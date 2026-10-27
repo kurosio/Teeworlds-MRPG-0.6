@@ -1743,3 +1743,46 @@ body.editor-focus .editor-sidebar-meta{
 /* Строка во всю ширину сетки задачи: позиция X/Y с кнопкой карты не должна
    сжиматься до одной колонки — иначе оси снова «разъезжаются». */
 .editor-item-span{grid-column:1/-1;min-width:0;}
+
+/* Related record drill-down: one header, regardless of navigation depth. */
+.related-record-control{display:flex;align-items:flex-start;gap:6px;min-width:0;max-width:100%;}
+.related-record-control > :first-child{flex:1 1 0;min-width:0;max-width:100%;}
+.related-record-link{flex:0 0 auto;min-height:38px;}
+.related-record-dialog{
+  width:calc(100% - 24px);max-width:1600px;
+  height:calc(100vh - 24px);height:calc(100dvh - 24px);max-height:none;
+  margin:auto;padding:0;border:1px solid var(--editor-line);border-radius:var(--editor-radius-lg);
+  color:var(--editor-text);background:var(--editor-bg);overflow:hidden;
+}
+.related-record-dialog[open]{display:flex;flex-direction:column;}
+.related-record-dialog::backdrop{background:rgb(0 0 0 / .55);}
+.related-record-header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:10px 12px;border-bottom:1px solid var(--editor-line);flex-shrink:0;}
+.related-record-trail{flex:1 1 160px;min-width:0;overflow-wrap:anywhere;font-size:14px;}
+.related-record-hint{color:var(--editor-text-muted);font-size:12px;}
+.related-record-dialog > iframe{flex:1 1 0;min-height:0;width:100%;border:0;background:var(--editor-bg);}
+.related-record-dialog > iframe[hidden]{display:none;}
+
+@media (max-width:640px){
+  /* Avoid iOS zooming the entire editor when focusing a field. */
+  .editor-theme :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea){font-size:16px;}
+  .editor-page-header{flex-wrap:wrap;gap:12px;}
+  .editor-page-actions{flex-wrap:wrap;max-width:100%;}
+  .editor-page-actions .editor-btn{white-space:normal;height:auto;min-height:40px;}
+  .editor-section-head{flex-wrap:wrap;}
+  .related-record-dialog{width:100%;max-width:none;height:100vh;height:100dvh;border:0;border-radius:0;}
+  .related-record-header{padding:8px max(8px,env(safe-area-inset-right)) 8px max(8px,env(safe-area-inset-left));}
+  .related-record-header .editor-btn{min-height:44px;}
+  .related-record-hint{display:none;}
+  .related-record-trail{font-size:12px;}
+}
+@media (pointer:coarse){
+  .related-record-link{min-width:44px;min-height:44px;}
+  .editor-dbcombo-option{min-height:44px;}
+}
+@media (max-width:640px){
+  .editor-sticky-toolbar{flex-wrap:wrap;gap:10px;min-width:0;}
+  .editor-sticky-toolbar > :first-child{flex:1 1 100%;min-width:0;overflow-wrap:anywhere;}
+  .editor-sticky-toolbar > .editor-page-actions{flex:1 1 100%;justify-content:flex-start;}
+  .editor-sticky-toolbar .editor-btn{flex:1 1 auto;}
+}
+.related-record-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}

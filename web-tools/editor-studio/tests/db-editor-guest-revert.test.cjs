@@ -59,7 +59,7 @@ const minimalFormRuntime = (window) => ({
   },
 });
 
-function mountEditor({ draftOps = [], submitStatus = 'draft', rawRow = DB_ROW, search = '' } = {}) {
+function mountEditor({ draftOps = [], submitStatus = 'draft', rawRow = DB_ROW, search = '', resource = 'items', admin = false } = {}) {
   const dom = new JSDOM(`<!DOCTYPE html><body><div id="root">
     <div data-editor-role="list"></div>
     <div data-editor-role="title"></div>
@@ -85,8 +85,8 @@ function mountEditor({ draftOps = [], submitStatus = 'draft', rawRow = DB_ROW, s
   };
 
   const Guest = {
-    isGuest: () => true,
-    ready: async () => 'guest',
+    isGuest: () => !admin,
+    ready: async () => admin ? 'admin' : 'guest',
     Draft: {
       rowMeta: () => (meta.state ? meta : null),
       revertField: async (resource, id, column, baseRow) => {
@@ -130,7 +130,7 @@ function mountEditor({ draftOps = [], submitStatus = 'draft', rawRow = DB_ROW, s
   window.eval(source('db-editor-runtime.js'));
 
   const editor = window.EditorCore.DbEditor.mount(rootEl, {
-    resource: 'items',
+    resource,
     fields: { Name: { type: 'text' }, Comment: { type: 'text' }, RequiresProducts: { type: 'number' } },
     rowToModel,
     modelToPayload: (model) => ({ ...model }),
@@ -250,4 +250,18 @@ test('a record link to a record outside the loaded list is fetched by id', { ski
   assert.deepEqual(calls.get, [99]);
   assert.equal(fieldValue(rootEl, 'Name'), 'Fetched');
   editor.destroy();
+});
+
+test('a deep link to world 0 selects an existing row and saves it with UPDATE, including a second save', { skip }, async () => {
+  const h = mountEditor({ resource: 'worlds', admin: true, search: '?resource=worlds&record=0' });
+  await settle();
+  assert.equal(h.window.EditorCore.DeepLink.active, true);
+  assert.equal(h.editor.getModel().ID, 0);
+  assert.equal(h.editor.getModel().Name, 'Fetched');
+  h.rootEl.querySelector('[data-editor-role="save"]').click(); await settle();
+  h.rootEl.querySelector('[data-editor-role="save"]').click(); await settle();
+  assert.equal(h.calls.update.length, 2);
+  assert.equal(h.calls.update[0][0], 'worlds');
+  assert.equal(h.calls.update[0][1], 0);
+  h.editor.destroy(); h.dom.window.close();
 });

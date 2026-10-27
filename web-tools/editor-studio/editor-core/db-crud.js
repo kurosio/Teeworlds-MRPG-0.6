@@ -18,6 +18,12 @@
     return guest ? (await guest.ready()) === 'guest' : false;
   };
 
+  const validRecordId = (resource, id) => {
+    if (id === null || id === undefined || String(id).trim() === '') return false;
+    const n = Number(id);
+    return Number.isSafeInteger(n) && (n > 0 || (n === 0 && resource === 'worlds'));
+  };
+
   const rawGet = (resource, id) => jsonFetch(`${API}?${qs({ action: 'get', resource, id })}`);
   const rawGetRow = async (resource, id) => {
     try {
@@ -169,8 +175,8 @@
      * null, если строка недоступна (нет записи или нет прав на чтение).
      */
     rawRow(resource, id) {
-      const numericId = Number(id) || 0;
-      if (!resource || numericId <= 0) return Promise.resolve(null);
+      const numericId = Number(id);
+      if (!resource || !validRecordId(resource, id)) return Promise.resolve(null);
       return rawGetRow(resource, numericId);
     },
 
@@ -187,7 +193,7 @@
     },
 
     async update(resource, id, data, { _skipSyncRecord = false } = {}) {
-      if (!resource || !id || !data) throw new Error('Resource, id, and data are required for update');
+      if (!resource || !validRecordId(resource, id) || !data) throw new Error('Resource, id, and data are required for update');
       return mutate(resource, 'update', {
         id,
         data,
@@ -200,7 +206,7 @@
     },
 
     async remove(resource, id, { _skipSyncRecord = false } = {}) {
-      if (!resource || !id) throw new Error('Resource and id are required for remove');
+      if (!resource || !validRecordId(resource, id)) throw new Error('Resource and id are required for remove');
       return mutate(resource, 'remove', {
         id,
         skipSync: _skipSyncRecord,

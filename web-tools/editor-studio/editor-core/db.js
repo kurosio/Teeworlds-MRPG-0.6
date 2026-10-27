@@ -627,27 +627,30 @@
       if (!portal || !input || !dropdown) return;
       const rect = input.getBoundingClientRect();
       const margin = 6;
-      const vw = window.innerWidth || document.documentElement.clientWidth || 0;
-      const vh = window.innerHeight || document.documentElement.clientHeight || 0;
-      const availBelow = vh - rect.bottom - margin - 12;
-      const availAbove = rect.top - margin - 12;
+      const viewport = window.visualViewport;
+      const vw = viewport?.width || window.innerWidth || document.documentElement.clientWidth || 0;
+      const vh = viewport?.height || window.innerHeight || document.documentElement.clientHeight || 0;
+      const viewportTop = viewport?.offsetTop || 0;
+      const availBelow = viewportTop + vh - rect.bottom - margin - 12;
+      const availAbove = rect.top - viewportTop - margin - 12;
       const preferAbove = availBelow < 160 && availAbove > availBelow;
-      const maxHeight = Math.max(140, Math.min(320, preferAbove ? availAbove : availBelow));
+      const maxHeight = Math.max(40, Math.min(320, preferAbove ? availAbove : availBelow));
 
-      const left = Math.max(8, Math.min(rect.left, Math.max(8, vw - rect.width - 8)));
+      const width = Math.min(Math.max(140, rect.width), Math.max(40, vw - 16));
+      const left = Math.max(8, Math.min(rect.left, Math.max(8, vw - width - 8)));
 
       dropdown.style.position = 'fixed';
       dropdown.style.left = `${left}px`;
       dropdown.style.right = 'auto';
-      dropdown.style.width = `${Math.max(140, rect.width)}px`;
+      dropdown.style.width = `${width}px`;
       dropdown.style.zIndex = '10000';
       dropdown.style.maxHeight = `${maxHeight}px`;
 
       if (preferAbove) {
-        dropdown.style.top = '';
-        dropdown.style.bottom = `${Math.max(8, vh - rect.top + margin)}px`;
+        dropdown.style.bottom = '';
+        dropdown.style.top = `${Math.max(viewportTop + 8, rect.top - margin - maxHeight)}px`;
       } else {
-        const top = Math.min(Math.max(8, rect.bottom + margin), Math.max(8, vh - maxHeight - 8));
+        const top = Math.min(Math.max(8, rect.bottom + margin), Math.max(viewportTop + 8, viewportTop + vh - maxHeight - 8));
         dropdown.style.bottom = '';
         dropdown.style.top = `${top}px`;
       }
@@ -669,6 +672,8 @@
       debouncedQuery.cancel();
       removalObserver?.disconnect();
       removalObserver = null;
+      window.visualViewport?.removeEventListener('resize', onViewport);
+      window.visualViewport?.removeEventListener('scroll', onViewport);
       window.removeEventListener('resize', onViewport);
       window.removeEventListener('scroll', onViewport, true);
       document.removeEventListener('mousedown', onOutside);
@@ -703,6 +708,8 @@
       state.open = true;
       if (portal && state.lastResults.length) renderList(state.lastResults);
       dropdown?.classList.add('open');
+      window.visualViewport?.addEventListener('resize', onViewport);
+      window.visualViewport?.addEventListener('scroll', onViewport);
       window.addEventListener('resize', onViewport);
       window.addEventListener('scroll', onViewport, { capture: true, passive: true });
       document.addEventListener('mousedown', onOutside);
@@ -823,7 +830,9 @@
     };
     dropdownLocal?.addEventListener('click', onDropdownClick);
 
+    let displaySeq = 0;
     const ensureDisplay = async () => {
+      const seq = ++displaySeq;
       if (!input) return;
       const cur = readBoundValue();
       if (!cur) {
@@ -840,6 +849,7 @@
       }
       try {
         const one = await db.getOne(source, cur);
+        if (seq !== displaySeq || readBoundValue() !== cur || state.open) return;
         if (one?.ok && one.item) {
           input.value = formatLabel(one.item.value, one.item.label);
           input.dataset.lookupChangeKind = one.item[LOOKUP_CHANGE_KIND] || '';
@@ -850,6 +860,8 @@
           return;
         }
       } catch {}
+      // A slow lookup must not replace a newer selection or a search query.
+      if (seq !== displaySeq || readBoundValue() !== cur || state.open) return;
       // Fallback: show raw id
       input.value = cur;
       syncClearButton();
@@ -1016,12 +1028,24 @@
       bound.addEventListener('change', ensureDisplay);
     }
 
+    combo.addEventListener('editor-db:refresh', () => {
+      state.items = null;
+      if (!state.open) ensureDisplay();
+    });
+
     // Initial label
     await ensureDisplay();
   };
 
   const DB = {
     endpoint: DEFAULT_ENDPOINT,
+
+    invalidateCache() {
+      cache.clear();
+      document.querySelectorAll('.editor-dbcombo').forEach((combo) => {
+        combo.dispatchEvent(new Event('editor-db:refresh'));
+      });
+    },
 
     resolveSource(dbKey) {
       const map = window.EditorCore?.DBMap || {};
@@ -1108,6 +1132,7 @@
     },
 
     async init(root = document) {
+      window.EditorCore.RelatedRecords?.init(root);
       const selects = Array.from(root.querySelectorAll('select[data-datasource]'));
       const combos = Array.from(root.querySelectorAll('.editor-dbcombo[data-datasource]'));
       if (!selects.length && !combos.length) return;
@@ -1203,9 +1228,8 @@
       }
 
       // Init new db_select combo widgets
-      for (const combo of combos) {
-        await initDbCombo(this, combo, root);
-      }
+      await Promise.all(combos.map((combo) => initDbCombo(this, combo, root)));
+      window.EditorCore.RelatedRecords?.init(root);
     }
   };
 

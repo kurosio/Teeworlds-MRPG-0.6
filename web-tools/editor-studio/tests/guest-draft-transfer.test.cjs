@@ -10,7 +10,8 @@ const source = (name) => fs.readFileSync(path.join(root, 'editor-core', name), '
 const DRAFT_KEY = 'editorStudio.guestDraft.v2:a1';
 const SUBMIT_KEY = 'editorStudio.guestSubmitKey:a1';
 const ACCOUNT = { id: 'a1', login: 'guest', name: 'Guest', pages: ['items', 'crafts'] };
-const CONFIG = { resources: { items: { title: 'Items' }, crafts: { title: 'Crafts' } } };
+const CONFIG = {
+  reference_schema: require('../editor-core/reference-schema.json'), resources: { items: { title: 'Items' }, crafts: { title: 'Crafts' } } };
 
 const seedDraft = (ops = [], nextTemp = 2000000001) => JSON.stringify({
   v: 2, accountId: 'a1', nextTemp, ops,
@@ -72,6 +73,7 @@ function makeDocument({ storage, json } = {}) {
     },
   });
   vm.runInContext(source('utils.js'), context);
+  vm.runInContext(source('reference-data.js'), context);
   vm.runInContext(source('guest-mode.js'), context);
   return { Guest: context.window.EditorCore.Guest };
 }

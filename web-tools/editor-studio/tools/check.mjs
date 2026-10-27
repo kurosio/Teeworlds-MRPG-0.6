@@ -110,7 +110,11 @@ for (const page of list(ROOT, '.html')) {
   for (const name of new Set([...code.matchAll(/EditorCore\.([A-Za-z_$][\w$]*)/g)].map((m) => m[1]))) {
     const available = [...loaded].some((src) => {
       const file = path.join(ROOT, src);
-      return src.startsWith('editor-core/') && fs.existsSync(file) && read(file).includes(`EditorCore.${name}`);
+      if (!src.startsWith('editor-core/') || !fs.existsSync(file)) return false;
+      const module = read(file);
+      // Shared modules may export through a local alias of window.EditorCore.
+      return module.includes(`EditorCore.${name}`)
+        || (module.includes('window.EditorCore') && new RegExp(`(?:namespace|core)\\.${name}\\s*=`).test(module));
     });
     if (!available) problems.push(`${page}: EditorCore.${name} используется, но модуль не подключён`);
   }
@@ -712,6 +716,8 @@ const DATA_STRINGS = new Set([
 const looksLikeProse = (text) => {
   if (text.length < 2 || !/[A-Za-z]/.test(text)) return false;
   if (/[{}$#@\\_=<>|]/.test(text)) return false;
+  // Attribute selectors, optionally in a comma-separated selector list.
+  if (/^[a-z][\w-]*\[[^\]]+\](?:\s*,\s*[a-z][\w-]*\[[^\]]+\])*$/.test(text)) return false;
   // CSS и инлайновые стили: «position:fixed», «padding:4px 10px».
   if (/[a-z-]+:\s*[-0-9a-z.,()]/.test(text)) return false;
   if (/\b\d+px\b|\b\d+deg\b|rgba?\(/i.test(text)) return false;

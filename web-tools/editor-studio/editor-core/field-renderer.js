@@ -134,6 +134,7 @@
     if (includeName) attrs.push(`name="${escapeAttr(path)}"`);
     if (includeDataPath) attrs.push(`data-path="${escapeAttr(path)}"`);
     if (includeDataKey) attrs.push(`data-key="${escapeAttr(path)}"`);
+    if (field?.ui?.relatedListSource) attrs.push(`data-related-list-source="${escapeAttr(field.ui.relatedListSource)}"`);
     if (field?.ui?.placeholder) attrs.push(`placeholder="${escapeAttr(field.ui.placeholder)}"`);
     if (field?.ui?.min !== undefined) attrs.push(`min="${escapeAttr(field.ui.min)}"`);
     if (field?.ui?.max !== undefined) attrs.push(`max="${escapeAttr(field.ui.max)}"`);

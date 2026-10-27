@@ -1,0 +1,305 @@
+{
+  "vouchers": [],
+  "bots_mobs": [
+    {
+      "column": "BotID",
+      "codec": "id",
+      "target": "bots_info"
+    },
+    {
+      "column": "WorldID",
+      "codec": "id",
+      "target": "worlds"
+    },
+    {
+      "column": "it_drop_0",
+      "codec": "id",
+      "target": "items"
+    },
+    {
+      "column": "it_drop_1",
+      "codec": "id",
+      "target": "items"
+    },
+    {
+      "column": "it_drop_2",
+      "codec": "id",
+      "target": "items"
+    },
+    {
+      "column": "it_drop_3",
+      "codec": "id",
+      "target": "items"
+    },
+    {
+      "column": "it_drop_4",
+      "codec": "id",
+      "target": "items"
+    }
+  ],
+  "bots_info": [
+    {
+      "column": "SlotHammer",
+      "codec": "id",
+      "target": "items"
+    },
+    {
+      "column": "SlotGun",
+      "codec": "id",
+      "target": "items"
+    },
+    {
+      "column": "SlotShotgun",
+      "codec": "id",
+      "target": "items"
+    },
+    {
+      "column": "SlotGrenade",
+      "codec": "id",
+      "target": "items"
+    },
+    {
+      "column": "SlotRifle",
+      "codec": "id",
+      "target": "items"
+    },
+    {
+      "column": "SlotArmor",
+      "codec": "id",
+      "target": "items"
+    },
+    {
+      "column": "EquippedModules",
+      "codec": "csv",
+      "target": "items"
+    }
+  ],
+  "bots_npc": [
+    {
+      "column": "BotID",
+      "codec": "id",
+      "target": "bots_info"
+    },
+    {
+      "column": "GiveQuestID",
+      "codec": "id",
+      "target": "quests"
+    },
+    {
+      "column": "WorldID",
+      "codec": "id",
+      "target": "worlds"
+    },
+    {
+      "column": "DialogData",
+      "codec": "json",
+      "paths": {
+        "*.left_speaker_id": "bots_info",
+        "*.right_speaker_id": "bots_info"
+      },
+      "tokens": true
+    }
+  ],
+  "crafts": [
+    {
+      "column": "ItemID",
+      "codec": "id",
+      "target": "items"
+    },
+    {
+      "column": "WorldID",
+      "codec": "id",
+      "target": "worlds"
+    },
+    {
+      "column": "RequiredItems",
+      "codec": "pairs",
+      "target": "items"
+    }
+  ],
+  "warehouses": [
+    {
+      "column": "Currency",
+      "codec": "id",
+      "target": "items"
+    },
+    {
+      "column": "WorldID",
+      "codec": "id",
+      "target": "worlds"
+    },
+    {
+      "column": "Trades",
+      "codec": "brackets",
+      "target": "items"
+    }
+  ],
+  "worlds": [
+    {
+      "column": "RespawnWorldID",
+      "codec": "id",
+      "target": "worlds"
+    },
+    {
+      "column": "JailWorldID",
+      "codec": "id",
+      "target": "worlds"
+    }
+  ],
+  "nodes_collecting": [
+    {
+      "column": "WorldID",
+      "codec": "id",
+      "target": "worlds"
+    },
+    {
+      "column": "Properties",
+      "codec": "brackets",
+      "target": "items"
+    }
+  ],
+  "aethers": [
+    {
+      "column": "WorldID",
+      "codec": "id",
+      "target": "worlds"
+    }
+  ],
+  "items": [
+    {
+      "column": "AT1",
+      "codec": "id",
+      "target": "attributes"
+    },
+    {
+      "column": "AT2",
+      "codec": "id",
+      "target": "attributes"
+    },
+    {
+      "column": "Data",
+      "codec": "json",
+      "paths": {
+        "random_box.*.item_id": "items",
+        "box.*.item_id": "items",
+        "use_scenario.world_id": "worlds",
+        "use_scenario.rewards.*.item_id": "items"
+      }
+    },
+    {
+      "column": "ScenarioData",
+      "codec": "json",
+      "recursive": {
+        "item_id": "items",
+        "quest_id": "quests",
+        "world_id": "worlds",
+        "bot_id": "bots_info",
+        "item.id": "items"
+      },
+      "tokens": true
+    }
+  ],
+  "dungeons": [
+    {
+      "column": "WorldID",
+      "codec": "id",
+      "target": "worlds"
+    },
+    {
+      "column": "Scenario",
+      "codec": "json",
+      "recursive": {
+        "item_id": "items",
+        "quest_id": "quests",
+        "world_id": "worlds",
+        "bot_id": "bots_info",
+        "item.id": "items"
+      },
+      "tokens": true
+    }
+  ],
+  "quests": [
+    {
+      "column": "NextQuestID",
+      "codec": "id",
+      "target": "quests"
+    }
+  ],
+  "quest_board_links": [
+    {
+      "column": "QuestID",
+      "codec": "id",
+      "target": "quests"
+    },
+    {
+      "column": "DailyBoardID",
+      "codec": "id",
+      "target": "quest_boards"
+    }
+  ],
+  "quest_boards": [
+    {
+      "column": "WorldID",
+      "codec": "id",
+      "target": "worlds"
+    }
+  ],
+  "quest_bots": [
+    {
+      "column": "BotID",
+      "codec": "id",
+      "target": "bots_info"
+    },
+    {
+      "column": "QuestID",
+      "codec": "id",
+      "target": "quests"
+    },
+    {
+      "column": "WorldID",
+      "codec": "id",
+      "target": "worlds"
+    },
+    {
+      "column": "DialogData",
+      "codec": "json",
+      "paths": {
+        "*.left_speaker_id": "bots_info",
+        "*.right_speaker_id": "bots_info"
+      },
+      "tokens": true
+    },
+    {
+      "column": "TasksData",
+      "codec": "json",
+      "paths": {
+        "required_items.*.id": "items",
+        "reward_items.*.id": "items",
+        "defeat_bots.*.id": "bots_info",
+        "defeat_bots.*.bot_id": "bots_info",
+        "move_to.*.world_id": "worlds",
+        "move_to.*.required_item.id": "items",
+        "move_to.*.pick_up_item.id": "items",
+        "move_to.*.defeat_bot.id": "bots_info",
+        "move_to.*.defeat_bot.bot_id": "bots_info",
+        "move_to.*.defeat_bot.world_id": "worlds",
+        "move_to.*.required_item_id": "items",
+        "move_to.*.pick_up_item_id": "items",
+        "move_to.*.defeat_bot_id": "bots_info",
+        "move_to.*.defeat_bot_world_id": "worlds"
+      }
+    },
+    {
+      "column": "ScenarioData",
+      "codec": "json",
+      "recursive": {
+        "item_id": "items",
+        "quest_id": "quests",
+        "world_id": "worlds",
+        "bot_id": "bots_info",
+        "item.id": "items"
+      },
+      "tokens": true
+    }
+  ]
+}

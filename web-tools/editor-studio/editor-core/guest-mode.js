@@ -125,7 +125,8 @@
     if (force) { configPromise = null; config = null; }
     if (!configPromise) {
       configPromise = window.EditorCore.Http.json('api/change-requests.php?action=config')
-        .then((res) => { if (res.ok) config = res.data; return config; });
+        .then((res) => { if (res.ok) config = res.data; else configPromise = null; return config; })
+        .catch((error) => { configPromise = null; throw error; });
     }
     return configPromise;
   };
@@ -148,6 +149,7 @@
       resource: o.resource,
       id: o.type === 'create' ? undefined : Number(o.id),
       tempId: o.type === 'create' ? Number(o.tempId) : undefined,
+      ...(o.type === 'create' && isTempId(o.serverTempId) ? { serverTempId: Number(o.serverTempId) } : {}),
       data: o.data && typeof o.data === 'object' ? clone(o.data) : {},
       label: typeof o.label === 'string' ? o.label : '',
       ts: Number(o.ts) || Date.now(),
@@ -156,7 +158,7 @@
       reqDirty: !!o.reqDirty,
       submittedAt: o.submittedAt ? String(o.submittedAt) : null,
     };
-    if (op.type !== 'create' && (!Number.isInteger(op.id) || op.id <= 0)) return null;
+    if (op.type !== 'create' && (!Number.isSafeInteger(op.id) || op.id < 0 || (op.id === 0 && op.resource !== 'worlds'))) return null;
     if (op.type === 'create' && !isTempId(op.tempId)) return null;
     return op;
   };
@@ -198,6 +200,10 @@
       // actually stored so the next read does not parse it again.
       try { raw = safeLocal ? safeLocal.getItem(key) : null; } catch { raw = null; }
     }
+    draft.nextTemp = Math.max(
+      Number.isSafeInteger(draft.nextTemp) && draft.nextTemp > TEMP_ID_BASE ? draft.nextTemp : TEMP_ID_BASE + 1,
+      TEMP_ID_BASE + 1, ...draft.ops.map(op => isTempId(op.tempId) ? Number(op.tempId) + 1 : TEMP_ID_BASE + 1)
+    );
     draftCache = draft;
     draftCacheKey = key;
     draftCacheRaw = raw || '';
@@ -301,6 +307,28 @@
     return out;
   };
 
+  const referenceData = () => {
+    const api = window.EditorCore.ReferenceData;
+    if (!api) throw new Error('Reference handling is not loaded. Reload the studio.');
+    return api;
+  };
+  const remapReferences = (resource, data, idMap) => referenceData().remap(resource, data, config?.reference_schema, idMap);
+  /**
+   * A new record may not disappear while a pending operation still points at it:
+   * the reference would be submitted without its target. The requests page loads
+   * the config before rendering, so the rules are normally available; if they are
+   * not (first click before the config arrived) the server rejects the request
+   * with an explicit message instead of storing a dangling reference.
+   */
+  const assertUnreferenced = (draft, op) => {
+    if (op?.type !== 'create') return;
+    if (!config?.reference_schema) { loadConfig().catch(() => {}); return; }
+    const usedBy = draft.ops.find(other => other.uid !== op.uid &&
+      referenceData().references(other.resource, other.data, config?.reference_schema)
+        .some(ref => ref.id === Number(op.tempId) && ref.target === op.resource));
+    if (usedBy) throw new Error('This new record is still referenced by another pending change. Remove that reference first.');
+  };
+
   const resourceTitle = (resource) => config?.resources?.[resource]?.title || resource;
   const rowLabel = (resource, row) => {
     const col = config?.resources?.[resource]?.label;
@@ -375,6 +403,7 @@
       const d = draftForWrite();
       const op = d.ops.find(o => o.uid === opUid);
       if (op?.reqId) throw new Error('This change is already submitted in a request and awaits admin review.');
+      assertUnreferenced(d, op);
       d.ops = d.ops.filter(o => o.uid !== opUid);
       writeDraft(d);
       return true;
@@ -490,6 +519,7 @@
       if (isTempId(id)) {
         const op = d.ops.find(o => o.type === 'create' && o.resource === resource && Number(o.tempId) === Number(id));
         if (op?.reqId) throw new Error('The new record is already submitted in a request and awaits admin review.');
+        assertUnreferenced(d, op);
         d.ops = d.ops.filter(o => !(o.type === 'create' && o.resource === resource && Number(o.tempId) === Number(id)));
         writeDraft(d);
         toastInfo('New record removed from the draft');
@@ -653,17 +683,18 @@
       let parsed;
       try { parsed = JSON.parse(String(text || '')); }
       catch { throw new Error('The file is not valid JSON.'); }
-      if (!parsed || parsed.app !== 'editor-studio-guest-draft' || !Array.isArray(parsed.ops)) {
+      if (!parsed || parsed.app !== 'editor-studio-guest-draft' || !Array.isArray(parsed.ops) || (parsed.version !== undefined && parsed.version !== 1)) {
         throw new Error('This file is not an Editor Studio guest draft.');
       }
       await loadConfig();
+      if (!config?.reference_schema) throw new Error('Could not load reference rules. Retry importing after reconnecting.');
       const d = draftForWrite();
       const existingKeys = new Set(d.ops.map(o => `${o.type}:${o.resource}:${o.type === 'create' ? o.tempId : o.id}`));
       const busyRows = new Set(d.ops.filter(o => o.type !== 'create').map(o => `${o.resource}:${o.id}`));
       const usedTemps = new Set(d.ops.filter(o => o.type === 'create').map(o => Number(o.tempId)));
 
       const incoming = [];
-      let skipped = 0;
+      let skipped = Math.max(0, parsed.ops.length - 500);
       for (const raw of parsed.ops.slice(0, 500)) {
         const op = normalizeOp(raw && typeof raw === 'object' ? { ...raw, uid: '', reqId: null } : raw);
         if (!op) { skipped++; continue; }
@@ -687,7 +718,8 @@
       for (const op of incoming) {
         if (op.type !== 'create') continue;
         const original = Number(op.tempId);
-        if (usedTemps.has(original) || seenCreates.has(original)) {
+        if (seenCreates.has(original)) throw new Error('The imported draft contains duplicate temporary IDs.');
+        if (usedTemps.has(original)) {
           const fresh = allocTemp();
           if (!remap.has(original)) remap.set(original, fresh);
           op.tempId = fresh;
@@ -696,31 +728,28 @@
         }
         seenCreates.add(original);
       }
-      const remapValue = (value) => {
-        if (typeof value === 'number' && remap.has(value)) return remap.get(value);
-        if (Array.isArray(value)) return value.map(remapValue);
-        if (value && typeof value === 'object') {
-          const out = {};
-          for (const [k, v] of Object.entries(value)) out[k] = remapValue(v);
-          return out;
-        }
-        if (typeof value === 'string' && remap.size) {
-          return value.replace(/200\d{7}/g, (m) => (remap.has(Number(m)) ? String(remap.get(Number(m))) : m));
-        }
-        return value;
-      };
+      const idMap = Object.fromEntries(remap);
 
       let imported = 0;
       for (const op of incoming) {
-        op.data = remapValue(op.data);
+        op.data = remapReferences(op.resource, filterColumns(op.resource, op.data), idMap);
         const key = `${op.type}:${op.resource}:${op.type === 'create' ? op.tempId : op.id}`;
         if (existingKeys.has(key) || (op.type !== 'create' && busyRows.has(`${op.resource}:${op.id}`))) {
           skipped++;
           continue;
         }
         d.ops.push(op);
+        if (op.type !== 'create') busyRows.add(`${op.resource}:${op.id}`);
         existingKeys.add(key);
         imported++;
+      }
+      const creates = new Map(d.ops.filter(o => o.type === 'create').map(o => [Number(o.tempId), o.resource]));
+      for (const op of d.ops.filter(o => incoming.includes(o))) {
+        for (const ref of referenceData().references(op.resource, op.data, config.reference_schema)) {
+          if (isTempId(ref.id) && creates.get(ref.id) !== ref.target) {
+            throw new Error('The imported draft references a new record that is not part of it.');
+          }
+        }
       }
       d.nextTemp = Math.max(nextTemp, TEMP_ID_BASE + 1,
         ...d.ops.filter(o => o.type === 'create').map(o => Number(o.tempId) + 1));
@@ -734,17 +763,32 @@
       if (!requestId || !Array.isArray(request?.operations)) return false;
       const d = draftForWrite();
       const previous = new Map(d.ops.filter(o => o.reqId === requestId)
-        .map(o => [`${o.type}:${o.resource}:${o.type === 'create' ? o.tempId : o.id}`, o]));
+        .map(o => [`${o.type}:${o.resource}:${o.type === 'create' ? (o.serverTempId || o.tempId) : o.id}`, o]));
       const now = new Date().toISOString();
       d.ops = d.ops.filter(o => o.reqId !== requestId);
+      const used = new Set(d.ops.filter(o => o.type === 'create').map(o => Number(o.tempId)));
+      const aliases = {};
+      for (const op of request.operations.filter(o => o.type === 'create')) {
+        const old = previous.get(`create:${op.resource}:${op.tempId}`);
+        let localId = Number(old?.tempId ?? op.tempId);
+        if (used.has(localId)) {
+          while (used.has(d.nextTemp)) d.nextTemp++;
+          localId = d.nextTemp++;
+          if (!isTempId(localId)) throw new Error('Too many new records in the draft.');
+        }
+        used.add(localId);
+        aliases[op.tempId] = localId;
+      }
       for (const op of request.operations) {
         const key = `${op.type}:${op.resource}:${op.type === 'create' ? op.tempId : op.id}`;
         const old = previous.get(key);
-        const data = clone(op.data || {});
+        const data = Object.entries(aliases).some(([temp, local]) => Number(temp) !== local)
+          ? remapReferences(op.resource, op.data || {}, aliases) : clone(op.data || {});
         d.ops.push({
           uid: old?.uid || uid(), type: op.type, resource: op.resource,
           id: op.type === 'create' ? undefined : Number(op.id),
-          tempId: op.type === 'create' ? Number(op.tempId) : undefined,
+          tempId: op.type === 'create' ? aliases[op.tempId] : undefined,
+          ...(op.type === 'create' ? { serverTempId: Number(op.tempId) } : {}),
           data,
           label: rowLabel(op.resource, op.type === 'delete' ? (op.before || data) : data) || old?.label || '',
           ts: old?.ts || Date.now(), reqId: requestId,
@@ -752,7 +796,7 @@
           submittedAt: old?.submittedAt || now,
         });
       }
-      d.nextTemp = Math.max(Number(d.nextTemp) || TEMP_ID_BASE + 1,
+      d.nextTemp = Math.max(d.nextTemp, TEMP_ID_BASE + 1,
         ...d.ops.filter(o => o.type === 'create').map(o => Number(o.tempId) + 1));
       writeDraft(d);
       return true;
@@ -815,18 +859,64 @@
           try {
             const detail = await window.EditorCore.Http.json(`api/change-requests.php?action=get&id=${encodeURIComponent(requestId)}&peek=1`);
             if (!detail.ok || !detail.request || Number(detail.request.version) <= (localVersions.get(requestId) || 1)) continue;
+            await loadConfig();
             Draft.replaceRequest(detail.request);
             revised.push({ reqId: requestId, version: Number(detail.request.version) || 1 });
           } catch { /* The next poll retries; the current local snapshot stays intact. */ }
         }
 
+        const terminal = new Map();
+        const idMap = {};
+        for (const requestId of ids) {
+          let req = byId.get(requestId);
+          if (req?.status === 'pending') continue;
+          // Lists may be paginated, and an approved request can have been revised
+          // since this tab last polled. Its detail is authoritative for idMap.
+          try {
+            const detail = await window.EditorCore.Http.json(`api/change-requests.php?action=get&id=${encodeURIComponent(requestId)}&peek=1`);
+            if (!detail.ok || !detail.request || detail.request.id !== requestId) continue;
+            req = detail.request;
+            if (req.status === 'pending') continue;
+            if (!['approved', 'rejected', 'withdrawn'].includes(req.status)) continue;
+            // The approval must be complete before local references are rewritten:
+            // every created record of this request has to carry its real ID.
+            if (req.status === 'approved') {
+              const mapping = req.review?.idMap;
+              const creates = (req.operations || []).filter(op => op.type === 'create');
+              if (creates.length && (!mapping || creates.some(op => {
+                const real = Number(mapping?.[op.tempId]);
+                return !Number.isSafeInteger(real) || real <= 0 || isTempId(real);
+              }))) continue;
+            }
+            terminal.set(requestId, req);
+          } catch { /* Keep tracked operations and retry after transient failures. */ }
+        }
+        // Always re-read after awaits: edits from another document must survive.
         const d = draftForWrite();
+        // Only the create operations this draft actually tracks are mapped: a
+        // temp ID of somebody else's request must never rewrite local values.
+        for (const op of d.ops) {
+          const req = terminal.get(op.reqId);
+          if (op.type !== 'create' || req?.status !== 'approved') continue;
+          const real = Number(req.review?.idMap?.[op.serverTempId || op.tempId]);
+          if (Number.isSafeInteger(real) && real > 0 && !isTempId(real)) idMap[op.tempId] = real;
+        }
+        // Pending operations may still point at the just-approved records (the
+        // guest kept working while the request was reviewed). Rewrite those
+        // references through the same typed rules the server used, so the next
+        // submission stores real IDs instead of reserved ones.
+        if (Object.keys(idMap).length) {
+          try { await loadConfig(); } catch { /* keep local temps; the server explains the reference on submit */ }
+        }
         const keep = [];
         for (const op of d.ops) {
-          if (!op.reqId) { keep.push(op); continue; }
-          const req = byId.get(op.reqId);
-          if (req && req.status === 'pending') { keep.push(op); continue; }
-          resolved.push({ reqId: op.reqId, status: req?.status || 'deleted', op });
+          const req = terminal.get(op.reqId);
+          if (req) { resolved.push({ reqId: op.reqId, status: req.status, op }); continue; }
+          if (Object.keys(idMap).length && config?.reference_schema) {
+            op.data = remapReferences(op.resource, op.data, idMap);
+            if (op.type !== 'create' && Object.prototype.hasOwnProperty.call(idMap, op.id)) op.id = idMap[op.id];
+          }
+          keep.push(op);
         }
         if (revised.length) {
           try { window.EditorCore?.DBCrud?.invalidateCache?.(); } catch {}

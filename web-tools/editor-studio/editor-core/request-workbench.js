@@ -226,7 +226,7 @@
         const type = typeEl.value;
         const id = Number(idEl.value);
         if (!resources[resource]) return setStatus('Select a section.', true);
-        if (type !== 'create' && (!Number.isSafeInteger(id) || id <= 0 || id >= 2000000000)) {
+        if (type !== 'create' && (!Number.isSafeInteger(id) || id < 0 || (id === 0 && resource !== 'worlds') || id >= 2000000000)) {
           return setStatus('Enter a valid existing record ID.', true);
         }
         if (operations.some((op) => op.resource === resource && op.type !== 'create' && type !== 'create' && Number(op.id) === id)) {

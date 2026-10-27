@@ -272,3 +272,14 @@ test('новая форма закрывает список, оставшийс�
   assert.equal(second.picker(), null);
   assert.equal(window.document.body.querySelectorAll('.dlg-picker').length, 0, 'старый список закрыт');
 });
+
+test('record format links open the referenced editor without replacing or removing the token', { skip }, () => {
+  const { window, host, textarea, changes, click } = mount({ lines: ['<item_31> <world_0> <bot_12>'] });
+  const opened = [];
+  window.EditorCore.RelatedRecords = { open: (...args) => opened.push(args.slice(0, 2)) };
+  const original = textarea().value;
+  host.querySelectorAll('[data-dialog-token-open]').forEach(click);
+  assert.deepEqual(opened, [['items', 31], ['worlds', 0], ['bots', 12]]);
+  assert.equal(textarea().value, original);
+  assert.equal(changes.length, 0);
+});

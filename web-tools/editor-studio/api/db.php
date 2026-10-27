@@ -38,9 +38,9 @@ const SOURCES = [
 // editors the account cannot open).
 const SOURCE_TABS = [
     'quests'     => ['quests'],
-    'quest_boards' => ['quests'],
-    'items'      => ['items', 'crafts', 'warehouses', 'quests'],
-    'worlds'     => ['worlds', 'crafts', 'quests', 'dungeons', 'aethers'],
+    'quest_boards' => ['quests', 'quest_boards'],
+    'items'      => ['items', 'crafts', 'warehouses', 'quests', 'bots_info', 'bots_mobs', 'nodes_collecting'],
+    'worlds'     => ['worlds', 'crafts', 'warehouses', 'quests', 'quest_boards', 'bots_mobs', 'bots_npc', 'nodes_collecting', 'dungeons', 'aethers', 'items'],
     'skills'     => ['items', 'bots_mobs', 'quests'],
     'bots'       => ['bots_info', 'bots_mobs', 'bots_npc', 'quests'],
     'attributes' => ['items', 'bots_mobs'],

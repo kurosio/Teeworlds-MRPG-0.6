@@ -27,7 +27,10 @@
     const origin = messageOrigin();
     if (!target || !origin) return false;
     try {
-      target.postMessage(data, origin);
+      // A source editor with an open drill-down must never be evicted as clean.
+      const payload = data?.type === 'editor-shell:dirty-status' && namespace.RelatedRecords?.hasOpenEditors?.()
+        ? { ...data, dirty: true } : data;
+      target.postMessage(payload, origin);
       return true;
     } catch {
       return false;

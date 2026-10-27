@@ -20,13 +20,16 @@
   const ROW_SELECTOR = '.editor-row[data-id], [data-node-type="quest"][data-id], [data-node-type="step"][data-id]';
   const ACTIVE_CLASSES = ['editor-row-active', 'ring-2', 'tree-selected', 'active', 'is-active', 'selected'];
   const POLL_MS = 200;
-  const POLL_LIMIT_MS = 6000;
+  const POLL_LIMIT_MS = 30000;
   const FLASH_MS = 2600;
 
   const query = new URLSearchParams(window.location?.search || '');
   const requestId = String(query.get('request') || '').trim();
   const parsedRecord = Number(query.get('record'));
-  const record = requestId ? 0 : (Number.isSafeInteger(parsedRecord) && parsedRecord > 0 ? parsedRecord : 0);
+  const resource = String(query.get('resource') || '');
+  const active = !requestId && query.has('record') && String(query.get('record')).trim() !== ''
+    && Number.isSafeInteger(parsedRecord) && (parsedRecord > 0 || (parsedRecord === 0 && resource === 'worlds'));
+  const record = active ? parsedRecord : 0;
   // Имя поля из URL сравнивается со `data-field-path` как строка (в селектор
   // оно не попадает), длина ограничена — этого достаточно для безопасности.
   const field = requestId ? '' : String(query.get('field') || '').trim().slice(0, 120);
@@ -38,6 +41,9 @@
 
   const rowFor = (id) => {
     for (const node of document.querySelectorAll(ROW_SELECTOR)) {
+      const nodeType = node.dataset?.nodeType;
+      if (nodeType && resource === 'quests' && nodeType !== 'quest') continue;
+      if (nodeType && resource === 'quest_bots' && nodeType !== 'step') continue;
       if (Number(node.dataset?.id) === id) return node;
     }
     return null;
@@ -87,19 +93,33 @@
   };
 
   const start = () => {
-    if (!record) return;
+    if (!active) return;
     deadline = Date.now() + POLL_LIMIT_MS;
     attempt();
     if (!done) timer = window.setInterval(attempt, POLL_MS);
   };
 
   window.EditorCore.DeepLink = {
-    active: !!record,
+    active,
+    resource,
     record,
     field,
     revealField,
     /** Запись выбрана из кода (CRUD-редактор прочитал её по ID) — прекращаем опрос. */
     markHandled: stop,
+    // Custom editors can resolve a URL target even outside the first page.
+    async resolveRow(targetResource, rows) {
+      if (!active || (resource && resource !== targetResource)) return null;
+      stop();
+      let row = rows.find((item) => Number(item.ID) === record);
+      if (!row) {
+        const response = await namespace.DBCrud.get(targetResource, record);
+        row = response?.row;
+        if (row) rows.unshift(row);
+      }
+      if (!row) namespace.UI?.toast?.(namespace.I18n?.t?.('The linked record was not found.') || 'The linked record was not found.', 'error');
+      return row || null;
+    },
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
