@@ -946,7 +946,11 @@
 
       // Hydrate options from DB if requested
       const hydrateTagsFromDB = async () => {
-        const widgets = Array.from(root.querySelectorAll('.editor-tags[data-tags-datasource]'));
+        // Already-connected widgets keep their options; refetching them on
+        // every form rerender wastes requests, so hydrate only the rest.
+        const widgets = Array.from(root.querySelectorAll('.editor-tags[data-tags-datasource]')).filter(
+          (w) => w.dataset.tagsDbState !== 'connected'
+        );
         if (!widgets.length) return;
         const DB = window.EditorCore?.DB;
         if (!DB?.list) return;

@@ -152,6 +152,7 @@
       frame.src = 'about:blank';
       window.removeEventListener('message', onMessage);
       closeBtn.onclick = null;
+      modal.removeEventListener('click', onBackdropClick);
     };
 
     const onMessage = (event) => {
@@ -181,9 +182,8 @@
 
     window.addEventListener('message', onMessage);
     closeBtn.onclick = () => close();
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) close();
-    }, { once: true });
+    const onBackdropClick = (e) => { if (e.target === modal) close(); };
+    modal.addEventListener('click', onBackdropClick);
 
     const rawWorldId = Number(cfg.worldId);
     const worldParam = cfg.worldId !== null && cfg.worldId !== undefined && String(cfg.worldId) !== '' &&

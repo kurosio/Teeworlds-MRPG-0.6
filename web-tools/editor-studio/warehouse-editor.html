@@ -604,6 +604,10 @@
     };
 
     const mountMainForm = () => {
+      // Unmount the previous runtime: its listeners stay on #form-main forever
+      // otherwise (a stale mount writes to an old state and, after render()
+      // replaces innerHTML, its event target is detached).
+      runtimeMain?.destroy?.();
       runtimeMain = EditorCore.FormRuntime.mount(els.formMain, {
         fields: mainFields,
         data: STATE.selected || {},
