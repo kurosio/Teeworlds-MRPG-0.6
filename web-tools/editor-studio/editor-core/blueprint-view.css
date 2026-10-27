@@ -38,8 +38,11 @@ body.bp-mode #bp-canvas { display: block; }
 #bp-canvas {
   position: relative;
   width: 100%;
-  height: calc(100vh - var(--scenario-top-h, 126px));
-  height: calc(100dvh - var(--scenario-top-h, 126px));
+  /* Never collapse to nothing: on a phone the sticky chrome above the canvas
+     can be taller than the viewport, and a plain calc() would leave the graph
+     zero pixels high (which is exactly what made it unusable there). */
+  height: max(320px, calc(100vh - var(--scenario-top-h, 126px)));
+  height: max(320px, calc(100dvh - var(--scenario-top-h, 126px)));
   overflow: hidden;
   background-color: var(--bp-bg);
   background-image:
@@ -795,12 +798,82 @@ body.bp-fullscreen #bp-minimap{ bottom:60px; }
 .bp-create-menu button[data-create="group"]:hover i{ color: var(--editor-accent, #72d6c0); }
 .bp-create-menu button[data-create="comment"]:hover i{ color: #ffcf5a; }
 
-/* Граф на телефоне: панель инструментов переносится, мини-карта меньше. */
-@media (max-width: 640px) {
-  .bp-toolbar { top: 10px; left: 10px; flex-wrap: wrap; max-width: calc(100% - 20px); gap: 4px; }
-  .bp-tool-btn { width: 32px; height: 32px; }
-  #bp-minimap { width: 150px; height: 104px; right: 10px; bottom: 48px; }
-  body.bp-fullscreen #bp-minimap { bottom: 54px; }
+/* ============================================================
+   Phones: the graph takes over the screen, controls sit at the
+   bottom (thumb reach) and scroll horizontally instead of
+   wrapping into a wall of buttons over the canvas.
+   ============================================================ */
+@media (max-width: 767px) {
+  /* Graph mode owns the viewport: the sticky header + summary cards above it
+     are worthless there and used to eat the whole screen. */
+  body.bp-mode #bp-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 200;
+  }
+  body.bp-mode #scenario-top-chrome,
+  body.bp-mode .scenario-overview { display: none !important; }
+  body.bp-mode { overflow: hidden; }
+
+  .bp-toolbar {
+    top: auto; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    /* Wrapped in at most two rows: the canvas is touch-action:none, so a
+       horizontally scrolling strip could not be scrolled with a finger. */
+    flex-wrap: wrap; justify-content: center;
+    max-width: none; gap: 4px; padding: 5px;
+  }
+  .bp-tool-btn { width: 38px; height: 38px; flex: 0 0 auto; }
+  .bp-toolbar .bp-sep { flex: 0 0 auto; }
+  .bp-zoom-label { min-width: 40px; flex: 0 0 auto; }
+  /* The legend is a desktop nicety and overlaps the bottom toolbar here. */
+  .bp-legend { display: none; }
+  /* The minimap and the full-screen toggle make no sense on a phone: the
+     graph already fills the screen and pinch-zoom replaces the minimap. */
+  #bp-minimap, #bp-minimap-toggle, #bp-fullscreen { display: none !important; }
+}
+
+/* Back-to-list button only exists for touch / narrow screens. */
+#bp-back-list { display: none; }
+@media (max-width: 767px) {
+  #bp-back-list { display: inline-flex; width: auto; padding: 0 12px; gap: 6px; }
+  #bp-back-list span { font-size: 12px; font-weight: 700; }
+}
+
+/* ---- Touch ergonomics ------------------------------------- */
+@media (pointer: coarse) {
+  /* Fingers need bigger targets than a 13px pin / 20px grip. */
+  .bp-drag-zone { width: 26px; height: 26px; font-size: 15px; }
+  .bp-node-header { padding-left: 6px; gap: 6px; }
+  /* Actions appear on the selected node: keeping four permanent buttons in a
+     260px header squeezed the step id down to a single character. */
+  .bp-node-actions { display: none; }
+  /* Selected node: the actions drop to a second header row so the step id
+     keeps its full width instead of collapsing to the first two letters. */
+  .bp-node.is-selected .bp-node-header { flex-wrap: wrap; }
+  .bp-node.is-selected .bp-node-actions {
+    display: flex; opacity: 1; pointer-events: auto;
+    order: 10; margin-left: auto;
+  }
+  .bp-node-actions button { width: 26px; height: 26px; font-size: 12px; }
+  .bp-node-header .bp-node-title { min-width: 0; }
+  .bp-group-header .bp-group-event { max-width: 96px; }
+  .bp-group-title { min-width: 0; }
+  .bp-pin.bp-pin-out.bp-pin-dot { right: -12px; }
+  .bp-pin-dot::before { width: 16px; height: 16px; }
+  .bp-pin.bp-pin-out { width: 18px; height: 18px; }
+  .bp-comp { padding-top: 8px; padding-bottom: 8px; }
+  .bp-comp .bp-comp-actions button { width: 28px; height: 28px; }
+  .bp-comp-actions { opacity: 1; }
+  .bp-group-header { min-height: 34px; }
+  .bp-group-resize { width: 26px; height: 26px; }
+  .bp-comment-resize { width: 24px; height: 24px; }
+  .bp-comment-actions { opacity: 1; }
+  .bp-comment-actions button { width: 24px; height: 24px; }
+  #bp-minimap { display: none; }
+  #bp-minimap.is-on { display: block; }
 }
 
 /* ============================================================
