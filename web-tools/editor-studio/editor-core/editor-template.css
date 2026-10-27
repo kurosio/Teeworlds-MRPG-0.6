@@ -588,18 +588,41 @@ body[data-editor="database"]{ --editor-accent:#34d399; }
   min-height:38px;
 }
 
+/* Wide screens: the sticky column header names every cell, so per-field
+   captions are hidden to avoid duplicate labels. */
 .editor-list-table .editor-nested-label{display:none;}
 .editor-list-table-del{justify-self:end;}
 
+/* Phones: the header row does not fit and is hidden, and each row stacks
+   into a card. Without captions bare inputs (e.g. drop quantity / chance)
+   are indistinguishable, so every control gets its label back and the slot
+   number moves into a compact card header next to the delete button. */
 @media (max-width:700px){
   .editor-list-table-header{display:none;}
   .editor-list-table-row{
-    grid-template-columns:1fr;
-    gap:10px;
-    align-items:stretch;
+    grid-template-columns:minmax(0,1fr) auto;
+    column-gap:10px;
+    row-gap:8px;
+    align-items:center;
+    padding:12px;
+    background:var(--editor-surface-2);
   }
-  .editor-list-table-idx{display:none;}
-  .editor-list-table-del{justify-self:end;}
+  .editor-list-table-idx{
+    display:block;
+    grid-column:1;
+    grid-row:1;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+  }
+  .editor-list-table-del{
+    grid-column:2;
+    grid-row:1;
+    justify-self:end;
+  }
+  .editor-list-table-cell{grid-column:1 / -1;}
+  .editor-list-table .editor-nested-label{display:block;}
 }
 
 /* -------------------------------------------------------------

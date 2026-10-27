@@ -78,3 +78,91 @@ test('step card and component rows use the phone width without clipping', () => 
   // Кнопка «Добавить шаг» больше не прилипает к низу экрана.
   assert.match(html, /#add-step-button\{ position: static;/);
 });
+
+// Табличные списки (дроп мобов, ингредиенты, награды) на десктопе читаются
+// через шапку колонок, но на телефоне шапка скрыта — раньше поля оставались
+// без подписей и два числовых поля было не различить.
+test('table-mode lists keep per-field captions that appear on phones', () => {
+  const css = read('editor-core/editor-template.css');
+  // Подписи вложенных полей существуют в разметке всегда, но скрыты, пока
+  // колонки называет шапка таблицы.
+  assert.match(css, /\.editor-list-table \.editor-nested-label\{display:none;\}/);
+  const anchor = css.indexOf('.editor-list-table');
+  const mobileStart = css.indexOf('@media (max-width:700px){', anchor);
+  assert.ok(mobileStart > 0);
+  // Вырезаем весь медиаблок с учётом вложенных фигурных скобок.
+  const open = css.indexOf('{', mobileStart);
+  let depth = 0;
+  let end = open;
+  for (; end < css.length; end += 1) {
+    if (css[end] === '{') depth += 1;
+    if (css[end] === '}') depth -= 1;
+    if (depth === 0) break;
+  }
+  const mobile = css.slice(mobileStart, end);
+  assert.match(mobile, /\.editor-list-table-header\{display:none;\}/);
+  assert.match(mobile, /\.editor-list-table \.editor-nested-label\{display:block;\}/);
+  assert.match(mobile, /\.editor-list-table-cell\{grid-column:1 \/ -1;\}/);
+  // Номер слота не пропадает: он переезжает в шапку карточки.
+  assert.match(mobile, /\.editor-list-table-idx\{[\s\S]*?display:block;/);
+});
+
+test('table-mode list rows render nested labels for every cell', () => {
+  const vm = require('vm');
+  const context = { window: { EditorCore: {
+    utils: {
+      parsePath: (p) => String(p ?? '').split('.'),
+      getAtPath: (data, p) => String(p ?? '').split('.').reduce((c, k) => (c == null ? undefined : c[k]), data),
+      setAtPath: () => {},
+      cloneData: (v) => JSON.parse(JSON.stringify(v)),
+      escapeAttr: (v) => String(v).replace(/"/g, '&quot;'),
+      escapeHtml: (v) => String(v),
+    },
+    DB: { resolveSource: () => '' },
+  } } };
+  vm.runInNewContext(read('editor-core/field-renderer.js'), context);
+  const html = context.window.EditorCore.FieldRenderer.renderField({
+    path: 'drops',
+    field: {
+      type: 'list',
+      label: 'Drop table',
+      ui: { listMode: 'table', tableHeader: ['Item', 'Quantity', 'Chance (%)'] },
+      itemFields: {
+        item_id: { type: 'db_select', label: 'Item', ui: { dbKey: 'item' } },
+        count: { type: 'number', label: 'Quantity' },
+        chance: { type: 'number', label: 'Chance (%)' },
+      },
+    },
+    data: { drops: [{ item_id: 50, count: 1, chance: 5 }] },
+    options: { classes: {
+      input: 'editor-input form-input', label: 'editor-label',
+      nestedLabel: 'editor-nested-label', fieldWrapper: 'editor-field',
+      listWrapper: 'editor-list', listAdd: 'editor-btn', listRemove: 'editor-icon-btn',
+    } },
+  });
+  for (const label of ['Item', 'Quantity', 'Chance (%)']) {
+    assert.ok(html.includes(`editor-nested-label">${label}<`), `nested caption "${label}" must exist in markup`);
+  }
+  assert.match(html, /editor-list-table-idx[^>]*>#1</);
+});
+
+test('voucher reward rows have real labels revealed below the desktop header breakpoint', () => {
+  const html = read('vouchers-editor.html');
+  assert.ok(html.includes("label: 'Item'"));
+  assert.ok(html.includes("label: 'Quantity'"));
+  assert.doesNotMatch(html, /hideLabel: true/);
+  assert.match(html, /#itemsRoot \.editor-nested-label\{display:none;\}/);
+  assert.match(html, /@media \(max-width:767px\)\{\s*#itemsRoot \.editor-nested-label\{display:block;\}\s*\}/);
+});
+
+test('warehouse trade rows carry per-cell captions for the stacked phone layout', () => {
+  const html = read('warehouse-editor.html');
+  for (const label of ['Item / collection', 'Qty', 'Price 1', 'Price 2', 'Collection group', 'Collection subgroup', 'Raw database line']) {
+    assert.ok(html.includes(`data-label="${label}"`), `caption "${label}"`);
+  }
+  assert.match(html, /\.trade-cell::before\{[\s\S]*?content:attr\(data-label\);/);
+  assert.match(html, /\.trade-cell\.is-static\{display:none;\}/);
+  for (const label of ['Main group (optional)', 'Group', 'Subgroup']) {
+    assert.ok(html.includes(`<div class="trade-group-label">${label}</div>`));
+  }
+});
