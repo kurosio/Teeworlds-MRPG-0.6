@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db-core.php';
 require_once __DIR__ . '/db-resources.php';
+require_once __DIR__ . '/reference-data.php';
 
 const CR_NICK_MIN = 2;
 const CR_NICK_MAX = 32;
@@ -583,6 +584,27 @@ function cr_normalize_data(array $R, mixed $raw): array
         if (!array_key_exists($col, $raw)) continue;
         $data[$col] = cr_normalize_value($raw[$col], in_array($col, $jsonCols, true), $col);
     }
+    foreach ($R['refs'] ?? [] as $col => $_table) {
+        if (!array_key_exists($col, $data) || $data[$col] === null || $data[$col] === '') continue;
+        $value = $data[$col];
+        if ((!is_int($value) && !is_float($value) && !(is_string($value) && preg_match('/^-?[0-9]+$/', $value)))
+            || (float)$value !== floor((float)$value) || (float)$value < -2147483648 || (float)$value > 2147483647) {
+            throw new CrInputError("Поле $col: требуется целый ID записи");
+        }
+        $data[$col] = (int)$value;
+    }
+    // Списки ID (модули бота) — только числа и разделители. Пустые элементы
+    // допускаются: они встречаются в старых строках и не меняют смысл.
+    // JSON-колонки не отклоняются здесь: прямое сохранение администратором
+    // (db-crud.php) их тоже не проверяет, а неразобранные значения показывает
+    // анализ запроса — см. предупреждение о временных ID ниже.
+    foreach (editor_reference_schema()[$R['key']] ?? [] as $rule) {
+        $value = $data[$rule['column']] ?? null;
+        if ($rule['codec'] !== 'csv' || !is_string($value) || trim($value) === '') continue;
+        if (!preg_match('/^\s*-?[0-9]*(?:\s*,\s*-?[0-9]*)*\s*$/', $value)) {
+            throw new CrInputError("Поле {$rule['column']}: требуются ID, разделённые запятыми");
+        }
+    }
     return encode_json_cols($data, $jsonCols);
 }
 
@@ -623,7 +645,8 @@ function cr_normalize_ops(mixed $rawOps, int $maxOps): array
             continue;
         }
 
-        $id = cr_parse_id($raw['id'] ?? null, 'ID записи');
+        $rawId = $raw['id'] ?? null;
+        $id = $key === 'worlds' && in_array($rawId, [0, '0'], true) ? 0 : cr_parse_id($rawId, 'ID записи');
         if (is_guest_temp_id($id)) {
             throw new CrInputError('Изменение/удаление новой записи должно быть объединено с её созданием. Обновите черновик.');
         }
@@ -662,105 +685,34 @@ function cr_normalize_ops(mixed $rawOps, int $maxOps): array
 /** Temporary item IDs inside tw_crafts_list.RequiredItems pairs. */
 function cr_craft_required_item_temp_refs(mixed $raw): array
 {
-    if (is_array($raw)) {
-        $decoded = $raw;
-    } elseif (is_string($raw)) {
-        $decoded = json_decode(trim($raw), true);
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) $decoded = null;
-    } else {
-        $decoded = null;
-    }
-
-    $ids = [];
-    if (is_array($decoded) && array_is_list($decoded)) {
-        foreach ($decoded as $pair) {
-            if (!is_array($pair)) continue;
-            if (array_is_list($pair)) {
-                $id = $pair[0] ?? null;
-                $quantity = $pair[1] ?? null;
-            } else {
-                $id = null;
-                foreach (['id', 'ItemID', 'item_id', 'key'] as $key) {
-                    if (array_key_exists($key, $pair)) { $id = $pair[$key]; break; }
-                }
-                $quantity = null;
-                foreach (['value', 'count', 'qty', 'amount'] as $key) {
-                    if (array_key_exists($key, $pair)) { $quantity = $pair[$key]; break; }
-                }
-            }
-            if (is_numeric($quantity) && (float)$quantity > 0 && is_guest_temp_id($id)) {
-                $ids[] = (int)$id;
-            }
-        }
-    }
-
-    // The editor's canonical format is "[ItemID/Count],[ItemID/Count]".
-    // JSON arrays are also accepted by PairList, so support both encodings.
-    if ($decoded === null && is_string($raw)
-        && preg_match_all('/\[\s*(\d+)\s*\/\s*(\d+)\s*\]/', $raw, $matches, PREG_SET_ORDER)) {
-        foreach ($matches as $match) {
-            if ((int)$match[2] > 0 && is_guest_temp_id((int)$match[1])) {
-                $ids[] = (int)$match[1];
-            }
-        }
-    }
-    return array_values(array_unique($ids));
+    return array_values(array_unique(array_column(array_filter(
+        editor_data_references('crafts', ['RequiredItems'=>$raw]),
+        static fn($ref) => is_guest_temp_id($ref['id'])
+    ), 'id')));
 }
 
-/** Replace temporary item IDs in a craft's serialized ingredient list. */
+/** Compatibility helper; approval uses the generic typed remapper. */
 function cr_remap_craft_required_items(mixed $raw, array $idMap): mixed
 {
-    if (!is_string($raw) || !$idMap) return $raw;
-
-    $trimmed = trim($raw);
-    $decoded = json_decode($trimmed, true);
-    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && array_is_list($decoded)) {
-        foreach ($decoded as &$pair) {
-            if (!is_array($pair)) continue;
-            if (array_is_list($pair)) {
-                $idKey = 0;
-                $id = $pair[$idKey] ?? null;
-            } else {
-                $idKey = null;
-                $id = null;
-                foreach (['id', 'ItemID', 'item_id', 'key'] as $key) {
-                    if (array_key_exists($key, $pair)) { $idKey = $key; $id = $pair[$key]; break; }
-                }
-            }
-            if ($idKey === null || !is_guest_temp_id($id)) continue;
-            $key = (string)(int)$id;
-            if (array_key_exists($key, $idMap)) $pair[$idKey] = (int)$idMap[$key];
-        }
-        unset($pair);
-        return json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-    }
-
-    return preg_replace_callback(
-        '/(\[\s*)(\d+)(\s*\/\s*\d+\s*\])/',
-        static function (array $match) use ($idMap): string {
-            $tempId = (int)$match[2];
-            $key = (string)$tempId;
-            if (!is_guest_temp_id($tempId) || !array_key_exists($key, $idMap)) return $match[0];
-            return $match[1] . (int)$idMap[$key] . $match[3];
-        },
-        $raw,
-    ) ?? $raw;
+    return editor_remap_references('crafts', ['RequiredItems'=>$raw], $idMap)['RequiredItems'];
 }
 
-/** Temp ids referenced from FK columns (and craft ingredient pairs) of an operation. */
+/** Reserved draft IDs occurring anywhere in a value (text, numbers, JSON). */
+function cr_scan_temp_ids(mixed $value): array
+{
+    if ($value === null) return [];
+    $s = is_string($value) ? $value : (string)json_encode($value);
+    if (!preg_match_all('/(?<!\d)(200\d{7})(?!\d)/', $s, $m)) return [];
+    return array_values(array_unique(array_filter(array_map('intval', $m[1]), 'is_guest_temp_id')));
+}
+
+/** All typed references, including embedded JSON and serialized lists. */
 function cr_op_temp_refs(array $op): array
 {
-    $R = cr_resource($op['resource'], false);
-    $refs = [];
-    foreach (($R['refs'] ?? []) as $col => $_table) {
-        if (array_key_exists($col, $op['data']) && is_guest_temp_id($op['data'][$col])) {
-            $refs[] = (int)$op['data'][$col];
-        }
-    }
-    if (($op['resource'] ?? '') === 'crafts') {
-        $refs = array_merge($refs, cr_craft_required_item_temp_refs($op['data']['RequiredItems'] ?? null));
-    }
-    return array_values(array_unique($refs));
+    return array_values(array_unique(array_column(array_filter(
+        editor_data_references($op['resource'], $op['data']),
+        static fn($ref) => is_guest_temp_id($ref['id'])
+    ), 'id')));
 }
 
 /** Creates first (dependency ordered), then updates, then deletes. */
@@ -768,12 +720,21 @@ function cr_order_ops(array $ops): array
 {
     $creates = array_values(array_filter($ops, fn($o) => $o['type'] === 'create'));
     $others = array_values(array_filter($ops, fn($o) => $o['type'] !== 'create'));
-    $known = array_flip(array_map(fn($o) => $o['tempId'], $creates));
+    $known = [];
+    foreach ($creates as $op) $known[$op['tempId']] = $op['resource'];
 
+    $deleted = [];
+    foreach ($ops as $op) if ($op['type'] === 'delete') $deleted[$op['resource'] . ':' . $op['id']] = true;
     foreach ($ops as $op) {
-        foreach (cr_op_temp_refs($op) as $t) {
+        foreach (editor_data_references($op['resource'], $op['data']) as $ref) {
+            $t = $ref['id'];
+            if (isset($deleted[$ref['target'] . ':' . $t])) throw new CrInputError("Поле {$ref['column']} ссылается на запись #$t, удаляемую в этом же запросе");
+            if (!is_guest_temp_id($t)) continue;
             if (!isset($known[$t])) {
-                throw new CrInputError("Операция ссылается на новую запись #$t, которой нет в черновике");
+                throw new CrInputError("Поле {$ref['column']} ссылается на новую запись #$t, которой нет в этом запросе. Дождитесь одобрения связанного запроса или добавьте запись в этот черновик.");
+            }
+            if ($known[$t] !== $ref['target']) {
+                throw new CrInputError("Поле {$ref['column']}: новая запись #$t относится к {$known[$t]}, а требуется {$ref['target']}");
             }
         }
     }
@@ -790,7 +751,25 @@ function cr_order_ops(array $ops): array
             unset($creates[$i]);
             $progress = true;
         }
-        if (!$progress) throw new CrInputError('Циклическая зависимость между новыми записями');
+        if (!$progress) {
+            // Embedded JSON/list references can be filled after all INSERT IDs
+            // are known. Ordinary FK cycles are rejected before any DB writes.
+            foreach ($creates as $i => $op) {
+                $hardDeps = [];
+                foreach (editor_reference_schema()[$op['resource']] ?? [] as $rule) {
+                    if ($rule['codec'] !== 'id') continue;
+                    $value = $op['data'][$rule['column']] ?? null;
+                    if (is_guest_temp_id($value) && (int)$value !== (int)$op['tempId']) $hardDeps[] = (int)$value;
+                }
+                if (array_diff($hardDeps, array_keys($placed))) continue;
+                $ordered[] = $op;
+                $placed[$op['tempId']] = true;
+                unset($creates[$i]);
+                $progress = true;
+                break;
+            }
+            if (!$progress) throw new CrInputError('Циклическая зависимость обычных полей-ссылок между новыми записями. Сохраните одну из связей отдельным изменением после одобрения.');
+        }
     }
     $updates = array_filter($others, fn($o) => $o['type'] === 'update');
     $deletes = array_filter($others, fn($o) => $o['type'] === 'delete');
@@ -960,12 +939,28 @@ function cr_impact(CrLookup $lookup, string $table, int $id, string $type): arra
     return $out;
 }
 
-function cr_scan_temp_ids(mixed $value): array
+/**
+ * Что произойдёт с временными ID значения при применении:
+ *  * info    — ссылка описана схемой, ID будет заменён автоматически;
+ *  * warning — зарезервированный ID стоит там, где ссылки быть не может
+ *              (свободный текст, количество, неразобранный JSON): замена не выполняется.
+ */
+function cr_temp_id_notes(string $resource, array $data, array $refs = []): array
 {
-    if ($value === null) return [];
-    $s = is_string($value) ? $value : (string)json_encode($value);
-    if (!preg_match_all('/(?<!\d)(200\d{7})(?!\d)/', $s, $m)) return [];
-    return array_values(array_unique(array_filter(array_map('intval', $m[1]), 'is_guest_temp_id')));
+    $notes = [];
+    $typedByColumn = [];
+    foreach (editor_data_references($resource, $data) as $ref) {
+        if (!is_guest_temp_id($ref['id'])) continue;
+        $typedByColumn[$ref['column']][] = $ref['id'];
+        if (isset($refs[$ref['column']])) continue;
+        $notes[] = ['severity' => 'info', 'text' => "Поле {$ref['column']}: временный ID #{$ref['id']} будет автоматически заменён ID из БД ({$ref['target']})."];
+    }
+    foreach ($data as $col => $val) {
+        $uncovered = array_values(array_diff(cr_scan_temp_ids($val), $typedByColumn[$col] ?? []));
+        if (!$uncovered) continue;
+        $notes[] = ['severity' => 'warning', 'text' => "Поле $col содержит временный ID новой записи (#" . implode(', #', $uncovered) . ") в месте, которое не является ссылкой. Он не будет заменён автоматически — проверьте значение перед применением."];
+    }
+    return $notes;
 }
 
 /**
@@ -1078,13 +1073,8 @@ function cr_analyze(mysqli $db, array $ops): array
             $entry['title'] = ($op['type'] === 'update' ? 'Изменение' : 'Удаление') . ": {$R['title']} #{$op['id']}";
         }
 
-        // Temp ids hidden inside text/JSON columns are NOT remapped automatically.
-        foreach ($op['data'] as $col => $val) {
-            if (isset($refs[$col])) continue;
-            $found = cr_scan_temp_ids($val);
-            if ($found) {
-                $entry['warnings'][] = ['severity' => 'warning', 'text' => "Поле $col содержит временный ID новой записи (#" . implode(', #', $found) . "). Он не будет заменён автоматически — администратору нужно поправить значение после применения."];
-            }
+        foreach (cr_temp_id_notes($op['resource'], $op['data'], $refs) as $note) {
+            $entry['warnings'][] = $note;
         }
 
         if (!$entry['noop'] && !$entry['error']) {
@@ -1168,6 +1158,78 @@ function cr_detect_conflicts(mysqli $db, array $ops, bool $forUpdate = false): a
 }
 
 /**
+ * Последовательность применения операций без доступа к БД: замена временных ID,
+ * порядок вставок и отложенная дозапись ссылок на саму запись. Колбэки выполняют
+ * реальные запросы, поэтому логика проверяется отдельно от mysqli.
+ *
+ * @param callable(array $R, array $data): int          $insert
+ * @param callable(array $R, int $id, array $data): void $updateRow
+ * @param callable(array $R, int $id): void              $deleteRow
+ * @param callable(array $R, int $id): ?array            $fetchRow
+ */
+function cr_apply_sequence(array $ops, callable $insert, callable $updateRow, callable $deleteRow, callable $fetchRow, array $missing = []): array
+{
+    $idMap = [];
+    $applied = [];
+    $deferred = [];
+    $skipped = [];
+    foreach ($ops as $i => $op) {
+        // Defence in depth: a request may only touch resources that are
+        // guest-editable at all, even if the stored file was tampered with.
+        $R = cr_resource($op['resource'], true);
+        $selfTemp = $op['type'] === 'create' ? (int)$op['tempId'] : null;
+        $data = editor_remap_references($op['resource'], $op['data'], $idMap, $selfTemp !== null, $selfTemp);
+        if (isset($missing[$i])) {
+            $skipped[] = ['index' => $i, 'text' => "{$R['title']} #{$op['id']}: пропущено — запись не существует"];
+            continue;
+        }
+        if ($op['type'] === 'create') {
+            $newId = $insert($R, $data);
+            $idMap[(int)$op['tempId']] = $newId;
+            $pendingColumns = [];
+            foreach (editor_data_references($op['resource'], $op['data']) as $ref) {
+                // Unknown at INSERT time: another record created later, or this very record.
+                if (is_guest_temp_id($ref['id']) && !isset($idMap[$ref['id']])) $pendingColumns[$ref['column']] = $op['data'][$ref['column']];
+                if ($ref['id'] === (int)$op['tempId']) $pendingColumns[$ref['column']] = $op['data'][$ref['column']];
+            }
+            if ($pendingColumns) $deferred[] = ['resource' => $op['resource'], 'id' => $newId, 'data' => $pendingColumns, 'appliedIndex' => count($applied)];
+            $applied[] = ['type' => 'create', 'resource' => $op['resource'], 'id' => $newId, 'tempId' => $op['tempId'], 'data' => decode_json_cols($data, $R['json'] ?? [])];
+        } elseif ($op['type'] === 'update') {
+            // Only columns that actually differ from the snapshot are written.
+            $write = is_array($op['before'] ?? null) && $op['before'] ? array_intersect_key($data, $op['before']) : $data;
+            // Запрос мог быть создан до правила «NULL = '' = 0» и содержать
+            // пустые значения там, где в БД NULL. Такие поля не пишем —
+            // иначе одобрение заменило бы NULL на пустую строку/ноль.
+            $currentRow = $fetchRow($R, (int)$op['id']);
+            if ($currentRow) {
+                $currentValues = decode_json_cols($currentRow, $R['json'] ?? []);
+                $rowJsonCols = $R['json'] ?? [];
+                $write = array_filter(
+                    $write,
+                    fn($val, $col) => !editor_values_equal($currentValues[$col] ?? null, $val, in_array($col, $rowJsonCols, true)),
+                    ARRAY_FILTER_USE_BOTH
+                );
+            }
+            if (!$write) continue;
+            $updateRow($R, (int)$op['id'], $write);
+            $applied[] = ['type' => 'update', 'resource' => $op['resource'], 'id' => (int)$op['id'], 'data' => decode_json_cols($write, $R['json'] ?? [])];
+        } else {
+            $deleteRow($R, (int)$op['id']);
+            $applied[] = ['type' => 'delete', 'resource' => $op['resource'], 'id' => (int)$op['id'], 'data' => []];
+        }
+    }
+    foreach ($deferred as $pending) {
+        $R = cr_resource($pending['resource'], true);
+        $data = editor_remap_references($pending['resource'], $pending['data'], $idMap);
+        $updateRow($R, $pending['id'], $data);
+        $applied[$pending['appliedIndex']]['data'] = array_replace(
+            $applied[$pending['appliedIndex']]['data'], decode_json_cols($data, $R['json'] ?? [])
+        );
+    }
+    return ['idMap' => $idMap, 'applied' => $applied, 'skipped' => $skipped];
+}
+
+/**
  * Apply a request in ONE transaction (all-or-nothing).
  * Returns ['idMap'=>[temp=>real], 'applied'=>[...], 'skipped'=>[...]]
  */
@@ -1202,59 +1264,17 @@ function cr_apply(mysqli $db, array $req, bool $force): array
             if ($c['kind'] === 'missing') $missing[$c['index']] = true;
         }
 
-        $idMap = [];
-        $applied = [];
-        $skipped = [];
-        foreach ($ops as $i => $op) {
-            // Defence in depth: a request may only touch resources that are
-            // guest-editable at all, even if the stored file was tampered with.
-            $R = cr_resource($op['resource'], true);
-            $data = $op['data'];
-            foreach (($R['refs'] ?? []) as $col => $_t) {
-                if (array_key_exists($col, $data) && is_guest_temp_id($data[$col])) {
-                    $t = (int)$data[$col];
-                    if (!isset($idMap[$t])) throw new RuntimeException("Не удалось сопоставить временный ID #$t");
-                    $data[$col] = $idMap[$t];
-                }
-            }
-            if ($op['resource'] === 'crafts' && array_key_exists('RequiredItems', $data)) {
-                foreach (cr_craft_required_item_temp_refs($data['RequiredItems']) as $tempId) {
-                    if (!isset($idMap[$tempId])) throw new RuntimeException("Не удалось сопоставить временный ID #$tempId");
-                }
-                $data['RequiredItems'] = cr_remap_craft_required_items($data['RequiredItems'], $idMap);
-            }
-            if (isset($missing[$i])) {
-                $skipped[] = ['index' => $i, 'text' => "{$R['title']} #{$op['id']}: пропущено — запись не существует"];
-                continue;
-            }
-            if ($op['type'] === 'create') {
-                $newId = crud_insert($db, $R, $data);
-                $idMap[(int)$op['tempId']] = $newId;
-                $applied[] = ['type' => 'create', 'resource' => $op['resource'], 'id' => $newId, 'tempId' => $op['tempId'], 'data' => decode_json_cols($data, $R['json'] ?? [])];
-            } elseif ($op['type'] === 'update') {
-                // Only columns that actually differ from the snapshot are written.
-                $write = is_array($op['before']) && $op['before'] ? array_intersect_key($data, $op['before']) : $data;
-                // Запрос мог быть создан до правила «NULL = '' = 0» и содержать
-                // пустые значения там, где в БД NULL. Такие поля не пишем —
-                // иначе одобрение заменило бы NULL на пустую строку/ноль.
-                $currentRow = crud_fetch_row($db, $R, (int)$op['id'], true);
-                if ($currentRow) {
-                    $currentValues = decode_json_cols($currentRow, $R['json'] ?? []);
-                    $rowJsonCols = $R['json'] ?? [];
-                    $write = array_filter(
-                        $write,
-                        fn($val, $col) => !editor_values_equal($currentValues[$col] ?? null, $val, in_array($col, $rowJsonCols, true)),
-                        ARRAY_FILTER_USE_BOTH
-                    );
-                }
-                if (!$write) continue;
-                crud_update($db, $R, (int)$op['id'], $write);
-                $applied[] = ['type' => 'update', 'resource' => $op['resource'], 'id' => (int)$op['id'], 'data' => decode_json_cols($write, $R['json'] ?? [])];
-            } else {
-                crud_delete($db, $R, (int)$op['id']);
-                $applied[] = ['type' => 'delete', 'resource' => $op['resource'], 'id' => (int)$op['id'], 'data' => []];
-            }
-        }
+        $result = cr_apply_sequence(
+            $ops,
+            fn(array $R, array $data): int => crud_insert($db, $R, $data),
+            function (array $R, int $id, array $data) use ($db): void { crud_update($db, $R, $id, $data); },
+            function (array $R, int $id) use ($db): void { crud_delete($db, $R, $id); },
+            fn(array $R, int $id): ?array => crud_fetch_row($db, $R, $id, true),
+            $missing,
+        );
+        $idMap = $result['idMap'];
+        $applied = $result['applied'];
+        $skipped = $result['skipped'];
         $db->commit();
         return ['idMap' => $idMap, 'applied' => $applied, 'skipped' => $skipped, 'conflicts' => $conflicts];
     } catch (CrInputError $e) {

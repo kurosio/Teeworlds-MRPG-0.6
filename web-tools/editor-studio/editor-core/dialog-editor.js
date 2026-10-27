@@ -45,9 +45,14 @@
   const byteLength = (text) => {
     const value = String(text ?? '');
     if (typeof TextEncoder === 'function') {
-      try { return new TextEncoder().encode(value).length; } catch { /* считаем символы */ }
+      try { return new TextEncoder().encode(value).length; } catch { /* portable UTF-8 fallback below */ }
     }
-    return value.length;
+    let bytes = 0;
+    for (const char of value) {
+      const code = char.codePointAt(0);
+      bytes += code <= 0x7f ? 1 : code <= 0x7ff ? 2 : code <= 0xffff ? 3 : 4;
+    }
+    return bytes;
   };
 
   // Подписи записей для форматов: <bot_12> → имя бота. Кэш общий на страницу:
@@ -846,6 +851,10 @@
                   <i class="fa-solid ${meta.icon}" aria-hidden="true"></i>
                   ${labelHtml}
                 </button>
+                <button type="button" class="dlg-token-x" data-dialog-token-open
+                  title="Edit related record" aria-label="Edit related record">
+                  <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
+                </button>
                 ${removeBtn}
               </span>`;
           };
@@ -887,6 +896,12 @@
             if (!chip) return;
             const token = locate(chip);
             if (!token) return;
+            const openButton = event.target.closest('[data-dialog-token-open]');
+            if (openButton) {
+              const source = RECORD_FORMATS[chip.dataset.tokenKind]?.source;
+              window.EditorCore.RelatedRecords?.open(source, Number(chip.dataset.tokenId), openButton);
+              return;
+            }
             if (event.target.closest('[data-dialog-token-remove]')) {
               replaceToken(token, '');
               textarea.focus();

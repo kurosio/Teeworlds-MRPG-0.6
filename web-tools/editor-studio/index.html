@@ -20,6 +20,7 @@
   <script src="editor-core/http.js"></script>
   <script src="editor-core/utils.js"></script>
   <script src="studio.manifest.js"></script>
+  <script src="editor-core/reference-data.js"></script>
   <script src="editor-core/guest-mode.js"></script>
   <!-- Языки интерфейса: манифест папки localization/ и сами языковые файлы -->
   <script src="localization/index.js"></script>
@@ -833,7 +834,7 @@
         let evicted = false;
         for (const candidate of candidates) {
           const state = await requestFrameDirtyStatus(frames.get(candidate));
-          if (!(state.supported && state.dirty)) { destroyFrame(candidate); evicted = true; break; }
+          if (state.supported && !state.dirty) { destroyFrame(candidate); evicted = true; break; }
         }
         if (!evicted) return; // везде несохранённая работа — временно превышаем лимит
         renderTabs();
@@ -845,7 +846,7 @@
       if (!el && !tabOrder.includes(key)) return;
       if (el) {
         const state = await requestFrameDirtyStatus(el);
-        if (state.supported && state.dirty) {
+        if (!state.supported || state.dirty) {
           const approved = await EditorCore.Page.confirm('You have unsaved changes. Close without saving?');
           if (!approved) return;
         }
@@ -931,6 +932,14 @@
       if (!tabOrder.includes(e.key)) { tabOrder.push(e.key); persistTabs(); }
       let el = frames.get(e.key);
       const isNew = !el;
+      // Parameterized links replace an existing document, unlike ordinary tabs.
+      // Unknown dirty status is not permission to destroy a loading editor.
+      if (!isNew && hasParams) {
+        const state = await requestFrameDirtyStatus(el);
+        if ((!state.supported || state.dirty)
+          && !await EditorCore.Page.confirm('The open editor has unsaved changes. Reload without saving?')) return;
+        if (requestSeq !== openEditorRequestSeq) return;
+      }
       if (isNew) {
         el = document.createElement('iframe');
         el.className = 'studio-iframe';
@@ -979,8 +988,8 @@
       }
     })();
 
-    const storageGet = (key) => safeStorage?.getItem(key) || '';
-    const storageSet = (key, value) => safeStorage?.setItem(key, value);
+    const storageGet = (key) => { try { return safeStorage?.getItem(key) || ''; } catch { return ''; } };
+    const storageSet = (key, value) => { try { safeStorage?.setItem(key, value); } catch { /* quota/private mode: keep working in memory */ } };
 
     // ── Боковая панель: рельс из иконок + раскрытие при наведении ─────────
     //
@@ -1102,6 +1111,7 @@
       };
       shield.addEventListener('pointermove', onMove);
       shield.addEventListener('pointerup', onUp);
+      shield.addEventListener('pointercancel', onUp, { once: true });
     });
     sidebarResizer?.addEventListener('dblclick', () => {
       studioApp?.style.removeProperty('--studio-panel-w');
@@ -1429,7 +1439,7 @@
         && EditorCore.Http.isSameOriginMessage(event, window);
       if (!fromFrame && !ownAuthWarning) return;
       if (data?.type === 'editor-shell:open-editor' && typeof data.key === 'string') {
-        if (isAuthorized) openEditor(data.key, { params: data.params && typeof data.params === 'object' ? data.params : {} });
+        if (isAuthorized && getEditors().some((entry) => entry.key === data.key)) openEditor(data.key, { params: data.params && typeof data.params === 'object' ? data.params : {} });
         return;
       }
       if (data?.type === 'editor-shell:navigate') {

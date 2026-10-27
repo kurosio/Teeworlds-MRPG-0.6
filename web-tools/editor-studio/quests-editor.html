@@ -2853,13 +2853,19 @@
       }
 
       if (recordId && !inRequest) {
-        const quest = STATE.quests.find((q) => q.ID === recordId);
+        const isStepLink = params.get('resource') === 'quest_bots';
+        const quest = isStepLink ? null : STATE.quests.find((q) => q.ID === recordId);
         const step = quest ? null : STATE.steps.find((s) => s.ID === recordId);
         if (quest || step) {
           EditorCore.DeepLink?.markHandled?.();
           if (quest) selectQuest(quest); else selectStep(step);
           return;
         }
+        STATE.selected = null;
+        showEditor(null);
+        resetHeader();
+        renderTree();
+        return;
       }
       if (recordId && inRequest) {
         // Выбором управляет request-context; родительский квест он раскроет
@@ -2898,6 +2904,20 @@
           EditorCore.utils.getSkinsApi()
         ]);
 
+        // Resolve an explicit URL target independently of the 5000-row catalogue
+        // cap; a missing record must not silently open an unrelated saved selection.
+        const link = EditorCore.DeepLink;
+        if (!deepLinkConsumed && link?.active) {
+          const resource = link.resource === 'quest_bots' ? 'quest_bots' : 'quests';
+          const response = resource === 'quests' ? questsRes : stepsRes;
+          const targetRows = response.rows || (response.rows = []);
+          const target = await link.resolveRow(resource, targetRows);
+          if (resource === 'quest_bots' && target
+            && !(questsRes.rows || []).some((quest) => Number(quest.ID) === Number(target.QuestID))) {
+            const parent = await EditorCore.DBCrud.get('quests', target.QuestID);
+            if (parent?.row) questsRes.rows.push(parent.row);
+          }
+        }
         const boardLinks = new Map((boardLinksRes?.rows || []).map((row) => [toNum(row.QuestID), row]));
         STATE.quests = (questsRes?.rows || []).map((row) => ({
           ID: toNum(row.ID),

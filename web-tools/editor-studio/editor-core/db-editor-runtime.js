@@ -58,6 +58,9 @@
       // Ссылка «открыть запись» (?record=&field=) из вкладки «Запросы».
       const deepLink = window.EditorCore?.DeepLink || null;
       let deepLinkPending = !!deepLink?.active;
+      // This runtime resolves links through CRUD, not a timed synthetic click.
+      if (deepLinkPending) deepLink.markHandled?.();
+      const hasSelectedRecord = () => !!state.model && (state.selectedId !== 0 || state.persistedModel !== null);
 
       /** Спрашивает подтверждение, если в форме есть несохранённые правки. */
       const canDiscardDirty = async () => {
@@ -105,10 +108,10 @@
           return;
         }
         const title = typeof cfg.getTitle === 'function'
-          ? cfg.getTitle(state.model, state.selectedId)
+          ? cfg.getTitle(state.model, state.selectedId, { existing: hasSelectedRecord() })
           : (state.model?.Name || `Record #${state.selectedId || 'new'}`);
         const subtitle = typeof cfg.getSubtitle === 'function'
-          ? cfg.getSubtitle(state.model, state.selectedId)
+          ? cfg.getSubtitle(state.model, state.selectedId, { existing: hasSelectedRecord() })
           : '';
         if (els.title) els.title.textContent = title;
         if (els.subtitle) els.subtitle.textContent = subtitle;
@@ -286,7 +289,7 @@
           els.cancel.disabled = !canCancel;
           els.cancel.classList.toggle('hidden', !canCancel);
         }
-        if (els.del) els.del.disabled = !canEdit || !state.selectedId;
+        if (els.del) els.del.disabled = !canEdit || !hasSelectedRecord();
       };
 
       const runOperation = async (task) => {
@@ -377,7 +380,7 @@
           const label = typeof cfg.listItem === 'function'
             ? cfg.listItem(row)
             : { title: row?.Name || `#${row?.ID}`, subtitle: row?.Path || '' };
-          const active = Number(row?.ID) === Number(state.selectedId);
+          const active = hasSelectedRecord() && Number(row?.ID) === Number(state.selectedId);
           const meta = guestMeta(row?.ID);
           const badge = meta ? guestBadgeHtml(meta) : '';
           return `
@@ -432,14 +435,18 @@
       const openDeepLinkRecord = async () => {
         deepLinkPending = false;
         const id = Number(deepLink?.record) || 0;
-        if (!id) return false;
+        if (!deepLink?.active) return false;
         const inList = state.rows.find((row) => Number(row?.ID) === id) || null;
         let row = inList;
         if (!row) {
           const response = await window.EditorCore.DBCrud.get(resource, id).catch(() => null);
           row = response?.row || null;
         }
-        if (!row) return false;
+        if (!row) {
+          setStatus('The linked record was not found.', 'err');
+          toast('The linked record was not found.', 'error');
+          return false;
+        }
         deepLink?.markHandled?.();
         if (!inList) {
           // Записи не было в списке — показываем её в списке, чтобы форма и
@@ -471,7 +478,7 @@
           await selectRow(requestedRow, { confirmDirty: false });
         } else if (deepLinkPending && !state.model) {
           await openDeepLinkRecord();
-        } else if (state.selectedId) {
+        } else if (hasSelectedRecord()) {
           const found = state.rows.find(r => Number(r.ID) === Number(state.selectedId));
           if (found && !state.dirty?.isDirty?.()) await selectRow(found, { confirmDirty: false, refresh: true });
         } else if (!state.model && state.rows.length) {
@@ -488,7 +495,7 @@
         const nextId = Number(row?.ID || 0);
         const currentId = Number(state.selectedId || 0);
 
-        if (nextId && nextId === currentId && !options.refresh) return true;
+        if (row && hasSelectedRecord() && nextId === currentId && !options.refresh) return true;
         if (confirmDirty && (!await canDiscardDirty() || state.operation)) return false;
 
         if (!row) {
@@ -587,7 +594,7 @@
         if (state.operation || !state.model) return false;
 
         // cancel creation of local draft
-        if (!state.selectedId) {
+        if (!hasSelectedRecord()) {
           const fallbackId = Number(state.lastSelectedIdBeforeCreate || 0);
           const fallbackRow = fallbackId
             ? state.rows.find((row) => Number(row?.ID || 0) === fallbackId)
@@ -618,7 +625,7 @@
         window.EditorCore.Http.postMessage(window.parent, {
           type: 'editor-shell:dirty-status',
           requestId: data.requestId,
-          dirty: !!state.dirty?.isDirty?.(),
+          dirty: state.operation || !!state.dirty?.isDirty?.(),
         });
       };
 
@@ -637,7 +644,7 @@
         return runOperation(async () => {
           setStatus('Saving…');
           try {
-            if (state.selectedId) {
+            if (hasSelectedRecord()) {
               // DBCrud auto-records for sync
               await window.EditorCore.DBCrud.update(resource, state.selectedId, payload);
               if (isRequestEditing()) {
@@ -678,7 +685,7 @@
 
       const remove = async () => {
         const id = Number(state.selectedId || 0);
-        if (state.operation || !id) return false;
+        if (state.operation || !hasSelectedRecord()) return false;
         if (!await EditorCore.Page.confirm('Delete the record?')) return false;
         // A second confirmation or a background refresh must not delete another
         // record (or ID 0) after the selection changed while the dialog was open.
@@ -765,7 +772,7 @@
 
       // Guest mode: the role and the local draft are resolved asynchronously.
       const onGuestUpdated = () => { renderList(); updateGuestHint(); };
-      const onGuestReady = () => { renderList(); updateGuestHint(); if (state.selectedId === 0) loadList({ forceServer: true }); };
+      const onGuestReady = () => { renderList(); updateGuestHint(); if (!state.model) loadList({ forceServer: true }); };
       const onGuestResolved = () => {
         if (!isGuest()) return;
         window.EditorCore?.DBCrud?.invalidateCache?.();

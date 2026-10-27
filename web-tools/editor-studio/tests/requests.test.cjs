@@ -36,6 +36,7 @@ function guestHarness({ seed, onJson } = {}) {
     crypto: require('node:crypto'),
   });
   vm.runInContext(source('utils.js'), context);
+  vm.runInContext(source('reference-data.js'), context);
   vm.runInContext(source('guest-mode.js'), context);
   return { context, Guest: context.window.EditorCore.Guest, local, draftKey };
 }

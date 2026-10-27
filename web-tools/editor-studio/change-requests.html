@@ -950,7 +950,10 @@
       });
       $('g-ops').addEventListener('click', (e) => {
         const b = e.target.closest('[data-remove-op]');
-        if (b) Guest.Draft.removeOp(b.dataset.removeOp);
+        if (b) {
+          try { Guest.Draft.removeOp(b.dataset.removeOp); }
+          catch (error) { toast(error.message, 'error'); }
+        }
       });
       $('g-mine-list').addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) showMineDetail(b.dataset.id); });
       $('g-mine-detail').addEventListener('click', async (e) => {

@@ -146,6 +146,7 @@ try {
                 'custom' => $effective['custom'],
             ],
             'features' => ['idempotent_submit' => true, 'mark_read' => true, 'bulk' => $IS_ADMIN, 'audit' => $IS_ADMIN],
+            'reference_schema' => editor_reference_schema(),
             'temp_id' => ['base' => GUEST_TEMP_ID_BASE, 'max' => GUEST_TEMP_ID_MAX],
             'resources' => $resources,
         ]);

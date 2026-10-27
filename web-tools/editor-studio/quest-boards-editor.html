@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,7 +8,7 @@
   <style>
     body[data-editor="quest_boards"] { --editor-page-max: 1720px; }
     .qb-layout { display:grid; grid-template-columns:minmax(260px,320px) minmax(0,1fr); gap:18px; align-items:start; }
-    .qb-pool { position:sticky; top:16px; max-height:calc(100vh - 32px); display:flex; flex-direction:column; }
+    .qb-pool { position:sticky; top:16px; max-height:calc(100vh - 32px); max-height:calc(100dvh - 32px); display:flex; flex-direction:column; }
     .qb-pool-list { overflow:auto; min-height:120px; padding-right:4px; }
     .qb-board-viewport { min-width:0; overflow-x:auto; overflow-y:hidden; padding:3px 3px 16px; scroll-behavior:smooth; overscroll-behavior-inline:contain; scrollbar-width:thin; scroll-snap-type:x proximity; }
     .qb-board-grid { display:flex; width:max-content; min-width:100%; gap:16px; align-items:flex-start; }
@@ -39,17 +39,20 @@
     .qb-edit { width:42px;border-left:1px solid var(--editor-line);color:var(--editor-text-muted);display:grid;place-items:center;cursor:pointer; } .qb-edit:hover{color:var(--editor-accent);background:var(--editor-soft-bg)}
     .qb-board-nav{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:thin}.qb-nav-chip{flex:none;border:1px solid var(--editor-line);border-radius:999px;padding:5px 10px;background:var(--editor-surface-2);color:var(--editor-text-muted);font-size:11px;cursor:pointer}.qb-nav-chip:hover{border-color:var(--editor-primary);color:var(--editor-accent)}
     .qb-scrollbar { position:sticky;top:0;z-index:4;background:var(--editor-bg);padding:6px 0;display:flex;align-items:center;gap:8px;margin-bottom:10px; } .qb-scrollbar .editor-muted-text{margin-right:auto} .qb-scroll-btn{width:34px;height:32px;display:grid;place-items:center;}
-    .qb-form-wrap { padding:17px; overflow:auto; max-height:calc(100vh - 190px); } .qb-dialog-foot{display:flex;justify-content:flex-end;gap:8px;padding:13px 17px;border-top:1px solid var(--editor-line);background:var(--editor-surface-2)}
+    .qb-form-wrap { padding:17px; overflow:auto; max-height:calc(100vh - 190px); max-height:calc(100dvh - 190px); } .qb-dialog-foot{display:flex;justify-content:flex-end;gap:8px;padding:13px 17px;border-top:1px solid var(--editor-line);background:var(--editor-surface-2)}
     .qb-toolbar-stat { display:flex;gap:8px;flex-wrap:wrap;margin-top:8px; }
     .qb-stat { border:1px solid var(--editor-line);border-radius:999px;padding:4px 9px;font-size:11px;color:var(--editor-text-muted);background:var(--editor-surface-2); }
     .qb-stat b { color:var(--editor-text); }
-    .qb-dialog { width:min(620px,calc(100vw - 28px));max-height:min(760px,calc(100vh - 28px));padding:0;border:1px solid var(--editor-line);border-radius:16px;background:var(--editor-surface);color:var(--editor-text);box-shadow:var(--editor-shadow-lg); }
+    .qb-dialog { width:min(620px,calc(100vw - 28px));max-height:min(760px,calc(100vh - 28px));max-height:min(760px,calc(100dvh - 28px));padding:0;border:1px solid var(--editor-line);border-radius:16px;background:var(--editor-surface);color:var(--editor-text);box-shadow:var(--editor-shadow-lg); }
     .qb-dialog::backdrop { background:rgba(3,7,18,.62);backdrop-filter:blur(3px); }
     .qb-dialog-head { position:sticky;top:0;z-index:2;padding:17px;border-bottom:1px solid var(--editor-line);background:var(--editor-surface); }
     .qb-picker-list { padding:10px;display:flex;flex-direction:column;gap:6px;overflow:auto;max-height:520px; }
     .qb-picker-row { width:100%;text-align:left;cursor:pointer; }
     .qb-pool.is-drag-over .qb-pool-list { outline:2px dashed var(--editor-primary);outline-offset:4px;border-radius:10px; }
     @media(max-width:900px){.qb-layout{grid-template-columns:1fr}.qb-pool{position:static;max-height:none}.qb-pool-list{max-height:300px}.qb-card{width:min(340px,calc(100vw - 48px));min-width:min(340px,calc(100vw - 48px))}}
+    @media(pointer:coarse){.qb-quest-open{opacity:1}.qb-remove,.qb-edit,.qb-add{min-width:44px;min-height:44px}}
+    :root[lang="ru"] .qb-field-changed::after{content:'изм.'}
+    :root[lang="ru"] .qb-field-changed.is-submitted::after{content:'в запросе'}
     /* Guest mode: mark every local change (draft / in a change request) */
     .qb-quest.qb-guest-changed{box-shadow:0 0 0 2px color-mix(in srgb,var(--editor-warning,#ffc27f) 55%,transparent),inset 3px 0 0 var(--editor-warning,#ffc27f)}
     .qb-quest.qb-guest-changed.is-submitted{box-shadow:0 0 0 2px color-mix(in srgb,var(--editor-primary,#6366f1) 55%,transparent),inset 3px 0 0 var(--editor-primary,#6366f1)}
@@ -57,9 +60,9 @@
     .qb-card.qb-guest-changed.is-submitted{box-shadow:var(--editor-shadow-sm,0 1px 3px rgba(0,0,0,.12)),inset 3px 0 0 var(--editor-primary,#6366f1)}
     .qb-card > .guest-row-badge{display:block;width:fit-content;margin:10px 0 0 16px}
     .qb-field-changed{position:relative;border-radius:10px;box-shadow:0 0 0 1px color-mix(in srgb,var(--editor-warning,#ffc27f) 45%,transparent);background:color-mix(in srgb,var(--editor-warning,#ffc27f) 5%,transparent)}
-    .qb-field-changed::after{content:'изм.';position:absolute;top:-7px;right:6px;padding:0 5px;border-radius:999px;font-size:9.5px;font-weight:700;line-height:1.6;color:var(--editor-warning,#ffc27f);background:var(--editor-surface,#121821);border:1px solid color-mix(in srgb,var(--editor-warning,#ffc27f) 45%,transparent)}
+    .qb-field-changed::after{content:'edited';position:absolute;top:-7px;right:6px;padding:0 5px;border-radius:999px;font-size:9.5px;font-weight:700;line-height:1.6;color:var(--editor-warning,#ffc27f);background:var(--editor-surface,#121821);border:1px solid color-mix(in srgb,var(--editor-warning,#ffc27f) 45%,transparent)}
     .qb-field-changed.is-submitted{box-shadow:0 0 0 1px color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent);background:color-mix(in srgb,var(--editor-primary,#6366f1) 5%,transparent)}
-    .qb-field-changed.is-submitted::after{content:'в запросе';color:var(--editor-primary,#6366f1);border-color:color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent)}
+    .qb-field-changed.is-submitted::after{content:'In request';color:var(--editor-primary,#6366f1);border-color:color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent)}
   </style>
 </head>
 <body class="editor-theme" data-editor="quest_boards">
@@ -105,7 +108,7 @@
     const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
     const $ = (id) => document.getElementById(id);
     const DOM = { boards:$('boards'), empty:$('empty'), pool:$('pool'), poolList:$('pool-list'), poolCount:$('pool-count'), search:$('search'), save:$('save'), refresh:$('refresh'), dirty:$('dirty-pill'), stats:$('stats'), picker:$('picker'), pickerTitle:$('picker-title'), pickerSearch:$('picker-search'), pickerList:$('picker-list'), viewport:$('board-viewport'), boardDialog:$('board-dialog'), boardForm:$('board-form'), boardDialogTitle:$('board-dialog-title'), boardSubmit:$('board-submit'), boardDelete:$('board-delete'), boardNav:$('board-nav') };
-    const state = { boards:[], quests:[], links:new Map(), allLinkRows:[], original:new Map(), pickerBoard:null, dragging:null, loading:false, editingBoard:null, boardFormRuntime:null };
+    const state = { boards:[], quests:[], links:new Map(), allLinkRows:[], original:new Map(), pickerBoard:null, dragging:null, loading:false, editingBoard:null, boardFormRuntime:null, boardDirty:false };
     const num = (v) => { const n=Number(v); return Number.isFinite(n)&&n>0?n:null; };
     const esc = (v) => String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     const Guest = window.EditorCore.Guest || null;
@@ -124,7 +127,7 @@
       const submitted = !!op.reqId;
       const labels = { create: 'New', update: 'Changed', delete: 'Delete' };
       const icons = { create: 'fa-plus', update: 'fa-pen', delete: 'fa-trash' };
-      return `<span class="guest-row-badge ${submitted ? 'is-submitted' : 'is-draft'}" title="${esc(submitted ? `Изменение в запросе ${op.reqId} — ожидает проверки администратором` : 'Локальное изменение — пока не записано в базу данных')}"><i class="fa-solid ${submitted ? 'fa-hourglass-half' : (icons[op.type] || 'fa-pen')}"></i>${esc(submitted ? 'в запросе' : (labels[op.type] || 'Изменено'))}</span>`;
+      return `<span class="guest-row-badge ${submitted ? 'is-submitted' : 'is-draft'}" title="${esc(submitted ? `Change in request ${op.reqId} — awaiting administrator review` : 'Local change — not saved to the database')}"><i class="fa-solid ${submitted ? 'fa-hourglass-half' : (icons[op.type] || 'fa-pen')}"></i>${esc(submitted ? 'In request' : (labels[op.type] || 'Changed'))}</span>`;
     };
 
     const boardGuestOp = (b) => {
@@ -152,7 +155,7 @@
       const mark = questGuestState(q);
       const cls = 'qb-quest' + (mark ? ' qb-guest-changed' : '') + (mark && mark.op && mark.op.reqId ? ' is-submitted' : '');
       const badge = mark && mark.op ? guestBadgeHtml(mark.op) : '';
-      return `<div class="${cls}" draggable="true" data-quest="${q.ID}" title="Double-click to open the quest in a new tab"><span class="qb-quest-id">#${q.ID}</span><span class="qb-quest-name">${esc(q.Name||`Quest #${q.ID}`)}</span><span class="qb-quest-open" aria-hidden="true"><i class="fa-solid fa-arrow-up-right-from-square"></i></span><span class="qb-quest-type">${esc(questType(q))}</span>${badge}${removable?`<button class="qb-remove" data-remove="${q.ID}" title="Remove from board"><i class="fa-solid fa-xmark"></i></button>`:''}</div>`; }
+      return `<div class="${cls}" draggable="true" data-quest="${q.ID}" title="Edit related record"><span class="qb-quest-id">#${q.ID}</span><span class="qb-quest-name">${esc(q.Name||`Quest #${q.ID}`)}</span><button type="button" class="qb-quest-open editor-icon-btn" data-open-quest="${q.ID}" title="Edit related record" aria-label="Edit related record"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></button><span class="qb-quest-type">${esc(questType(q))}</span>${badge}${removable?`<button class="qb-remove" data-remove="${q.ID}" title="Remove from board"><i class="fa-solid fa-xmark"></i></button>`:''}</div>`; }
     function filtered(quests, term){ const tokens=String(term||'').toLowerCase().trim().split(/\s+/).filter(Boolean); return !tokens.length?quests:quests.filter(q=>{const h=`${q.ID} ${q.Name} ${q.Flags}`.toLowerCase();return tokens.every(t=>h.includes(t));}); }
     function render(){
       const term=DOM.search.value;
@@ -171,14 +174,10 @@
       }));
       bindRows(); updateDirty();
     }
-    function move(questId,boardId){ const link=state.links.get(questId)||{id:null,boardId:null}; if(link.boardId===boardId)return; link.boardId=boardId; state.links.set(questId,link); render(); }
-    function openQuestInNewTab(questId){
-      const id=num(questId);if(!id)return;
-      const url=new URL('quests-editor.html',document.baseURI);url.searchParams.set('resource','quests');url.searchParams.set('record',String(id));
-      window.open(url.href,'_blank','noopener,noreferrer');
-    }
+    function move(questId,boardId){ if(state.loading)return; const link=state.links.get(questId)||{id:null,boardId:null}; if(link.boardId===boardId)return; link.boardId=boardId; state.links.set(questId,link); render(); }
     function bindRows(){
-      document.querySelectorAll('[data-quest]').forEach(el=>{el.addEventListener('dblclick',e=>{if(e.target.closest('[data-remove]'))return;e.preventDefault();openQuestInNewTab(el.dataset.quest)});el.addEventListener('dragstart',e=>{state.dragging=num(el.dataset.quest);el.classList.add('is-dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',el.dataset.quest)});el.addEventListener('dragend',()=>{state.dragging=null;document.querySelectorAll('.is-drag-over,.is-dragging').forEach(x=>x.classList.remove('is-drag-over','is-dragging'))});});
+      document.querySelectorAll('[data-quest]').forEach(el=>{el.addEventListener('dblclick',e=>{if(e.target.closest('[data-remove]'))return;e.preventDefault();EditorCore.RelatedRecords.open('quests',el.dataset.quest,el)});el.addEventListener('dragstart',e=>{state.dragging=num(el.dataset.quest);el.classList.add('is-dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',el.dataset.quest)});el.addEventListener('dragend',()=>{state.dragging=null;document.querySelectorAll('.is-drag-over,.is-dragging').forEach(x=>x.classList.remove('is-drag-over','is-dragging'))});});
+      document.querySelectorAll('[data-open-quest]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();EditorCore.RelatedRecords.open('quests',btn.dataset.openQuest,btn)}));
       document.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();move(num(btn.dataset.remove),null)}));
       document.querySelectorAll('[data-add]').forEach(btn=>btn.addEventListener('click',()=>openPicker(num(btn.dataset.add))));
       document.querySelectorAll('[data-edit-board]').forEach(btn=>btn.addEventListener('click',()=>openBoardEditor(state.boards.find(b=>b.ID===num(btn.dataset.editBoard)))));
@@ -193,19 +192,20 @@
     function openBoardEditor(board=null){
       if(isDirty()){EditorCore.UI.toast('Save quest assignments before creating or editing a board','info');return;}
       state.editingBoard=board||null;
+      state.boardDirty=false;
       DOM.boardDialogTitle.textContent=board?`Edit board: ${board.Name||'#'+board.ID}`:'New quest board';
       DOM.boardDelete.classList.toggle('hidden', !board);
       DOM.boardDelete.disabled = false;
       state.boardFormRuntime?.destroy?.();
-      state.boardFormRuntime=EditorCore.FormRuntime.mount(DOM.boardForm,{fields:boardFields,data:{Name:board?.Name||'',WorldID:num(board?.WorldID),PosX:Number(board?.PosX||0),PosY:Number(board?.PosY||0)},fieldOptions:fieldRenderOptions});
+      state.boardFormRuntime=EditorCore.FormRuntime.mount(DOM.boardForm,{fields:boardFields,onChange:()=>{state.boardDirty=true},data:{Name:board?.Name||'',WorldID:EditorCore.MapWorlds.parseWorldId(board?.WorldID),PosX:Number(board?.PosX||0),PosY:Number(board?.PosY||0)},fieldOptions:fieldRenderOptions});
       DOM.boardDialog.showModal();
     }
     async function submitBoard(){
       const data=state.boardFormRuntime?.getData?.()||{};
-      const payload={Name:String(data.Name||'').trim(),WorldID:num(data.WorldID),PosX:Number(data.PosX||0),PosY:Number(data.PosY||0)};
-      if(!payload.Name||!payload.WorldID){EditorCore.UI.toast('Enter a name and select a world','error');return;}
+      const payload={Name:String(data.Name||'').trim(),WorldID:EditorCore.MapWorlds.parseWorldId(data.WorldID),PosX:Number(data.PosX||0),PosY:Number(data.PosY||0)};
+      if(!payload.Name||!Number.isSafeInteger(payload.WorldID)||payload.WorldID<0){EditorCore.UI.toast('Enter a name and select a world','error');return;}
       DOM.boardSubmit.disabled=true;
-      try{if(state.editingBoard)await EditorCore.DBCrud.update('quest_boards',state.editingBoard.ID,payload);else await EditorCore.DBCrud.create('quest_boards',payload);DOM.boardDialog.close();EditorCore.UI.toast(isGuest()?(state.editingBoard?'Изменения доски добавлены в черновик заявки':'Новая доска добавлена в черновик заявки'):(state.editingBoard?'Quest board updated':'Quest board created'),isGuest()?'info':'success');await load();setTimeout(()=>{DOM.viewport.scrollLeft=DOM.viewport.scrollWidth},30)}catch(e){EditorCore.UI.toast(e.message||'Could not save the board','error')}finally{DOM.boardSubmit.disabled=false}
+      try{if(state.editingBoard)await EditorCore.DBCrud.update('quest_boards',state.editingBoard.ID,payload);else await EditorCore.DBCrud.create('quest_boards',payload);state.boardDirty=false;DOM.boardDialog.close();EditorCore.UI.toast(isGuest()?(state.editingBoard?'Board changes added to the request draft':'New board added to the request draft'):(state.editingBoard?'Quest board updated':'Quest board created'),isGuest()?'info':'success');await load();setTimeout(()=>{DOM.viewport.scrollLeft=DOM.viewport.scrollWidth},30)}catch(e){EditorCore.UI.toast(e.message||'Could not save the board','error')}finally{DOM.boardSubmit.disabled=false}
     }
     async function deleteBoard(){
       const board=state.editingBoard;
@@ -214,7 +214,7 @@
       const warning=assigned.length
         ? `Delete “${board.Name}”? ${assigned.length} assigned quest(s) will become unassigned.`
         : `Delete “${board.Name}”? This action cannot be undone.`;
-      if(!confirm(warning))return;
+      if(!await EditorCore.Page.confirm(warning))return;
       DOM.boardDelete.disabled=true;DOM.boardSubmit.disabled=true;
       try{
         // Delete memberships first. The board is removed only after every link
@@ -227,8 +227,8 @@
           if(linkId)await EditorCore.DBCrud.remove('quest_board_links',linkId);
         }
         await EditorCore.DBCrud.remove('quest_boards',board.ID);
-        DOM.boardDialog.close();
-        EditorCore.UI.toast(isGuest()?'Доска удалена в черновике заявки':`Quest board deleted. Unassigned quests: ${assigned.length}`,isGuest()?'info':'success');
+        state.boardDirty=false;DOM.boardDialog.close();
+        EditorCore.UI.toast(isGuest()?'Board deletion added to the request draft':`Quest board deleted. Unassigned quests: ${assigned.length}`,isGuest()?'info':'success');
         await load();
       }catch(e){
         EditorCore.UI.toast(e.message||'Could not safely delete the quest board','error');
@@ -240,8 +240,8 @@
     function openPicker(boardId){state.pickerBoard=boardId;DOM.pickerSearch.value='';const b=state.boards.find(x=>x.ID===boardId);DOM.pickerTitle.textContent=`Add quest to ${b?.Name||`board #${boardId}`}`;renderPicker();DOM.picker.showModal();setTimeout(()=>DOM.pickerSearch.focus(),0)}
     function renderPicker(){const rows=filtered(state.quests.filter(q=>currentBoard(q.ID)!==state.pickerBoard),DOM.pickerSearch.value);DOM.pickerList.innerHTML=rows.length?rows.map(q=>`<button class="qb-quest qb-picker-row" data-pick="${q.ID}"><span class="qb-quest-id">#${q.ID}</span><span class="qb-quest-name">${esc(q.Name)}</span><span class="qb-quest-type">${currentBoard(q.ID)?'move':'add'}</span></button>`).join(''):'<div class="qb-empty">No quests found</div>';DOM.pickerList.querySelectorAll('[data-pick]').forEach(btn=>btn.addEventListener('click',()=>{move(num(btn.dataset.pick),state.pickerBoard);DOM.picker.close()}));}
     $('picker-close').addEventListener('click',()=>DOM.picker.close());DOM.pickerSearch.addEventListener('input',renderPicker);DOM.search.addEventListener('input',render);
-    async function load(){state.loading=true;DOM.save.disabled=true;DOM.boards.innerHTML='<div class="editor-muted-text">Loading quest boards…</div>';try{const [boards,quests,links]=await Promise.all([EditorCore.DBCrud.list('quest_boards',{limit:5000}),EditorCore.DBCrud.list('quests',{limit:5000}),EditorCore.DBCrud.list('quest_board_links',{limit:5000})]);state.boards=(boards.rows||[]).map(x=>({...x,ID:num(x.ID)})).sort((a,b)=>a.ID-b.ID);state.quests=(quests.rows||[]).map(x=>({...x,ID:num(x.ID)})).sort((a,b)=>a.ID-b.ID);state.allLinkRows=links.rows||[];state.links=new Map();state.allLinkRows.forEach(x=>{const q=num(x.QuestID);if(q)state.links.set(q,{id:num(x.ID),boardId:num(x.DailyBoardID)})});if(state.original.size===0) state.original=new Map(state.quests.map(q=>[q.ID,currentBoard(q.ID)]));render()}catch(e){DOM.boards.innerHTML='<div class="editor-empty-state"><i class="fa-solid fa-triangle-exclamation"></i><div>Could not load quest boards</div></div>';EditorCore.UI.toast(e.message||'Loading failed','error')}finally{state.loading=false;updateDirty()}}
-    async function save(){const changed=state.quests.filter(q=>currentBoard(q.ID)!==(state.original.get(q.ID)||null));if(!changed.length)return;state.loading=true;updateDirty();try{for(const q of changed){const link=state.links.get(q.ID)||{id:null,boardId:null};if(link.boardId){if(link.id)await EditorCore.DBCrud.update('quest_board_links',link.id,{QuestID:q.ID,DailyBoardID:link.boardId});else{const r=await EditorCore.DBCrud.create('quest_board_links',{QuestID:q.ID,DailyBoardID:link.boardId});link.id=num(r.id);state.links.set(q.ID,link)}}else if(link.id){await EditorCore.DBCrud.remove('quest_board_links',link.id);state.links.set(q.ID,{id:null,boardId:null})}state.original.set(q.ID,link.boardId||null)}EditorCore.UI.toast(isGuest()?'Изменения назначений добавлены в черновик заявки':`Saved assignments: ${changed.length}`,isGuest()?'info':'success');render()}catch(e){EditorCore.UI.toast(e.message||'Saving failed','error')}finally{state.loading=false;updateDirty()}}
+    async function load(){state.loading=true;DOM.save.disabled=true;DOM.boards.innerHTML='<div class="editor-muted-text">Loading quest boards…</div>';try{const [boards,quests,links]=await Promise.all([EditorCore.DBCrud.list('quest_boards',{limit:5000}),EditorCore.DBCrud.list('quests',{limit:5000}),EditorCore.DBCrud.list('quest_board_links',{limit:5000})]);state.boards=(boards.rows||[]).map(x=>({...x,ID:num(x.ID)})).sort((a,b)=>a.ID-b.ID);state.quests=(quests.rows||[]).map(x=>({...x,ID:num(x.ID)})).sort((a,b)=>a.ID-b.ID);state.allLinkRows=links.rows||[];state.links=new Map();state.allLinkRows.forEach(x=>{const q=num(x.QuestID);if(q)state.links.set(q,{id:num(x.ID),boardId:num(x.DailyBoardID)})});state.original=new Map(state.quests.map(q=>[q.ID,currentBoard(q.ID)]));render()}catch(e){DOM.boards.innerHTML='<div class="editor-empty-state"><i class="fa-solid fa-triangle-exclamation"></i><div>Could not load quest boards</div></div>';EditorCore.UI.toast(e.message||'Loading failed','error')}finally{state.loading=false;updateDirty()}}
+    async function save(){if(state.loading)return;const changed=state.quests.filter(q=>currentBoard(q.ID)!==(state.original.get(q.ID)||null));if(!changed.length)return;state.loading=true;updateDirty();try{for(const q of changed){const link=state.links.get(q.ID)||{id:null,boardId:null};if(link.boardId){if(link.id)await EditorCore.DBCrud.update('quest_board_links',link.id,{QuestID:q.ID,DailyBoardID:link.boardId});else{const r=await EditorCore.DBCrud.create('quest_board_links',{QuestID:q.ID,DailyBoardID:link.boardId});link.id=num(r.id);state.links.set(q.ID,link)}}else if(link.id){await EditorCore.DBCrud.remove('quest_board_links',link.id);state.links.set(q.ID,{id:null,boardId:null})}state.original.set(q.ID,link.boardId||null)}EditorCore.UI.toast(isGuest()?'Assignment changes added to the request draft':`Saved assignments: ${changed.length}`,isGuest()?'info':'success');render()}catch(e){EditorCore.UI.toast(e.message||'Saving failed','error')}finally{state.loading=false;updateDirty()}}
     // Native modal dialogs occupy the browser top layer. Some browsers keep a
     // previously opened parent dialog above a map dialog even when the map calls
     // showModal(). Temporarily close the board editor while PointMap is active;
@@ -263,17 +263,37 @@
       }, 0);
     });
 
+    async function closeBoard(){
+      if(DOM.boardSubmit.disabled)return;
+      if(state.boardDirty&&!await EditorCore.Page.confirm('You have unsaved changes. Close without saving?'))return;
+      state.boardDirty=false;DOM.boardDialog.close();
+    }
+    DOM.boardDialog.addEventListener('cancel',e=>{e.preventDefault();closeBoard()});
+    window.addEventListener('message',event=>{
+      if(!EditorCore.Http.isSameOriginMessage(event,window.parent))return;
+      if(event.data?.type!=='editor-shell:request-dirty-status')return;
+      EditorCore.Http.postMessage(window.parent,{type:'editor-shell:dirty-status',requestId:event.data.requestId,
+        dirty:isDirty()||state.boardDirty||state.loading||DOM.boardSubmit.disabled});
+    });
+    EditorCore.Page.guardUnsaved(()=>state.boardDirty);
     $('new-board').addEventListener('click',()=>openBoardEditor());
-    $('board-dialog-close').addEventListener('click',()=>DOM.boardDialog.close()); $('board-cancel').addEventListener('click',()=>DOM.boardDialog.close()); DOM.boardSubmit.addEventListener('click',submitBoard); DOM.boardDelete.addEventListener('click',deleteBoard);
+    $('board-dialog-close').addEventListener('click',closeBoard); $('board-cancel').addEventListener('click',closeBoard); DOM.boardSubmit.addEventListener('click',submitBoard); DOM.boardDelete.addEventListener('click',deleteBoard);
     $('scroll-left').addEventListener('click',()=>DOM.viewport.scrollBy({left:-760,behavior:'smooth'})); $('scroll-right').addEventListener('click',()=>DOM.viewport.scrollBy({left:760,behavior:'smooth'}));
-    DOM.viewport.addEventListener('wheel',e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){e.preventDefault();DOM.viewport.scrollLeft+=e.deltaY}},{passive:false});
-    DOM.save.addEventListener('click',save);DOM.refresh.addEventListener('click',()=>{if(isDirty()&&!confirm('Discard unsaved board changes?'))return;load()});window.addEventListener('beforeunload',e=>{if(isDirty()){e.preventDefault();e.returnValue=''}});
-    const guestRefresh = () => { if (state.loading || DOM.boardDialog.open) return; load(); };
+    DOM.viewport.addEventListener('wheel',e=>{if(window.matchMedia('(min-width:901px)').matches&&Math.abs(e.deltaY)>Math.abs(e.deltaX)){e.preventDefault();DOM.viewport.scrollLeft+=e.deltaY}},{passive:false});
+    DOM.save.addEventListener('click',save);DOM.refresh.addEventListener('click',async()=>{if(state.loading)return;if(isDirty()&&!await EditorCore.Page.confirm('Discard unsaved board changes?'))return;await load()});window.addEventListener('beforeunload',e=>{if(isDirty()){e.preventDefault();e.returnValue=''}});
+    const guestRefresh = () => { if (state.loading || DOM.boardDialog.open || isDirty()) return; load(); };
     window.addEventListener('editor-core:guest-updated', guestRefresh);
     window.addEventListener('editor-core:guest-ready', guestRefresh);
     window.addEventListener('editor-core:guest-request-resolved', () => { if (!isGuest()) return; state.original.clear(); guestRefresh(); });
     window.addEventListener('editor-core:guest-request-revised', guestRefresh);
-    load();
+    (async()=>{
+      const link=EditorCore.DeepLink;
+      if(link?.active)link.markHandled();
+      await load();
+      if(!link?.active)return;
+      const row=await link.resolveRow('quest_boards',state.boards);
+      if(row)openBoardEditor(row);
+    })();
   </script>
 </body>
 </html>

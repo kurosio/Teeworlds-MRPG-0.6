@@ -205,7 +205,7 @@
       EquippedModules: {
         type: 'text',
         label: 'Modules',
-        ui: { placeholder: '90,91,35' },
+        ui: { placeholder: '90,91,35', relatedListSource: 'items' },
         help: 'Module IDs separated by commas. Leave 0 if there are no modules.'
       },
       SlotHammer: {
@@ -551,18 +551,34 @@
       setButtons(true);
     };
 
+    let linkPending = !!EditorCore.DeepLink?.active;
+    if (linkPending) EditorCore.DeepLink.markHandled();
+    let listSeq = 0;
     const loadList = async () => {
+      const seq = ++listSeq;
       const search = DOM.search?.value?.trim() || '';
       setStatus('Loading list…');
       try {
         const res = await EditorCore.DBCrud.list('bots_info', { search, limit: 5000, offset: 0 });
+        if (seq !== listSeq) return;
         STATE.rows = Array.isArray(res.rows) ? res.rows : [];
+        let linkedRow = null;
+        // An explicit link is a request for ONE record: if it is missing, the
+        // editor stays empty instead of silently opening an unrelated row.
+        const linkRequested = linkPending;
+        if (linkPending) {
+          linkPending = false;
+          linkedRow = await EditorCore.DeepLink.resolveRow('bots_info', STATE.rows);
+          if (seq !== listSeq) return;
+        }
         setStatus(STATE.rows.length ? '' : 'The list is empty.', 'muted');
         renderList();
-        if (STATE.selectedId) {
+        if (linkedRow) {
+          await selectRow(linkedRow);
+        } else if (STATE.selectedId) {
           const found = STATE.rows.find(r => Number(r.ID) === Number(STATE.selectedId));
-          if (found) selectRow(found);
-        } else if (!STATE.model && STATE.rows.length) {
+          if (found && !dirty.isDirty()) selectRow(found);
+        } else if (!STATE.model && STATE.rows.length && !(linkRequested && !linkedRow)) {
           selectRow(STATE.rows[0]);
         }
       } catch (err) {
@@ -697,7 +713,7 @@
 
     const init = async () => {
       STATE.skinsApi = await EditorCore.utils.getSkinsApi();
-      loadList();
+      await loadList();
       setHeader();
     };
 

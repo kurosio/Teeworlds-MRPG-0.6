@@ -63,6 +63,7 @@ function makeDocument({ storage, role = 'guest', pathname = '/index.html', json 
     },
   });
   vm.runInContext(source('utils.js'), context);
+  vm.runInContext(source('reference-data.js'), context);
   vm.runInContext(source('guest-mode.js'), context);
   return { window, posted, context, Guest: context.window.EditorCore.Guest, listeners: get };
 }

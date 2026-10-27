@@ -198,7 +198,9 @@
       if (event.target === backdrop) finish(false);
     });
     document.addEventListener('keydown', onKey, true);
-    document.body.appendChild(backdrop);
+    // Keep confirmations interactive when invoked from a native modal.
+    const dialogs = document.querySelectorAll?.('dialog[open]');
+    (dialogs?.[dialogs.length - 1] || document.body).appendChild(backdrop);
     // Фокус на «Отмене»: случайный Enter не удалит данные.
     (hideCancel ? ok : cancel).focus();
   });

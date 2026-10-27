@@ -290,8 +290,8 @@ test('quest boards editor exposes visual assignment workflow', () => {
   assert.ok(html.includes('qb-board-viewport') && html.includes('scrollBy({left:'), 'horizontal board scrolling is missing');
   assert.ok(html.includes('reopenBoardAfterMap') && html.includes("addEventListener('editor-map:closed'"),
     'board popup is not suspended while the map picker is open');
-  assert.ok(html.includes('openQuestInNewTab') && html.includes("addEventListener('dblclick'")
-    && html.includes("url.searchParams.set('record'"), 'double-click quest deep link is missing');
+  assert.ok(html.includes("RelatedRecords.open('quests'") && html.includes("addEventListener('dblclick'")
+    && html.includes('data-open-quest='), 'touch and double-click quest drill-down is missing');
   assert.ok(html.includes('async function deleteBoard()') && html.includes("DBCrud.remove('quest_boards'"),
     'quest board deletion is missing');
   assert.ok(html.indexOf("DBCrud.remove('quest_board_links'") < html.indexOf("DBCrud.remove('quest_boards'"),

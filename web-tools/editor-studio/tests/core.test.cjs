@@ -230,6 +230,7 @@ test('guest draft snapshots stay isolated and failed storage writes do not mutat
   window.parent = window;
   const context = vm.createContext({ window, location, document: {}, localStorage, sessionStorage, console });
   vm.runInContext(source('utils.js'), context);
+  vm.runInContext(source('reference-data.js'), context);
   vm.runInContext(source('guest-mode.js'), context);
   const draft = context.window.EditorCore.Guest.Draft;
 

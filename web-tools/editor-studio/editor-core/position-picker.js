@@ -337,6 +337,7 @@
       if (!root.isConnected) return;
       fillWorldSelect(root, options);
       updateText(root);
+      namespace.RelatedRecords?.init(root);
     }).catch(() => {});
   };
 

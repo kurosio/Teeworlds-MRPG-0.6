@@ -46,6 +46,9 @@ for (const dir of ['api']) {
   }
 }
 
+await php.mkdir(`${VFS_ROOT}/editor-core`);
+await php.writeFile(`${VFS_ROOT}/editor-core/reference-schema.json`, fs.readFileSync(path.join(ROOT, 'editor-core/reference-schema.json'), 'utf8'), { encoding: 'utf8' });
+
 async function syntaxCheck(file) {
   // token_get_all() compiles the source: a parse error shows up here.
   const { output } = await run(`<?php token_get_all(file_get_contents(${JSON.stringify(`${VFS_ROOT}/${file}`)})); echo 'ok';`);
@@ -140,6 +143,180 @@ $checks = [
 echo in_array(false, $checks, true) ? "craft ID remapping: FAIL\n" : "craft ID remapping: ok\n";
 `);
   if (!output.includes('craft ID remapping: ok')) errors.push(output.trim() || 'craft ID remapping failed');
+  process.stdout.write(output);
+}
+
+// ── Общие типы ссылок: PHP заменяет ровно те ID, которые описаны схемой ─────
+{
+  const { fixtures, idMap } = await import('./reference-fixtures.mjs');
+  await php.writeFile(`${VFS_ROOT}/ref-fixtures.json`, JSON.stringify({ fixtures, idMap }), { encoding: 'utf8' });
+  const { output } = await run(`<?php
+require_once '${VFS_ROOT}/api/change-requests-lib.php';
+$f = json_decode(file_get_contents('${VFS_ROOT}/ref-fixtures.json'), true, 512, JSON_THROW_ON_ERROR);
+$idMap = $f['idMap'];
+$failed = 0;
+foreach ($f['fixtures'] as $n => $case) {
+    $actual = editor_remap_references($case['resource'], $case['data'], $idMap);
+    if (json_encode($actual, JSON_UNESCAPED_UNICODE) !== json_encode($case['expected'], JSON_UNESCAPED_UNICODE)) {
+        $failed++;
+        echo "FAIL case " . ($n + 1) . ' (' . $case['resource'] . "):\\n"
+            . json_encode($actual, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\\n";
+    }
+    // Повторная замена уже реальных ID не меняет результат.
+    $again = editor_remap_references($case['resource'], $actual, $idMap);
+    if (json_encode($again) !== json_encode($actual)) { $failed++; echo "FAIL idempotent case " . ($n + 1) . "\\n"; }
+}
+// Ссылка на новую запись вне черновика и несовместимый тип раздела отклоняются.
+$missing = null; $wrongTarget = null;
+try {
+    cr_normalize_ops([['type'=>'create','resource'=>'crafts','tempId'=>2000000001,
+        'data'=>['ItemID'=>2000000009, 'RequiredItems'=>"[2000000009/1]"]]], 10);
+} catch (CrInputError $e) { $missing = $e->getMessage(); }
+try {
+    cr_normalize_ops([
+        ['type'=>'create','resource'=>'items','tempId'=>2000000001, 'data'=>['Name'=>'X']],
+        ['type'=>'create','resource'=>'crafts','tempId'=>2000000002, 'data'=>['WorldID'=>2000000001]],
+    ], 10);
+} catch (CrInputError $e) { $wrongTarget = $e->getMessage(); }
+// Ссылка на запись, удаляемую этим же запросом.
+$deleted = null;
+try {
+    cr_normalize_ops([
+        ['type'=>'create','resource'=>'crafts','tempId'=>2000000001, 'data'=>['ItemID'=>7]],
+        ['type'=>'delete','resource'=>'items','id'=>7],
+    ], 10);
+} catch (CrInputError $e) { $deleted = $e->getMessage(); }
+if ($missing === null || strpos($missing, 'которой нет в этом запросе') === false) { $failed++; echo "FAIL missing ref\\n"; }
+if ($wrongTarget === null || strpos($wrongTarget, 'требуется worlds') === false) { $failed++; echo "FAIL wrong target\\n"; }
+if ($deleted === null || strpos($deleted, 'удаляемую в этом же запросе') === false) { $failed++; echo "FAIL deleted ref\\n"; }
+echo $failed === 0 ? "reference remapping: ok\\n" : "reference remapping: {$failed} failed\\n";
+`);
+  if (!output.includes('reference remapping: ok')) errors.push(output.trim() || 'reference remapping failed');
+  process.stdout.write(output);
+}
+
+// ── Одобрение запроса: временные ID черновика становятся реальными ID БД ────
+{
+  const { output } = await run(`<?php
+require_once '${VFS_ROOT}/api/change-requests-lib.php';
+$I = 2000000001; $W = 2000000002; $B = 2000000003; $Q = 2000000004; $C = 2000000005;
+$raw = [
+    ['type'=>'create','resource'=>'crafts','tempId'=>$C,
+        'data'=>['GroupName'=>'Recipe','ItemID'=>$I,'ItemValue'=>1,'RequiredItems'=>"[$I/2],[17/3]",'WorldID'=>$W]],
+    ['type'=>'create','resource'=>'quests','tempId'=>$Q,
+        'data'=>['Name'=>'Loop','NextQuestID'=>$Q,'Money'=>0,'Exp'=>0]],
+    ['type'=>'create','resource'=>'bots_info','tempId'=>$B,
+        'data'=>['Name'=>'Bot','SlotHammer'=>$I,'EquippedModules'=>"17,$I"]],
+    ['type'=>'create','resource'=>'worlds','tempId'=>$W, 'data'=>['Name'=>'World','Path'=>'w','Type'=>'default']],
+    ['type'=>'create','resource'=>'items','tempId'=>$I, 'data'=>['Name'=>'Sword']],
+    ['type'=>'update','resource'=>'bots_npc','id'=>4,
+        'data'=>['BotID'=>$B,'DialogData'=>json_encode([['left_speaker_id'=>$B,'text'=>"Take <item_$I> in <world_$W>"]])]],
+    ['type'=>'update','resource'=>'items','id'=>12,
+        'data'=>['Data'=>json_encode(['random_box'=>[['item_id'=>$I,'value'=>3]],'use_scenario'=>['world_id'=>$W,'duration'=>5]])]],
+    ['type'=>'update','resource'=>'nodes_collecting','id'=>3, 'data'=>['Properties'=>"[$I/2/50]"]],
+];
+$ops = cr_normalize_ops($raw, 50);
+// Порядок: сначала записи без зависимостей, затем ссылающиеся на них.
+$order = array_map(fn($o) => $o['resource'], $ops);
+$next = 80; $rows = []; $updates = [];
+$result = cr_apply_sequence(
+    $ops,
+    function ($R, $data) use (&$next, &$rows) { $rows[$R['key'] . ':' . ++$next] = $data; return $next; },
+    function ($R, $id, $data) use (&$rows, &$updates) {
+        $key = $R['key'] . ':' . $id;
+        $rows[$key] = array_replace($rows[$key] ?? [], $data);
+        $updates[] = $key;
+    },
+    function ($R, $id) use (&$updates) { $updates[] = 'delete:' . $R['key'] . ':' . $id; },
+    fn($R, $id) => null,
+);
+$idMap = $result['idMap'];
+$stored = json_encode($rows, JSON_UNESCAPED_UNICODE);
+$failed = 0;
+$check = function ($label, $ok) use (&$failed) { if (!$ok) { $failed++; echo "FAIL $label\\n"; } };
+$check('ordering items before crafts', array_search('items', $order, true) < array_search('crafts', $order, true));
+$check('ordering worlds before crafts', array_search('worlds', $order, true) < array_search('crafts', $order, true));
+$check('idMap complete', count($idMap) === 5 && !array_intersect(array_values($idMap), [$I,$W,$B,$Q,$C]));
+$check('no temp id survives in stored rows', preg_match('/200\\d{7}/', $stored) !== 1);
+$craft = $rows['crafts:' . $idMap[$C]];
+$check('craft scalar FK', $craft['ItemID'] === $idMap[$I] && $craft['WorldID'] === $idMap[$W]);
+$check('craft pair list', $craft['RequiredItems'] === '[' . $idMap[$I] . '/2],[17/3]');
+$quest = $rows['quests:' . $idMap[$Q]];
+$check('self reference deferred to real id', $quest['NextQuestID'] === $idMap[$Q]);
+$check('self reference written after insert', in_array('quests:' . $idMap[$Q], $updates, true));
+$bot = $rows['bots_info:' . $idMap[$B]];
+$check('bot FK and csv modules', $bot['SlotHammer'] === $idMap[$I] && $bot['EquippedModules'] === '17,' . $idMap[$I]);
+$npc = json_decode($rows['bots_npc:4']['DialogData'], true);
+$check('dialog speaker id', $npc[0]['left_speaker_id'] === $idMap[$B]);
+$check('dialog tokens', $npc[0]['text'] === 'Take <item_' . $idMap[$I] . '> in <world_' . $idMap[$W] . '>');
+$itemData = json_decode($rows['items:12']['Data'], true);
+$check('item json list', $itemData['random_box'][0]['item_id'] === $idMap[$I] && $itemData['random_box'][0]['value'] === 3);
+$check('item json world', $itemData['use_scenario']['world_id'] === $idMap[$W] && $itemData['use_scenario']['duration'] === 5);
+$check('collecting properties', $rows['nodes_collecting:3']['Properties'] === '[' . $idMap[$I] . '/2/50]');
+echo $failed === 0 ? "apply remapping: ok\\n" : "apply remapping: {$failed} failed\\n";
+`);
+  if (!output.includes('apply remapping: ok')) errors.push(output.trim() || 'apply remapping failed');
+  process.stdout.write(output);
+}
+
+// ── Гостевой черновик: мир 0 допустим, остальные разделы — нет ──────────────
+{
+  const { output } = await run(`<?php
+require_once '${VFS_ROOT}/api/change-requests-lib.php';
+$world = cr_normalize_ops([['type'=>'update','resource'=>'worlds','id'=>0,'data'=>['Name'=>'Main']]], 10);
+$failed = 0;
+if (count($world) !== 1 || $world[0]['id'] !== 0) { $failed++; echo "FAIL world 0 update\\n"; }
+$worldString = cr_normalize_ops([['type'=>'update','resource'=>'worlds','id'=>'0','data'=>['Name'=>'Main']]], 10);
+if (($worldString[0]['id'] ?? null) !== 0) { $failed++; echo "FAIL world '0' string\\n"; }
+foreach ([['items', 0], ['items', -3], ['worlds', -1], ['worlds', ''], ['worlds', null], ['worlds', 1.5]] as [$resource, $id]) {
+    try {
+        cr_normalize_ops([['type'=>'update','resource'=>$resource,'id'=>$id,'data'=>['Name'=>'x']]], 10);
+        $failed++; echo "FAIL accepted " . var_export($id, true) . " for $resource\\n";
+    } catch (CrInputError) { /* ожидаемый отказ */ }
+}
+// Новая запись не может быть одновременно создана и изменена отдельной операцией.
+try {
+    cr_normalize_ops([
+        ['type'=>'create','resource'=>'items','tempId'=>2000000001,'data'=>['Name'=>'x']],
+        ['type'=>'update','resource'=>'items','id'=>2000000001,'data'=>['Name'=>'y']],
+    ], 10);
+    $failed++; echo "FAIL temp id accepted as an existing record\\n";
+} catch (CrInputError) { /* ожидаемый отказ */ }
+// Повторяющийся временный ID отклоняется.
+try {
+    cr_normalize_ops([
+        ['type'=>'create','resource'=>'items','tempId'=>2000000001,'data'=>['Name'=>'x']],
+        ['type'=>'create','resource'=>'items','tempId'=>2000000001,'data'=>['Name'=>'y']],
+    ], 10);
+    $failed++; echo "FAIL duplicate temp id\\n";
+} catch (CrInputError) { /* ожидаемый отказ */ }
+echo $failed === 0 ? "guest draft ids: ok\\n" : "guest draft ids: {$failed} failed\\n";
+`);
+  if (!output.includes('guest draft ids: ok')) errors.push(output.trim() || 'guest draft ids failed');
+  process.stdout.write(output);
+}
+
+// ── Анализ: какие временные ID заменятся, а какие нужно проверить руками ────
+{
+  const { output } = await run(`<?php
+require_once '${VFS_ROOT}/api/change-requests-lib.php';
+$I = 2000000001;
+$notes = cr_temp_id_notes('crafts', ['ItemID' => $I, 'RequiredItems' => "[$I/2]"], ['ItemID' => 'tw_items_list']);
+$failed = 0;
+$check = function ($label, $ok) use (&$failed) { if (!$ok) { $failed++; echo "FAIL $label\\n"; } };
+$check('scalar FK is not reported twice', count(array_filter($notes, fn($n) => $n['severity'] === 'info')) === 1);
+$check('pair list replacement announced', (bool)array_filter($notes, fn($n) => $n['severity'] === 'info' && str_contains($n['text'], 'RequiredItems')));
+$text = cr_temp_id_notes('items', ['Name' => "copy of item $I"]);
+$check('free text warns', count($text) === 1 && $text[0]['severity'] === 'warning');
+$broken = cr_temp_id_notes('items', ['Data' => "{ not json $I"]);
+$check('unparsable JSON warns', count($broken) === 1 && $broken[0]['severity'] === 'warning');
+$quantity = cr_temp_id_notes('items', ['Data' => json_encode(['random_box' => [['item_id' => 12, 'value' => $I]]])]);
+$check('a quantity that looks like a draft ID warns', count($quantity) === 1 && $quantity[0]['severity'] === 'warning');
+$clean = cr_temp_id_notes('items', ['Data' => json_encode(['random_box' => [['item_id' => $I, 'value' => 3]]])]);
+$check('typed JSON reference only informs', count($clean) === 1 && $clean[0]['severity'] === 'info');
+echo $failed === 0 ? "temp id analysis: ok\\n" : "temp id analysis: {$failed} failed\\n";
+`);
+  if (!output.includes('temp id analysis: ok')) errors.push(output.trim() || 'temp id analysis failed');
   process.stdout.write(output);
 }
 
