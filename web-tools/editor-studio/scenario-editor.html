@@ -29,7 +29,7 @@
         /* Compact adaptive header: keep controls visible without horizontal scroll. */
         #scenario-header{ overflow-x: hidden; min-height: var(--scenario-header-h); background: transparent; border-bottom: 1px solid color-mix(in srgb, var(--editor-light-border) 45%, transparent); }
         #scenario-top-chrome, #scenario-top-chrome *{ scroll-margin-top: var(--scenario-top-h); }
-        #scenario-header .editor-page-title{ flex: 1 1 auto; min-width: 220px; }
+        #scenario-header .editor-page-title{ flex: 1 1 auto; min-width: 0; }
         #scenario-header .controls{ flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; align-items: center; }
         #scenario-header .controls > *{ flex: 0 0 auto; }
         #scenario-header select, #scenario-header input{ width: clamp(130px, 14vw, 210px); }
@@ -265,6 +265,54 @@
             .scenario-overview { padding: 0.7rem 0.8rem; }
             .scenario-overview-card { flex: 1 1 calc(50% - 0.65rem); min-width: 0; }
             .scenario-overview-card.is-wide { flex-basis: 100%; }
+
+            /* На телефоне шапка со всеми действиями — пол-экрана высотой.
+               Липкой её оставлять нельзя: закреплённый #scenario-top-chrome
+               съедал бы большую часть вьюпорта и не давал добраться до
+               шагов. Пусть шапка прокручивается вместе со страницей. */
+            #scenario-top-chrome{ position: static; }
+            #scenario-header{ flex-direction: column; align-items: stretch; gap: 10px; padding: 12px; }
+            #scenario-header .editor-page-title{ flex: 0 1 auto; }
+            #scenario-header .editor-page-sub{ overflow-wrap: anywhere; }
+
+            /* Действия: переносимый flex вместо grid-ячеек общего шаблона.
+               Текстовые кнопки — по две в ряд, иконочные не растягиваются,
+               select/«Save as…» занимают строку целиком (иначе на 140px
+               они налезали друг на друга, а «Arrows» уезжал за край). */
+            #scenario-header .controls{
+                display: flex; flex-wrap: wrap; align-items: center;
+                justify-content: flex-start; gap: 8px; width: 100%; min-width: 0;
+            }
+            #scenario-header .controls > *{ flex: 0 1 auto; min-width: 0; }
+            #scenario-header .controls > .editor-btn{
+                flex: 1 1 calc(50% - 4px); justify-content: center;
+                min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            }
+            #scenario-header .controls > .editor-btn:has(> i:only-child),
+            #scenario-header .controls > .editor-icon-btn{ flex: 0 0 auto; }
+            #scenario-header .controls > .editor-btn:has(> i:only-child){ min-width: 44px; }
+            #scenario-header .controls .bp-viewmode{ flex: 0 0 auto; }
+            #scenario-header .scenario-switch-wrap{ flex: 0 0 auto; margin-left: auto; }
+            #scenario-header select,
+            #scenario-header input{
+                flex: 1 1 calc(100% - 52px); width: auto; min-width: 0; max-width: none;
+            }
+            #scenario-header #save-as-filename{ flex-basis: 100%; }
+
+            /* Колонки «навигатор / редактор» не должны раздвигать страницу:
+               flex-элементы без min-width:0 широким содержимым (дерево,
+               карточки шагов) выдавливали вёрстку за край экрана. */
+            .main-container > *{ min-width: 0; }
+            #editor-wrapper{ flex: 1 1 auto; width: 100%; padding: 12px; }
+            #navigator{ width: 100%; }
+            #add-component-menu{ max-width: calc(100vw - 16px); }
+        }
+
+        /* Совсем узкий экран: подпись «Arrows:» прячем (подсказка остаётся
+           в aria-label переключателя), кнопки — по-прежнему две в ряд. */
+        @media (max-width: 420px) {
+            #scenario-header .scenario-switch-label{ display: none; }
+            #scenario-header .controls > .editor-btn{ flex-basis: calc(50% - 4px); }
         }
 
         /* ===== Completion-logic: convenient segmented control ===== */
@@ -438,7 +486,7 @@
             </div>
             <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Data not saved</span>
         </div>
-        <div class="controls editor-page-actions flex flex-nowrap items-center gap-3 min-w-0">
+        <div class="controls editor-page-actions flex flex-wrap items-center gap-3 min-w-0">
             <div class="bp-viewmode" role="tablist" aria-label="Display mode">
                 <button type="button" id="view-mode-list" class="is-active" role="tab" aria-selected="true" title="Step list">
                     <i class="fa-solid fa-list-ul"></i><span>List</span>
