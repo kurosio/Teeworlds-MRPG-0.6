@@ -15,16 +15,50 @@
     #form-main [data-field-path="Name"],
     #form-main [data-field-path="TypeArr"],
     #form-main [data-field-path="Position"],
-    #form-main [data-field-path="StorageData"]{grid-column:1 / -1;}
+    #form-main [data-field-path="StorageValue"],
+    #form-main [data-field-path="StoragePosition"]{grid-column:1 / -1;}
     @media (max-width: 640px){#form-main{grid-template-columns:1fr;}}
 
     .trade-header,
     .trade-row{display:grid;grid-template-columns:minmax(0,1.25fr) 110px 110px 110px 38px;gap:8px;align-items:center;}
     .trade-header{padding:0 4px 4px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--editor-text-muted);}
     .trade-row .editor-btn{padding-left:0;padding-right:0;justify-content:center;}
+    .trade-cell{min-width:0;}
+    /* Captions exist in markup for every cell but only show on narrow
+       screens where the column header is hidden. */
+    .trade-group-label{display:none;}
     @media (max-width: 900px){
       .trade-header{display:none;}
-      .trade-row{grid-template-columns:minmax(0,1fr) repeat(3,86px) 36px;gap:6px;}
+      .trade-row{
+        grid-template-columns:minmax(0,1fr) auto;
+        column-gap:10px;
+        row-gap:8px;
+        align-items:center;
+        padding:12px;
+        border:1px solid var(--editor-soft-border);
+        border-radius:var(--editor-radius-md);
+        background:var(--editor-surface-2);
+      }
+      .trade-row > .editor-icon-btn{grid-column:2;grid-row:1;}
+      .trade-cell{grid-column:1 / -1;}
+      .trade-cell::before{
+        content:attr(data-label);
+        display:block;
+        margin-bottom:4px;
+        font-size:var(--editor-text-xs);
+        font-weight:600;
+        color:var(--editor-text-muted);
+      }
+      /* Disabled alignment placeholders ("Set" / "—") add noise once rows
+         are stacked — the captions already explain which kind of row it is. */
+      .trade-cell.is-static{display:none;}
+      .trade-group-label{
+        display:block;
+        margin-bottom:4px;
+        font-size:var(--editor-text-xs);
+        font-weight:600;
+        color:var(--editor-text-muted);
+      }
     }
   </style>
 </head>
@@ -312,6 +346,42 @@
       return lines.join('\n');
     };
 
+    // StorageData is only read by the server when the "storage" flag is set.
+    // Canonical shape (see CWarehouse::InitializeStorage / SaveData):
+    //   { "value": "100051", "position": { "x": 23053, "y": 2970 } }
+    // "value" is a BigInt serialized as text, so it must stay a string.
+    const parseStorageData = (raw) => {
+      const out = { StorageValue: '0', StoragePosX: 0, StoragePosY: 0 };
+      if (raw === null || raw === undefined || String(raw).trim() === '') return out;
+      try {
+        const json = JSON.parse(String(raw));
+        if (json && typeof json === 'object') {
+          if (json.value !== undefined && json.value !== null) {
+            out.StorageValue = String(json.value).replace(/[^\d]/g, '') || '0';
+          }
+          const pos = json.position && typeof json.position === 'object' ? json.position : {};
+          const x = Number(pos.x);
+          const y = Number(pos.y);
+          out.StoragePosX = Number.isFinite(x) ? x : 0;
+          out.StoragePosY = Number.isFinite(y) ? y : 0;
+        }
+      } catch (err) {
+        // Legacy / hand-written malformed JSON: start from defaults instead
+        // of blocking the record — the storage section rebuilds it on save.
+        console.warn('warehouse: malformed StorageData, using defaults', err);
+      }
+      return out;
+    };
+
+    const buildStorageData = (m) => {
+      if (!Array.isArray(m.TypeArr) || !m.TypeArr.includes('storage')) return '';
+      const value = String(m.StorageValue ?? '').replace(/[^\d]/g, '') || '0';
+      return JSON.stringify({
+        value,
+        position: { x: Number(m.StoragePosX) || 0, y: Number(m.StoragePosY) || 0 },
+      });
+    };
+
     const emptyModel = () => ({
       ID: 0,
       Name: '',
@@ -319,7 +389,7 @@
       TradesArr: [],
       PosX: 0,
       PosY: 0,
-      StorageData: '',
+      ...parseStorageData(''),
       Currency: 1,
       WorldID: 0,
     });
@@ -331,7 +401,7 @@
       TradesArr: parseTrades(row?.Trades || ''),
       PosX: Number(row?.PosX || 0),
       PosY: Number(row?.PosY || 0),
-      StorageData: row?.StorageData == null ? '' : String(row.StorageData),
+      ...parseStorageData(row?.StorageData),
       Currency: Number(row?.Currency || 1),
       WorldID: Number(row?.WorldID || 0),
     });
@@ -342,7 +412,7 @@
       Trades: stringifyTrades(m.TradesArr),
       PosX: Number(m.PosX || 0),
       PosY: Number(m.PosY || 0),
-      StorageData: String(m.StorageData || ''),
+      StorageData: buildStorageData(m),
       Currency: Number(m.Currency || 1),
       WorldID: Number(m.WorldID || 0),
     });
@@ -486,6 +556,10 @@
     };
 
     let runtimeMain = null;
+    // Storage fields exist only while the "storage" operation mode is on.
+    const isStorageMode = (data) =>
+      Array.isArray(data?.TypeArr) && data.TypeArr.includes('storage');
+
     const mainFields = {
       Name: { type: 'text', label: 'Name', validate: { required: true }, ui: { placeholder: 'For example: Weapon shop' } },
       TypeArr: { type: 'text', label: 'Operation modes', ui: { type: 'tags', allowCreate: false, placeholder: 'Add mode…', options: [
@@ -502,7 +576,31 @@
         label: 'Point coordinates (X, Y)',
         ui: { step: 1, axes: { x: 'PosX', y: 'PosY' }, mapWorldPath: 'WorldID', showTiles: true, radius: 320, highlightTiles: [29] },
       },
-      StorageData: { type: 'textarea', label: 'Additional data (StorageData JSON)', ui: { rows: 3, placeholder: '{"position":{"x":0,"y":0},"value":"1"}' } },
+      // ── Storage settings (StorageData JSON, edited through plain controls) ──
+      StorageValue: {
+        type: 'text',
+        label: 'Storage fill (goods amount)',
+        validate: { pattern: '^\\d*$', message: 'Only digits are allowed' },
+        ui: {
+          spanAll: true,
+          placeholder: '0',
+          section: { title: 'Storage settings', icon: 'fa-box-archive' },
+          showWhen: isStorageMode,
+          help: 'Current amount of goods in the storage. Stored as text to keep precision for values larger than 2^53.',
+        },
+      },
+      StoragePosition: {
+        type: 'vec2',
+        label: 'Floating text position (X, Y)',
+        ui: {
+          step: 1,
+          axes: { x: 'StoragePosX', y: 'StoragePosY' },
+          mapWorldPath: 'WorldID',
+          showTiles: true,
+          showWhen: isStorageMode,
+          help: 'World point where the in-game text with the goods amount is pinned. (0, 0) hides the text.',
+        },
+      },
     };
 
     const mountMainForm = () => {
@@ -510,9 +608,12 @@
         fields: mainFields,
         data: STATE.selected || {},
         fieldOptions: fieldRenderOptions,
-        onChange: () => {
+        onChange: (data, { path } = {}) => {
           if (!STATE.selected) return;
           if (!Array.isArray(STATE.selected.TypeArr)) STATE.selected.TypeArr = parseTypeSet(STATE.selected.TypeArr);
+          // The storage section is conditional on the "storage" tag: rebuild
+          // the form so its fields appear/disappear together with the flag.
+          if (path === 'TypeArr') runtimeMain?.render?.();
           syncRawTrades();
           markDirty(true);
           updateHeader();
@@ -556,28 +657,28 @@
         const rows = entries.map((e, ei) => {
           if (e.kind === 'collection') {
             return `<div class="trade-row" data-gi="${gi}" data-ei="${ei}">
-              <select data-field="collection_group" class="editor-input form-input">${buildCollectionGroupOptionsHtml(e.collection_group || '')}</select>
-              <select data-field="collection_sub" class="editor-input form-input">${buildCollectionSubOptionsHtml(e.collection_group || '', e.collection_sub || '')}</select>
-              <input disabled class="editor-input form-input" value="Set" />
-              <input disabled class="editor-input form-input" value="—" />
-              <button type="button" class="editor-icon-btn editor-icon-danger" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Delete the position"><i class="fa-solid fa-trash"></i></button>
+              <div class="trade-cell" data-label="Collection group"><select data-field="collection_group" class="editor-input form-input">${buildCollectionGroupOptionsHtml(e.collection_group || '')}</select></div>
+              <div class="trade-cell" data-label="Collection subgroup"><select data-field="collection_sub" class="editor-input form-input">${buildCollectionSubOptionsHtml(e.collection_group || '', e.collection_sub || '')}</select></div>
+              <div class="trade-cell is-static"><input disabled class="editor-input form-input" value="Set" /></div>
+              <div class="trade-cell is-static"><input disabled class="editor-input form-input" value="—" /></div>
+              <button type="button" class="editor-icon-btn editor-icon-danger" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Delete the position" aria-label="Delete the position"><i class="fa-solid fa-trash"></i></button>
             </div>`;
           }
           if (e.kind === 'raw') {
             return `<div class="trade-row" data-gi="${gi}" data-ei="${ei}">
-              <input data-field="raw" class="editor-input form-input" value="${esc(e.raw || '')}" placeholder="Raw database line" />
-              <input disabled class="editor-input form-input" value="—" />
-              <input disabled class="editor-input form-input" value="—" />
-              <input disabled class="editor-input form-input" value="—" />
-              <button type="button" class="editor-icon-btn editor-icon-danger" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Delete the position"><i class="fa-solid fa-trash"></i></button>
+              <div class="trade-cell" data-label="Raw database line"><input data-field="raw" class="editor-input form-input" value="${esc(e.raw || '')}" placeholder="Raw database line" /></div>
+              <div class="trade-cell is-static"><input disabled class="editor-input form-input" value="—" /></div>
+              <div class="trade-cell is-static"><input disabled class="editor-input form-input" value="—" /></div>
+              <div class="trade-cell is-static"><input disabled class="editor-input form-input" value="—" /></div>
+              <button type="button" class="editor-icon-btn editor-icon-danger" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Delete the position" aria-label="Delete the position"><i class="fa-solid fa-trash"></i></button>
             </div>`;
           }
           return `<div class="trade-row" data-gi="${gi}" data-ei="${ei}">
-            <div>${buildItemComboHtml(gi, ei, e.item_id)}</div>
-            <input data-field="amount" type="number" min="1" class="editor-input form-input" value="${Math.max(1, Number(e.amount || 1))}" placeholder="Qty" title="Quantity" />
-            <input data-field="price" type="number" class="editor-input form-input" value="${Number(e.price || 0)}" placeholder="Price 1" title="Base price" />
-            <input data-field="price_alt" type="number" class="editor-input form-input" value="${Number(e.price_alt || 0)}" placeholder="Price 2" title="Alternative price (0 — none)" />
-            <button type="button" class="editor-icon-btn editor-icon-danger" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Delete the position"><i class="fa-solid fa-trash"></i></button>
+            <div class="trade-cell" data-label="Item / collection">${buildItemComboHtml(gi, ei, e.item_id)}</div>
+            <div class="trade-cell" data-label="Qty"><input data-field="amount" type="number" min="1" class="editor-input form-input" value="${Math.max(1, Number(e.amount || 1))}" placeholder="Qty" title="Quantity" aria-label="Quantity" /></div>
+            <div class="trade-cell" data-label="Price 1"><input data-field="price" type="number" class="editor-input form-input" value="${Number(e.price || 0)}" placeholder="Price 1" title="Base price" aria-label="Base price" /></div>
+            <div class="trade-cell" data-label="Price 2"><input data-field="price_alt" type="number" class="editor-input form-input" value="${Number(e.price_alt || 0)}" placeholder="Price 2" title="Alternative price (0 — none)" aria-label="Alternative price (0 — none)" /></div>
+            <button type="button" class="editor-icon-btn editor-icon-danger" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Delete the position" aria-label="Delete the position"><i class="fa-solid fa-trash"></i></button>
           </div>`;
         }).join('');
 
@@ -592,9 +693,18 @@
           </div>
           <div class="flex items-center justify-between gap-2 mb-2">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
-              <input data-gfield="main" data-gi="${gi}" class="editor-input form-input" value="${esc(g.main || '')}" placeholder="Main group (optional)" title="For example: Armor" />
-              <input data-gfield="group" data-gi="${gi}" class="editor-input form-input" value="${esc(g.group || '')}" placeholder="Group" />
-              <input data-gfield="sub" data-gi="${gi}" class="editor-input form-input" value="${esc(g.sub || '')}" placeholder="Subgroup" />
+              <div>
+                <div class="trade-group-label">Main group (optional)</div>
+                <input data-gfield="main" data-gi="${gi}" class="editor-input form-input" value="${esc(g.main || '')}" placeholder="Main group (optional)" title="For example: Armor" aria-label="Main group (optional)" />
+              </div>
+              <div>
+                <div class="trade-group-label">Group</div>
+                <input data-gfield="group" data-gi="${gi}" class="editor-input form-input" value="${esc(g.group || '')}" placeholder="Group" aria-label="Group" />
+              </div>
+              <div>
+                <div class="trade-group-label">Subgroup</div>
+                <input data-gfield="sub" data-gi="${gi}" class="editor-input form-input" value="${esc(g.sub || '')}" placeholder="Subgroup" aria-label="Subgroup" />
+              </div>
             </div>
             <button type="button" class="editor-icon-btn editor-icon-danger shrink-0" data-action="del-group" data-gi="${gi}" title="Delete the group"><i class="fa-solid fa-trash"></i></button>
           </div>

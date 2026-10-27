@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vouchers • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="scenario"></script>
+  <style>
+    /* Wide screens name the columns via the grid header; on phones the
+       header is hidden and stacked rows need per-field captions instead. */
+    #itemsRoot .editor-nested-label{display:none;}
+    @media (max-width:767px){
+      #itemsRoot .editor-nested-label{display:block;}
+    }
+  </style>
 </head>
 
 <body class="editor-theme" data-editor="vouchers">
@@ -209,9 +217,11 @@
     };
 
     // Items are rendered as compact rows (table-like) for a cleaner UX.
+    // Labels stay in the markup: desktop relies on the column header (CSS
+    // hides the nested labels), while phones show them above each control.
     const ITEM_ROW_FIELDS = {
-      id: { type: 'db_select', label: '', ui: { dbKey: 'item', placeholder: 'Item (ID:Name)', manualPlaceholder: 'Item ID', hideLabel: true } },
-      value: { type: 'number', label: '', ui: { min: 1, step: 1, placeholder: 'Qty', hideLabel: true } }
+      id: { type: 'db_select', label: 'Item', ui: { dbKey: 'item', placeholder: 'Item (ID:Name)', manualPlaceholder: 'Item ID' } },
+      value: { type: 'number', label: 'Quantity', ui: { min: 1, step: 1, placeholder: 'Qty' } }
     };
 
     // Use shared render defaults (same look across editors)
