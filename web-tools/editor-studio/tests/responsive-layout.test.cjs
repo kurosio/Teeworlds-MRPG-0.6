@@ -37,7 +37,44 @@ test('scenario header stacks compactly and does not stick on phones', () => {
   assert.doesNotMatch(html, /controls editor-page-actions flex flex-nowrap/);
   assert.match(html, /controls editor-page-actions flex flex-wrap/);
   assert.match(html, /@media \(max-width: 767px\) \{[\s\S]*?#scenario-top-chrome\{ position: static; \}/);
-  assert.match(html, /#scenario-header \.controls > \.editor-btn\{\s+flex: 1 1 calc\(50% - 4px\);/);
+  // Действия делят строку поровну (min-width мал, иначе три кнопки не
+  // помещаются в 390px и уезжают за край).
+  assert.match(html, /#scenario-header \.controls > \.editor-btn\{\s+flex: 1 1 60px; min-width: 60px;/);
   assert.match(html, /#scenario-header \.editor-page-title\{ flex: 1 1 auto; min-width: 0; \}/);
   assert.match(html, /\.main-container > \*\{ min-width: 0; \}/);
+});
+
+test('phone header keeps only the essentials, the rest lives behind "⋯"', () => {
+  const html = read('scenario-editor.html');
+  // Кнопка «⋯» существует и скрыта на десктопе.
+  assert.match(html, /id="scenario-more-btn"/);
+  assert.match(html, /#scenario-more-btn\{ display: none; \}/);
+  // Второстепенные действия прячутся, пока шапка не раскрыта.
+  assert.match(html, /#scenario-header \.controls > \.scenario-extra\{ display: none !important; \}/);
+  assert.match(html, /#scenario-header\.is-expanded \.controls > \.scenario-extra/);
+  // Разметка помечает второстепенные действия и «главные» оставляет видимыми.
+  assert.match(html, /markHeaderExtras\(\)/);
+  assert.match(html, /el\.classList\.contains\('bp-viewmode'\)/);
+});
+
+test('scenario overview collapses to a single strip on phones', () => {
+  const html = read('scenario-editor.html');
+  assert.match(html, /@media \(max-width: 767px\) \{[\s\S]*?\.scenario-overview\{[\s\S]*?flex-wrap: nowrap;/);
+  assert.match(html, /\.scenario-overview-card\.is-wide \.label\{ display: none; \}/);
+});
+
+test('structure tree is collapsible on phones', () => {
+  const html = read('scenario-editor.html');
+  assert.match(html, /id="navigator-toggle"/);
+  assert.match(html, /#navigator\.is-collapsed \.navigator-header \.editor-search/);
+  assert.match(html, /this\.setNavigatorCollapsed\(true\)/);
+});
+
+test('step card and component rows use the phone width without clipping', () => {
+  const html = read('scenario-editor.html');
+  // Действия компонента переезжают на свою строку, текст не рвётся по слогам.
+  assert.match(html, /\.component-item\{\s+flex-wrap: wrap;/);
+  assert.match(html, /\.component-item \.component-info\{ flex: 1 1 100%;/);
+  // Кнопка «Добавить шаг» больше не прилипает к низу экрана.
+  assert.match(html, /#add-step-button\{ position: static;/);
 });

@@ -89,8 +89,57 @@
       this.minimapOn = false;
       try { this.minimapOn = localStorage.getItem('scenario-studio:bp-minimap') === '1'; } catch { /* ignore */ }
 
+      // Remember what kind of pointer was used last: a few interactions
+      // (tap-to-rename) make sense with a mouse but not with a finger.
+      this.lastPointerType = 'mouse';
+      document.addEventListener('pointerdown', (e) => { this.lastPointerType = e.pointerType || 'mouse'; }, true);
+
       this.bindCanvasEvents();
       this.bindMinimap();
+    }
+
+    // ---- pointer plumbing (mouse / touch / pen) ----------------
+    // Every drag in the graph goes through this one helper. Pointer events
+    // cover mouse, touch and pen with the same code path, so a finger can
+    // move nodes / groups / comments / wires exactly like a cursor does.
+    // The returned function cancels the drag (used by pinch-to-zoom, which
+    // must be able to abort a one-finger drag when a second finger lands).
+    startPointerDrag(startEvent, handlers = {}) {
+      // While two fingers pinch, a second pointerdown must NOT start a new
+      // drag (that finger belongs to the zoom gesture).
+      if (this._pinch) return () => {};
+      const id = startEvent?.pointerId;
+      const isTouch = startEvent?.pointerType === 'touch';
+      let finished = false;
+      const samePointer = (ev) => id == null || ev.pointerId === id;
+
+      const onMove = ev => {
+        if (!samePointer(ev) || finished) return;
+        // Touch scrolling/zooming is disabled on the canvas (touch-action:none),
+        // this only stops the browser from also panning the page on some
+        // Android builds.
+        if (isTouch && ev.cancelable) ev.preventDefault();
+        handlers.move?.(ev);
+      };
+      const finish = (ev, cancelled) => {
+        if (finished) return;
+        finished = true;
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onCancel);
+        if (this._dragCancel === cancel) this._dragCancel = null;
+        handlers.end?.(ev, cancelled);
+      };
+      const onUp = ev => { if (samePointer(ev)) finish(ev, false); };
+      const onCancel = ev => { if (samePointer(ev)) finish(ev, true); };
+      const cancel = () => finish(null, true);
+
+      this._dragCancel?.();     // never keep two drags alive at once
+      this._dragCancel = cancel;
+      window.addEventListener('pointermove', onMove, { passive: false });
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onCancel);
+      return cancel;
     }
 
     // ---- persistence helpers ----------------------------------
@@ -130,9 +179,11 @@
           const v = JSON.parse(raw);
           if (v && Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.scale)) {
             this.view = { x: v.x, y: v.y, scale: Math.min(MAX_SCALE, Math.max(MIN_SCALE, v.scale)) };
+            return true;
           }
         }
       } catch { /* ignore */ }
+      return false;
     }
 
     saveView() {
@@ -143,8 +194,11 @@
     show() {
       this.active = true;
       document.body.classList.add('bp-mode');
-      this.loadView();
+      const restored = this.loadView();
       this.render();
+      // First visit for this scenario (or a brand-new device): frame the whole
+      // graph. Without this a phone opens the graph on an empty patch of canvas.
+      if (!restored) requestAnimationFrame(() => this.fitToView());
       this.updateMinimapVisibility();
       this.drawMinimap();
     }
@@ -307,7 +361,7 @@
         body.classList.remove('is-editing');
       };
       body.addEventListener('dblclick', e => { e.stopPropagation(); beginEdit(); });
-      body.addEventListener('mousedown', e => { if (body.classList.contains('is-editing')) e.stopPropagation(); });
+      body.addEventListener('pointerdown', e => { if (body.classList.contains('is-editing')) e.stopPropagation(); });
       body.addEventListener('blur', endEdit);
       body.addEventListener('input', () => {
         cmt.text = body.textContent;
@@ -316,7 +370,7 @@
 
       // actions
       el.querySelectorAll('[data-cmt-action]').forEach(btn => {
-        btn.addEventListener('mousedown', e => e.stopPropagation());
+        btn.addEventListener('pointerdown', e => e.stopPropagation());
         btn.addEventListener('click', e => {
           e.stopPropagation();
           const a = btn.dataset.cmtAction;
@@ -327,14 +381,14 @@
 
       // drag (by head)
       const head = el.querySelector('.bp-comment-head');
-      head.addEventListener('mousedown', e => {
+      head.addEventListener('pointerdown', e => {
         if (e.button !== 0 || e.target.closest('[data-cmt-action]')) return;
         e.preventDefault(); e.stopPropagation();
         this.startCommentDrag(el, cmt, e);
       });
       // resize
       const grip = el.querySelector('.bp-comment-resize');
-      grip.addEventListener('mousedown', e => {
+      grip.addEventListener('pointerdown', e => {
         if (e.button !== 0) return;
         e.preventDefault(); e.stopPropagation();
         this.startCommentResize(el, cmt, e);
@@ -389,44 +443,40 @@
       const startMouse = { x: e.clientX, y: e.clientY };
       const start = { x: cmt.x, y: cmt.y };
       let moved = false;
-      const onMove = ev => {
-        const dx = (ev.clientX - startMouse.x) / this.view.scale;
-        const dy = (ev.clientY - startMouse.y) / this.view.scale;
-        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
-        cmt.x = start.x + dx; cmt.y = start.y + dy;
-        el.style.left = `${Math.round(cmt.x)}px`;
-        el.style.top = `${Math.round(cmt.y)}px`;
-      };
-      const onUp = () => {
-        el.classList.remove('is-dragging');
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        if (moved) this.editor.dirty.markDirty?.();
-      };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      this.startPointerDrag(e, {
+        move: ev => {
+          const dx = (ev.clientX - startMouse.x) / this.view.scale;
+          const dy = (ev.clientY - startMouse.y) / this.view.scale;
+          if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
+          cmt.x = start.x + dx; cmt.y = start.y + dy;
+          el.style.left = `${Math.round(cmt.x)}px`;
+          el.style.top = `${Math.round(cmt.y)}px`;
+        },
+        end: () => {
+          el.classList.remove('is-dragging');
+          if (moved) this.editor.dirty.markDirty?.();
+        }
+      });
     }
 
     startCommentResize(el, cmt, e) {
       const startMouse = { x: e.clientX, y: e.clientY };
       const start = { w: cmt.w || 240, h: cmt.h || 130 };
       let moved = false;
-      const onMove = ev => {
-        const dx = (ev.clientX - startMouse.x) / this.view.scale;
-        const dy = (ev.clientY - startMouse.y) / this.view.scale;
-        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
-        cmt.w = Math.max(140, start.w + dx);
-        cmt.h = Math.max(80, start.h + dy);
-        el.style.width = `${Math.round(cmt.w)}px`;
-        el.style.height = `${Math.round(cmt.h)}px`;
-      };
-      const onUp = () => {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        if (moved) this.editor.dirty.markDirty?.();
-      };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      this.startPointerDrag(e, {
+        move: ev => {
+          const dx = (ev.clientX - startMouse.x) / this.view.scale;
+          const dy = (ev.clientY - startMouse.y) / this.view.scale;
+          if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
+          cmt.w = Math.max(140, start.w + dx);
+          cmt.h = Math.max(80, start.h + dy);
+          el.style.width = `${Math.round(cmt.w)}px`;
+          el.style.height = `${Math.round(cmt.h)}px`;
+        },
+        end: () => {
+          if (moved) this.editor.dirty.markDirty?.();
+        }
+      });
     }
 
     // ---- group frames -----------------------------------------
@@ -449,7 +499,7 @@
       title.textContent = group.name || 'Group';
       title.contentEditable = 'true';
       title.spellcheck = false;
-      title.addEventListener('mousedown', e => e.stopPropagation());
+      title.addEventListener('pointerdown', e => e.stopPropagation());
       title.addEventListener('click', e => e.stopPropagation());
       title.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); title.blur(); }
@@ -464,7 +514,7 @@
       const sel = document.createElement('select');
       sel.className = 'bp-group-event';
       sel.title = 'Group event';
-      sel.addEventListener('mousedown', e => e.stopPropagation());
+      sel.addEventListener('pointerdown', e => e.stopPropagation());
       sel.innerHTML = ['<option value="">No event</option>']
         .concat(Object.entries(this.editor.scenarioEvents || {})
           .filter(([k]) => k !== 'general')
@@ -480,7 +530,7 @@
       del.className = 'bp-group-del';
       del.title = 'Delete the group';
       del.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-      del.addEventListener('mousedown', e => e.stopPropagation());
+      del.addEventListener('pointerdown', e => e.stopPropagation());
       del.addEventListener('click', e => {
         e.stopPropagation();
         this.editor.openDeleteGroupModal?.(group.id);
@@ -494,7 +544,7 @@
       grip.className = 'bp-group-resize';
       grip.title = 'Drag to resize the group';
       grip.innerHTML = '<i class="fa-solid fa-up-right-and-down-left-from-center"></i>';
-      grip.addEventListener('mousedown', e => {
+      grip.addEventListener('pointerdown', e => {
         if (e.button !== 0) return;
         e.preventDefault();
         e.stopPropagation();
@@ -503,7 +553,7 @@
       frame.appendChild(grip);
 
       // drag whole group by header
-      header.addEventListener('mousedown', e => {
+      header.addEventListener('pointerdown', e => {
         if (e.button !== 0) return;
         if (e.target.closest('.bp-group-title, .bp-group-event, .bp-group-del')) return;
         e.preventDefault();
@@ -614,32 +664,30 @@
       const startRect = { ...this.groupRect(groupId) };
       let moved = false;
 
-      const onMove = ev => {
-        const dx = (ev.clientX - startMouse.x) / this.view.scale;
-        const dy = (ev.clientY - startMouse.y) / this.view.scale;
-        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
-        // Move the frame and all its members together.
-        members.forEach(id => {
-          const sp = startPos.get(id);
-          const np = { x: sp.x + dx, y: sp.y + dy };
-          this.bp.positions[id] = np;
-          const node = this.nodeEls.get(id);
-          if (node) { node.style.left = `${np.x}px`; node.style.top = `${np.y}px`; }
-        });
-        this.bp.groupRects[groupId] = {
-          x: startRect.x + dx, y: startRect.y + dy, w: startRect.w, h: startRect.h
-        };
-        this.updateGroupFrames();
-        this.scheduleWireRedraw();
-      };
-      const onUp = () => {
-        frame?.classList.remove('is-dragging');
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        if (moved) { this.syncGroupRect(groupId); this.editor.dirty.markDirty?.(); }
-      };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      this.startPointerDrag(e, {
+        move: ev => {
+          const dx = (ev.clientX - startMouse.x) / this.view.scale;
+          const dy = (ev.clientY - startMouse.y) / this.view.scale;
+          if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
+          // Move the frame and all its members together.
+          members.forEach(id => {
+            const sp = startPos.get(id);
+            const np = { x: sp.x + dx, y: sp.y + dy };
+            this.bp.positions[id] = np;
+            const node = this.nodeEls.get(id);
+            if (node) { node.style.left = `${np.x}px`; node.style.top = `${np.y}px`; }
+          });
+          this.bp.groupRects[groupId] = {
+            x: startRect.x + dx, y: startRect.y + dy, w: startRect.w, h: startRect.h
+          };
+          this.updateGroupFrames();
+          this.scheduleWireRedraw();
+        },
+        end: () => {
+          frame?.classList.remove('is-dragging');
+          if (moved) { this.syncGroupRect(groupId); this.editor.dirty.markDirty?.(); }
+        }
+      });
     }
 
     // Generic multi-selection drag (used when grabbing a selected group/comment).
@@ -654,24 +702,22 @@
       moveSet.stepIds.forEach(id => this.nodeEls.get(id)?.classList.add('is-dragging'));
       let moved = false;
 
-      const onMove = ev => {
-        const dx = (ev.clientX - startMouse.x) / this.view.scale;
-        const dy = (ev.clientY - startMouse.y) / this.view.scale;
-        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
-        this.translateSelection(moveSet, startNode, startComment, startGroupRect, dx, dy);
-        this.scheduleWireRedraw();
-      };
-      const onUp = () => {
-        moveSet.stepIds.forEach(id => this.nodeEls.get(id)?.classList.remove('is-dragging'));
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        if (moved) {
-          this.groupEls.forEach((_, gid) => this.syncGroupRect(gid));
-          this.editor.dirty.markDirty?.();
+      this.startPointerDrag(e, {
+        move: ev => {
+          const dx = (ev.clientX - startMouse.x) / this.view.scale;
+          const dy = (ev.clientY - startMouse.y) / this.view.scale;
+          if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
+          this.translateSelection(moveSet, startNode, startComment, startGroupRect, dx, dy);
+          this.scheduleWireRedraw();
+        },
+        end: () => {
+          moveSet.stepIds.forEach(id => this.nodeEls.get(id)?.classList.remove('is-dragging'));
+          if (moved) {
+            this.groupEls.forEach((_, gid) => this.syncGroupRect(gid));
+            this.editor.dirty.markDirty?.();
+          }
         }
-      };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      });
     }
 
     startGroupResize(groupId, e) {
@@ -681,25 +727,23 @@
       const startRect = { ...this.groupRect(groupId) };
       let moved = false;
 
-      const onMove = ev => {
-        const dx = (ev.clientX - startMouse.x) / this.view.scale;
-        const dy = (ev.clientY - startMouse.y) / this.view.scale;
-        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
-        // Grow/shrink from bottom-right; auto-fit (union with member bounds)
-        // guarantees we never clip the contained steps.
-        const w = Math.max(180, startRect.w + dx);
-        const h = Math.max(120, startRect.h + dy);
-        this.bp.groupRects[groupId] = { x: startRect.x, y: startRect.y, w, h };
-        this.updateGroupFrames();
-      };
-      const onUp = () => {
-        frame?.classList.remove('is-resizing');
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        if (moved) { this.syncGroupRect(groupId); this.editor.dirty.markDirty?.(); }
-      };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      this.startPointerDrag(e, {
+        move: ev => {
+          const dx = (ev.clientX - startMouse.x) / this.view.scale;
+          const dy = (ev.clientY - startMouse.y) / this.view.scale;
+          if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
+          // Grow/shrink from bottom-right; auto-fit (union with member bounds)
+          // guarantees we never clip the contained steps.
+          const w = Math.max(180, startRect.w + dx);
+          const h = Math.max(120, startRect.h + dy);
+          this.bp.groupRects[groupId] = { x: startRect.x, y: startRect.y, w, h };
+          this.updateGroupFrames();
+        },
+        end: () => {
+          frame?.classList.remove('is-resizing');
+          if (moved) { this.syncGroupRect(groupId); this.editor.dirty.markDirty?.(); }
+        }
+      });
     }
 
     // ---- nodes ------------------------------------------------
@@ -800,7 +844,7 @@
 
         // Component action buttons (edit / duplicate / delete) — don't start a drag.
         row.querySelectorAll('[data-bp-comp-action]').forEach(btn => {
-          btn.addEventListener('mousedown', ev => ev.stopPropagation());
+          btn.addEventListener('pointerdown', ev => ev.stopPropagation());
           btn.addEventListener('click', ev => {
             ev.stopPropagation();
             const action = btn.dataset.bpCompAction;
@@ -816,7 +860,7 @@
 
         // Drag a component (by its icon) between steps.
         const iconEl = row.querySelector('.bp-comp-icon');
-        iconEl.addEventListener('mousedown', ev => {
+        iconEl.addEventListener('pointerdown', ev => {
           if (ev.button !== 0) return;
           ev.preventDefault();
           ev.stopPropagation();
@@ -841,7 +885,7 @@
           pin.title = connected
             ? `Link:  ${field} → ${linkByField.get(field)}  (drag to redirect; double-click to delete)`
             : `Drag to create a link (${field})`;
-          pin.addEventListener('mousedown', ev => {
+          pin.addEventListener('pointerdown', ev => {
             if (ev.button !== 0) return;
             ev.preventDefault();
             ev.stopPropagation();
@@ -1185,50 +1229,49 @@
         y: (ev.clientY - this.canvas.getBoundingClientRect().top - this.view.y) / this.view.scale
       });
 
-      const onMove = ev => {
-        const b = toWorld(ev);
-        tmp.setAttribute('d', this.bezier(a, b));
-        // hover highlight target node
-        const node = this.nodeAtClient(ev.clientX, ev.clientY);
-        this.world.querySelectorAll('.bp-node.is-drop-target')
-          .forEach(n => n.classList.remove('is-drop-target'));
-        if (node && node.dataset.stepId !== stepId) node.classList.add('is-drop-target');
-      };
-
-      const onUp = ev => {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        pin.classList.remove('is-connecting');
-        this.world.querySelectorAll('.bp-node.is-drop-target')
-          .forEach(n => n.classList.remove('is-drop-target'));
-        tmp.remove();
-        this._connect = null;
-
-        const node = this.nodeAtClient(ev.clientX, ev.clientY);
-        if (node) {
-          const targetId = node.dataset.stepId;
-          if (targetId && targetId !== stepId) {
-            this.applyLink(stepId, componentId, field, targetId);
-          } else {
-            this.drawWires();
-          }
-        } else {
-          // dropped on empty canvas -> create a linked step there.
-          // If the drop landed inside a group band, add it to that group;
-          // otherwise keep it ungrouped (don't fall into the default group).
+      this.startPointerDrag(e, {
+        move: ev => {
           const b = toWorld(ev);
-          const dropGroup = this.groupAtPoint(b.x, b.y);
-          const newId = this.editor.addNewStepAt?.(b.x - NODE_W / 2, b.y, {
-            group: dropGroup || null,
-            ungrouped: !dropGroup
-          });
-          if (newId) this.applyLink(stepId, componentId, field, newId);
-          else this.drawWires();
-        }
-      };
+          tmp.setAttribute('d', this.bezier(a, b));
+          // hover highlight target node
+          const node = this.nodeAtClient(ev.clientX, ev.clientY);
+          this.world.querySelectorAll('.bp-node.is-drop-target')
+            .forEach(n => n.classList.remove('is-drop-target'));
+          if (node && node.dataset.stepId !== stepId) node.classList.add('is-drop-target');
+        },
+        end: (ev, cancelled) => {
+          pin.classList.remove('is-connecting');
+          this.world.querySelectorAll('.bp-node.is-drop-target')
+            .forEach(n => n.classList.remove('is-drop-target'));
+          tmp.remove();
+          this._connect = null;
+          if (cancelled || !ev) { this.drawWires(); return; }
 
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+          const node = this.nodeAtClient(ev.clientX, ev.clientY);
+          if (node) {
+            const targetId = node.dataset.stepId;
+            if (targetId && targetId !== stepId) {
+              this.applyLink(stepId, componentId, field, targetId);
+            } else {
+              this.drawWires();
+            }
+          } else {
+            // dropped on empty canvas -> create a linked step there.
+            // If the drop landed inside a group band, add it to that group;
+            // otherwise keep it ungrouped (don't fall into the default group).
+            const b = toWorld(ev);
+            const dropGroup = this.groupAtPoint(b.x, b.y);
+            const newId = this.editor.addNewStepAt?.(b.x - NODE_W / 2, b.y, {
+              group: dropGroup || null,
+              ungrouped: !dropGroup
+            });
+            if (newId) this.applyLink(stepId, componentId, field, newId);
+            else this.drawWires();
+          }
+        }
+      });
+      // On touch the temp wire follows the finger; the canvas must not pan.
+      this.canvas.classList.remove('is-panning');
     }
 
     cancelConnect() {
@@ -1267,48 +1310,45 @@
         return { row: r, after };
       };
 
-      const onMove = ev => {
-        if (Math.abs(ev.clientX - e.clientX) > 2 || Math.abs(ev.clientY - e.clientY) > 2) moved = true;
-        moveGhost(ev.clientX, ev.clientY);
-        clearMarks();
-        const node = this.nodeAtClient(ev.clientX, ev.clientY);
-        if (node) node.classList.add('is-drop-target');
-        const hit = rowAtClient(ev.clientX, ev.clientY);
-        if (hit && hit.row !== row) {
-          hit.row.classList.add(hit.after ? 'is-drop-after' : 'is-drop-before');
+      this.startPointerDrag(e, {
+        move: ev => {
+          if (Math.abs(ev.clientX - e.clientX) > 2 || Math.abs(ev.clientY - e.clientY) > 2) moved = true;
+          moveGhost(ev.clientX, ev.clientY);
+          clearMarks();
+          const node = this.nodeAtClient(ev.clientX, ev.clientY);
+          if (node) node.classList.add('is-drop-target');
+          const hit = rowAtClient(ev.clientX, ev.clientY);
+          if (hit && hit.row !== row) {
+            hit.row.classList.add(hit.after ? 'is-drop-after' : 'is-drop-before');
+          }
+        },
+        end: (ev, cancelled) => {
+          ghost.remove();
+          row.classList.remove('is-dragging-out');
+          clearMarks();
+          if (cancelled || !ev) return;
+
+          if (!moved) { this.editor.openEditModal?.(fromStepId, componentId); return; }
+
+          const node = this.nodeAtClient(ev.clientX, ev.clientY);
+          if (!node) return;
+          const toStepId = node.dataset.stepId;
+          if (!toStepId) return;
+
+          const hit = rowAtClient(ev.clientX, ev.clientY);
+          let beforeId = null;
+          if (hit && hit.row !== row) {
+            const targetId = hit.row.dataset.componentId;
+            beforeId = hit.after ? this.nextComponentId(toStepId, targetId) : targetId;
+          }
+
+          const ok = this.editor.moveComponent?.(fromStepId, componentId, toStepId, beforeId);
+          if (ok) {
+            this.editor.renderAll();
+            this.flashNode(toStepId);
+          }
         }
-      };
-
-      const onUp = ev => {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        ghost.remove();
-        row.classList.remove('is-dragging-out');
-        clearMarks();
-
-        if (!moved) { this.editor.openEditModal?.(fromStepId, componentId); return; }
-
-        const node = this.nodeAtClient(ev.clientX, ev.clientY);
-        if (!node) return;
-        const toStepId = node.dataset.stepId;
-        if (!toStepId) return;
-
-        const hit = rowAtClient(ev.clientX, ev.clientY);
-        let beforeId = null;
-        if (hit && hit.row !== row) {
-          const targetId = hit.row.dataset.componentId;
-          beforeId = hit.after ? this.nextComponentId(toStepId, targetId) : targetId;
-        }
-
-        const ok = this.editor.moveComponent?.(fromStepId, componentId, toStepId, beforeId);
-        if (ok) {
-          this.editor.renderAll();
-          this.flashNode(toStepId);
-        }
-      };
-
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      });
     }
 
     // id of the component that follows targetId in its step (or null = append).
@@ -1401,15 +1441,40 @@
       });
       if (!Number.isFinite(minX)) { this.resetZoom(); return; }
       const rect = this.canvas.getBoundingClientRect();
-      const pad = 80;
+      // Keep the margin proportional: 80px is right on a desktop canvas but
+      // eats most of a 390px phone screen.
+      const pad = Math.max(16, Math.min(80, Math.min(rect.width, rect.height) * 0.08));
+      // On phones the toolbar floats at the bottom of the canvas — fit above it.
+      const inset = this.toolbarInset();
+      const usableH = Math.max(120, rect.height - inset);
       const sx = (rect.width - pad * 2) / Math.max(1, maxX - minX);
-      const sy = (rect.height - pad * 2) / Math.max(1, maxY - minY);
-      const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min(sx, sy, 1)));
+      const sy = (usableH - pad * 2) / Math.max(1, maxY - minY);
+      let scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min(sx, sy, 1)));
+      // On a phone, "fit the whole graph" shrinks a 20-step scenario into an
+      // unreadable speck. Prefer legibility: show the start of the graph at a
+      // readable zoom and let the user pan from there.
+      // "Compact" = phone portrait OR phone landscape: in both cases fitting
+      // the whole graph would shrink it to unreadable specks.
+      const compact = rect.width < 600 || rect.height < 520;
+      if (compact) scale = Math.max(scale, 0.44);
       this.view.scale = scale;
-      this.view.x = pad - minX * scale + (rect.width - pad * 2 - (maxX - minX) * scale) / 2;
-      this.view.y = pad - minY * scale;
+      const fitsWidth = (maxX - minX) * scale <= rect.width - pad * 2;
+      const fitsHeight = (maxY - minY) * scale <= usableH - pad * 2;
+      this.view.x = fitsWidth
+        ? pad - minX * scale + (rect.width - pad * 2 - (maxX - minX) * scale) / 2
+        : pad - minX * scale;
+      this.view.y = fitsHeight
+        ? pad - minY * scale + (usableH - pad * 2 - (maxY - minY) * scale) / 2
+        : pad - minY * scale;
       this.applyTransform();
       this.saveView();
+    }
+
+    // Height covered by the floating toolbar (phone layout only).
+    toolbarInset() {
+      if (window.innerWidth > 767) return 0;
+      const bar = this.canvas.querySelector('.bp-toolbar');
+      return bar ? bar.offsetHeight + 16 : 0;
     }
 
     flashNode(stepId) {
@@ -1440,7 +1505,7 @@
       const badge = header.querySelector('.bp-logic-badge');
 
       node.querySelectorAll('[data-bp-action]').forEach(btn => {
-        btn.addEventListener('mousedown', e => e.stopPropagation());
+        btn.addEventListener('pointerdown', e => e.stopPropagation());
         btn.addEventListener('click', e => {
           e.stopPropagation();
           const action = btn.dataset.bpAction;
@@ -1464,25 +1529,36 @@
       });
 
       // Logic badge: click cycles the completion logic (AND → OR → 1·2·3).
-      badge?.addEventListener('mousedown', e => e.stopPropagation());
+      badge?.addEventListener('pointerdown', e => e.stopPropagation());
       badge?.addEventListener('click', e => {
         e.stopPropagation();
         this.editor.cycleCompletionLogic?.(step.id);
       });
 
-      // Title: single click = inline rename, double click = quick popover.
-      titleEl?.addEventListener('mousedown', e => e.stopPropagation());
+      // Title: single click = inline rename (mouse), double click = quick
+      // popover. On touch the title doubles as a drag handle — it is the
+      // biggest free area of the header, and a tap no longer renames.
+      titleEl?.addEventListener('pointerdown', e => {
+        e.stopPropagation();
+        if (e.pointerType === 'touch' && e.button === 0) {
+          e.preventDefault();
+          this.startNodeDrag(node, step, e);
+        }
+      });
       titleEl?.addEventListener('dblclick', e => {
         e.stopPropagation();
         this.editor.openStepQuickPopover?.(step.id, header.getBoundingClientRect());
       });
       titleEl?.addEventListener('click', e => {
         e.stopPropagation();
+        // A finger tap should not pop up the keyboard: on touch the rename is
+        // available from the quick-settings popover (double tap).
+        if (this.lastPointerType === 'touch') return;
         this.startNodeRename(titleEl, step.id);
       });
 
       node.querySelectorAll('.bp-comp').forEach(row => {
-        row.addEventListener('mousedown', e => {
+        row.addEventListener('pointerdown', e => {
           if (e.target.closest('.bp-pin') || e.target.closest('.bp-comp-icon') || e.target.closest('[data-bp-comp-action]')) return;
           e.stopPropagation();
         });
@@ -1497,12 +1573,34 @@
         });
       });
 
-      // Node moves ONLY via the drag-zone grip (so header clicks/edits are safe).
-      dragZone?.addEventListener('mousedown', e => {
+      // Node moves via the drag-zone grip (so header clicks/edits are safe).
+      dragZone?.addEventListener('pointerdown', e => {
         if (e.button !== 0) return;
         e.preventDefault();
         e.stopPropagation();
         this.startNodeDrag(node, step, e);
+      });
+
+      // …and by the rest of the header on touch screens, where a 20px grip is
+      // a cruel target. Buttons / title / badge / pins keep their own handlers.
+      header.addEventListener('pointerdown', e => {
+        if (e.button !== 0) return;
+        if (e.pointerType !== 'touch') return;
+        if (e.target.closest('.bp-node-actions, [data-bp-action], .bp-node-title, .bp-logic-badge, .bp-pin')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        this.startNodeDrag(node, step, e);
+      });
+
+      // Tap to select on touch (reveals the row of node actions); tapping
+      // elsewhere on the canvas clears the selection.
+      node.addEventListener('pointerup', e => {
+        if (e.pointerType !== 'touch') return;
+        if (e.target.closest('.bp-node-actions, [data-bp-action], .bp-comp, .bp-pin, .bp-logic-badge')) return;
+        this.selected = new Set([step.id]);
+        this.selectedGroups.clear();
+        this.selectedComments.clear();
+        this.applySelectionStyles();
       });
     }
 
@@ -1559,34 +1657,30 @@
       moveSet.groupIds.forEach(gid => startGroupRect.set(gid, { ...this.groupRect(gid) }));
       let moved = false;
 
-      const onMove = ev => {
-        const dx = (ev.clientX - startMouse.x) / this.view.scale;
-        const dy = (ev.clientY - startMouse.y) / this.view.scale;
-        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
-        this.translateSelection(moveSet, startNode, startComment, startGroupRect, dx, dy);
-        if (!multi) this.highlightDropGroup(node);
-        this.scheduleWireRedraw();
-      };
-
-      const onUp = () => {
-        moveSet.stepIds.forEach(id => this.nodeEls.get(id)?.classList.remove('is-dragging'));
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-        this.world.querySelectorAll('.bp-group.is-drop-target')
-          .forEach(g => g.classList.remove('is-drop-target'));
-        if (moved) {
-          let changed = false;
-          // Membership re-evaluation only for single-node drags (keeps multi-move simple & predictable).
-          if (!multi) changed = this.commitMembershipFromPosition(step.id, node);
-          // Persist any auto-grown frames so the box keeps the new size.
-          this.groupEls.forEach((_, gid) => this.syncGroupRect(gid));
-          this.editor.dirty.markDirty?.();
-          if (changed) this.editor.renderAll();
+      this.startPointerDrag(e, {
+        move: ev => {
+          const dx = (ev.clientX - startMouse.x) / this.view.scale;
+          const dy = (ev.clientY - startMouse.y) / this.view.scale;
+          if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
+          this.translateSelection(moveSet, startNode, startComment, startGroupRect, dx, dy);
+          if (!multi) this.highlightDropGroup(node);
+          this.scheduleWireRedraw();
+        },
+        end: () => {
+          moveSet.stepIds.forEach(id => this.nodeEls.get(id)?.classList.remove('is-dragging'));
+          this.world.querySelectorAll('.bp-group.is-drop-target')
+            .forEach(g => g.classList.remove('is-drop-target'));
+          if (moved) {
+            let changed = false;
+            // Membership re-evaluation only for single-node drags (keeps multi-move simple & predictable).
+            if (!multi) changed = this.commitMembershipFromPosition(step.id, node);
+            // Persist any auto-grown frames so the box keeps the new size.
+            this.groupEls.forEach((_, gid) => this.syncGroupRect(gid));
+            this.editor.dirty.markDirty?.();
+            if (changed) this.editor.renderAll();
+          }
         }
-      };
-
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      });
     }
 
     nodeCenter(node) {
@@ -1633,7 +1727,7 @@
     bindCanvasEvents() {
       // Background drag: Shift (or active "select" mode) = marquee selection;
       // otherwise pan the canvas.
-      this.canvas.addEventListener('mousedown', e => {
+      this.canvas.addEventListener('pointerdown', e => {
         if (e.button !== 0 && e.button !== 1) return;
         // A comment's BODY area must NOT block panning/marquee (it's the back
         // layer). Only its interactive controls (move-head, resize, buttons or
@@ -1655,20 +1749,59 @@
         this.canvas.classList.add('is-panning');
         const start = { x: e.clientX, y: e.clientY };
         const startView = { x: this.view.x, y: this.view.y };
-        const onMove = ev => {
-          this.view.x = startView.x + (ev.clientX - start.x);
-          this.view.y = startView.y + (ev.clientY - start.y);
-          this.applyTransform();
-        };
-        const onUp = () => {
-          this.canvas.classList.remove('is-panning');
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
-          this.saveView();
-        };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
+        let moved = 0;
+        this.startPointerDrag(e, {
+          move: ev => {
+            moved = Math.max(moved, Math.abs(ev.clientX - start.x) + Math.abs(ev.clientY - start.y));
+            this.view.x = startView.x + (ev.clientX - start.x);
+            this.view.y = startView.y + (ev.clientY - start.y);
+            this.applyTransform();
+          },
+          end: (ev, cancelled) => {
+            this.canvas.classList.remove('is-panning');
+            this.saveView();
+            // A tap (no movement) on empty canvas = double-tap-to-create on touch.
+            if (!cancelled && ev && ev.pointerType === 'touch' && moved < 8) {
+              this.registerCanvasTap(ev.clientX, ev.clientY);
+            }
+          }
+        });
       });
+
+      // ---- two-finger pinch zoom (phones / tablets) -------------
+      // One finger pans or drags (handled above), two fingers zoom the camera
+      // around their midpoint — the gesture people expect from a node graph.
+      const touches = new Map();
+      const pinchPoints = () => Array.from(touches.values());
+      const onPinchMove = ev => {
+        if (!touches.has(ev.pointerId)) return;
+        touches.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+        if (this._pinch && touches.size >= 2) {
+          if (ev.cancelable) ev.preventDefault();
+          this._pinch.update(pinchPoints());
+        }
+      };
+      // Capture phase on purpose: nodes/components stop pointerdown from
+      // bubbling, and the pinch must still see the second finger.
+      this.canvas.addEventListener('pointerdown', e => {
+        if (e.pointerType !== 'touch') return;
+        touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (touches.size === 2) {
+          // A second finger means the user wants to zoom: abort whatever
+          // one-finger drag started a moment ago.
+          this._dragCancel?.();
+          this.canvas.classList.remove('is-panning');
+          this.beginPinch(pinchPoints());
+        }
+      }, { capture: true, passive: true });
+      this.canvas.addEventListener('pointermove', onPinchMove, { capture: true, passive: false });
+      const dropTouch = e => {
+        touches.delete(e.pointerId);
+        if (touches.size < 2) this.endPinch();
+      };
+      this.canvas.addEventListener('pointerup', dropTouch, true);
+      this.canvas.addEventListener('pointercancel', dropTouch, true);
+      window.addEventListener('blur', () => { touches.clear(); this.endPinch(); });
 
       this.canvas.addEventListener('wheel', e => {
         if (!this.active) return;
@@ -1689,6 +1822,53 @@
         // Open a small picker near the cursor instead of creating a step directly.
         this.openCreateMenu(e.clientX, e.clientY);
       });
+    }
+
+    // Double-tap on empty canvas opens the "what to add" picker (touch only —
+    // a touch double-tap does not always produce a dblclick event).
+    registerCanvasTap(clientX, clientY) {
+      const now = Date.now();
+      const last = this._lastTap;
+      if (last && now - last.t < 350 && Math.abs(last.x - clientX) < 28 && Math.abs(last.y - clientY) < 28) {
+        this._lastTap = null;
+        this.openCreateMenu(clientX, clientY);
+        return;
+      }
+      this._lastTap = { t: now, x: clientX, y: clientY };
+    }
+
+    // ---- pinch zoom -------------------------------------------
+    beginPinch(points) {
+      if (!points || points.length < 2) return;
+      const [a, b] = points;
+      const rect = this.canvas.getBoundingClientRect();
+      const startDist = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+      const startScale = this.view.scale;
+      // Keep the world point under the pinch midpoint pinned to the midpoint.
+      const midX = (a.x + b.x) / 2;
+      const midY = (a.y + b.y) / 2;
+      const wx = (midX - rect.left - this.view.x) / startScale;
+      const wy = (midY - rect.top - this.view.y) / startScale;
+      this._pinch = {
+        update: pts => {
+          if (!pts || pts.length < 2) return;
+          const [p, q] = pts;
+          const dist = Math.max(1, Math.hypot(p.x - q.x, p.y - q.y));
+          const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, startScale * (dist / startDist)));
+          const cx = (p.x + q.x) / 2;
+          const cy = (p.y + q.y) / 2;
+          this.view.scale = scale;
+          this.view.x = cx - rect.left - wx * scale;
+          this.view.y = cy - rect.top - wy * scale;
+          this.applyTransform();
+        }
+      };
+    }
+
+    endPinch() {
+      if (!this._pinch) return;
+      this._pinch = null;
+      this.saveView();
     }
 
     // ---- "what to add" picker (double-click on empty canvas) ----
@@ -1731,18 +1911,18 @@
       };
 
       menu.querySelectorAll('[data-create]').forEach(btn => {
-        btn.addEventListener('mousedown', ev => ev.stopPropagation());
+        btn.addEventListener('pointerdown', ev => ev.stopPropagation());
         btn.addEventListener('click', ev => { ev.stopPropagation(); act(btn.dataset.create); });
       });
 
       // dismiss on outside click / escape / scroll-zoom
       this._createMenuDismiss = (ev) => {
         if(ev.type === 'keydown' && ev.key !== 'Escape') return;
-        if(ev.type === 'mousedown' && menu.contains(ev.target)) return;
+        if((ev.type === 'pointerdown' || ev.type === 'mousedown') && menu.contains(ev.target)) return;
         this.closeCreateMenu();
       };
       setTimeout(() => {
-        document.addEventListener('mousedown', this._createMenuDismiss, true);
+        document.addEventListener('pointerdown', this._createMenuDismiss, true);
         document.addEventListener('keydown', this._createMenuDismiss, true);
         this.canvas.addEventListener('wheel', this._createMenuDismiss, { passive: true });
       }, 0);
@@ -1751,7 +1931,7 @@
     closeCreateMenu() {
       if(this._createMenu) { this._createMenu.remove(); this._createMenu = null; }
       if(this._createMenuDismiss) {
-        document.removeEventListener('mousedown', this._createMenuDismiss, true);
+        document.removeEventListener('pointerdown', this._createMenuDismiss, true);
         document.removeEventListener('keydown', this._createMenuDismiss, true);
         this.canvas.removeEventListener('wheel', this._createMenuDismiss);
         this._createMenuDismiss = null;
@@ -1813,25 +1993,23 @@
         );
       };
 
-      const update = ev => {
-        const cur = this.clientToWorld(ev.clientX, ev.clientY);
-        const x = Math.min(startW.x, cur.x), y = Math.min(startW.y, cur.y);
-        const w = Math.abs(cur.x - startW.x), h = Math.abs(cur.y - startW.y);
-        if (w > 2 || h > 2) moved = true;
-        box.style.left = `${x}px`; box.style.top = `${y}px`;
-        box.style.width = `${w}px`; box.style.height = `${h}px`;
-        hitTest({ x, y, w, h });
-      };
-
-      const onUp = ev => {
-        document.removeEventListener('mousemove', update);
-        document.removeEventListener('mouseup', onUp);
-        const cur = this.clientToWorld(ev.clientX, ev.clientY);
-        const x = Math.min(startW.x, cur.x), y = Math.min(startW.y, cur.y);
-        const w = Math.abs(cur.x - startW.x), h = Math.abs(cur.y - startW.y);
-        box.remove();
-        this.world.querySelectorAll('.is-marquee-hit').forEach(n => n.classList.remove('is-marquee-hit'));
-        if (moved) {
+      this.startPointerDrag(e, {
+        move: ev => {
+          const cur = this.clientToWorld(ev.clientX, ev.clientY);
+          const x = Math.min(startW.x, cur.x), y = Math.min(startW.y, cur.y);
+          const w = Math.abs(cur.x - startW.x), h = Math.abs(cur.y - startW.y);
+          if (w > 2 || h > 2) moved = true;
+          box.style.left = `${x}px`; box.style.top = `${y}px`;
+          box.style.width = `${w}px`; box.style.height = `${h}px`;
+          hitTest({ x, y, w, h });
+        },
+        end: (ev, cancelled) => {
+          box.remove();
+          this.world.querySelectorAll('.is-marquee-hit').forEach(n => n.classList.remove('is-marquee-hit'));
+          if (cancelled || !ev || !moved) return;
+          const cur = this.clientToWorld(ev.clientX, ev.clientY);
+          const x = Math.min(startW.x, cur.x), y = Math.min(startW.y, cur.y);
+          const w = Math.abs(cur.x - startW.x), h = Math.abs(cur.y - startW.y);
           forEachHit({ x, y, w, h },
             (node, id, hit) => { if (hit) this.selected.add(id); },
             (frame, gid, hit) => { if (hit) this.selectedGroups.add(gid); },
@@ -1839,11 +2017,8 @@
           );
           this.applySelectionStyles();
         }
-        // single click without drag already cleared selection in mousedown
-      };
-
-      document.addEventListener('mousemove', update);
-      document.addEventListener('mouseup', onUp);
+      });
+      // A single tap without dragging already cleared the selection in pointerdown.
     }
 
     rectsIntersect(a, b) {
@@ -1943,12 +2118,10 @@
         this.drawMinimap();
         this.saveView();
       };
-      let dragging = false;
-      this.minimap.addEventListener('mousedown', e => {
-        dragging = true; navigateTo(e.clientX, e.clientY); e.preventDefault();
-        const mm = ev => dragging && navigateTo(ev.clientX, ev.clientY);
-        const mu = () => { dragging = false; document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); };
-        document.addEventListener('mousemove', mm); document.addEventListener('mouseup', mu);
+      this.minimap.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        navigateTo(e.clientX, e.clientY);
+        this.startPointerDrag(e, { move: ev => navigateTo(ev.clientX, ev.clientY) });
       });
     }
     toggleMinimap() {
