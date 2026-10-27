@@ -24,6 +24,18 @@
     mount(root, { fields, data, fieldOptions, onChange } = {}) {
       const state = { data: data || {} };
 
+      // A form root can be mounted more than once (DB editors re-mount the form
+      // on every record switch). Listeners left by a previous mount would keep
+      // writing to a stale state object and, after render() replaces the event
+      // target's DOM, would miss events on the new DOM. Remove them first so
+      // re-mounting on the same root is always safe.
+      const prevHandlers = root.__editorFormHandlers;
+      if (prevHandlers) {
+        root.removeEventListener('input', prevHandlers.input);
+        root.removeEventListener('change', prevHandlers.change);
+        root.removeEventListener('click', prevHandlers.click);
+      }
+
       const render = () => {
         const renderer = window.EditorCore?.FieldRenderer;
         if (!renderer) {
@@ -80,6 +92,7 @@
       root.addEventListener('input', onFieldEvent);
       root.addEventListener('change', onFieldEvent);
       root.addEventListener('click', onListClick);
+      root.__editorFormHandlers = { input: onFieldEvent, change: onFieldEvent, click: onListClick };
 
       const api = {
         render,
@@ -92,6 +105,8 @@
           root.removeEventListener('input', onFieldEvent);
           root.removeEventListener('change', onFieldEvent);
           root.removeEventListener('click', onListClick);
+          const handlers = root.__editorFormHandlers;
+          if (handlers && handlers.input === onFieldEvent) delete root.__editorFormHandlers;
         },
       };
 
