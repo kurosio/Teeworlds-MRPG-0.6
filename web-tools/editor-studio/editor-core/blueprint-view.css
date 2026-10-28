@@ -995,3 +995,226 @@ html[data-editor-theme="light"] .bp-create-menu button:hover {
 html[data-editor-theme="light"] .bp-create-menu button:hover i {
   color: #1d4ed8;
 }
+
+/* ============================================================
+   v4: scenario events (execution blocks)
+   Every event (`on_end`, `on_recieve_objectives`, …) is started by
+   the server as its own scenario, so steps of one event can never
+   flow into another. The UI makes that separation visible: each
+   event owns a colour that tints its group frame, its nodes and the
+   dashed "next step" arrows, and links never cross an event.
+   ============================================================ */
+
+/* ---- group frames: one tint per event --------------------- */
+.bp-group.is-event {
+  border-color: color-mix(in srgb, var(--bp-event-color, #64748b) 55%, transparent);
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--bp-event-color, #64748b) 13%, transparent) 0%,
+      color-mix(in srgb, var(--bp-event-color, #64748b) 4%, transparent) 34px,
+      transparent 100%),
+    rgba(120, 132, 150, 0.07);
+}
+.bp-group.is-event .bp-group-header {
+  border-bottom: 1px solid color-mix(in srgb, var(--bp-event-color, #64748b) 35%, transparent);
+}
+.bp-group.is-event .bp-group-flag { color: var(--bp-event-color, #64748b); }
+/* The event selector doubles as the event's label — colour it, so the group
+   header reads as one block: icon + name + event. */
+.bp-group.is-event .bp-group-event {
+  color: var(--bp-event-color, var(--bp-text));
+  font-weight: 600;
+  border-color: color-mix(in srgb, var(--bp-event-color, #64748b) 50%, transparent);
+  background: color-mix(in srgb, var(--bp-event-color, #64748b) 14%, rgba(0, 0, 0, .28));
+}
+
+/* ---- nodes: accent + "this is where the event starts" ----- */
+.bp-node.has-event {
+  border-color: color-mix(in srgb, var(--bp-event-color, #64748b) 42%, var(--bp-node-border, rgba(255,255,255,.14)));
+}
+.bp-node.has-event .bp-node-header {
+  box-shadow: inset 3px 0 0 var(--bp-event-color, #64748b);
+}
+.bp-node-event {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 118px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  color: var(--bp-event-color, #cbd5e1);
+  background: color-mix(in srgb, var(--bp-event-color, #64748b) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bp-event-color, #64748b) 50%, transparent);
+}
+.bp-node-event span { overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- wiring across events is impossible: show it ---------- */
+/* Nodes of another event while a wire is being dragged. */
+.bp-node.is-event-mismatch { opacity: .35; filter: grayscale(.4); }
+.bp-node.is-drop-blocked {
+  opacity: 1;
+  border-color: var(--bp-wire-false) !important;
+  box-shadow: 0 0 0 2px var(--bp-wire-false);
+  cursor: not-allowed;
+}
+@keyframes bp-blocked-flash {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 124, 135, 0); }
+  30%      { box-shadow: 0 0 0 3px var(--bp-wire-false, #ff7c87); }
+}
+.bp-node.is-blocked-flash { animation: bp-blocked-flash .7s ease; }
+
+/* A stored link that points into another event: data exists, wire does not. */
+.bp-pin-dot.is-cross-event::before {
+  border-color: var(--bp-wire-false, #ff7c87);
+  background: transparent;
+}
+.bp-pin-dot.is-cross-event { transform: scale(1.15); }
+.bp-comp.is-cross-event { border-left-color: var(--bp-wire-false, #ff7c87) !important; }
+.bp-cross-event-tag {
+  color: var(--bp-wire-false, #ff7c87);
+  font-size: 10px;
+  margin-left: 4px;
+  cursor: help;
+}
+
+/* ---- event legend (top-left of the canvas) ---------------- */
+.bp-event-legend {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 21;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: min(560px, calc(100% - 24px));
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--editor-toolbar-bg, rgba(13, 18, 26, .86));
+  border: 1px solid rgba(255, 255, 255, .1);
+}
+.bp-event-legend.is-empty { display: none; }
+.bp-event-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  max-width: 190px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--bp-text-muted, #9aa8bc);
+  background: color-mix(in srgb, var(--event-color, #64748b) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--event-color, #64748b) 45%, transparent);
+  transition: background .12s ease, color .12s ease;
+}
+.bp-event-chip i { color: var(--event-color, #94a3b8); font-size: 11px; }
+.bp-event-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bp-event-chip b {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: .8;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .28);
+}
+.bp-event-chip:hover { color: var(--bp-text, #edf3fb); background: color-mix(in srgb, var(--event-color, #64748b) 30%, transparent); }
+.bp-event-chip.is-active { color: #0b0f14; background: var(--event-color, #94a3b8); }
+.bp-event-chip.is-active i, .bp-event-chip.is-active b { color: #0b0f14; }
+.bp-event-chip.is-active b { background: rgba(255, 255, 255, .45); }
+
+@media (max-width: 767px) {
+  /* The canvas is `touch-action: none`, so the chips may not scroll with a
+     finger — they wrap instead and stay tappable. */
+  .bp-event-legend {
+    top: 6px; left: 6px; right: 6px;
+    max-width: none;
+    flex-wrap: wrap;
+    max-height: 34vh;
+    overflow: hidden;
+    padding: 4px;
+    gap: 4px;
+  }
+  .bp-event-chip { flex: 0 1 auto; max-width: 48%; padding: 4px 8px; }
+}
+
+@media (pointer: coarse) {
+  .bp-event-chip { min-height: 26px; }
+}
+
+html[data-editor-theme="light"] .bp-event-legend {
+  background: rgba(255, 255, 255, .94);
+  border-color: rgba(15, 23, 42, .12);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, .10);
+}
+html[data-editor-theme="light"] .bp-event-chip b { background: rgba(15, 23, 42, .10); }
+html[data-editor-theme="light"] .bp-event-chip.is-active b { background: rgba(255, 255, 255, .5); }
+html[data-editor-theme="light"] .bp-group.is-event {
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--bp-event-color, #64748b) 16%, transparent) 0%,
+      color-mix(in srgb, var(--bp-event-color, #64748b) 5%, transparent) 34px,
+      transparent 100%),
+    rgba(100, 116, 139, 0.06);
+}
+/* Event chips are tinted pills: on a light canvas the accent colour alone is
+   too pale for text, so darken the label. */
+html[data-editor-theme="light"] .bp-node-event,
+html[data-editor-theme="light"] .nav-event-badge,
+html[data-editor-theme="light"] .step-group-event-chip {
+  color: color-mix(in srgb, var(--event-color, var(--bp-event-color, #334155)) 60%, #0f172a);
+  background: color-mix(in srgb, var(--event-color, var(--bp-event-color, #64748b)) 14%, #ffffff);
+}
+html[data-editor-theme="light"] .bp-group.is-event .bp-group-event { color: color-mix(in srgb, var(--bp-event-color, #334155) 60%, #0f172a); }
+
+/* ============================================================
+   Step list / navigator: the same event colours
+   ============================================================ */
+.step-group-heading { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.step-group-with-event { border-left: 3px solid color-mix(in srgb, var(--event-color, #64748b) 65%, transparent); }
+.step-group-event-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--event-color, #94a3b8);
+  background: color-mix(in srgb, var(--event-color, #64748b) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--event-color, #64748b) 45%, transparent);
+}
+.step-group-event-chip i { font-size: 10px; }
+
+.nav-event-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 150px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--event-color, #94a3b8);
+  background: color-mix(in srgb, var(--event-color, #64748b) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--event-color, #64748b) 45%, transparent);
+}
+.nav-event-badge span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-group-wrapper.has-event { border-left: 3px solid color-mix(in srgb, var(--event-color, #64748b) 60%, transparent); }
+.nav-event-select { border-color: color-mix(in srgb, var(--event-color, #64748b) 55%, transparent) !important; }
+
+/* A group frame that cannot accept the wire being dragged (another event). */
+.bp-group.is-drop-blocked {
+  border-color: var(--bp-wire-false, #ff7c87) !important;
+  background: color-mix(in srgb, var(--bp-wire-false, #ff7c87) 10%, transparent);
+}

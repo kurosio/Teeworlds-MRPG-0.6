@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scenario graph — events preview</title>
+
+  <link rel="stylesheet" href="../vendor/fontawesome/css/all.min.css" />
+  <link rel="stylesheet" href="../editor-core/editor-theme.css" />
+  <link rel="stylesheet" href="../editor-core/editor-template.css" />
+  <link rel="stylesheet" href="../editor-core/blueprint-view.css" />
+
+  <style>
+    /* Standalone showcase for the scenario graph WITHOUT a database: it boots
+       the real BlueprintView over a fake editor, so the event separation
+       (colours, legend, "no wire between events") can be checked by eye. */
+    body.preview-page {
+      margin: 0;
+      background: var(--editor-bg);
+      color: var(--editor-text);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    .preview-head { padding: 18px 22px 10px; max-width: 980px; }
+    .preview-head h1 { margin: 0 0 6px; font-size: 19px; }
+    .preview-head p { margin: 0 0 8px; color: var(--editor-text-muted); font-size: 13px; line-height: 1.55; }
+    .preview-notes { margin: 0; padding-left: 18px; color: var(--editor-text-muted); font-size: 12.5px; line-height: 1.7; }
+    .preview-notes code { font-family: ui-monospace, Menlo, monospace; }
+    #bp-canvas { height: 620px; }
+    @media (max-width: 767px) { #bp-canvas { height: 70vh; } }
+  </style>
+</head>
+<body class="preview-page bp-mode">
+  <div class="preview-head">
+    <h1>Scenario graph — one trigger, one flow</h1>
+    <p>
+      Every event block (<code>on_end</code>, <code>on_recieve_objectives</code>, <code>on_equip</code>, …)
+      is started by the server as its own scenario, so a step can only link to steps of the same event.
+      The graph paints each event with its own colour, lists them in the legend (click a chip to focus one)
+      and never draws a wire across a boundary — the dashed “next step” arrows stop at the end of their block.
+    </p>
+  </div>
+
+  <!-- The real canvas markup, same ids as in scenario-editor.html -->
+  <div id="bp-canvas">
+    <div class="bp-toolbar">
+      <button class="bp-tool-btn" id="bp-fit" title="Fit to screen"><i class="fa-solid fa-expand"></i></button>
+      <button class="bp-tool-btn" id="bp-relayout" title="Auto layout"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+    </div>
+    <div id="bp-world"><svg id="bp-wires"></svg></div>
+    <div id="bp-event-legend" class="bp-event-legend" title="Scenario events — click a chip to focus it"></div>
+    <div class="bp-legend">
+      <span><i style="background: var(--bp-wire-exec)"></i> Flow</span>
+      <span><i style="background: var(--bp-wire-true)"></i> TRUE</span>
+      <span><i style="background: var(--bp-wire-false)"></i> FALSE</span>
+      <span><i class="is-dash"></i> Sequential</span>
+    </div>
+  </div>
+
+  <script src="../editor-core/scenario-events.js"></script>
+  <script src="../editor-core/blueprint-view.js"></script>
+  <script>
+    // ---- sample scenario -------------------------------------------------
+    // Two steps of `on_end`, two of `on_recieve_objectives`, one of `on_equip`
+    // and a base (no event) step. `step_b` follows `step_a` in list order, but
+    // they belong to different events — the old graph drew a dashed arrow
+    // between them, the new one stops at the block boundary.
+    const EVENTS = {
+      general: 'Standard',
+      on_recieve_objectives: 'On objectives received',
+      on_complete_objectives: 'On objectives completed',
+      on_end: 'On step end',
+      on_got: 'On item received',
+      on_lost: 'On item lost',
+      on_use: 'On item used',
+      on_unequip: 'On item unequipped',
+      on_equip: 'On item equipped'
+    };
+
+    const STEPS = [
+      { id: 'step_1', components: [{ component_id: 'c1', type: 'message' }, { component_id: 'c2', type: 'follow_camera' }] },
+      { id: 'step_2', components: [{ component_id: 'c3', type: 'message' }] },
+      { id: 'step', components: [{ component_id: 'c4', type: 'follow_camera' }] },
+      { id: 'reward', components: [{ component_id: 'c5', type: 'message' }] },
+      { id: 'glow', components: [{ component_id: 'c6', type: 'message' }] },
+      { id: 'base_step', components: [{ component_id: 'c7', type: 'message' }] }
+    ];
+
+    const GROUPS = [
+      { id: 'g_end', name: 'v1', event_key: 'on_end', steps: ['step_1', 'step_2'] },
+      { id: 'g_obj', name: 'v2', event_key: 'on_recieve_objectives', steps: ['step'] },
+      { id: 'g_reward', name: 'v3', event_key: 'on_recieve_objectives', steps: ['reward'] },
+      { id: 'g_equip', name: 'v4', event_key: 'on_equip', steps: ['glow'] },
+      { id: 'g_base', name: 'v5', steps: ['base_step'] }
+    ];
+
+    const COMPONENT_NAMES = {
+      message: { name: 'Message', icon: 'fa-solid fa-comment', class: 'info', sum: '“Here you can …”' },
+      follow_camera: { name: 'Camera follow', icon: 'fa-solid fa-video', class: 'camera', sum: 'To the point (2 …)' }
+    };
+
+    const scope = new Map();
+    GROUPS.forEach((g) => (g.steps || []).forEach((id) => scope.set(id, g.event_key || '')));
+
+    const editor = {
+      scenarioData: {
+        steps: STEPS,
+        editor_data: {
+          groups: GROUPS,
+          ungrouped_steps: [],
+          blueprint: {
+            positions: {
+              step_1: { x: 80, y: 90 }, step_2: { x: 80, y: 250 },
+              step: { x: 420, y: 90 }, reward: { x: 420, y: 220 },
+              glow: { x: 760, y: 90 }, base_step: { x: 760, y: 250 }
+            }
+          }
+        }
+      },
+      scenarioEvents: EVENTS,
+      componentTypes: COMPONENT_NAMES,
+      allComponentTypes: COMPONENT_NAMES,
+      dirty: { markDirty() {} },
+      getComponentLinkFields: () => ['next_step_id'],
+      getComponentLinks: () => [],
+      getComponentSummary: (comp) => (COMPONENT_NAMES[comp.type] || {}).sum || '',
+      findStep: (id) => STEPS.find((s) => s.id === id) || null,
+      findComponent: () => null,
+      getCurrentViewState: () => ({
+        groups: GROUPS.map((g) => ({ ...g, collapsed: false })),
+        ungroupedSteps: []
+      }),
+      isKnownScenarioEvent: (key) => typeof key === 'string' && key !== 'general'
+        && Object.prototype.hasOwnProperty.call(EVENTS, key),
+      getGroupEventLabel: (key) => (EVENTS[key] || key),
+      getStepEventKey: (id) => scope.get(id) || '',
+      getEventStyle(eventKey) {
+        const meta = window.EditorCore.ScenarioEvents.style(eventKey, EVENTS);
+        return {
+          ...meta,
+          label: meta.isEvent ? this.getGroupEventLabel(eventKey) : 'No event'
+        };
+      },
+      showToast: (msg, type) => window.EditorCore?.utils?.showToast
+        ? window.EditorCore.utils.showToast(msg, type)
+        : console.log(`[${type}] ${msg}`),
+      renderAll: () => {},
+      switchViewMode: () => {},
+      addNewStepAt: () => null,
+      addNewGroup: () => {},
+      moveStepToGroup: () => {},
+      openEditModal: () => {},
+      handleDelete: () => {},
+      openDeleteGroupModal: () => {},
+      renameGroupSilent: () => {},
+      setGroupEventKey: () => {},
+      showAddComponentMenu: () => {},
+      generateUUID: () => String(Math.random()).slice(2)
+    };
+
+    const canvas = document.getElementById('bp-canvas');
+    const view = new window.EditorCore.BlueprintView(editor, canvas);
+    view.show();
+    // Frames are laid out on first paint; fit once more so nothing is clipped.
+    requestAnimationFrame(() => view.fitToView());
+
+    document.getElementById('bp-fit').addEventListener('click', () => view.fitToView());
+    document.getElementById('bp-relayout').addEventListener('click', () => view.autoLayoutAll());
+  </script>
+</body>
+</html>
