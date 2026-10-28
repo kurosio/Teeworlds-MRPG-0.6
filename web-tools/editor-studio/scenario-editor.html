@@ -11,6 +11,7 @@
 
     <!-- Blueprint (Unreal-style) graph view -->
     <link rel="stylesheet" href="editor-core/blueprint-view.css">
+    <script src="editor-core/scenario-events.js"></script>
     <script src="editor-core/blueprint-view.js"></script>
     
     <style>
@@ -718,6 +719,9 @@
                 <div id="bp-world">
                     <svg id="bp-wires"></svg>
                 </div>
+                <!-- One clickable chip per scenario event: it shows the colour every
+                     group / node of that event uses and frames the event on click. -->
+                <div id="bp-event-legend" class="bp-event-legend" title="Scenario events — click a chip to focus it"></div>
                 <div class="bp-legend">
                     <span><i style="background: var(--bp-wire-exec)"></i> Flow</span>
                     <span><i style="background: var(--bp-wire-true)"></i> TRUE</span>
@@ -1388,6 +1392,99 @@
                 return this.isKnownScenarioEvent(eventKey) ? (this.scenarioEvents[eventKey] || eventKey) : 'No event';
             }
 
+            // ==================================================
+            // SCENARIO EVENTS (execution blocks)
+            // ==================================================
+            // The server starts every event block (`on_end`, `on_recieve_objectives`, …)
+            // as its own, independent scenario. Steps of one block therefore can never
+            // jump into steps of another one — such a link is dead data. The editor
+            // shows that separation everywhere (colour + icon per event) and refuses
+            // to create links that cross an event boundary.
+
+            // One colour/icon per event so the same block always looks the same in
+            // the step list, the navigator and the graph. The palette itself lives
+            // in editor-core/scenario-events.js (shared with the graph preview).
+            getEventStyles() {
+                return window.EditorCore?.ScenarioEvents?.COLORS || {};
+            }
+
+            getEventStyle(eventKey) {
+                const isEvent = this.isKnownScenarioEvent(eventKey);
+                const meta = window.EditorCore?.ScenarioEvents
+                    ? window.EditorCore.ScenarioEvents.style(eventKey, this.scenarioEvents)
+                    : { isEvent, color: '#64748b', icon: 'fa-solid fa-layer-group' };
+                return {
+                    key: isEvent ? eventKey : '',
+                    isEvent,
+                    color: meta.color,
+                    icon: meta.icon,
+                    label: isEvent ? this.getGroupEventLabel(eventKey) : 'No event'
+                };
+            }
+
+            // The event block a step is executed in: the event of its group, or the
+            // base block ('') for ungrouped steps and for groups without an event.
+            // Memoised because the graph asks this once per wire on every redraw;
+            // `rebuildDataIndexes()` (called by renderAll) drops the cache.
+            getStepEventKey(stepId) {
+                if (!this._stepEventKeyCache) {
+                    const cache = new Map();
+                    const groups = Array.isArray(this.scenarioData?.editor_data?.groups)
+                        ? this.scenarioData.editor_data.groups
+                        : [];
+                    groups.forEach((group) => {
+                        const key = this.isKnownScenarioEvent(group?.event_key) ? group.event_key : '';
+                        (group?.steps || []).forEach((id) => cache.set(id, key));
+                    });
+                    this._stepEventKeyCache = cache;
+                }
+                return this._stepEventKeyCache.get(stepId) || '';
+            }
+
+            getStepEventStyle(stepId) {
+                return this.getEventStyle(this.getStepEventKey(stepId));
+            }
+
+            // Links are only meaningful inside one event block.
+            stepsShareEvent(fromStepId, toStepId) {
+                return this.getStepEventKey(fromStepId) === this.getStepEventKey(toStepId);
+            }
+
+            // Every link that crosses an event boundary (ignored by the editor,
+            // still present in the data — the user can remove it from the graph).
+            getCrossEventLinks() {
+                const broken = [];
+                (this.scenarioData?.steps || []).forEach((step) => {
+                    const fromKey = this.getStepEventKey(step.id);
+                    (step.components || []).filter(Boolean).forEach((comp) => {
+                        this.getComponentLinks(comp).forEach((link) => {
+                            if (this.getStepEventKey(link.targetId) !== fromKey) {
+                                broken.push({
+                                    stepId: step.id, componentId: comp.component_id,
+                                    field: link.field, targetId: link.targetId,
+                                    fromKey, toKey: this.getStepEventKey(link.targetId)
+                                });
+                            }
+                        });
+                    });
+                });
+                return broken;
+            }
+
+            // Explain dead links right after the action that created them
+            // (dragging a step into another event, changing a group's event).
+            reportCrossEventLinks() {
+                this._stepEventKeyCache = null;
+                const broken = this.getCrossEventLinks();
+                if (broken.length === 0) return 0;
+                const pair = broken[0];
+                const from = this.getEventStyle(pair.fromKey).label;
+                const to = this.getEventStyle(pair.toKey).label;
+                const more = broken.length > 1 ? ` (+${broken.length - 1} more)` : '';
+                this.showToast(`Link ignored: «${from}» → «${to}» are different events.${more}`, 'warning');
+                return broken.length;
+            }
+
             getComponentTypesByMode(mode) {
                 const modeConfig = this.scenarioModes[mode];
                 if (!modeConfig || !Array.isArray(modeConfig.componentTypes)) {
@@ -1668,7 +1765,7 @@
                 this.moreBtn?.addEventListener('click', () => this.toggleHeaderExtras());
 
                 // Blueprint toolbar
-                this.bpControls.addStep?.addEventListener('click', () => this.addNewStepAt());
+                this.bpControls.addStep?.addEventListener('click', () => this.addStepFromGraph());
                 this.bpControls.addGroup?.addEventListener('click', () => this.addNewGroup());
                 this.bpControls.addComment?.addEventListener('click', () => this.addGraphComment());
                 this.bpControls.selectMode?.addEventListener('click', () => this.blueprint?.toggleSelectMode());
@@ -1818,10 +1915,22 @@
                     groupWrapper.className = 'step-group-container mb-8';
                     
                     if (!group.isDefault && group.steps.length > 0) {
+                        const eventStyle = this.getEventStyle(group.event_key);
                         const titleEl = document.createElement('h3');
-                        titleEl.className = 'text-center text-lg font-semibold editor-muted-text tracking-wider uppercase pt-4 pb-2 mb-4 border-b editor-hairline';
-                        titleEl.textContent = group.name;
+                        titleEl.className = 'text-center text-lg font-semibold editor-muted-text tracking-wider uppercase pt-4 pb-2 mb-4 border-b editor-hairline step-group-heading';
+                        titleEl.style.setProperty('--event-color', eventStyle.color);
+                        const eventChip = eventStyle.isEvent
+                            ? `<span class="step-group-event-chip" title="${EditorCore.utils.escapeHtml(`${eventStyle.label} (${group.event_key})`)}"><i class="${eventStyle.icon}"></i>${EditorCore.utils.escapeHtml(eventStyle.label)}</span>`
+                            : '';
+                        titleEl.innerHTML = `${eventChip}${EditorCore.utils.escapeHtml(group.name)}`;
                         groupWrapper.appendChild(titleEl);
+                        groupWrapper.dataset.eventKey = eventStyle.key;
+                        if (eventStyle.isEvent) {
+                            // Only event groups get the coloured edge: it marks the
+                            // boundary of a block the server runs on its own trigger.
+                            groupWrapper.style.setProperty('--event-color', eventStyle.color);
+                            groupWrapper.classList.add('step-group-with-event');
+                        }
                     }
 
                     const stepListContainer = document.createElement('div');
@@ -1971,6 +2080,26 @@
                 return newId;
             }
 
+            /**
+             * "+" on the graph toolbar. The step lands in the middle of the
+             * current view and joins the group under it — so a step created while
+             * looking at an event group belongs to that event (and can be linked
+             * to the rest of it) instead of silently starting a new base flow.
+             */
+            addStepFromGraph() {
+                const bp = this.ensureBlueprint();
+                if (!bp) { this.addNewStepAt(); return; }
+                const rect = bp.canvas.getBoundingClientRect();
+                const world = bp.clientToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
+                const group = bp.groupAtPoint(world.x, world.y);
+                const newId = this.addNewStepAt(world.x - 130, world.y - 40, {
+                    group: group || null,
+                    ungrouped: !group
+                });
+                if (newId) requestAnimationFrame(() => bp.focusStep?.(newId));
+                return newId;
+            }
+
             // Rename a group without a full re-render (used by inline graph editing).
             renameGroupSilent(groupId, newName) {
                 const groups = this.scenarioData.editor_data?.groups || [];
@@ -2009,6 +2138,9 @@
                 } else {
                     ed.ungrouped_steps.push(stepId);
                 }
+                // Moving a step into another event block can orphan its links.
+                this._stepEventKeyCache = null;
+                this.reportCrossEventLinks();
                 this.dirty.markDirty();
             }
 
@@ -2327,11 +2459,15 @@
                     });
 
                     if (this.isKnownScenarioEvent(group.event_key)) {
+                        const eventStyle = this.getEventStyle(group.event_key);
                         const eventBadge = document.createElement('span');
-                        eventBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full editor-primary-tint editor-primary-text border editor-primary-border';
-                        eventBadge.textContent = '(Event)';
-                        eventBadge.title = `${group.event_key} · ${this.getGroupEventLabel(group.event_key)}`;
+                        eventBadge.className = 'nav-event-badge';
+                        eventBadge.style.setProperty('--event-color', eventStyle.color);
+                        eventBadge.innerHTML = `<i class="${eventStyle.icon}"></i><span>${EditorCore.utils.escapeHtml(eventStyle.label)}</span>`;
+                        eventBadge.title = `${group.event_key} · ${eventStyle.label}`;
                         titleWrapper.appendChild(eventBadge);
+                        groupWrapper.style.setProperty('--event-color', eventStyle.color);
+                        groupWrapper.classList.add('has-event');
                     }
                 }
 
@@ -2343,8 +2479,9 @@
                     controls.className = 'nav-group-controls flex items-center gap-2';
 
                     const eventSelect = document.createElement('select');
-                    eventSelect.className = 'form-input text-xs h-7 min-w-[170px] max-w-[190px]';
-                    eventSelect.title = 'Group event type';
+                    eventSelect.className = 'form-input text-xs h-7 min-w-[170px] max-w-[190px] nav-event-select';
+                    eventSelect.style.setProperty('--event-color', this.getEventStyle(group.event_key).color);
+                    eventSelect.title = 'Event that runs this group — each event is a separate scenario';
                     const eventOptions = ['<option value="">No event</option>']
                         .concat(Object.entries(this.scenarioEvents)
                             .filter(([key]) => key !== 'general')
@@ -2526,9 +2663,15 @@
 
                 const fragment = document.createDocumentFragment();
                 this.scenarioData.steps.forEach(step => {
+                    const fromEvent = this.getStepEventKey(step.id);
                     (step.components || []).forEach(comp => {
                         if (!comp) return;
-                        this.getComponentLinks(comp).forEach((link) => this.drawSingleConnection(comp.component_id, link.targetId, fragment));
+                        // Steps of different events live in separate scenarios on the
+                        // server: an arrow between them would describe a transition
+                        // that can never happen, so it is not drawn at all.
+                        this.getComponentLinks(comp)
+                            .filter((link) => this.getStepEventKey(link.targetId) === fromEvent)
+                            .forEach((link) => this.drawSingleConnection(comp.component_id, link.targetId, fragment));
                     });
                 });
 
@@ -2966,11 +3109,15 @@
                 // Переходы к шагам — всегда одна строка на поле: подпись слева,
                 // список шагов справа. Сверху формы, до остальных настроек.
                 const navRows = [];
+                // A component can only jump to steps of its OWN event (the server
+                // runs every event as a separate scenario). The dropdown therefore
+                // lists that event's steps, labelled with the event name.
+                const eventScope = step ? this.getStepEventKey(step.id) : null;
                 const pushNavRow = (name, label, value, excludeStepId) => {
                     const stepSelect = document.createElement('select');
                     stepSelect.name = name;
                     stepSelect.className = renderOptions.classes.input;
-                    this.populateStepDropdown(stepSelect, value, excludeStepId);
+                    this.populateStepDropdown(stepSelect, value, excludeStepId, eventScope);
                     navRows.push(
                         `<div class="sc-modal-nav-row" data-field-path="${name}">` +
                         `<label class="sc-modal-nav-label" for="sc-nav-${name}">${label}:</label>` +
@@ -3657,6 +3804,8 @@
             rebuildDataIndexes() {
                 this.stepIndex = new Map();
                 this.componentStepIndex = new Map();
+                // Group membership / event keys may have changed → drop the memo.
+                this._stepEventKeyCache = null;
 
                 this.scenarioData.steps.forEach(step => {
                     this.stepIndex.set(step.id, step);
@@ -3714,8 +3863,32 @@
                 return newId;
             }
             generateUUID() { return EditorCore.utils.uuid(); }
-            populateStepDropdown(select, selectedValue, excludeId = null) {
-                select.innerHTML = `<option value="">-- Not selected --</option>` + this.scenarioData.steps.filter(s => s.id !== excludeId).map(s => `<option value="${s.id}" ${s.id === selectedValue ? 'selected' : ''}>${s.id}</option>`).join('');
+            /**
+             * Options for a link field. `eventKey` (when given, including the empty
+             * string of the base block) limits the list to steps of that event —
+             * a link into another event would never run. An already stored value
+             * from another event is kept in the list (and marked), so opening the
+             * form never silently rewrites the data.
+             */
+            populateStepDropdown(select, selectedValue, excludeId = null, eventKey = null) {
+                const all = this.scenarioData.steps.filter(s => s.id !== excludeId);
+                const options = eventKey === null
+                    ? all.slice()
+                    : all.filter(s => this.getStepEventKey(s.id) === eventKey);
+                if (selectedValue && !options.some(s => s.id === selectedValue)) {
+                    const current = all.find(s => s.id === selectedValue);
+                    if (current) options.push(current);
+                }
+                const optionLabel = (stepId) => {
+                    const style = this.getStepEventStyle(stepId);
+                    return style.isEvent ? `${stepId} · ${style.label}` : stepId;
+                };
+                select.innerHTML = `<option value="">-- Not selected --</option>` + options
+                    .map((s) => {
+                        const foreign = eventKey !== null && this.getStepEventKey(s.id) !== eventKey;
+                        return `<option value="${s.id}" ${s.id === selectedValue ? 'selected' : ''}>${optionLabel(s.id)}${foreign ? '  ⚠ other event' : ''}</option>`;
+                    })
+                    .join('');
             }
             validateAllStepIds() {
                 const ids = new Map();
@@ -3993,6 +4166,8 @@
                     delete group.event_key;
                 }
 
+                this._stepEventKeyCache = null;
+                this.reportCrossEventLinks();
                 this.renderAll();
                 this.dirty.markDirty();
             }

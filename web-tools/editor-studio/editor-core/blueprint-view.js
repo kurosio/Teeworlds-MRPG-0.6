@@ -217,6 +217,7 @@
         ? this.editor.getCurrentViewState()
         : { groups: [], ungroupedSteps: [] };
       this.viewState = vs;
+      this._scopeCache = new Map();     // event block per step, rebuilt on render
       this.stepGroup.clear();
       (vs.groups || []).forEach(g => (g.steps || []).forEach(id => this.stepGroup.set(id, g.id)));
       // flattened "list order" for implicit arrows
@@ -246,6 +247,7 @@
         this.renderEmpty();
         this.applyTransform();
         this.clearWires();
+        this.renderEventLegend();
         return;
       }
 
@@ -257,6 +259,7 @@
         // Empty graph but with comments: only comments to show.
         this.applyTransform();
         this.clearWires();
+        this.renderEventLegend();
         return;
       }
 
@@ -295,6 +298,7 @@
       });
       this.applyTransform();
       this.drawWires();
+      this.renderEventLegend();
       // prune selection of ids that no longer exist, then re-apply styles
       this.selected.forEach(id => { if (!this.nodeEls.has(id)) this.selected.delete(id); });
       this.selectedGroups.forEach(id => { if (!this.groupEls.has(id)) this.selectedGroups.delete(id); });
@@ -488,10 +492,20 @@
       const header = document.createElement('div');
       header.className = 'bp-group-header';
 
+      // The event of a group is the block the server runs it in — the frame is
+      // tinted with that event's colour (and the legend in the corner lists
+      // them), so two events never look like one continuous flow.
+      const eventStyle = this.eventStyle(group.event_key);
+      frame.style.setProperty('--bp-event-color', eventStyle.color);
+      frame.classList.add(eventStyle.isEvent ? 'is-event' : 'is-base');
+      frame.dataset.eventKey = eventStyle.key;
+      frame.title = `${group.name || 'Group'} — ${eventStyle.label}`;
+
       const flag = document.createElement('i');
-      const hasEvent = this.editor.isKnownScenarioEvent?.(group.event_key);
-      flag.className = `bp-group-flag fa-solid ${hasEvent ? 'fa-flag' : 'fa-flag-checkered'}`;
-      flag.title = hasEvent ? this.editor.getGroupEventLabel(group.event_key) : 'Group';
+      flag.className = `bp-group-flag ${eventStyle.icon}`;
+      flag.title = eventStyle.isEvent
+        ? `Event:  ${eventStyle.label}  (${group.event_key}) — its steps never link outside this event`
+        : 'Group without an event';
       header.appendChild(flag);
 
       const title = document.createElement('span');
@@ -519,7 +533,7 @@
         .concat(Object.entries(this.editor.scenarioEvents || {})
           .filter(([k]) => k !== 'general')
           .map(([k, label]) => `<option value="${k}">${this.esc(label)}</option>`)).join('');
-      sel.value = hasEvent ? group.event_key : '';
+      sel.value = eventStyle.isEvent ? group.event_key : '';
       sel.addEventListener('change', e => {
         e.stopPropagation();
         this.editor.setGroupEventKey?.(group.id, sel.value || null);
@@ -754,10 +768,21 @@
 
       const components = (step.components || []).filter(Boolean);
       const isRoot = !this.hasIncoming(step.id);
+      // Which event block the step runs in — drives the accent colour and the
+      // "start of an event" marker on the node.
+      const eventStyle = this.eventStyle(this.eventKeyOfStep(step.id));
+      node.dataset.eventKey = eventStyle.key;
+      node.style.setProperty('--bp-event-color', eventStyle.color);
+      node.classList.toggle('has-event', eventStyle.isEvent);
       const headColor = isRoot
         ? 'linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0)), #7c2430'
         : 'linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0)), #243049';
       node.style.setProperty('--bp-head', headColor);
+      // The first step of an event is where that event starts running — label
+      // it, otherwise "this node has no incoming wire" looks like a mistake.
+      const eventRootChip = (isRoot && eventStyle.isEvent)
+        ? `<span class="bp-node-event" title="Start of the event:  ${this.esc(eventStyle.label)}"><i class="${eventStyle.icon}"></i><span>${this.esc(eventStyle.label)}</span></span>`
+        : '';
 
       // completion-logic presentation (shared with the list view)
       const logic = this.editor.getCompletionLogic
@@ -775,6 +800,7 @@
       header.innerHTML = `
         <span class="bp-drag-zone" title="Drag to move the step"><i class="fa-solid fa-grip-vertical"></i></span>
         <span class="bp-node-title" data-role="title" title="Click to rename; double-click for quick settings">${this.esc(step.id)}</span>
+        ${eventRootChip}
         ${showLogic ? `<span class="bp-logic-badge" data-logic="${logic}" title="Completion logic:  ${this.esc(lmeta.short)}  — click to switch">${this.esc(lmeta.short)}</span>` : ''}
         <span class="bp-node-actions">
           <button data-bp-action="settings" title="Quick settings"><i class="fa-solid fa-sliders"></i></button>
@@ -825,6 +851,15 @@
 
         const broken = links.some(l => !allIds.has(l.targetId));
         if (broken) row.classList.add('is-broken');
+        // Links pointing into another event block: they are in the data, but
+        // never drawn and never executed. Flag the row so the dead link can be
+        // removed from the source instead of silently disappearing.
+        const crossEvent = links.find(l => allIds.has(l.targetId)
+          && this.eventKeyOfStep(l.targetId) !== this.eventKeyOfStep(step.id));
+        if (crossEvent) row.classList.add('is-cross-event');
+        const crossEventTag = crossEvent
+          ? `<span class="bp-cross-event-tag" title="Link to «${this.esc(this.eventStyle(this.eventKeyOfStep(crossEvent.targetId)).label)}» — a different event, so this link is ignored. Double-click the link dot to remove it.">⚠</span>`
+          : '';
 
         const orderChip = (showLogic && logic === 'sequential')
           ? `<span class="bp-comp-order" title="Sequence step #${index + 1}">${index + 1}</span>`
@@ -833,7 +868,7 @@
           ${orderChip}
           <i class="bp-comp-icon ${info.icon}" title="Drag by the icon to move the component to another step"></i>
           <div class="bp-comp-text">
-            <div class="bp-comp-name">${this.esc(info.name)}${broken ? '<span class="bp-broken-tag">⚠</span>' : ''}</div>
+            <div class="bp-comp-name">${this.esc(info.name)}${broken ? '<span class="bp-broken-tag">⚠</span>' : ''}${crossEventTag}</div>
             <div class="bp-comp-sum">${this.editor.getComponentSummary(comp) || ''}</div>
           </div>
           <span class="bp-comp-actions">
@@ -871,8 +906,11 @@
         fields.forEach(field => {
           const pin = document.createElement('span');
           const connected = !!linkByField.get(field);
-          pin.className = `bp-pin bp-pin-out bp-pin-dot${connected ? ' is-connected' : ''}`;
-          const color2 = WIRE_COLORS[field] || WIRE_COLORS._data;
+          const targetId = linkByField.get(field);
+          const targetEvent = connected ? this.eventStyle(this.eventKeyOfStep(targetId)) : null;
+          const pinCrossEvent = !!connected && this.eventKeyOfStep(targetId) !== this.eventKeyOfStep(step.id);
+          pin.className = `bp-pin bp-pin-out bp-pin-dot${connected ? ' is-connected' : ''}${pinCrossEvent ? ' is-cross-event' : ''}`;
+          const color2 = pinCrossEvent ? 'var(--bp-wire-false)' : (WIRE_COLORS[field] || WIRE_COLORS._data);
           pin.style.setProperty('--bp-pin-color', color2);
           pin.dataset.field = field;
           const short = FIELD_SHORT[field] ?? '';
@@ -882,9 +920,11 @@
             lbl.textContent = short;
             pin.appendChild(lbl);
           }
-          pin.title = connected
-            ? `Link:  ${field} → ${linkByField.get(field)}  (drag to redirect; double-click to delete)`
-            : `Drag to create a link (${field})`;
+          pin.title = pinCrossEvent
+            ? `Link:  ${field} → ${targetId}  — «${targetEvent.label}» is a different event, so this link is ignored (double-click to delete)`
+            : connected
+              ? `Link:  ${field} → ${targetId}  (drag to redirect; double-click to delete)`
+              : `Drag to create a link (${field})`;
           pin.addEventListener('pointerdown', ev => {
             if (ev.button !== 0) return;
             ev.preventDefault();
@@ -926,11 +966,57 @@
       });
     }
 
+    // ---- event scopes -----------------------------------------
+    // Each scenario event (on_end, on_recieve_objectives, …) is started by the
+    // server as its OWN scenario. A step of one event can therefore never jump
+    // into a step of another one — such a wire describes a transition that
+    // cannot happen, so wires are never drawn across an event boundary.
+    // `''` = the base block (ungrouped steps + groups without an event).
+    eventKeyOfStep(stepId) {
+      if (!this._scopeCache) this._scopeCache = new Map();
+      if (this._scopeCache.has(stepId)) return this._scopeCache.get(stepId);
+      let key = '';
+      if (this.editor.getStepEventKey) {
+        key = this.editor.getStepEventKey(stepId) || '';
+      } else {
+        const gid = this.stepGroup.get(stepId);
+        const group = (this.viewState?.groups || []).find(g => g.id === gid);
+        key = this.editor.isKnownScenarioEvent?.(group?.event_key) ? group.event_key : '';
+      }
+      this._scopeCache.set(stepId, key);
+      return key;
+    }
+
+    eventStyle(eventKey) {
+      const style = this.editor.getEventStyle?.(eventKey);
+      if (style) return style;
+      const isEvent = this.editor.isKnownScenarioEvent?.(eventKey);
+      return {
+        key: isEvent ? eventKey : '',
+        isEvent: !!isEvent,
+        color: '#64748b',
+        icon: 'fa-solid fa-layer-group',
+        label: isEvent ? (this.editor.getGroupEventLabel?.(eventKey) || eventKey) : 'No event'
+      };
+    }
+
+    stepsShareEvent(a, b) {
+      return this.eventKeyOfStep(a) === this.eventKeyOfStep(b);
+    }
+
+    // Event block of a group ('' = base block).
+    groupEventKey(groupId) {
+      const group = (this.viewState?.groups || []).find(g => g.id === groupId);
+      return group ? this.eventStyle(group.event_key).key : '';
+    }
+
     // ---- link/topology helpers --------------------------------
-    // Any component anywhere links explicitly to this step.
+    // Any component of the SAME event block links explicitly to this step.
     hasExplicitIncoming(stepId) {
       const steps = this.editor.scenarioData.steps || [];
+      const scope = this.eventKeyOfStep(stepId);
       for (const s of steps) {
+        if (this.eventKeyOfStep(s.id) !== scope) continue;
         for (const c of (s.components || [])) {
           if (!c) continue;
           for (const l of (this.editor.getComponentLinks(c) || [])) {
@@ -951,24 +1037,36 @@
         const prev = order[idx - 1];
         const prevStep = this.editor.findStep?.(prev);
         // Same condition as getImplicitEdges(): prev has no explicit out AND
-        // this step is not itself an explicit jump target.
-        if (prevStep && !this.stepHasExplicitOut(prevStep) && !this.hasExplicitIncoming(stepId)) {
+        // this step is not itself an explicit jump target — and both steps
+        // must belong to the same event block.
+        if (prevStep && this.stepsShareEvent(prev, stepId)
+            && !this.stepHasExplicitOut(prevStep) && !this.hasExplicitIncoming(stepId)) {
           return true;
         }
       }
       return false;
     }
 
+    // Only links that can actually fire count: a stored link into another
+    // event never runs, so it must not suppress the fall-through of its block.
     stepHasExplicitOut(step) {
-      return (step.components || []).some(c => (this.editor.getComponentLinks(c) || []).length > 0);
+      const key = this.eventKeyOfStep(step.id);
+      return (step.components || []).some(c => (this.editor.getComponentLinks(c) || [])
+        .some(l => this.eventKeyOfStep(l.targetId) === key));
     }
 
+    // `crossEvent` edges exist in the data but are never drawn: the two steps
+    // belong to different scenario blocks, which the server runs separately.
     getEdges() {
       const edges = [];
       (this.editor.scenarioData.steps || []).forEach(step => {
+        const fromKey = this.eventKeyOfStep(step.id);
         (step.components || []).filter(Boolean).forEach(comp => {
           (this.editor.getComponentLinks(comp) || []).forEach(link => {
-            edges.push({ from: step.id, to: link.targetId, comp, field: link.field });
+            edges.push({
+              from: step.id, to: link.targetId, comp, field: link.field,
+              crossEvent: this.eventKeyOfStep(link.targetId) !== fromKey
+            });
           });
         });
       });
@@ -983,13 +1081,17 @@
         const toId = order[i + 1];
         const fromStep = this.editor.findStep?.(fromId);
         if (!fromStep) continue;
+        // "Next step in list order" only means something inside ONE event
+        // block: after the last step of `on_end` the flow does not continue
+        // into `on_recieve_objectives` — that block has its own trigger.
+        if (!this.stepsShareEvent(fromId, toId)) continue;
         // The step's own explicit links define its flow -> no fall-through.
         if (this.stepHasExplicitOut(fromStep)) continue;
         // Don't draw a fall-through INTO a step that is an explicit jump target:
         // that step is reached via the explicit wire, not "by list order".
         // (Fixes the spurious dashed line between two branch endpoints.)
         if (this.hasExplicitIncoming(toId)) continue;
-        edges.push({ from: fromId, to: toId });
+        edges.push({ from: fromId, to: toId, eventKey: this.eventKeyOfStep(fromId) });
       }
       return edges;
     }
@@ -997,7 +1099,8 @@
     // ---- auto layout (clustered by group) ---------------------
     computeDepths(steps) {
       const depth = new Map();
-      const edges = this.getEdges();
+      // Cross-event links are dead data — they must not stretch the layout.
+      const edges = this.getEdges().filter(e => !e.crossEvent);
       const calc = (id, guard) => {
         if (depth.has(id)) return depth.get(id);
         if (guard.has(id)) return 0;
@@ -1147,8 +1250,9 @@
       this.clearWires();
       const allIds = new Set((this.editor.scenarioData.steps || []).map(s => s.id));
 
-      // implicit "by list order" arrows (dashed)
-      this.getImplicitEdges().forEach(({ from, to }) => {
+      // implicit "by list order" arrows (dashed) — tinted with the colour of the
+      // event they belong to, so a dashed line never looks like it leaves its block
+      this.getImplicitEdges().forEach(({ from, to, eventKey }) => {
         if (!allIds.has(to)) return;
         const a = this.nodeOutCenter(from);
         const b = this.nodeInPinPos(to);
@@ -1156,11 +1260,20 @@
         const path = document.createElementNS(SVG_NS, 'path');
         path.setAttribute('d', this.bezier(a, b));
         path.setAttribute('class', 'bp-wire bp-wire-implicit');
+        const style = this.eventStyle(eventKey);
+        if (style.isEvent) {
+          path.style.stroke = style.color;
+          path.style.opacity = '.55';
+        }
         this.wires.appendChild(path);
       });
 
       // explicit links
-      this.getEdges().forEach(({ from, to, comp, field }) => {
+      this.getEdges().forEach(({ from, to, comp, field, crossEvent }) => {
+        // A link between two events can never fire (each event is its own
+        // scenario) — no wire is drawn for it. The source row and the pin show
+        // a warning marker instead, so the data problem stays visible.
+        if (crossEvent) return;
         if (!allIds.has(to)) return;
         const a = this.pinOutPos(from, comp.component_id, field);
         const b = this.nodeInPinPos(to);
@@ -1224,6 +1337,15 @@
 
       this._connect = { stepId, componentId, field, pin, a, tmp };
 
+      // Only steps of the SAME event can receive this wire. Dim the rest while
+      // the wire is being dragged: it is the clearest possible explanation of
+      // why a connection cannot be made.
+      const fromKey = this.eventKeyOfStep(stepId);
+      this.world.classList.add('is-linking');
+      this.nodeEls.forEach((n, id) => {
+        n.classList.toggle('is-event-mismatch', this.eventKeyOfStep(id) !== fromKey);
+      });
+
       const toWorld = ev => ({
         x: (ev.clientX - this.canvas.getBoundingClientRect().left - this.view.x) / this.view.scale,
         y: (ev.clientY - this.canvas.getBoundingClientRect().top - this.view.y) / this.view.scale
@@ -1233,16 +1355,31 @@
         move: ev => {
           const b = toWorld(ev);
           tmp.setAttribute('d', this.bezier(a, b));
-          // hover highlight target node
+          // hover highlight target node (only a step of the same event can take it)
           const node = this.nodeAtClient(ev.clientX, ev.clientY);
-          this.world.querySelectorAll('.bp-node.is-drop-target')
-            .forEach(n => n.classList.remove('is-drop-target'));
-          if (node && node.dataset.stepId !== stepId) node.classList.add('is-drop-target');
+          this.world.querySelectorAll('.bp-node.is-drop-target, .bp-node.is-drop-blocked')
+            .forEach(n => n.classList.remove('is-drop-target', 'is-drop-blocked'));
+          const targetId = node?.dataset.stepId;
+          if (node && targetId && targetId !== stepId) {
+            node.classList.add(this.stepsShareEvent(stepId, targetId) ? 'is-drop-target' : 'is-drop-blocked');
+          }
+          // An empty spot inside a group of ANOTHER event cannot take the wire
+          // either (dropping there would create a step in the wrong block).
+          const hoverGroup = this.groupAtPoint(b.x, b.y);
+          const groupBlocked = !!hoverGroup && this.groupEventKey(hoverGroup) !== fromKey;
+          this.groupEls.forEach((frame, gid) => {
+            frame.classList.toggle('is-drop-blocked', gid === hoverGroup && groupBlocked);
+          });
+          // Let the temp wire show the answer before the user releases.
+          const blocked = groupBlocked || !!(node && targetId && !this.stepsShareEvent(stepId, targetId));
+          tmp.style.stroke = blocked ? 'var(--bp-wire-false)' : color;
         },
         end: (ev, cancelled) => {
           pin.classList.remove('is-connecting');
-          this.world.querySelectorAll('.bp-node.is-drop-target')
-            .forEach(n => n.classList.remove('is-drop-target'));
+          this.world.classList.remove('is-linking');
+          this.world.querySelectorAll('.bp-node.is-drop-target, .bp-node.is-drop-blocked, .bp-node.is-event-mismatch')
+            .forEach(n => n.classList.remove('is-drop-target', 'is-drop-blocked', 'is-event-mismatch'));
+          this.groupEls.forEach(frame => frame.classList.remove('is-drop-blocked'));
           tmp.remove();
           this._connect = null;
           if (cancelled || !ev) { this.drawWires(); return; }
@@ -1261,6 +1398,13 @@
             // otherwise keep it ungrouped (don't fall into the default group).
             const b = toWorld(ev);
             const dropGroup = this.groupAtPoint(b.x, b.y);
+            // Never create a step in another event just to link it: the link would
+            // be dead. Explain instead.
+            if (dropGroup && this.groupEventKey(dropGroup) !== fromKey) {
+              this.explainCrossEvent(fromKey, this.groupEventKey(dropGroup));
+              this.drawWires();
+              return;
+            }
             const newId = this.editor.addNewStepAt?.(b.x - NODE_W / 2, b.y, {
               group: dropGroup || null,
               ungrouped: !dropGroup
@@ -1279,6 +1423,10 @@
       this._connect.pin?.classList.remove('is-connecting');
       this._connect.tmp?.remove();
       this._connect = null;
+      this.world.classList.remove('is-linking');
+      this.world.querySelectorAll('.bp-node.is-event-mismatch, .bp-node.is-drop-blocked')
+        .forEach(n => n.classList.remove('is-event-mismatch', 'is-drop-blocked'));
+      this.groupEls.forEach(frame => frame.classList.remove('is-drop-blocked'));
     }
 
     // ---- component drag (reorder within a step / move between steps) -------
@@ -1367,12 +1515,44 @@
     }
 
     applyLink(stepId, componentId, field, targetId) {
+      // Different events are different scenarios on the server: such a link
+      // would never fire. Refuse it and say why instead of writing dead data.
+      if (!this.stepsShareEvent(stepId, targetId)) {
+        this.explainCrossEventLink(stepId, targetId);
+        this.drawWires();
+        return false;
+      }
       const comp = this.editor.findComponent?.(stepId, componentId);
-      if (!comp) { this.render(); return; }
+      if (!comp) { this.render(); return false; }
       comp[field] = targetId;
       this.editor.dirty.markDirty?.();
       this.editor.renderAll();   // keeps list + graph in sync
       this.flashNode(targetId);
+      return true;
+    }
+
+    // One shared explanation for every place that can attempt a cross-event
+    // link (wire drag, link on drop, dropping into a foreign group).
+    explainCrossEvent(fromKey, toKey) {
+      const a = this.eventStyle(fromKey);
+      const b = this.eventStyle(toKey);
+      const message = `«${a.label}» and «${b.label}» are different events: each one runs as its own scenario, so steps cannot link between them.`;
+      this.editor.showToast?.(message, 'warning');
+    }
+
+    explainCrossEventLink(fromStepId, toStepId) {
+      this.explainCrossEvent(this.eventKeyOfStep(fromStepId), this.eventKeyOfStep(toStepId));
+      this.flashBlocked?.(toStepId);
+    }
+
+    // Shake the refused target a little — the wire is already gone by then.
+    flashBlocked(stepId) {
+      const node = this.nodeEls.get(stepId);
+      if (!node) return;
+      node.classList.remove('is-blocked-flash');
+      void node.offsetWidth;
+      node.classList.add('is-blocked-flash');
+      setTimeout(() => node.classList.remove('is-blocked-flash'), 700);
     }
 
     clearLink(stepId, componentId, field) {
@@ -1425,28 +1605,50 @@
     zoomOut() { this.setScale(this.view.scale / 1.2); }
     resetZoom() { this.view.scale = 1; this.applyTransform(); this.saveView(); }
 
-    fitToView() {
+    // World-space bounds of everything currently drawn (private helper so
+    // "fit the graph" and "focus one event" share one implementation).
+    graphBounds(filterStepId = null) {
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       const extend = (x, y, w, h) => {
         minX = Math.min(minX, x); minY = Math.min(minY, y);
         maxX = Math.max(maxX, x + w); maxY = Math.max(maxY, y + h);
       };
       this.nodeEls.forEach((node, id) => {
+        if (filterStepId && !filterStepId(id)) return;
         const p = this.bp.positions[id];
         if (p) extend(p.x, p.y, node.offsetWidth, node.offsetHeight);
       });
-      this.groupEls.forEach((frame, id) => {
-        const r = this.groupRect(id);
-        extend(r.x, r.y, r.w, r.h);
-      });
+      if (!filterStepId) {
+        this.groupEls.forEach((frame, id) => {
+          const r = this.groupRect(id);
+          extend(r.x, r.y, r.w, r.h);
+        });
+      }
+      return { minX, minY, maxX, maxY };
+    }
+
+    fitToView() {
+      const { minX, minY, maxX, maxY } = this.graphBounds();
       if (!Number.isFinite(minX)) { this.resetZoom(); return; }
+      this.fitBounds(minX, minY, maxX, maxY, this.topOverlayInset());
+    }
+
+    // Height of the floating event legend (it covers the top of the canvas).
+    topOverlayInset() {
+      const legend = document.getElementById('bp-event-legend');
+      if (!legend || !legend.offsetHeight) return 0;
+      return legend.offsetHeight + 14;
+    }
+
+    // Centre + zoom the camera on one rectangle of the world.
+    fitBounds(minX, minY, maxX, maxY, topInset = 0) {
       const rect = this.canvas.getBoundingClientRect();
       // Keep the margin proportional: 80px is right on a desktop canvas but
       // eats most of a 390px phone screen.
       const pad = Math.max(16, Math.min(80, Math.min(rect.width, rect.height) * 0.08));
-      // On phones the toolbar floats at the bottom of the canvas — fit above it.
+      // Overlays: the event legend at the top, the toolbar at the bottom.
       const inset = this.toolbarInset();
-      const usableH = Math.max(120, rect.height - inset);
+      const usableH = Math.max(120, rect.height - inset - topInset);
       const sx = (rect.width - pad * 2) / Math.max(1, maxX - minX);
       const sy = (usableH - pad * 2) / Math.max(1, maxY - minY);
       let scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min(sx, sy, 1)));
@@ -1464,10 +1666,68 @@
         ? pad - minX * scale + (rect.width - pad * 2 - (maxX - minX) * scale) / 2
         : pad - minX * scale;
       this.view.y = fitsHeight
-        ? pad - minY * scale + (usableH - pad * 2 - (maxY - minY) * scale) / 2
-        : pad - minY * scale;
+        ? topInset + pad - minY * scale + (usableH - pad * 2 - (maxY - minY) * scale) / 2
+        : topInset + pad - minY * scale;
       this.applyTransform();
       this.saveView();
+    }
+
+    // ---- event legend (colours + focus) ------------------------
+    // One chip per event that is actually present in the graph. Clicking a chip
+    // frames that event's steps, which is the fastest way to jump between the
+    // blocks of a scenario on a small screen.
+    eventSummary() {
+      const counts = new Map();
+      this.nodeEls.forEach((_, id) => {
+        const key = this.eventKeyOfStep(id);
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+      const order = Object.keys(this.editor.scenarioEvents || {});
+      const items = Array.from(counts.entries()).map(([key, count]) => {
+        const style = this.eventStyle(key);
+        return { ...style, count };
+      });
+      items.sort((a, b) => {
+        if (a.isEvent !== b.isEvent) return a.isEvent ? 1 : -1;   // "No event" first
+        const ia = order.indexOf(a.key);
+        const ib = order.indexOf(b.key);
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+      });
+      return items;
+    }
+
+    renderEventLegend() {
+      const box = document.getElementById('bp-event-legend');
+      if (!box) return;
+      const items = this.eventSummary();
+      if (items.length === 0) { box.innerHTML = ''; box.classList.add('is-empty'); return; }
+      box.classList.remove('is-empty');
+      box.innerHTML = items.map(item => `
+        <button type="button" class="bp-event-chip${item.isEvent ? ' is-event' : ''}${this._focusEventKey === item.key ? ' is-active' : ''}"
+                data-event-key="${this.esc(item.key)}" style="--event-color:${item.color}"
+                title="«${this.esc(item.label)}»: ${item.count} step(s) — click to focus. Steps of one event never link to another event.">
+          <i class="${item.icon}"></i><span>${this.esc(item.label)}</span><b>${item.count}</b>
+        </button>`).join('');
+      box.querySelectorAll('.bp-event-chip').forEach(btn => {
+        btn.addEventListener('pointerdown', e => e.stopPropagation());
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          this.focusEvent(btn.dataset.eventKey || '');
+        });
+      });
+    }
+
+    focusEvent(eventKey) {
+      const ids = [];
+      this.nodeEls.forEach((_, id) => { if (this.eventKeyOfStep(id) === eventKey) ids.push(id); });
+      if (ids.length === 0) return;
+      const inScope = new Set(ids);
+      const { minX, minY, maxX, maxY } = this.graphBounds(id => inScope.has(id));
+      if (!Number.isFinite(minX)) return;
+      this._focusEventKey = eventKey;
+      this.fitBounds(minX, minY, maxX, maxY, this.topOverlayInset());
+      this.renderEventLegend();
+      ids.forEach(id => this.flashNode(id));
     }
 
     // Height covered by the floating toolbar (phone layout only).
@@ -1737,7 +1997,8 @@
           || e.target.closest('.bp-comment-actions')
           || e.target.closest('.bp-comment-body.is-editing');
         if (e.target.closest('.bp-node') || e.target.closest('.bp-group') || commentBlocks ||
-            e.target.closest('.bp-toolbar') || e.target.closest('.bp-legend')) return;
+            e.target.closest('.bp-toolbar') || e.target.closest('.bp-legend') ||
+            e.target.closest('.bp-event-legend')) return;
 
         const wantSelect = e.button === 0 && (e.shiftKey || this.selectMode);
         if (wantSelect) { e.preventDefault(); this.startMarquee(e); return; }
@@ -1811,7 +2072,8 @@
       }, { passive: false });
 
       this.canvas.addEventListener('dblclick', e => {
-        if (e.target.closest('.bp-node') || e.target.closest('.bp-toolbar') || e.target.closest('.bp-legend')) return;
+        if (e.target.closest('.bp-node') || e.target.closest('.bp-toolbar') || e.target.closest('.bp-legend')
+            || e.target.closest('.bp-event-legend')) return;
         if (e.target.closest('.bp-comment')) return;
         if (e.target.closest('.bp-group-header') || e.target.closest('.bp-group-resize')) return;
         // Ignore double-clicks that land on a connection wire (those delete the
