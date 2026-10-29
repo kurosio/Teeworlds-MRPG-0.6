@@ -890,6 +890,7 @@ class ScenarioDefeatMobsComponent final : public PlayerAwareComponent<ScenarioDe
 	vec2 m_Position {};
 	float m_Radius {};
 	float m_ActiveRadius {};
+	float m_WanderRadius {};
 	int m_KillsMade {};
 	int m_TargetTick {};
 	nlohmann::json m_MobsData {};
@@ -900,13 +901,16 @@ public:
 	{
 		InitBaseJsonField(j);
 		m_Mode = GetMode(j.value("mode", ""));
-		m_Radius = j.value("radius", 180.f);
+		m_Radius = j.value("radius", 800.f);
+		// active radius — field of view in which scenario mobs are active.
+		m_ActiveRadius = j.value("activeradius", (float)g_Config.m_SvMapDistanceActveBot);
+		m_ActiveRadius = m_ActiveRadius > 1.f ? m_ActiveRadius : g_Config.m_SvMapDistanceActveBot;
+		// wander radius — max distance from the spawn point; 0 — teleport-back off.
+		m_WanderRadius = j.value("wanderradius", 0.f);
 		m_Position = j.value("position", vec2 {});
 		m_MobsData = j.value("mobs", nlohmann::json::array());
 		m_TargetKills = j.value("kill_target", (int)NOPE);
 		m_Duration = j.value("duration", 0);
-		// m_ActiveRadius = j.value("activeradius", (float)g_Config.m_SvMapDistanceActveBot); TODO: disable
-		m_ActiveRadius = m_ActiveRadius > 1.f ? m_ActiveRadius : g_Config.m_SvMapDistanceActveBot;
 		m_ListenerScope.Init(this, IEventListener::CharacterDeath);
 	}
 	DECLARE_COMPONENT_NAME("defeat_mobs")
@@ -943,6 +947,7 @@ private:
 			mobInfo.m_Radius = m_Radius;
 			mobInfo.m_LimitMoving = true;
 			mobInfo.m_ActiveRadius = m_ActiveRadius;
+			mobInfo.m_WanderRadius = m_WanderRadius;
 			mobInfo.m_WorldID = GS()->GetWorldID();
 
 			// initialize behavior

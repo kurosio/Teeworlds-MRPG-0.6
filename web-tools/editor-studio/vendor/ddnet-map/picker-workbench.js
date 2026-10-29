@@ -9,6 +9,7 @@
       const text = en ? {
         title:'Placement tools', collision:'Gameplay layer', spawn:'To spawn', measure:'Measure (M)', clear:'Clear measurement',
         from:'From selected point', use:'B → position', radius:'Radius preview, px', layers:'Show all layers', noGame:'No gameplay layer in this map.', zoom:'Zoom in to see gameplay tiles.',
+        wanderLabel:'Wander radius', activeRadiusLabel:'Active radius', previewLabel:'Preview',
         legend:'1 solid · 2 death · 3 no-hook · green rings: selected tile IDs · blue: other tile IDs',
         blocked:'Red tiles are forbidden here',
         solid:'Solid', death:'Death', nohook:'No-hook', empty:'Empty', outside:'Outside gameplay layer', point:'Selected point',
@@ -17,6 +18,7 @@
       } : {
         title:'Инструменты размещения', collision:'Игровой слой', spawn:'К спавну', measure:'Измерить (M)', clear:'Очистить замер',
         from:'От выбранной точки', use:'B → позиция', radius:'Предпросмотр радиуса, px', layers:'Показать все слои', noGame:'В карте нет игрового слоя.', zoom:'Приблизьте карту для просмотра игровых тайлов.',
+        wanderLabel:'Радиус блуждания', activeRadiusLabel:'Радиус активности', previewLabel:'Предпросмотр',
         legend:'1 стена · 2 смерть · 3 без крюка · зелёный: спавны · синий: прочие ID',
         blocked:'Красные тайлы здесь запрещены',
         solid:'Стена', death:'Смерть', nohook:'Без крюка', empty:'Пусто', outside:'Вне игрового слоя', point:'Выбранная точка',
@@ -190,8 +192,28 @@
           const blocked = draw.blockedTile(game, state.hasPoint ? state.point : null, options.safe);
           el['collision-status'].classList.toggle('is-warning', blocked !== null || [1,2,3].includes(selectedTile));
           show(el['collision-status'], status);
-          const radius = Number(el.radius.value);
-          if (state.hasPoint && Number.isFinite(radius) && radius > 0 && radius <= 100000) draw.drawRadius(ctx, state.point, radius, worldToScreen);
+          // Wander radius from the editor — green dashed circle with a label.
+          if (state.hasPoint && Number.isFinite(options.radius) && options.radius > 0 && options.radius <= 100000) {
+            draw.drawRadius(ctx, state.point, options.radius, worldToScreen, {
+              color: '#52df9a', dash: [6, 4], lineWidth: 2, label: text.wanderLabel
+            });
+          }
+          // Active (aggro/FOV) radius from the editor — blue dotted circle,
+          // clearly distinct from the wander radius.
+          if (state.hasPoint && Number.isFinite(options.radiusActive) && options.radiusActive > 0 && options.radiusActive <= 100000) {
+            draw.drawRadius(ctx, state.point, options.radiusActive, worldToScreen, {
+              color: '#6f8cff', dash: [3, 3], lineWidth: 1.5, fill: 'rgba(111,140,255,.05)', label: text.activeRadiusLabel
+            });
+          }
+          // Ad-hoc preview from the workbench input (only when it differs from
+          // the editor wander radius, so the two circles do not overlap).
+          const manual = Number(el.radius.value);
+          if (state.hasPoint && Number.isFinite(manual) && manual > 0 && manual <= 100000
+            && (!Number.isFinite(options.radius) || manual !== options.radius)) {
+            draw.drawRadius(ctx, state.point, manual, worldToScreen, {
+              color: '#ffda70', dash: [4, 3], lineWidth: 1.5, fill: 'rgba(255,218,112,.06)', label: text.previewLabel
+            });
+          }
           draw.drawMeasure(ctx, a, b || (waiting ? preview : null), worldToScreen);
         },
       };

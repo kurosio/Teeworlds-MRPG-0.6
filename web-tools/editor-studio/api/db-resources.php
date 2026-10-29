@@ -60,7 +60,7 @@ function editor_resources(): array
             'table' => 'tw_bots_mobs',
             'pk' => 'ID',
             'columns' => [
-                'BotID','WorldID','PositionX','PositionY','Debuffs','Behavior','Level','Power','Number','Respawn','Radius','ActiveRadius','Boss',
+                'BotID','WorldID','PositionX','PositionY','Debuffs','Behavior','Level','Power','Number','Respawn','Radius','ActiveRadius','WanderRadius','Boss',
                 'it_drop_0','it_drop_1','it_drop_2','it_drop_3','it_drop_4','it_drop_count','it_drop_chance'
             ],
             'search' => ['ID','BotID'],

@@ -203,8 +203,15 @@ public:
 	int m_Level {};
 	int m_RespawnTick {};
 	int m_WorldID {};
+	// Spawn radius: limits the area around Position where the mob can (re)spawn.
 	float m_Radius {};
+	// Active radius: radius of the mob's field of view — players inside it make
+	// the mob active/aggressive (used for targeting). 0 — map default.
 	float m_ActiveRadius{};
+	// Wander radius: maximum distance from the respawn point. When the mob
+	// crosses it (m_LimitMoving), it is teleported back to respawn.
+	// Independent of the active radius. 0 — teleport-back limit off.
+	float m_WanderRadius{};
 	bool m_LimitMoving{};
 	int m_aDropItem[MAX_DROPPED_FROM_MOBS] {};
 	int m_aValueItem[MAX_DROPPED_FROM_MOBS] {};

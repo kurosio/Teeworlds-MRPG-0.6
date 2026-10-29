@@ -79,7 +79,9 @@
       highlightLayer: o.highlightLayer === 'switch' ? 'switch' : 'game',
       switchShowID: Number.isInteger(o.switchShowID) && o.switchShowID >= 1 && o.switchShowID <= 255 ? o.switchShowID : null,
       radiusPath: o.radiusPath == null ? '' : String(o.radiusPath),
+      activeRadiusPath: o.activeRadiusPath == null ? '' : String(o.activeRadiusPath),
       radius: o.radius == null ? '' : o.radius,
+      radiusActive: o.radiusActive == null ? '' : o.radiusActive,
       snap: typeof o.snap === 'boolean' ? o.snap : null,
       grid: typeof o.grid === 'boolean' ? o.grid : null,
     };
@@ -89,7 +91,8 @@
     safe: () => t('No collision tiles'),
     highlightTiles: () => t('Tile highlights'),
     tiles: () => t('Gameplay layer'),
-    radius: () => t('Radius'),
+    radius: () => t('Wander radius'),
+    radiusActive: () => t('Active radius'),
     snap: () => t('Tile centers'),
     grid: () => t('Grid'),
   };
@@ -97,7 +100,8 @@
     safe: () => t('A point cannot be placed on a solid, death or no-hook tile'),
     highlightTiles: () => t('Highlight selected tile IDs on the map'),
     tiles: () => t('Show the map gameplay layer'),
-    radius: () => t('Show a radius around the point'),
+    radius: () => t('Show the wander radius around the point'),
+    radiusActive: () => t('Show the active (aggro) radius around the point'),
     snap: () => t('Snap the point to tile centers'),
     grid: () => t('Show the tile grid'),
   };
@@ -106,6 +110,7 @@
     highlightTiles: o.highlightTiles.length > 0,
     tiles: o.showTiles,
     radius: !!o.radiusPath || Number(o.radius) > 0,
+    radiusActive: !!o.activeRadiusPath || Number(o.radiusActive) > 0,
     snap: o.snap === true,
     grid: o.grid === true,
   })[key];
@@ -158,12 +163,15 @@
   /** Флаги + актуальное значение радиуса из формы → параметры окна карты. */
   const resolveMapOptions = (root, override = {}) => {
     const o = readMapOptions(root);
-    let radius = 0;
-    let raw = '';
-    if (o.radiusPath) raw = findFieldInput(root, o.radiusPath)?.value ?? '';
-    if (String(raw).trim() === '') raw = o.radius ?? '';
-    const num = Number(raw);
-    if (Number.isFinite(num) && num > 0) radius = Math.min(Math.round(num), 100000);
+    const resolveRadius = (path, direct) => {
+      let raw = '';
+      if (path) raw = findFieldInput(root, path)?.value ?? '';
+      if (String(raw).trim() === '') raw = direct ?? '';
+      const num = Number(raw);
+      return Number.isFinite(num) && num > 0 ? Math.min(Math.round(num), 100000) : 0;
+    };
+    const radius = resolveRadius(o.radiusPath, o.radius);
+    const radiusActive = resolveRadius(o.activeRadiusPath, o.radiusActive);
     return {
       safe: o.safe,
       tiles: !!o.tiles,
@@ -171,6 +179,7 @@
       highlightLayer: o.highlightLayer,
       switchShowID: o.switchShowID,
       radius,
+      radiusActive,
       snap: o.snap,
       grid: o.grid,
       ...(override.mapOptions || {}),

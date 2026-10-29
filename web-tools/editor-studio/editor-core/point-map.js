@@ -147,6 +147,7 @@
     if (mapOptions.tiles) params.set('tiles', '1');
     if (Array.isArray(mapOptions.highlightTiles) && mapOptions.highlightTiles.length) params.set('highlightTiles', mapOptions.highlightTiles.join(','));
     if (Number.isFinite(mapOptions.radius) && mapOptions.radius > 0) params.set('radius', String(Math.round(mapOptions.radius)));
+    if (Number.isFinite(mapOptions.radiusActive) && mapOptions.radiusActive > 0) params.set('radiusActive', String(Math.round(mapOptions.radiusActive)));
     if (mapOptions.snap === true || mapOptions.snap === false) params.set('snap', mapOptions.snap ? '1' : '0');
     if (mapOptions.grid === true || mapOptions.grid === false) params.set('grid', mapOptions.grid ? '1' : '0');
     return new URL(`vendor/ddnet-map/picker.html?${params.toString()}`, document.baseURI).href;

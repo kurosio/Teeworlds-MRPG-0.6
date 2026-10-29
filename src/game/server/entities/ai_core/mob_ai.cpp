@@ -210,19 +210,25 @@ void CMobAI::Process()
 
 	HandleSkillBehaviors();
 
-	// limit moving
-	if (m_pMobInfo->m_LimitMoving 
-		&& (distance(m_pCharacter->m_RespawnedPos, m_pCharacter->m_Core.m_Pos) > (m_pMobInfo->m_ActiveRadius /* + m_pMobInfo->m_ActiveRadius / 2.f*/)))
+	// limit moving — the mob may walk only inside its wander radius around the
+	// respawn point; crossing it teleports the mob back.
+	// Wander radius is independent of the active radius: if it is not set (0),
+	// the teleport-back limit is off.
+	if (m_pMobInfo->m_LimitMoving && m_pMobInfo->m_WanderRadius > 0.f
+		&& distance(m_pCharacter->m_RespawnedPos, m_pCharacter->m_Core.m_Pos) > m_pMobInfo->m_WanderRadius)
 	{
 		GS()->CreateBirthdayEffect(m_pCharacter->m_Core.m_Pos);
 		GS()->EntityManager()->FlyingPoint(m_pCharacter->m_Core.m_Pos, m_ClientID, vec2(0.5f, 0.5f), WEAPON_LASER);
 		m_pCharacter->ChangePosition(m_pCharacter->m_RespawnedPos);
 	}
 
-	// update
+	// update — the mob becomes active only inside its field of view (active radius).
 	if(!m_BehaviorNeutral)
 	{
-		m_pCharacter->UpdateTarget(1000.f);
+		const float ActiveRadius = m_pMobInfo->m_ActiveRadius > 0.f
+			? m_pMobInfo->m_ActiveRadius
+			: static_cast<float>(g_Config.m_SvMapDistanceActveBot);
+		m_pCharacter->UpdateTarget(ActiveRadius);
 
 		if(const auto* pTargetChar = GS()->GetPlayerChar(m_Target.GetCID()))
 		{
