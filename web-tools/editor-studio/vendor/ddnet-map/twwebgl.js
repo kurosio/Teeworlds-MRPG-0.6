@@ -454,7 +454,9 @@ tw.init = function (attrs) {
     var req = new XMLHttpRequest();
     req.open("GET", mapUrl, true);
     req.responseType = "arraybuffer";
-    req.timeout = 20000;
+    // The bridge alone can take 20 seconds; allow time for the PHP response
+    // and for larger maps to download over mobile connections.
+    req.timeout = 120000;
 
     // PATCH (Editor Studio): понятная ошибка вместо молчания — редактор
     // показывает её в окне выбора точки и предлагает «Повторить».

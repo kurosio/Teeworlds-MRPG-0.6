@@ -29,10 +29,16 @@ require_once __DIR__ . '/db-core.php';
 $ROLE = bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN, EDITOR_ROLE_GUEST]);
 
 /** Вкладки, в которых редактор показывает координаты (значит, нужна карта). */
-const MAP_TABS = ['quests', 'bots_npc', 'bots_mobs', 'warehouses', 'worlds', 'crafts', 'dungeons', 'aethers'];
+const MAP_TABS = ['quests', 'bots_npc', 'bots_mobs', 'warehouses', 'worlds', 'crafts', 'dungeons', 'aethers', 'nodes_collecting'];
 
 if ($ROLE !== EDITOR_ROLE_ADMIN && !array_intersect(MAP_TABS, editor_guest_pages())) {
     respond(['ok' => false, 'error' => 'Доступ запрещён: карта не входит в ваши вкладки.', 'code' => 'guest_forbidden'], 403);
+}
+
+// Map and texture requests are read-only. Release PHP's per-session lock after
+// authorization so slow downloads cannot block the editor or other textures.
+if (session_status() === PHP_SESSION_ACTIVE) {
+    session_write_close();
 }
 
 // ── Где искать файлы ─────────────────────────────────────────────────────────
@@ -176,6 +182,7 @@ function map_send_file(string $path, string $mime): never
     header('Content-Disposition: inline');
 
     if ($ifNoneMatch !== '' && str_contains($ifNoneMatch, $etag)) {
+        header_remove('Content-Length');
         http_response_code(304);
         exit;
     }
@@ -213,6 +220,7 @@ function map_send_remote(array $response, string $mime, int $maxBytes): never
     }
 
     if ($etag !== '' && $ifNoneMatch !== '' && str_contains($ifNoneMatch, $etag)) {
+        header_remove('Content-Length');
         http_response_code(304);
         exit;
     }

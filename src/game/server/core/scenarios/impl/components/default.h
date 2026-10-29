@@ -79,7 +79,7 @@ protected:
 	StepId m_PassStepId {};
 	StepId m_FailStepId {};
 	int m_TimeoutSeconds { 0 };
-	int m_TimeoutTick { 0 };
+	int64_t m_TimeoutTick { 0 };
 
 	void InitBranchFields(const nlohmann::json& j)
 	{
@@ -91,7 +91,7 @@ protected:
 	void StartBranchTimer()
 	{
 		m_TimeoutTick = (m_TimeoutSeconds > 0)
-			? this->Server()->Tick() + m_TimeoutSeconds * this->Server()->TickSpeed()
+			? int64_t(this->Server()->Tick()) + int64_t(m_TimeoutSeconds) * this->Server()->TickSpeed()
 			: 0;
 	}
 
@@ -100,7 +100,7 @@ protected:
 	{
 		if(m_TimeoutSeconds <= 0)
 			return -1;
-		return std::max(0, (m_TimeoutTick - this->Server()->Tick()) / this->Server()->TickSpeed());
+		return static_cast<int>(std::max<int64_t>(0, (m_TimeoutTick - this->Server()->Tick()) / this->Server()->TickSpeed()));
 	}
 
 	bool IsTimedOut() const
@@ -268,7 +268,7 @@ private:
 class ScenarioWaitComponent final : public PlayerAwareComponent<ScenarioWaitComponent>
 {
 	int m_Duration;
-	int m_TargetTick = 0;
+	int64_t m_TargetTick = 0;
 
 public:
 	explicit ScenarioWaitComponent(const nlohmann::json& j)
@@ -280,7 +280,7 @@ public:
 
 	void OnStartImpl() override
 	{
-		m_TargetTick = Server()->Tick() + Server()->TickSpeed() * m_Duration;
+		m_TargetTick = int64_t(Server()->Tick()) + int64_t(Server()->TickSpeed()) * m_Duration;
 	}
 
 	void OnActiveImpl() override
@@ -389,6 +389,7 @@ class ScenarioDynamicConditionComponent final : public ConditionBranchComponent<
 	bool m_EntireGroup { false };
 	bool m_Invert { false };
 	bool m_ShowProgress { true };
+	bool m_CheckOnce { false };
 
 	static EConditionType ParseConditionType(const std::string& Type)
 	{
@@ -493,10 +494,10 @@ class ScenarioDynamicConditionComponent final : public ConditionBranchComponent<
 
 		if(m_ItemScope == EItemScope::Total)
 		{
-			int Total = 0;
+			int64_t Total = 0;
 			for(auto* pPlayer : vpPlayers)
 				Total += GetPlayerItemCount(pPlayer);
-			return CompareInt(Total, m_Value);
+			return CompareInt(static_cast<int>(std::clamp<int64_t>(Total, INT32_MIN, INT32_MAX)), m_Value);
 		}
 
 		auto HasRequiredItems = [this](CPlayer* pPlayer)
@@ -549,6 +550,7 @@ public:
 		m_EntireGroup = j.value("entire_group", false);
 		m_Invert = j.value("invert", false);
 		m_ShowProgress = j.value("show_progress", true);
+		m_CheckOnce = j.value("check_once", false);
 	}
 	DECLARE_COMPONENT_NAME("dynamic_condition")
 
@@ -560,7 +562,15 @@ private:
 
 	void OnActiveImpl() override
 	{
-		// Evaluate; on success -> pass branch, on timeout -> fail branch.
+		// A one-shot decision chooses the failure path immediately; the default still waits.
+		if(m_CheckOnce)
+		{
+			if(EvaluateCondition())
+				FinishPassed();
+			else
+				FinishTimedOut();
+			return;
+		}
 		if(TickBranch())
 			return;
 
