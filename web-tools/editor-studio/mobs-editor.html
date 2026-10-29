@@ -174,7 +174,8 @@
       Number: 1,
       Respawn: 1,
       Radius: 800,
-	  ActiveRadius: 0,
+      ActiveRadius: 0,
+      WanderRadius: 0,
       Boss: 0,
       drops: [],
     });
@@ -217,6 +218,7 @@
       m.Respawn = Number(row.Respawn || 1);
       m.Radius = Number(row.Radius || 800);
       m.ActiveRadius = Number(row.ActiveRadius || 0);
+      m.WanderRadius = Number(row.WanderRadius || 0);
       m.Boss = Number(row.Boss || 0) ? 1 : 0;
       const counts = parsePipeNums(row.it_drop_count, false);
       const chances = parsePipeNums(row.it_drop_chance, true);
@@ -265,6 +267,7 @@
         Respawn: Number(m.Respawn || 1),
         Radius: Number(m.Radius || 800),
         ActiveRadius: Number(m.ActiveRadius || 0),
+        WanderRadius: Number(m.WanderRadius || 0),
         Boss: Number(m.Boss || 0) ? 1 : 0,
         it_drop_0: itemCols[0],
         it_drop_1: itemCols[1],
@@ -420,8 +423,9 @@
     const fieldsBasic = {
       BotID: { type: 'db_select', label: 'Mob (BotID)', validate: { required: true }, ui: { dbKey: 'mob', placeholder: '— select a mob —', searchPlaceholder: 'Search a mob…' } },
       WorldID: { type: 'db_select', label: 'World (WorldID)', ui: { dbKey: 'world', placeholder: '— select a world —', searchPlaceholder: 'Search a world…' } },
-      // Позиция моба: нельзя ставить на стены/смерть/без крюка, видны спавны
-      // и радиус блуждания — всё это флаги общего PositionPicker.
+      // Позиция моба: нельзя ставить на стены/смерть/без крюка, видны спавны.
+      // На карте рисуются радиус блуждания (WanderRadius) и радиус активности
+      // (ActiveRadius) — разные маркеры, чтобы не путать.
       _pos: {
         type: 'vec2',
         label: 'Position (X, Y)',
@@ -432,7 +436,8 @@
           mapWorldPath: 'WorldID',
           safeTiles: false,
           highlightTiles: [209],
-          radiusPath: 'Radius',
+          radiusPath: 'WanderRadius',
+          activeRadiusPath: 'ActiveRadius',
           grid: false,
           snap: true,
         },
@@ -441,8 +446,14 @@
       Power: { type: 'number', label: 'Power', ui: { min: 0, step: 1 } },
       Number: { type: 'number', label: 'Spawn count', ui: { min: 1, step: 1 } },
       Respawn: { type: 'number', label: 'Respawn (sec)', ui: { min: 0, step: 1 } },
-      Radius: { type: 'number', label: 'Wander radius', ui: { min: 0, step: 1 } },
-      ActiveRadius: { type: 'number', label: 'Active radius (0 — default)', ui: { min: 0, step: 1 } },
+      // Радиус области респауна моба Around его точки (лимит для выбора точки
+      // респауна на сервере), а не радиус блуждания.
+      Radius: { type: 'number', label: 'Spawn radius', ui: { min: 0, step: 1 }, help: 'Area around the point where the mob can spawn' },
+      // Радиус активности: в этом поле зрения моб реагирует на игроков.
+      ActiveRadius: { type: 'number', label: 'Active radius (0 — default)', ui: { min: 0, step: 1 }, help: 'Field of view radius in which the mob becomes active' },
+      // Радиус блуждания: максимальное удаление от точки респауна. При выходе
+      // за него моб телепортируется обратно. 0 — ограничение выключено.
+      WanderRadius: { type: 'number', label: 'Wander radius', ui: { min: 0, step: 1 }, help: 'Max distance from the spawn point; the mob is teleported back when crossed' },
       Boss: { type: 'toggle', label: 'Boss' },
     };
 
@@ -512,6 +523,7 @@
             Respawn: fieldsBasic.Respawn,
             Radius: fieldsBasic.Radius,
             ActiveRadius: fieldsBasic.ActiveRadius,
+            WanderRadius: fieldsBasic.WanderRadius,
             Boss: fieldsBasic.Boss,
           };
           const rest = window.EditorCore.FieldRenderer.renderFields({ fields: restFields, data: STATE.mob, options: fieldOptions });

@@ -595,7 +595,9 @@
         highlightLayer: ui.highlightLayer,
         switchShowID: ui.switchShowID,
         radiusPath: ui.radiusPath,
+        activeRadiusPath: ui.activeRadiusPath,
         radius: ui.radius,
+        radiusActive: ui.radiusActive,
         snap: ui.snap,
         grid: ui.grid,
       }) : `<div class="position-picker" data-position-picker="1"

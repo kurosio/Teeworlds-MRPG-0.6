@@ -248,14 +248,19 @@ void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 		MobBot.m_Boss = pRes->getBoolean("Boss");
 		MobBot.m_Level = pRes->getInt("Level");
 		MobBot.m_RespawnTick = pRes->getInt("Respawn");
-		MobBot.m_Radius = static_cast<float>(pRes->getInt("Radius"));
-		MobBot.m_WorldID = pRes->getInt("WorldID");
+			MobBot.m_Radius = static_cast<float>(pRes->getInt("Radius"));
+			MobBot.m_WorldID = pRes->getInt("WorldID");
 
-		// use configured active radius, or fall back to the map default when unset.
+		// active radius — radius of the field of view in which the mob is active.
 		const float RawActiveRadius = static_cast<float>(pRes->getInt("ActiveRadius"));
 		MobBot.m_ActiveRadius = RawActiveRadius > 1.f
 			? RawActiveRadius
 			: static_cast<float>(g_Config.m_SvMapDistanceActveBot);
+
+	// wander radius — max distance from the spawn point; crossing it teleports
+	// the mob back. 0 — the limit is off. It is independent of the active radius.
+	const float RawWanderRadius = static_cast<float>(pRes->getInt("WanderRadius"));
+	MobBot.m_WanderRadius = RawWanderRadius > 0.f ? RawWanderRadius : 0.f;
 
 		// behavior sets
 		MobBot.InitBehaviors(DBSet(pRes->getString("Behavior")));

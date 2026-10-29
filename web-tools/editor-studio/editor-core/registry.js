@@ -471,9 +471,10 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         mode: createField('text', 'Mode', 'annihilation', {
           ui: { type: 'select', options: ['annihilation', 'wave', 'survival'] }
         }),
-        radius: createField('number', 'Radius', 800, { ui: { min: 0, max: 99999 } }),
-        activeradius: createField('number', 'Activation radius (0 — default)', 0, { ui: { min: 0, max: 999999 } }),
-        position: createField('vec2', 'Position', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1, safeTiles: false, highlightTiles: [209], radiusPath: 'radius' } }),
+        radius: createField('number', 'Radius', 800, { ui: { min: 0, max: 99999 }, help: 'Spawn area radius around the position' }),
+        activeradius: createField('number', 'Active radius (0 — default)', 0, { ui: { min: 0, max: 999999 }, help: 'Field of view radius in which mobs become active' }),
+        wanderradius: createField('number', 'Wander radius (0 — off)', 0, { ui: { min: 0, max: 999999 }, help: 'Max distance from the spawn point; mobs are teleported back when crossed' }),
+        position: createField('vec2', 'Position', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1, safeTiles: false, highlightTiles: [209], radiusPath: 'wanderradius', activeRadiusPath: 'activeradius' } }),
         kill_target: createField('number', 'Kill goal', 10, { 
           ui: { min: 1, max: 9999, showWhen: { path: 'mode', equals: 'wave' } } 
         }),

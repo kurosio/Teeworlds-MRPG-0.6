@@ -100,14 +100,35 @@
     if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.strokeRect(p.x + 1, p.y + 1, q.x - p.x - 2, q.y - p.y - 2); }
     ctx.restore();
   };
-  const drawRadius = (ctx, point, radius, project) => {
+  const drawRadius = (ctx, point, radius, project, style = {}) => {
     if (!point || !Number.isFinite(radius) || radius <= 0) return;
     const center = project(point.x, point.y), edge = project(point.x + radius, point.y);
+    const color = style.color || '#52df9a';
+    const fill = style.fill ?? (color === '#52df9a' ? 'rgba(82,223,154,.09)' : 'rgba(111,140,255,.07)');
+    const dash = style.dash ?? [6, 4];
+    const lineWidth = style.lineWidth ?? 2;
     ctx.save();
-    ctx.strokeStyle = '#52df9a'; ctx.fillStyle = 'rgba(82,223,154,.09)';
-    ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+    ctx.strokeStyle = color; ctx.fillStyle = fill;
+    ctx.lineWidth = lineWidth;
+    if (dash.length) ctx.setLineDash(dash);
     ctx.beginPath(); ctx.arc(center.x, center.y, Math.abs(edge.x - center.x), 0, Math.PI * 2);
     ctx.fill(); ctx.stroke(); ctx.restore();
+
+    if (style.label) {
+      const ex = center.x + Math.abs(edge.x - center.x);
+      const ey = center.y;
+      const text = `${style.label}: ${Math.round(radius)} px`;
+      ctx.save();
+      ctx.translate(ex, ey);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.font = '11px sans-serif';
+      const m = ctx.measureText(text);
+      ctx.fillStyle = 'rgba(0,0,0,.7)';
+      ctx.fillRect(4, -10, m.width + 8, 18);
+      ctx.fillStyle = color;
+      ctx.fillText(text, 8, 0);
+      ctx.restore();
+    }
   };
   const drawMeasure = (ctx, a, b, project) => {
     if (!a || !b) return;

@@ -292,7 +292,7 @@ function get_resource_whitelist(): array
 {
     return [
         'vouchers'   => ['table' => 'tw_voucher',    'pk' => 'ID', 'columns' => ['Code', 'Data', 'Multiple', 'ValidUntil'], 'json' => ['Data'], 'editor' => 'vouchers-editor.html'],
-        'bots_mobs'  => ['table' => 'tw_bots_mobs',  'pk' => 'ID', 'columns' => ['BotID','WorldID','PositionX','PositionY','Debuffs','Behavior','Level','Power','Number','Respawn','Radius','ActiveRadius','Boss','it_drop_0','it_drop_1','it_drop_2','it_drop_3','it_drop_4','it_drop_count','it_drop_chance'], 'editor' => 'mobs-editor.html'],
+        'bots_mobs'  => ['table' => 'tw_bots_mobs',  'pk' => 'ID', 'columns' => ['BotID','WorldID','PositionX','PositionY','Debuffs','Behavior','Level','Power','Number','Respawn','Radius','ActiveRadius','WanderRadius','Boss','it_drop_0','it_drop_1','it_drop_2','it_drop_3','it_drop_4','it_drop_count','it_drop_chance'], 'editor' => 'mobs-editor.html'],
         'bots_info'  => ['table' => 'tw_bots_info',  'pk' => 'ID', 'columns' => ['Name','JsonTeeInfo','EquippedModules','SlotHammer','SlotGun','SlotShotgun','SlotGrenade','SlotRifle','SlotArmor'], 'editor' => 'bots-info-editor.html'],
         'bots_npc'   => ['table' => 'tw_bots_npc',   'pk' => 'ID', 'columns' => ['BotID','PosX','PosY','GiveQuestID','DialogData','Function','Static','Emote','WorldID'], 'json' => ['DialogData'], 'editor' => 'bots-npc-editor.html'],
         'crafts'     => ['table' => 'tw_crafts_list','pk' => 'ID', 'columns' => ['GroupName','ItemID','ItemValue','RequiredItems','Price','WorldID'], 'editor' => 'crafts-editor.html'],

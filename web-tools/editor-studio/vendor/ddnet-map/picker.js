@@ -12,7 +12,8 @@
  *   safe     — список ID игровых тайлов, на которые нельзя ставить точку
  *              (по умолчанию флаг редактора safeTiles даёт 1,2,3);
  *   tiles    — 1: включить игровой слой при открытии; highlightTiles — список ID подсвечиваемых тайлов;
- *   radius   — предпросмотр радиуса; grid/snap — 1|0: начальные инструменты
+ *   radius   — радиус блуждания вокруг точки (px); radiusActive — радиус активности
+ *              (FOV) вокруг точки (px); grid/snap — 1|0: начальные инструменты
  *              (без tiles/grid соответствующие переключатели выключены)
  *
  * Родительскому окну отправляются сообщения:
@@ -156,6 +157,7 @@
       .map((value) => value.trim()).filter(Boolean).map(Number)
       .filter((id) => Number.isInteger(id) && id >= 0 && id <= 255))],
     radius: Math.max(0, toNum(qs.get('radius'), 0)),
+    radiusActive: Math.max(0, toNum(qs.get('radiusActive'), 0)),
     snap: qs.has('snap') ? qs.get('snap') === '1' : null,
     grid: qs.has('grid') ? qs.get('grid') === '1' : null,
   };
