@@ -913,6 +913,11 @@
           setMapApiStatus(r.error || cfg.error || 'Error', 'err');
           return;
         }
+        if (!cfg.maps_dir) {
+          toast('The map source is unavailable', 'error');
+          setMapApiStatus('Map directory not found. Configure a readable maps directory or map-api.', 'err');
+          return;
+        }
         const where = [cfg.maps_dir ? `maps:  ${cfg.maps_dir}` : '', cfg.mapres_dir ? `textures:  ${cfg.mapres_dir}` : '']
           .filter(Boolean).join(', ');
         toast('The map folders are available', 'success');

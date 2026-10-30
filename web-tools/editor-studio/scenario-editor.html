@@ -3164,7 +3164,7 @@
                     if (!response.ok) throw new Error(response.error || `HTTP ${response.status}`);
                     const data = response.data || {};
                     if (data.success && data.files.length > 0) {
-                        this.scenarioSelect.innerHTML = data.files.map(file => `<option value="${file}">${file}</option>`).join('');
+                        this.scenarioSelect.innerHTML = data.files.map(file => `<option value="${EditorCore.utils.escapeHtml(file)}">${EditorCore.utils.escapeHtml(file)}</option>`).join('');
                         await this.loadScenario(data.files[0]);
                     } else this.loadScenarioData({ steps: [], editor_data: { groups: [] } }, 'new_scenario.json');
                 } catch (error) {
@@ -3174,7 +3174,7 @@
             async loadScenario(filename) {
                 if (!filename) return;
                 try {
-                    const response = await EditorCore.Http.json(this.apiUrl(`file=${filename}`));
+                    const response = await EditorCore.Http.json(this.apiUrl(`file=${encodeURIComponent(filename)}`));
                     if (!response.ok) throw new Error(response.error || `HTTP ${response.status}`);
                     const data = response.data || {};
                     if (data.error) throw new Error(data.error);
@@ -3351,7 +3351,7 @@
                             // Dynamic-condition branching: keep JSON minimal.
                             if (!c.timeout || Number(c.timeout) <= 0) {
                                 delete c.timeout;
-                                delete c.fail_step_id; // fail target is meaningless without a timeout
+                                // Keep fail_step_id even without a timeout: it may be used after editing the mode.
                             }
                             if (!this.executionTimeComponentTypes.has(c.type) || !c.execution_time) {
                                 delete c.execution_time;
@@ -3830,7 +3830,7 @@
                 const schemaLinks = Array.isArray(schema.linkTargets) ? schema.linkTargets.filter(Boolean) : [];
                 const fallbackLinks = ['next_step_id'];
                 const knownFields = [...new Set([...schemaLinks, ...fallbackLinks])];
-                return knownFields.filter((field) => Object.prototype.hasOwnProperty.call(component, field) || field === 'next_step_id');
+                return knownFields;
             }
             getComponentLinks(component) {
                 return this.getComponentLinkFields(component)
@@ -3886,7 +3886,7 @@
                 select.innerHTML = `<option value="">-- Not selected --</option>` + options
                     .map((s) => {
                         const foreign = eventKey !== null && this.getStepEventKey(s.id) !== eventKey;
-                        return `<option value="${s.id}" ${s.id === selectedValue ? 'selected' : ''}>${optionLabel(s.id)}${foreign ? '  ⚠ other event' : ''}</option>`;
+                        return `<option value="${EditorCore.utils.escapeHtml(s.id)}" ${s.id === selectedValue ? 'selected' : ''}>${EditorCore.utils.escapeHtml(optionLabel(s.id))}${foreign ? '  ⚠ other event' : ''}</option>`;
                     })
                     .join('');
             }
@@ -4424,27 +4424,43 @@
                 const search = menu.querySelector('.acm-search');
                 if (search) { search.value = ''; setTimeout(() => search.focus(), 0); }
             }
-            _renderAddComponentList(query) {
+            _renderAddComponentList(query, restoreFocus = false) {
                 const menu = this.addComponentMenu.element;
                 const q = String(query || '').trim().toLowerCase();
                 const entries = Object.entries(this.componentTypes).filter(([type, info]) => {
                     if (!q) return true;
                     return `${type} ${info.name} ${info.desc || ''}`.toLowerCase().includes(q);
                 });
-                const items = entries.map(([type, info]) =>
-                    `<div class="context-menu-item flex items-center gap-3 p-2 rounded-md editor-hover cursor-pointer" data-type="${type}"><i class="${info.icon} w-5 text-center editor-text"></i><div class="min-w-0"><div class="font-semibold editor-text">${info.name}</div><div class="text-xs editor-muted-text truncate">${info.desc || ''}</div></div></div>`
-                ).join('') || `<div class="px-2 py-4 text-sm editor-muted-text text-center">Nothing found</div>`;
+                const categories = [
+                    ['Logic & conditions', ['branch_random', 'dynamic_condition', 'quest_condition', 'condition_movement', 'defeat_mobs', 'use_chat_code', 'universal_condition_item', 'universal_pick_item_task', 'universal_shootmarkers']],
+                    ['Messages & presentation', ['message', 'wait', 'follow_camera', 'emote']],
+                    ['Player & quests', ['teleport', 'moving_disable', 'quest_action', 'restore_resources']],
+                    ['World & dungeon', ['set_group_flags', 'set_group_lives', 'set_group_spawn', 'dungeon_door_control', 'dungeon_activate_point', 'dungeon_complete', 'universal_door_control', 'world_complete']]
+                ];
+                const assigned = new Set(categories.flatMap(([, types]) => types));
+                categories.push(['Other', entries.map(([type]) => type).filter(type => !assigned.has(type))]);
+                const escape = EditorCore.utils.escapeHtml;
+                const items = categories.map(([label, types]) => {
+                    const group = entries.filter(([type]) => types.includes(type));
+                    if (!group.length) return '';
+                    const rows = group.map(([type, info]) =>
+                        `<div class="context-menu-item flex items-center gap-3 p-2 rounded-md editor-hover cursor-pointer" data-type="${escape(type)}"><i class="${escape(info.icon)} w-5 text-center editor-text"></i><div class="min-w-0"><div class="font-semibold editor-text">${escape(info.name)}</div><div class="text-xs editor-muted-text truncate">${escape(info.desc || '')}</div></div></div>`
+                    ).join('');
+                    return `<details ${q ? 'open' : ''}><summary class="p-2 cursor-pointer font-semibold editor-text">${escape(label)} (${group.length})</summary>${rows}</details>`;
+                }).join('') || `<div class="px-2 py-4 text-sm editor-muted-text text-center">Nothing found</div>`;
                 menu.innerHTML =
                     `<div class="acm-head sticky top-0 z-10 pb-2">
                         <input type="text" class="acm-search form-input w-full text-sm" placeholder="Search a component…" autocomplete="off">
                      </div>
                      <div class="acm-list flex flex-col gap-1 overflow-y-auto">${items}</div>`;
                 const search = menu.querySelector('.acm-search');
-                search?.addEventListener('input', (e) => this._renderAddComponentList(e.target.value));
+                search.value = query || '';
+                if (restoreFocus) { search.focus(); search.setSelectionRange(search.value.length, search.value.length); }
+                search?.addEventListener('input', (e) => this._renderAddComponentList(e.target.value, true));
                 search?.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape') { this.hideAddComponentMenu(); }
                     else if (e.key === 'Enter') {
-                        const first = menu.querySelector('.context-menu-item');
+                        const first = menu.querySelector('details[open] .context-menu-item');
                         if (first) this._addComponentOfType(first.dataset.type);
                     }
                 });

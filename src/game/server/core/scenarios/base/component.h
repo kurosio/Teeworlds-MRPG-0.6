@@ -28,6 +28,7 @@ template<typename TBase, typename T>
 class Component : public IStepComponent
 {
 	int m_StartExecutionTimeTick {};
+	std::optional<StepId> m_ConfiguredNextStepId {};
 
 protected:
 	TBase* m_pScenario {};
@@ -56,7 +57,7 @@ public:
 		m_ExecutionTimeTick = m_StartExecutionTimeTick;
 
 		if(j.contains("next_step_id"))
-			m_NextStepId = j.value("next_step_id", "");
+			m_ConfiguredNextStepId = j.value("next_step_id", "");
 	}
 
 	void Init(ScenarioBase* pScenario) override
@@ -67,6 +68,7 @@ public:
 	void OnStart() final
 	{
 		m_ExecutionTimeTick = m_StartExecutionTimeTick;
+		m_NextStepId = m_ConfiguredNextStepId;
 		m_bIsFinished = false;
 		OnStartImpl();
 	}

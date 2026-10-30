@@ -601,8 +601,13 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
           ui: { showWhen: { path: 'condition_type', equals: 'quest_state' } }
         }),
         invert: createField('boolean', 'Invert the result', false),
+        check_once: createField('boolean', 'Decide immediately', false, { ui: { help: 'Check once and take the failure path immediately if false; otherwise wait until success or timeout.' } }),
+        timeout: createField('number', 'Timeout (seconds; 0 = wait)', 0, { ui: { min: 0, max: 999999, help: 'Ignored when Decide immediately is enabled.' } }),
+        pass_step_id: createField('text', 'Step on success', ''),
+        fail_step_id: createField('text', 'Step on failure or timeout', ''),
         show_progress: createField('boolean', 'Show a reminder to players', true)
-      }
+      },
+      linkTargets: ['pass_step_id', 'fail_step_id']
     },
     condition_movement: {
       name: 'Condition: Movement',
