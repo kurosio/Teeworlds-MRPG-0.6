@@ -126,6 +126,22 @@
   color: var(--editor-success);
 }
 
+/* Окружность на карте: цвет точки в чипе совпадает с цветом линии. */
+.position-picker__flag--radius {
+  gap: 5px;
+  border-color: color-mix(in srgb, var(--position-flag-color, var(--editor-soft-border-strong)) 55%, transparent);
+  color: var(--position-flag-color, var(--editor-text-muted));
+}
+
+.position-picker__flag--radius::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--position-flag-color, currentColor);
+}
+
 .position-picker__warning {
   margin-top: 3px;
   font-size: 11.5px;

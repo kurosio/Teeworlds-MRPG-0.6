@@ -63,7 +63,13 @@ test('scenario mob positions enable mob highlightTiles and bind the radius field
   const schemas = context.window.EditorCore.schemas.componentSchemas;
   const ui = schemas.defeat_mobs.fields.position.ui;
   assert.deepEqual(Array.from(ui.highlightTiles), [209]);
-  assert.equal(ui.radiusPath, 'radius');
+  // Радиусы объявлены массивом: радиус спавна зоны и радиус активности мобов.
+  assert.deepEqual(Array.from(ui.radii, (entry) => entry.path), ['radius', 'activeradius']);
+  assert.deepEqual(Array.from(ui.radii, (entry) => entry.label), ['Spawn radius', 'Active radius']);
+  // Одиночных radiusPath/activeRadiusPath/radius/radiusActive в схеме больше нет.
+  for (const legacy of ['radiusPath', 'activeRadiusPath', 'radius', 'radiusActive']) {
+    assert.equal(ui[legacy], undefined, legacy);
+  }
   assert.equal(ui.safeTiles, false);
   for (const [name, schema] of Object.entries(schemas)) {
     for (const field of Object.values(schema.fields || {})) {

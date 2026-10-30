@@ -574,7 +574,16 @@
       Position: {
         type: 'vec2',
         label: 'Point coordinates (X, Y)',
-        ui: { step: 1, axes: { x: 'PosX', y: 'PosY' }, mapWorldPath: 'WorldID', showTiles: true, radius: 320, highlightTiles: [29] },
+        // 320 px — радиус действия склада (в игре взаимодействие работает на
+        // таком расстоянии), поэтому подпись у окружности «радиус действия».
+        ui: {
+          step: 1,
+          axes: { x: 'PosX', y: 'PosY' },
+          mapWorldPath: 'WorldID',
+          showTiles: true,
+          highlightTiles: [29],
+          radii: [{ value: 320, label: 'Action radius', color: '#ffda70', dash: [5, 4] }],
+        },
       },
       // ── Storage settings (StorageData JSON, edited through plain controls) ──
       StorageValue: {

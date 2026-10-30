@@ -12,9 +12,18 @@
  *   safe     — список ID игровых тайлов, на которые нельзя ставить точку
  *              (по умолчанию флаг редактора safeTiles даёт 1,2,3);
  *   tiles    — 1: включить игровой слой при открытии; highlightTiles — список ID подсвечиваемых тайлов;
- *   radius   — радиус блуждания вокруг точки (px); radiusActive — радиус активности
- *              (FOV) вокруг точки (px); grid/snap — 1|0: начальные инструменты
+ *   radii    — JSON-массив окружностей вокруг точки. Каждый элемент:
+ *              { value, label, color, dash, lineWidth, fill } — радиус (px),
+ *              подпись, цвет линии, штрихи пунктира, толщина и заливка
+ *              (`fill: false` — только контур). Массив задаёт количество и
+ *              подписи радиусов, поэтому одно окно показывает столько
+ *              окружностей, сколько объявил редактор;
+ *   grid/snap — 1|0: начальные инструменты
  *              (без tiles/grid соответствующие переключатели выключены)
+ *
+ * Радиусы передаются только параметром `radii`: одиночных radius/radiusActive
+ * в адресе окна нет, поэтому и «радиус блуждания» больше не подписывается
+ * автоматически — подпись приходит из объявления `ui.radii`.
  *
  * Родительскому окну отправляются сообщения:
  *   editor-map:ready            — карта отрисована
@@ -153,6 +162,41 @@
     .filter((value) => value !== '') // Number('') is 0, not an explicitly blocked tile.
     .map(Number)
     .filter((value, index, all) => Number.isInteger(value) && value >= 0 && all.indexOf(value) === index);
+  // Цвет и штрихи приходят из объявления UI-элемента позиции: принимаем только
+  // простые css-цвета, чтобы параметр адреса не превратился в произвольную строку.
+  const RADIUS_MAX = 100000;
+  const radiusColor = (value) => {
+    const text = typeof value === 'string' ? value.trim() : '';
+    if (!text || text.length > 64) return '';
+    if (/^#[0-9a-f]{3,8}$/i.test(text)) return text;
+    if (/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*(?:0|1|0?\.\d+)\s*)?\)$/i.test(text)) return text;
+    return '';
+  };
+  // `radii` — массив окружностей; пустой или битый JSON просто не рисует их.
+  const readRadii = () => {
+    const raw = qs.get('radii');
+    if (!raw) return [];
+    try {
+      const list = JSON.parse(raw);
+      if (!Array.isArray(list)) return [];
+      return list.slice(0, 8).map((entry) => {
+        if (!entry || typeof entry !== 'object') return null;
+        const value = Math.round(toNum(entry.value, 0));
+        if (!Number.isFinite(value) || value <= 0 || value > RADIUS_MAX) return null;
+        return {
+          value,
+          label: typeof entry.label === 'string' ? entry.label.slice(0, 80) : '',
+          color: radiusColor(entry.color) || '',
+          dash: Array.isArray(entry.dash)
+            ? entry.dash.map(Number).filter((n) => Number.isFinite(n) && n >= 0 && n <= 64).slice(0, 8)
+            : null,
+          lineWidth: Number.isFinite(Number(entry.lineWidth)) && Number(entry.lineWidth) >= 0.5
+            ? Math.min(Number(entry.lineWidth), 8) : null,
+          fill: entry.fill === false ? false : (radiusColor(entry.fill) || null),
+        };
+      }).filter(Boolean);
+    } catch { return []; }
+  };
   const OPTIONS = {
     preview: qs.get('preview') === '1',
     highlightLayer: qs.get('highlightLayer') === 'switch' ? 'switch' : 'game',
@@ -162,8 +206,7 @@
     highlightTiles: [...new Set((qs.get('highlightTiles') || '').split(',')
       .map((value) => value.trim()).filter(Boolean).map(Number)
       .filter((id) => Number.isInteger(id) && id >= 0 && id <= 255))],
-    radius: Math.max(0, toNum(qs.get('radius'), 0)),
-    radiusActive: Math.max(0, toNum(qs.get('radiusActive'), 0)),
+    radii: readRadii(),
     snap: qs.has('snap') ? qs.get('snap') === '1' : null,
     grid: qs.has('grid') ? qs.get('grid') === '1' : null,
   };

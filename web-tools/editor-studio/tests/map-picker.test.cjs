@@ -38,7 +38,13 @@ function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = 
   const nodes = new Map();
   const listeners = {};
   const messages = [];
-  const canvas = new Proxy({}, { get: () => () => {} });
+  // Оверлей рисует через ctx: записываем вызовы, чтобы проверять цвета,
+  // пунктир и подписи радиусов без настоящего canvas.
+  const drawing = [];
+  const canvas = new Proxy({}, {
+    get: (target, key) => (...args) => { drawing.push([String(key), ...args]); },
+    set: () => true,
+  });
   const document = {
     activeElement: null,
     getElementById(id) {
@@ -86,7 +92,7 @@ function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = 
       if (stopped) break;
     }
   };
-  return { node:id=>document.getElementById(`pk-${id}`), document, messages, tw, emit };
+  return { node:id=>document.getElementById(`pk-${id}`), document, messages, tw, emit, drawing };
 }
 test('picker controls: align, undo/redo, reset, grid, tile keyboard step and pixel step', () => {
   const p = picker();
@@ -189,6 +195,34 @@ test('layer toggles, spawn navigation, collision inspection and radius rendering
   assert.equal(p.node('out-x').textContent,'16');
 });
 
+test('radii array draws every circle with its own caption and dash pattern', () => {
+  const radii = [
+    { value: 96, label: 'Spawn radius', color: '#52df9a', dash: [6, 4], lineWidth: 2 },
+    { value: 48, label: 'Action radius', color: '#ffda70', dash: [], lineWidth: 1.5, fill: false },
+  ];
+  const p = picker(`?map=/map&x=48&y=48&radii=${encodeURIComponent(JSON.stringify(radii))}`);
+  p.tw.onAfterRender();
+  const texts = p.drawing.filter((call) => call[0] === 'fillText').map((call) => call[1]);
+  assert.ok(texts.some((text) => /^Spawn radius: 96 px$/.test(text)));
+  assert.ok(texts.some((text) => /^Action radius: 48 px$/.test(text)));
+  // Пунктир приходит из объявления: [6,4] у первой окружности, сплошная у второй.
+  assert.ok(p.drawing.some((call) => call[0] === 'setLineDash' && JSON.stringify(call[1]) === '[6,4]'));
+  // Предпросмотр стартует со значения первого радиуса.
+  assert.equal(p.node('radius').value, '96');
+  // Битый JSON в адресе не ломает окно и не рисует лишних окружностей.
+  const broken = picker('?map=/map&x=48&y=48&radii=not-json');
+  broken.tw.onAfterRender();
+  assert.equal(broken.node('radius').value, '');
+});
+
+test('legacy radius/radiusActive address params are gone and draw nothing', () => {
+  const p = picker('?map=/map&x=48&y=48&radius=96&radiusActive=32');
+  p.tw.onAfterRender();
+  const texts = p.drawing.filter((call) => call[0] === 'fillText').map((call) => call[1]);
+  assert.deepEqual(texts.filter((text) => /px$/.test(text)), []);
+  assert.equal(p.node('radius').value, '');
+});
+
 const safeMap = () => ({
   groups:[{layers:[{type:2,width:2,height:2}]}],
   gameplay:{width:2,height:2,indices:Uint8Array.from([1,2,3,0])},
@@ -260,7 +294,7 @@ test('picker opens with collapsed tools, gameplay and grid off by default', () =
   assert.equal(p.document.getElementById('pk-workbench').open,false);
 });
 test('safe, highlightTiles and radius do not implicitly enable gameplay or expand tools', () => {
-  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&highlightTiles=209&radius=96', safeMap());
+  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&highlightTiles=209&radii=%5B%7B%22value%22%3A96%7D%5D', safeMap());
   assert.equal(p.node('collision').checked,false);
   assert.equal(p.node('grid').checked,false);
   assert.equal(p.node('radius').value,'96');
@@ -268,7 +302,7 @@ test('safe, highlightTiles and radius do not implicitly enable gameplay or expan
   p.tw.onAfterRender(); // спавны и радиус работают без полного игрового слоя
 });
 test('explicit map flags enable gameplay and grid without expanding tools', () => {
-  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&tiles=1&highlightTiles=209&radius=96&grid=1&snap=1', safeMap());
+  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&tiles=1&highlightTiles=209&radii=%5B%7B%22value%22%3A96%7D%5D&grid=1&snap=1', safeMap());
   assert.equal(p.node('collision').checked,true);
   assert.equal(p.node('grid').checked,true);
   assert.equal(p.node('snap').checked,true);

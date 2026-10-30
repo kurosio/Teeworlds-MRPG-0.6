@@ -424,8 +424,8 @@
       BotID: { type: 'db_select', label: 'Mob (BotID)', validate: { required: true }, ui: { dbKey: 'mob', placeholder: '— select a mob —', searchPlaceholder: 'Search a mob…' } },
       WorldID: { type: 'db_select', label: 'World (WorldID)', ui: { dbKey: 'world', placeholder: '— select a world —', searchPlaceholder: 'Search a world…' } },
       // Позиция моба: нельзя ставить на стены/смерть/без крюка, видны спавны.
-      // На карте рисуются радиус блуждания (WanderRadius) и радиус активности
-      // (ActiveRadius) — разные маркеры, чтобы не путать.
+      // На карте — радиус спавна (Radius) и радиус активности (ActiveRadius):
+      // у каждой окружности свой цвет и подпись, поэтому их не перепутать.
       _pos: {
         type: 'vec2',
         label: 'Position (X, Y)',
@@ -436,8 +436,10 @@
           mapWorldPath: 'WorldID',
           safeTiles: false,
           highlightTiles: [209],
-          radiusPath: 'WanderRadius',
-          activeRadiusPath: 'ActiveRadius',
+          radii: [
+            { path: 'Radius', label: 'Spawn radius', color: '#52df9a', dash: [6, 4] },
+            { path: 'ActiveRadius', label: 'Active radius', color: '#6f8cff', dash: [3, 3], lineWidth: 1.5 },
+          ],
           grid: false,
           snap: true,
         },

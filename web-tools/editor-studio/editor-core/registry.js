@@ -474,7 +474,17 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         radius: createField('number', 'Radius', 800, { ui: { min: 0, max: 99999 }, help: 'Spawn area radius around the position' }),
         activeradius: createField('number', 'Active radius (0 — default)', 0, { ui: { min: 0, max: 999999 }, help: 'Field of view radius in which mobs become active' }),
         wanderradius: createField('number', 'Wander radius (0 — off)', 0, { ui: { min: 0, max: 999999 }, help: 'Max distance from the spawn point; mobs are teleported back when crossed' }),
-        position: createField('vec2', 'Position', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1, safeTiles: false, highlightTiles: [209], radiusPath: 'wanderradius', activeRadiusPath: 'activeradius' } }),
+        // Радиусы сцены рисуются массивом: зона спавна мобов и радиус их
+        // активности, у каждой окружности свой цвет и подпись.
+        position: createField('vec2', 'Position', { x: 0, y: 0 }, {
+          ui: {
+            min: -99999, max: 99999, step: 0.1, safeTiles: false, highlightTiles: [209],
+            radii: [
+              { path: 'radius', label: 'Spawn radius', color: '#52df9a', dash: [6, 4] },
+              { path: 'activeradius', label: 'Active radius', color: '#6f8cff', dash: [3, 3], lineWidth: 1.5 },
+            ],
+          }
+        }),
         kill_target: createField('number', 'Kill goal', 10, { 
           ui: { min: 1, max: 9999, showWhen: { path: 'mode', equals: 'wave' } } 
         }),

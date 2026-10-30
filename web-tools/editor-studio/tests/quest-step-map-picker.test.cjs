@@ -117,7 +117,10 @@ test('all position editors declare the map flags they need', () => {
   for (const [page, token] of [
     ['mobs-editor.html', 'safeTiles: false'],
     ['mobs-editor.html', 'highlightTiles: [209]'],
-    ['mobs-editor.html', "radiusPath: 'Radius'"],
+    // Мобы показывают радиус спавна (Radius), а не радиус блуждания; число,
+    // цвет и подпись объявляются в массиве radii.
+    ['mobs-editor.html', "path: 'Radius'"],
+    ['mobs-editor.html', "label: 'Spawn radius'"],
     ['bots-npc-editor.html', 'safeTiles: true'],
     ['quests-editor.html', 'safeTiles: true'],
     ['aethers-editor.html', 'showTiles: true'],
@@ -149,7 +152,7 @@ test('PositionPicker renders one card with map flags and manual entry', () => {
     step: 1,
     safeTiles: true,
     highlightTiles: [209],
-    radiusPath: 'Radius',
+    radii: [{ path: 'Radius', label: 'Spawn radius', color: '#52df9a', dash: [6, 4] }],
     grid: true,
     snap: true,
   });
@@ -168,12 +171,77 @@ test('PositionPicker renders one card with map flags and manual entry', () => {
   // Флаги карты сериализуются в объявление элемента.
   assert.match(html, /data-map-options="[^"]*&quot;safe&quot;:\[1,2,3\]/);
   assert.match(html, /&quot;highlightTiles&quot;:\[209\]/);
-  assert.match(html, /&quot;radiusPath&quot;:&quot;Radius&quot;/);
+  // Старых одиночных ключей в объявлении нет — только массив radii.
+  for (const legacy of ['radiusPath', 'activeRadiusPath', 'radiusActive']) {
+    assert.doesNotMatch(html, new RegExp(`&quot;${legacy}&quot;`), legacy);
+  }
+  assert.match(html, /&quot;radii&quot;:\[/);
   for (const flag of ['safe', 'highlightTiles', 'radius', 'grid', 'snap']) {
     assert.match(html, new RegExp(`data-position-flag="${flag}"`));
   }
   // Эти оверлеи больше не включают полный игровой слой неявно.
   assert.match(html, /&quot;tiles&quot;:false/);
+});
+
+test('radii are declared as an array with per-circle color, dash and caption', () => {
+  const api = loadModule();
+  const html = api.render({
+    label: 'Point',
+    xPath: 'X', yPath: 'Y',
+    xInputHtml: '', yInputHtml: '',
+    radii: [
+      { path: 'Radius', label: 'Spawn radius', color: '#52df9a', dash: [6, 4] },
+      { value: 320, label: 'Action radius', color: '#ffda70', dash: [], fill: false },
+    ],
+  });
+  // Массив едет в объявление элемента целиком — с цветом, пунктиром и подписью.
+  assert.match(html, /&quot;radii&quot;:\[/);
+  assert.match(html, /&quot;color&quot;:&quot;#52df9a&quot;/);
+  assert.match(html, /&quot;color&quot;:&quot;#ffda70&quot;/);
+  assert.match(html, /&quot;label&quot;:&quot;Spawn radius&quot;/);
+  assert.match(html, /&quot;label&quot;:&quot;Action radius&quot;/);
+  // Каждый радиус — свой чип с подписью, поэтому видно, что именно на карте.
+  assert.match(html, /data-position-radius-chip="0"/);
+  assert.match(html, /data-position-radius-chip="1"/);
+  assert.match(html, />Spawn radius</);
+  assert.match(html, />Action radius</);
+  // Старые одиночные флаги не нужны: подписи больше не «радиус блуждания».
+  assert.doesNotMatch(html, /&quot;radiusPath&quot;:&quot;[^&]/);
+});
+
+test('radii resolve to drawable circles, removed legacy keys are ignored', () => {
+  const api = loadModule();
+  const rootWith = (options) => ({
+    getAttribute: (name) => name === 'data-map-options' ? JSON.stringify(options) : null,
+    closest: () => null,
+    contains: () => false,
+  });
+
+  const resolved = api.resolveMapOptions(rootWith({
+    radii: [
+      { path: 'Radius', value: 800, label: 'Spawn radius', color: '#52df9a', dash: [6, 4] },
+      { value: 320, label: 'Action radius', color: '#ffda70', dash: [], fill: false },
+    ],
+  }));
+  assert.deepEqual(Array.from(resolved.radii, (r) => r.value), [800, 320]);
+  assert.deepEqual(Array.from(resolved.radii, (r) => r.label), ['Spawn radius', 'Action radius']);
+  assert.equal(resolved.radii[1].color, '#ffda70');
+  assert.deepEqual(Array.from(resolved.radii[1].dash), []);
+  assert.equal(resolved.radii[1].fill, false);
+
+  // Старый конфиг удалён: radiusPath/activeRadiusPath/radius/radiusActive
+  // больше не превращаются в окружности и не попадают в параметры окна.
+  const legacy = api.resolveMapOptions(rootWith({
+    radiusPath: 'Radius', activeRadiusPath: 'ActiveRadius', radius: 320, radiusActive: 96,
+  }));
+  assert.deepEqual(Array.from(legacy.radii), []);
+  for (const key of ['radius', 'radiusActive', 'radiusPath', 'activeRadiusPath']) {
+    assert.equal(legacy[key], undefined, key);
+  }
+
+  // Нулевые и пустые радиусы не рисуются.
+  const empty = api.resolveMapOptions(rootWith({ radii: [{ value: 0 }, { path: 'Radius' }] }));
+  assert.deepEqual(Array.from(empty.radii), []);
 });
 
 test('vec2 gameplay and grid defaults are explicit and independent of other overlays', () => {
@@ -186,11 +254,12 @@ test('vec2 gameplay and grid defaults are explicit and independent of other over
   assert.equal(plain.tiles, false);
   assert.equal(plain.grid, null); // picker трактует отсутствие настройки как выключено
 
-  const overlaysOnly = api.resolveMapOptions(rootWith({ safeTiles: true, highlightTiles: [209], radius: 96 }));
+  const overlaysOnly = api.resolveMapOptions(rootWith({ safeTiles: true, highlightTiles: [209], radii: [{ value: 96 }] }));
   assert.equal(overlaysOnly.tiles, false);
   assert.equal(overlaysOnly.grid, null);
   assert.deepEqual(Array.from(overlaysOnly.highlightTiles), [209]);
-  assert.equal(overlaysOnly.radius, 96);
+  assert.deepEqual(Array.from(overlaysOnly.radii, (r) => r.value), [96]);
+  assert.equal(overlaysOnly.radius, undefined);
 
   const explicit = api.resolveMapOptions(rootWith({ showTiles: true, grid: true }));
   assert.equal(explicit.tiles, true);
@@ -237,7 +306,7 @@ test('PositionPicker saves manual coordinates, world and map result', { skip: do
     step: 1,
     safeTiles: true,
     highlightTiles: [209],
-    radiusPath: 'Radius',
+    radii: [{ path: 'Radius', label: 'Spawn radius', color: '#52df9a', dash: [6, 4] }],
     grid: true,
     snap: true,
   });
@@ -276,7 +345,11 @@ test('PositionPicker saves manual coordinates, world and map result', { skip: do
   assert.deepEqual(Array.from(openedOptions.mapOptions.safe), [1, 2, 3]);
   assert.deepEqual(Array.from(openedOptions.mapOptions.highlightTiles), [209]);
   assert.equal(openedOptions.mapOptions.tiles, false);
-  assert.equal(openedOptions.mapOptions.radius, 256);
+  // Радиус берётся из поля формы: 256 из #radius → одна окружность.
+  assert.deepEqual(Array.from(openedOptions.mapOptions.radii, (r) => r.value), [256]);
+  assert.equal(openedOptions.mapOptions.radii[0].label, 'Spawn radius');
+  assert.equal(openedOptions.mapOptions.radii[0].color, '#52df9a');
+  assert.deepEqual(Array.from(openedOptions.mapOptions.radii[0].dash), [6, 4]);
   assert.equal(openedOptions.mapOptions.grid, true);
   assert.equal(openedOptions.mapOptions.snap, true);
   assert.deepEqual(Array.from(api.getMapOptions(picker).safe), [1, 2, 3]);

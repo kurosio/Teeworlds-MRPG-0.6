@@ -10,8 +10,18 @@
  *     только для карты.
  *
  * Флаги карты задаются при объявлении элемента (схема `ui.*` или `render()`),
- * например `{ safeTiles: true, highlightTiles: [209], radiusPath: 'Radius' }`.
+ * например `{ safeTiles: true, highlightTiles: [209], radii: [...] }`.
  * Они едут в окно карты через `PointMap.open()` и подсвечивают нужные слои.
+ *
+ * Радиусы объявляются ТОЛЬКО массивом `radii`: у каждого редактора свои
+ * окружности, их количество, цвет пунктира и подпись. Одиночные
+ * `radiusPath` / `activeRadiusPath` / `radius` / `radiusActive` больше не
+ * поддерживаются — старый конфиг нужно переписать на `radii`:
+ *
+ *   radii: [
+ *     { path: 'Radius', label: 'Spawn radius', color: '#52df9a', dash: [6, 4] },
+ *     { value: 320, label: 'Action radius', color: '#ffda70', dash: [], fill: false },
+ *   ]
  *
  * Скрытые инпуты `data-position-axis` остаются обычными полями формы:
  * FormRuntime, гостевые правки, валидация и сохранение работают без изменений.
@@ -51,6 +61,52 @@
   // которые нельзя ставить мобов, NPC и цели заданий.
   const DEFAULT_BLOCKED_TILES = Object.freeze([1, 2, 3]);
 
+  // ── Радиусы карты ─────────────────────────────────────────────────────────
+  // `radii: [...]` — массив окружностей вокруг точки. Каждая описывается сама:
+  //   path     — путь поля формы с радиусом (`data-path`), значение читается
+  //              при открытии карты, поэтому правки в форме видны сразу;
+  //   value    — фиксированный радиус, если поля в форме нет;
+  //   label    — подпись у окружности (английский текст, переводится через i18n);
+  //   color    — цвет линии (hex или rgb/rgba);
+  //   dash     — массив длин штрихов пунктира, [] — сплошная линия;
+  //   lineWidth— толщина линии; fill — цвет заливки, false — без заливки.
+  // Пустое или нулевое значение радиуса просто не рисует окружность.
+  const RADIUS_MAX = 100000;
+  const RADIUS_LIMIT = 8;
+  const RADIUS_COLORS = Object.freeze(['#52df9a', '#6f8cff', '#ffda70', '#ff8fab', '#8ce0ff']);
+  const radiusColor = (value) => {
+    const text = typeof value === 'string' ? value.trim() : '';
+    if (!text || text.length > 64) return '';
+    if (/^#[0-9a-f]{3,8}$/i.test(text)) return text;
+    if (/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*(?:0|1|0?\.\d+)\s*)?\)$/i.test(text)) return text;
+    return '';
+  };
+  const radiusDash = (value) => (Array.isArray(value)
+    ? value.map(Number).filter((n) => Number.isFinite(n) && n >= 0 && n <= 64).slice(0, 8)
+    : null);
+  const radiusFill = (value) => {
+    if (value === false || value === 'none' || value === 'transparent') return false;
+    return radiusColor(value) || null;
+  };
+  const radiusPx = (value, max = RADIUS_MAX) => {
+    const n = Number(value);
+    const limit = Number.isFinite(Number(max)) && Number(max) > 0 ? Math.min(Number(max), RADIUS_MAX) : RADIUS_MAX;
+    return Number.isFinite(n) && n > 0 ? Math.min(Math.round(n), limit) : 0;
+  };
+  const normalizeRadiusEntry = (entry, index = 0) => {
+    const source = entry && typeof entry === 'object' ? entry : { value: entry };
+    return {
+      path: source.path == null ? '' : String(source.path),
+      value: radiusPx(source.value, source.max),
+      label: source.label == null ? '' : String(source.label).slice(0, 80),
+      color: radiusColor(source.color) || RADIUS_COLORS[index % RADIUS_COLORS.length],
+      dash: radiusDash(source.dash),
+      lineWidth: Number.isFinite(Number(source.lineWidth)) && Number(source.lineWidth) >= 0.5
+        ? Math.min(Number(source.lineWidth), 8) : 2,
+      fill: radiusFill(source.fill),
+    };
+  };
+
   /**
    * Нормализуем объявление флагов в один объект (он же едет в URL карты).
    * Функция идемпотентна: уже нормализованный объект из `data-map-options`
@@ -68,6 +124,11 @@
     const showTiles = !!o.showTiles;
     const highlightTiles = [...new Set((Array.isArray(o.highlightTiles) ? o.highlightTiles : [])
       .filter((id) => Number.isInteger(id) && id >= 0 && id <= 255))];
+    // Радиусы — только массив `radii`. Одиночные `radiusPath` / `radius` /
+    // `activeRadiusPath` / `radiusActive` удалены из конфига: их больше нет ни
+    // в объявлении, ни в `data-map-options`, поэтому старые ключи игнорируются.
+    const radii = (Array.isArray(o.radii) ? o.radii.slice(0, RADIUS_LIMIT) : [])
+      .map((entry, index) => normalizeRadiusEntry(entry, index));
     return {
       safe,
       showTiles,
@@ -78,10 +139,7 @@
       highlightTiles,
       highlightLayer: o.highlightLayer === 'switch' ? 'switch' : 'game',
       switchShowID: Number.isInteger(o.switchShowID) && o.switchShowID >= 1 && o.switchShowID <= 255 ? o.switchShowID : null,
-      radiusPath: o.radiusPath == null ? '' : String(o.radiusPath),
-      activeRadiusPath: o.activeRadiusPath == null ? '' : String(o.activeRadiusPath),
-      radius: o.radius == null ? '' : o.radius,
-      radiusActive: o.radiusActive == null ? '' : o.radiusActive,
+      radii,
       snap: typeof o.snap === 'boolean' ? o.snap : null,
       grid: typeof o.grid === 'boolean' ? o.grid : null,
     };
@@ -91,8 +149,6 @@
     safe: () => t('No collision tiles'),
     highlightTiles: () => t('Tile highlights'),
     tiles: () => t('Gameplay layer'),
-    radius: () => t('Wander radius'),
-    radiusActive: () => t('Active radius'),
     snap: () => t('Tile centers'),
     grid: () => t('Grid'),
   };
@@ -100,8 +156,6 @@
     safe: () => t('A point cannot be placed on a solid, death or no-hook tile'),
     highlightTiles: () => t('Highlight selected tile IDs on the map'),
     tiles: () => t('Show the map gameplay layer'),
-    radius: () => t('Show the wander radius around the point'),
-    radiusActive: () => t('Show the active (aggro) radius around the point'),
     snap: () => t('Snap the point to tile centers'),
     grid: () => t('Show the tile grid'),
   };
@@ -109,17 +163,31 @@
     safe: o.safe.length > 0,
     highlightTiles: o.highlightTiles.length > 0,
     tiles: o.showTiles,
-    radius: !!o.radiusPath || Number(o.radius) > 0,
-    radiusActive: !!o.activeRadiusPath || Number(o.radiusActive) > 0,
     snap: o.snap === true,
     grid: o.grid === true,
   })[key];
 
-  const flagsHtml = (o) => Object.keys(FLAG_LABELS)
-    .filter((key) => flagOn(o, key))
-    .map((key) => `<span class="position-picker__flag position-picker__flag--${key}"`
-      + ` data-position-flag="${key}" title="${esc(FLAG_TITLES[key]())}">${esc(FLAG_LABELS[key]())}</span>`)
-    .join('');
+  /** Подпись окружности: поле label из объявления radii (переводится через i18n). */
+  const radiusEntryLabel = (entry) => (entry?.label ? t(entry.label) : t('Radius'));
+
+  const flagHtml = (key) => `<span class="position-picker__flag position-picker__flag--${key}"`
+    + ` data-position-flag="${key}" title="${esc(FLAG_TITLES[key]())}">${esc(FLAG_LABELS[key]())}</span>`;
+
+  // Окружности показываются своими чипами: цвет пунктира — точка в чипе,
+  // подпись — та же, что у окружности на карте.
+  const radiusFlagHtml = (entry, index) => `<span class="position-picker__flag position-picker__flag--radius"`
+    + ` data-position-flag="radius" data-position-radius-chip="${index}"`
+    + ` data-position-flag-label="${esc(entry.label)}" style="--position-flag-color:${esc(entry.color)}"`
+    + ` title="${esc(t('Radius shown on the map: {0}', [radiusEntryLabel(entry)]))}">`
+    + `${esc(radiusEntryLabel(entry))}</span>`;
+
+  const flagsHtml = (o) => {
+    const chips = [];
+    for (const key of ['safe', 'highlightTiles', 'tiles']) if (flagOn(o, key)) chips.push(flagHtml(key));
+    o.radii.forEach((entry, index) => chips.push(radiusFlagHtml(entry, index)));
+    for (const key of ['snap', 'grid']) if (flagOn(o, key)) chips.push(flagHtml(key));
+    return chips.join('');
+  };
 
   /** Разметка элемента. `xInputHtml`/`yInputHtml` — уже готовые скрытые инпуты. */
   const render = (options = {}) => {
@@ -160,26 +228,39 @@
     return Array.from(document.querySelectorAll('[data-path]')).find(matches) || null;
   };
 
-  /** Флаги + актуальное значение радиуса из формы → параметры окна карты. */
+  /** Флаги + актуальные значения радиусов из формы → параметры окна карты. */
   const resolveMapOptions = (root, override = {}) => {
     const o = readMapOptions(root);
     const resolveRadius = (path, direct) => {
-      let raw = '';
-      if (path) raw = findFieldInput(root, path)?.value ?? '';
-      if (String(raw).trim() === '') raw = direct ?? '';
-      const num = Number(raw);
-      return Number.isFinite(num) && num > 0 ? Math.min(Math.round(num), 100000) : 0;
+      const input = path ? findFieldInput(root, path) : null;
+      // Поле формы главнее значения из данных: очищенное поле не должно
+      // воскрешать старую окружность из снимка при отрисовке формы.
+      const raw = input ? input.value : (direct ?? '');
+      return radiusPx(raw);
     };
-    const radius = resolveRadius(o.radiusPath, o.radius);
-    const radiusActive = resolveRadius(o.activeRadiusPath, o.radiusActive);
+    // На карту едут только радиусы с положительным значением: поле с 0 просто
+    // не рисует свою окружность. Подпись переводим здесь, в окне редактора.
+    const radii = o.radii
+      .map((entry) => {
+        const value = resolveRadius(entry.path, entry.value);
+        if (!(value > 0)) return null;
+        return {
+          value,
+          color: entry.color,
+          dash: entry.dash,
+          lineWidth: entry.lineWidth,
+          fill: entry.fill,
+          label: radiusEntryLabel(entry),
+        };
+      })
+      .filter(Boolean);
     return {
       safe: o.safe,
       tiles: !!o.tiles,
       highlightTiles: o.highlightTiles,
       highlightLayer: o.highlightLayer,
       switchShowID: o.switchShowID,
-      radius,
-      radiusActive,
+      radii,
       snap: o.snap,
       grid: o.grid,
       ...(override.mapOptions || {}),
@@ -331,6 +412,14 @@
     if (worldSelect) worldSelect.setAttribute('aria-label', t('World'));
     root.querySelectorAll('[data-position-flag]').forEach((chip) => {
       const key = chip.getAttribute('data-position-flag');
+      // Чип окружности переводит собственную подпись, а не общий «радиус».
+      if (chip.hasAttribute('data-position-radius-chip')) {
+        const raw = chip.getAttribute('data-position-flag-label') || '';
+        const label = raw ? t(raw) : (FLAG_LABELS[key] ? FLAG_LABELS[key]() : t('Radius'));
+        chip.textContent = label;
+        chip.title = t('Radius shown on the map: {0}', [label]);
+        return;
+      }
       if (FLAG_LABELS[key]) chip.textContent = FLAG_LABELS[key]();
       if (FLAG_TITLES[key]) chip.title = FLAG_TITLES[key]();
     });

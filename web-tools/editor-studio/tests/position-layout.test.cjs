@@ -31,7 +31,7 @@ test('scenario modal outer cells give position cards the full row', () => {
   const methods = source.slice(source.indexOf('            isWideModalField(field) {'), source.indexOf('            buildModalForm(data, step) {'));
   const sizing = vm.runInNewContext(`new (class {${methods}})()`);
   assert.equal(sizing.modalFieldSize({ type: 'vec2' }), 'wide');
-  assert.equal(sizing.modalFieldSize({ type: 'vec2', ui: { highlightTiles: [209], radiusPath: 'radius' } }), 'wide');
+  assert.equal(sizing.modalFieldSize({ type: 'vec2', ui: { highlightTiles: [209], radii: [{ path: 'radius' }] } }), 'wide');
   assert.equal(sizing.modalFieldSize({ type: 'vec2', ui: { spanAll: false } }), 'mid');
   assert.equal(sizing.modalFieldSize({ type: 'number' }), 'narrow');
   assert.equal(sizing.modalFieldSize({ type: 'number', ui: { spanAll: true } }), 'wide');

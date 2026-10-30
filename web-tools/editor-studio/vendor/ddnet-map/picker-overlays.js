@@ -100,31 +100,46 @@
     if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.strokeRect(p.x + 1, p.y + 1, q.x - p.x - 2, q.y - p.y - 2); }
     ctx.restore();
   };
+  /** Полупрозрачная заливка из hex-цвета: у каждой окружности свой оттенок. */
+  const fillFromColor = (color) => {
+    const match = /^#([0-9a-f]{6})$/i.exec(color || '');
+    if (!match) return 'rgba(111,140,255,.07)';
+    const value = parseInt(match[1], 16);
+    return `rgba(${(value >> 16) & 255},${(value >> 8) & 255},${value & 255},.09)`;
+  };
+  // Радиус из объявления UI: цвет, пунктир и подпись приходят готовыми.
+  // `fill: false` — только контур, `dash: []` — сплошная линия.
   const drawRadius = (ctx, point, radius, project, style = {}) => {
     if (!point || !Number.isFinite(radius) || radius <= 0) return;
     const center = project(point.x, point.y), edge = project(point.x + radius, point.y);
     const color = style.color || '#52df9a';
-    const fill = style.fill ?? (color === '#52df9a' ? 'rgba(82,223,154,.09)' : 'rgba(111,140,255,.07)');
-    const dash = style.dash ?? [6, 4];
-    const lineWidth = style.lineWidth ?? 2;
+    const fill = style.fill === false ? null
+      : (typeof style.fill === 'string' && style.fill ? style.fill : fillFromColor(color));
+    const dash = Array.isArray(style.dash) ? style.dash : [6, 4];
+    const lineWidth = Number.isFinite(style.lineWidth) && style.lineWidth > 0 ? style.lineWidth : 2;
+    const screenRadius = Math.abs(edge.x - center.x);
     ctx.save();
-    ctx.strokeStyle = color; ctx.fillStyle = fill;
+    ctx.strokeStyle = color;
     ctx.lineWidth = lineWidth;
-    if (dash.length) ctx.setLineDash(dash);
-    ctx.beginPath(); ctx.arc(center.x, center.y, Math.abs(edge.x - center.x), 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke(); ctx.restore();
+    if (dash.length && ctx.setLineDash) ctx.setLineDash(dash);
+    ctx.beginPath(); ctx.arc(center.x, center.y, screenRadius, 0, Math.PI * 2);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    ctx.stroke();
+    ctx.restore();
 
     if (style.label) {
-      const ex = center.x + Math.abs(edge.x - center.x);
+      const ex = center.x + screenRadius;
       const ey = center.y;
       const text = `${style.label}: ${Math.round(radius)} px`;
       ctx.save();
       ctx.translate(ex, ey);
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
       ctx.font = '11px sans-serif';
-      const m = ctx.measureText(text);
+      // measureText есть не в каждом окружении (например, в тестовом canvas).
+      const metric = typeof ctx.measureText === 'function' ? ctx.measureText(text) : null;
+      const width = metric && Number.isFinite(metric.width) ? metric.width : text.length * 6.3;
       ctx.fillStyle = 'rgba(0,0,0,.7)';
-      ctx.fillRect(4, -10, m.width + 8, 18);
+      ctx.fillRect(4, -10, width + 8, 18);
       ctx.fillStyle = color;
       ctx.fillText(text, 8, 0);
       ctx.restore();

@@ -594,10 +594,17 @@
         highlightTiles: ui.highlightTiles ?? [],
         highlightLayer: ui.highlightLayer,
         switchShowID: ui.switchShowID,
-        radiusPath: ui.radiusPath,
-        activeRadiusPath: ui.activeRadiusPath,
-        radius: ui.radius,
-        radiusActive: ui.radiusActive,
+        // Радиусы карты — только массивом `ui.radii`: цвет, пунктир и подпись
+        // задаёт каждый редактор. Одиночных radiusPath/radius/radiusActive нет.
+        // Значение поля подставляем из данных — так окружность видна даже в
+        // скрытой сейчас секции, а PositionPicker уточнит его из DOM при
+        // открытии карты (правки в форме учитываются).
+        radii: Array.isArray(ui.radii) ? ui.radii.map((entry) => {
+          if (!entry || typeof entry !== 'object' || !entry.path || entry.value !== undefined) return entry;
+          const raw = getValueAtPath(data, String(entry.path));
+          const numeric = raw === '' || raw == null ? NaN : Number(raw);
+          return Number.isFinite(numeric) && numeric > 0 ? { ...entry, value: numeric } : entry;
+        }) : ui.radii,
         snap: ui.snap,
         grid: ui.grid,
       }) : `<div class="position-picker" data-position-picker="1"
