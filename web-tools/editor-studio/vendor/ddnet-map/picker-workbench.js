@@ -43,7 +43,10 @@
       // по себе и не меняют начальное состояние панели или этого переключателя.
       get('workbench').open = false;
       el.collision.checked = options.tiles === true;
-      if (Number.isFinite(options.radius) && options.radius > 0) el.radius.value = String(options.radius);
+      // Предпросмотр стартует со значения первого объявленного радиуса.
+      const firstRadius = (Array.isArray(options.radii) ? options.radii : [])
+        .find((radius) => Number.isFinite(radius?.value) && radius.value > 0);
+      if (firstRadius) el.radius.value = String(firstRadius.value);
       const show = (element, value) => { if (element.textContent !== value) element.textContent = value; };
       const updateResult = () => {
         el['measure-use'].disabled = !b;
@@ -192,24 +195,22 @@
           const blocked = draw.blockedTile(game, state.hasPoint ? state.point : null, options.safe);
           el['collision-status'].classList.toggle('is-warning', blocked !== null || [1,2,3].includes(selectedTile));
           show(el['collision-status'], status);
-          // Wander radius from the editor — green dashed circle with a label.
-          if (state.hasPoint && Number.isFinite(options.radius) && options.radius > 0 && options.radius <= 100000) {
-            draw.drawRadius(ctx, state.point, options.radius, worldToScreen, {
-              color: '#52df9a', dash: [6, 4], lineWidth: 2, label: text.wanderLabel
-            });
+          // Radii declared by the editor: every entry carries its own color,
+          // dash pattern and caption, so one point can show any number of
+          // circles (spawn/active/wander/action radius, etc.).
+          const editorRadii = Array.isArray(options.radii) ? options.radii : [];
+          if (state.hasPoint) {
+            for (const radius of editorRadii) {
+              if (!radius || !Number.isFinite(radius.value) || radius.value <= 0 || radius.value > 100000) continue;
+              draw.drawRadius(ctx, state.point, radius.value, worldToScreen, radius);
+            }
           }
-          // Active (aggro/FOV) radius from the editor — blue dotted circle,
-          // clearly distinct from the wander radius.
-          if (state.hasPoint && Number.isFinite(options.radiusActive) && options.radiusActive > 0 && options.radiusActive <= 100000) {
-            draw.drawRadius(ctx, state.point, options.radiusActive, worldToScreen, {
-              color: '#6f8cff', dash: [3, 3], lineWidth: 1.5, fill: 'rgba(111,140,255,.05)', label: text.activeRadiusLabel
-            });
-          }
-          // Ad-hoc preview from the workbench input (only when it differs from
-          // the editor wander radius, so the two circles do not overlap).
+          // Ad-hoc preview from the workbench input (hidden when it repeats a
+          // declared radius, so the circles do not overlap).
           const manual = Number(el.radius.value);
+          const declared = editorRadii.map((radius) => Number(radius?.value));
           if (state.hasPoint && Number.isFinite(manual) && manual > 0 && manual <= 100000
-            && (!Number.isFinite(options.radius) || manual !== options.radius)) {
+            && !declared.includes(manual)) {
             draw.drawRadius(ctx, state.point, manual, worldToScreen, {
               color: '#ffda70', dash: [4, 3], lineWidth: 1.5, fill: 'rgba(255,218,112,.06)', label: text.previewLabel
             });

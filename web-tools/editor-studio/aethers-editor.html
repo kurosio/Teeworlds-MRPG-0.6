@@ -106,7 +106,17 @@
       // тайлы — телепорт может вести в любое место карты.
       Position: {
         type: 'vec2', label: 'Teleport point coordinates',
-        ui: { step: 1, axes: { x: 'TeleX', y: 'TeleY' }, mapWorldPath: 'WorldID', showTiles: true, highlightTiles: [28], radius: 320, spanAll: true }
+        // 320 px — радиус активации сетевого камня: на таком расстоянии он
+        // срабатывает, поэтому окружность подписана как радиус активации.
+        ui: {
+          step: 1,
+          axes: { x: 'TeleX', y: 'TeleY' },
+          mapWorldPath: 'WorldID',
+          showTiles: true,
+          highlightTiles: [28],
+          radii: [{ value: 320, label: 'Activation radius', color: '#ffda70', dash: [5, 4] }],
+          spanAll: true,
+        }
       },
     };
 

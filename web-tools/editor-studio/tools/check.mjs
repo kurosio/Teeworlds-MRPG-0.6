@@ -279,7 +279,7 @@ if (/class="editor-vec2"/.test(questsPage)) {
 // Запрет COLLIDE/DEATH/UNHOOK включается при объявлении элемента позиции.
 // Дополнительные флаги подсвечивают нужные динамические слои на карте.
 
-for (const token of ['data-map-options', 'safeTiles', 'highlightTiles', 'radiusPath', 'showTiles', 'editor-map:validity']) {
+for (const token of ['data-map-options', 'safeTiles', 'highlightTiles', 'radii', 'radiusPath', 'showTiles', 'editor-map:validity']) {
   if (!positionPickerCode.includes(token)) {
     problems.push(`editor-core/position-picker.js: потерян флаг/событие карты ${token}`);
   }
@@ -290,7 +290,11 @@ if (!fieldCode.includes('safeTiles: ui.safeTiles')) {
 for (const [page, token] of [
   ['mobs-editor.html', 'safeTiles: false'],
   ['mobs-editor.html', 'highlightTiles: [209]'],
-  ['mobs-editor.html', "radiusPath: 'Radius'"],
+  // Мобы показывают радиус спавна с собственной подписью, а не радиус блуждания.
+  ['mobs-editor.html', "path: 'Radius'"],
+  ['mobs-editor.html', "label: 'Spawn radius'"],
+  ['warehouse-editor.html', "label: 'Action radius'"],
+  ['aethers-editor.html', "label: 'Activation radius'"],
   ['bots-npc-editor.html', 'safeTiles: true'],
   ['quests-editor.html', 'safeTiles: true'],
   ['aethers-editor.html', 'showTiles: true'],
@@ -304,14 +308,17 @@ for (const [page, token] of [
 if (!read(path.join(CORE_DIR, 'point-map.js')).includes("params.set('safe'")) {
   problems.push('editor-core/point-map.js: флаг safeTiles не передаётся в окно карты');
 }
+if (!read(path.join(CORE_DIR, 'point-map.js')).includes("params.set('radii'")) {
+  problems.push('editor-core/point-map.js: массив радиусов не передаётся в окно карты');
+}
 if (fs.existsSync(pickerDir)) {
   const pickerJsCode = read(path.join(pickerDir, 'picker.js'));
   const overlaysCode = read(path.join(pickerDir, 'picker-overlays.js'));
   const pickerHtmlCode = read(pickerHtmlPath);
-  for (const token of ["qs.get('safe')", 'editor-map:validity', 'state.invalid', 'drawPointMarker']) {
-    if (!pickerJsCode.includes(token)) problems.push(`vendor/ddnet-map/picker.js: нет проверки тайлов (${token})`);
+  for (const token of ["qs.get('safe')", "qs.get('radii')", 'editor-map:validity', 'state.invalid', 'drawPointMarker']) {
+    if (!pickerJsCode.includes(token)) problems.push(`vendor/ddnet-map/picker.js: нет проверки тайлов/радиусов (${token})`);
   }
-  for (const token of ['blockedTile', 'drawHighlightedTiles', 'drawTileBox']) {
+  for (const token of ['blockedTile', 'drawHighlightedTiles', 'drawTileBox', 'drawRadius']) {
     if (!overlaysCode.includes(token)) problems.push(`vendor/ddnet-map/picker-overlays.js: нет подсветки слоёв (${token})`);
   }
   if (!pickerHtmlCode.includes('pk-validity')) {

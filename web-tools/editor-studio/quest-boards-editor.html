@@ -187,7 +187,7 @@
     const boardFields = {
       Name: { type:'text', label:'Board name', validate:{ required:true }, ui:{ placeholder:'e.g. Guild Tasks' } },
       WorldID: { type:'db_select', label:'World', validate:{ required:true }, ui:{ dbKey:'world', placeholder:'— select world —', searchPlaceholder:'Search a world…' } },
-      Position: { type:'vec2', label:'Quest board coordinates', ui:{ axes:{x:'PosX',y:'PosY'}, step:1, mapWorldPath:'WorldID', mapPickerTag:'quest-board-position', showTiles:true, highlightTiles:[21], grid:true, snap:true, spanAll:true, radius:192 } }
+      Position: { type:'vec2', label:'Quest board coordinates', ui:{ axes:{x:'PosX',y:'PosY'}, step:1, mapWorldPath:'WorldID', mapPickerTag:'quest-board-position', showTiles:true, highlightTiles:[21], grid:true, snap:true, spanAll:true, radii:[{ value:192, label:'Interaction radius', color:'#ffda70', dash:[5,4] }] } }
     };
     function openBoardEditor(board=null){
       if(isDirty()){EditorCore.UI.toast('Save quest assignments before creating or editing a board','info');return;}

@@ -117,7 +117,10 @@ test('all position editors declare the map flags they need', () => {
   for (const [page, token] of [
     ['mobs-editor.html', 'safeTiles: false'],
     ['mobs-editor.html', 'highlightTiles: [209]'],
-    ['mobs-editor.html', "radiusPath: 'Radius'"],
+    // Мобы показывают радиус спавна (Radius), а не радиус блуждания; число,
+    // цвет и подпись объявляются в массиве radii.
+    ['mobs-editor.html', "path: 'Radius'"],
+    ['mobs-editor.html', "label: 'Spawn radius'"],
     ['bots-npc-editor.html', 'safeTiles: true'],
     ['quests-editor.html', 'safeTiles: true'],
     ['aethers-editor.html', 'showTiles: true'],
@@ -174,6 +177,64 @@ test('PositionPicker renders one card with map flags and manual entry', () => {
   }
   // Эти оверлеи больше не включают полный игровой слой неявно.
   assert.match(html, /&quot;tiles&quot;:false/);
+});
+
+test('radii are declared as an array with per-circle color, dash and caption', () => {
+  const api = loadModule();
+  const html = api.render({
+    label: 'Point',
+    xPath: 'X', yPath: 'Y',
+    xInputHtml: '', yInputHtml: '',
+    radii: [
+      { path: 'Radius', label: 'Spawn radius', color: '#52df9a', dash: [6, 4] },
+      { value: 320, label: 'Action radius', color: '#ffda70', dash: [], fill: false },
+    ],
+  });
+  // Массив едет в объявление элемента целиком — с цветом, пунктиром и подписью.
+  assert.match(html, /&quot;radii&quot;:\[/);
+  assert.match(html, /&quot;color&quot;:&quot;#52df9a&quot;/);
+  assert.match(html, /&quot;color&quot;:&quot;#ffda70&quot;/);
+  assert.match(html, /&quot;label&quot;:&quot;Spawn radius&quot;/);
+  assert.match(html, /&quot;label&quot;:&quot;Action radius&quot;/);
+  // Каждый радиус — свой чип с подписью, поэтому видно, что именно на карте.
+  assert.match(html, /data-position-radius-chip="0"/);
+  assert.match(html, /data-position-radius-chip="1"/);
+  assert.match(html, />Spawn radius</);
+  assert.match(html, />Action radius</);
+  // Старые одиночные флаги не нужны: подписи больше не «радиус блуждания».
+  assert.doesNotMatch(html, /&quot;radiusPath&quot;:&quot;[^&]/);
+});
+
+test('radii resolve to drawable circles, legacy radius flags still work', () => {
+  const api = loadModule();
+  const rootWith = (options) => ({
+    getAttribute: (name) => name === 'data-map-options' ? JSON.stringify(options) : null,
+    closest: () => null,
+    contains: () => false,
+  });
+
+  const resolved = api.resolveMapOptions(rootWith({
+    radii: [
+      { path: 'Radius', value: 800, label: 'Spawn radius', color: '#52df9a', dash: [6, 4] },
+      { value: 320, label: 'Action radius', color: '#ffda70', dash: [], fill: false },
+    ],
+  }));
+  assert.deepEqual(Array.from(resolved.radii, (r) => r.value), [800, 320]);
+  assert.deepEqual(Array.from(resolved.radii, (r) => r.label), ['Spawn radius', 'Action radius']);
+  assert.equal(resolved.radii[1].color, '#ffda70');
+  assert.deepEqual(Array.from(resolved.radii[1].dash), []);
+  assert.equal(resolved.radii[1].fill, false);
+
+  // Старое объявление превращается в такие же окружности: окно карты больше
+  // не рисует «радиус блуждания» само по себе.
+  const legacy = api.resolveMapOptions(rootWith({ radiusPath: 'Radius', radiusActive: 96 }));
+  assert.deepEqual(Array.from(legacy.radii, (r) => r.value), [96]);
+  assert.equal(legacy.radii[0].label, 'Active radius');
+  assert.equal(legacy.radii[0].color, '#6f8cff');
+
+  // Нулевые и пустые радиусы не рисуются.
+  const empty = api.resolveMapOptions(rootWith({ radii: [{ value: 0 }, { path: 'Radius' }] }));
+  assert.deepEqual(Array.from(empty.radii), []);
 });
 
 test('vec2 gameplay and grid defaults are explicit and independent of other overlays', () => {
