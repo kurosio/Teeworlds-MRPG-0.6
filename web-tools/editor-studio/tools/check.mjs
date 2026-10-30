@@ -279,7 +279,7 @@ if (/class="editor-vec2"/.test(questsPage)) {
 // Запрет COLLIDE/DEATH/UNHOOK включается при объявлении элемента позиции.
 // Дополнительные флаги подсвечивают нужные динамические слои на карте.
 
-for (const token of ['data-map-options', 'safeTiles', 'highlightTiles', 'radii', 'radiusPath', 'showTiles', 'editor-map:validity']) {
+for (const token of ['data-map-options', 'safeTiles', 'highlightTiles', 'radii', 'showTiles', 'editor-map:validity']) {
   if (!positionPickerCode.includes(token)) {
     problems.push(`editor-core/position-picker.js: потерян флаг/событие карты ${token}`);
   }
@@ -307,6 +307,22 @@ for (const [page, token] of [
 }
 if (!read(path.join(CORE_DIR, 'point-map.js')).includes("params.set('safe'")) {
   problems.push('editor-core/point-map.js: флаг safeTiles не передаётся в окно карты');
+}
+// Одиночные ключи радиусов удалены из конфига: возвращать их нельзя.
+for (const [file, code] of [
+  ['editor-core/position-picker.js', positionPickerCode],
+  ['editor-core/field-renderer.js', fieldCode],
+  ['editor-core/point-map.js', read(path.join(CORE_DIR, 'point-map.js'))],
+  ...list(ROOT, '.html').map((page) => [page, read(path.join(ROOT, page))]),
+]) {
+  for (const legacy of ['radiusPath', 'activeRadiusPath', 'radiusActive']) {
+    const hit = code.split('\n').find((line) => line.includes(legacy) && !line.trim().startsWith('//')
+      && !line.trim().startsWith('*'));
+    if (hit) problems.push(`${file}: удалённый ключ радиуса ${legacy} — объявляйте радиусы массивом radii`);
+  }
+  if (/(^|[^\w.])ui\.radius\b/.test(code)) {
+    problems.push(`${file}: удалённый ключ ui.radius — объявляйте радиусы массивом radii`);
+  }
 }
 if (!read(path.join(CORE_DIR, 'point-map.js')).includes("params.set('radii'")) {
   problems.push('editor-core/point-map.js: массив радиусов не передаётся в окно карты');

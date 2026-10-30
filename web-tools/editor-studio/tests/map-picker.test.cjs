@@ -215,12 +215,12 @@ test('radii array draws every circle with its own caption and dash pattern', () 
   assert.equal(broken.node('radius').value, '');
 });
 
-test('legacy radius and radiusActive params still draw labelled circles', () => {
+test('legacy radius/radiusActive address params are gone and draw nothing', () => {
   const p = picker('?map=/map&x=48&y=48&radius=96&radiusActive=32');
   p.tw.onAfterRender();
   const texts = p.drawing.filter((call) => call[0] === 'fillText').map((call) => call[1]);
-  assert.ok(texts.includes('Радиус блуждания: 96 px'));
-  assert.ok(texts.includes('Радиус активности: 32 px'));
+  assert.deepEqual(texts.filter((text) => /px$/.test(text)), []);
+  assert.equal(p.node('radius').value, '');
 });
 
 const safeMap = () => ({
@@ -294,7 +294,7 @@ test('picker opens with collapsed tools, gameplay and grid off by default', () =
   assert.equal(p.document.getElementById('pk-workbench').open,false);
 });
 test('safe, highlightTiles and radius do not implicitly enable gameplay or expand tools', () => {
-  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&highlightTiles=209&radius=96', safeMap());
+  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&highlightTiles=209&radii=%5B%7B%22value%22%3A96%7D%5D', safeMap());
   assert.equal(p.node('collision').checked,false);
   assert.equal(p.node('grid').checked,false);
   assert.equal(p.node('radius').value,'96');
@@ -302,7 +302,7 @@ test('safe, highlightTiles and radius do not implicitly enable gameplay or expan
   p.tw.onAfterRender(); // спавны и радиус работают без полного игрового слоя
 });
 test('explicit map flags enable gameplay and grid without expanding tools', () => {
-  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&tiles=1&highlightTiles=209&radius=96&grid=1&snap=1', safeMap());
+  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&tiles=1&highlightTiles=209&radii=%5B%7B%22value%22%3A96%7D%5D&grid=1&snap=1', safeMap());
   assert.equal(p.node('collision').checked,true);
   assert.equal(p.node('grid').checked,true);
   assert.equal(p.node('snap').checked,true);

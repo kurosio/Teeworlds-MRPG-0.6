@@ -18,10 +18,12 @@
  *              (`fill: false` — только контур). Массив задаёт количество и
  *              подписи радиусов, поэтому одно окно показывает столько
  *              окружностей, сколько объявил редактор;
- *   radius   — устаревший одиночный радиус (px), radiusActive — второй радиус;
- *              используются, только если radii не передан;
- *              grid/snap — 1|0: начальные инструменты
+ *   grid/snap — 1|0: начальные инструменты
  *              (без tiles/grid соответствующие переключатели выключены)
+ *
+ * Радиусы передаются только параметром `radii`: одиночных radius/radiusActive
+ * в адресе окна нет, поэтому и «радиус блуждания» больше не подписывается
+ * автоматически — подпись приходит из объявления `ui.radii`.
  *
  * Родительскому окну отправляются сообщения:
  *   editor-map:ready            — карта отрисована
@@ -80,8 +82,6 @@
       blockedHint: 'COLLIDE / DEATH / UNHOOK запрещены — выберите свободный тайл',
       blockedKinds: { 1: 'стена', 2: 'смерть', 3: 'без крюка' },
       tileShort: 'Тайл',
-      wanderLabel: 'Радиус блуждания',
-      activeRadiusLabel: 'Радиус активности',
     },
     en: {
       grid: '32×32 grid', snap: 'Tile centers', align: 'Center in tile',
@@ -120,8 +120,6 @@
       blockedHint: 'COLLIDE / DEATH / UNHOOK are forbidden — pick a free tile',
       blockedKinds: { 1: 'solid', 2: 'death', 3: 'no-hook' },
       tileShort: 'Tile',
-      wanderLabel: 'Wander radius',
-      activeRadiusLabel: 'Active radius',
     },
   }[LANG];
 
@@ -208,22 +206,10 @@
     highlightTiles: [...new Set((qs.get('highlightTiles') || '').split(',')
       .map((value) => value.trim()).filter(Boolean).map(Number)
       .filter((id) => Number.isInteger(id) && id >= 0 && id <= 255))],
-    radius: Math.max(0, toNum(qs.get('radius'), 0)),
-    radiusActive: Math.max(0, toNum(qs.get('radiusActive'), 0)),
     radii: readRadii(),
     snap: qs.has('snap') ? qs.get('snap') === '1' : null,
     grid: qs.has('grid') ? qs.get('grid') === '1' : null,
   };
-  // Совместимость со старыми ссылками: одиночные radius/radiusActive рисуются
-  // теми же окружностями, но с подписями из словаря окна.
-  if (!OPTIONS.radii.length) {
-    if (OPTIONS.radius > 0) {
-      OPTIONS.radii.push({ value: Math.round(OPTIONS.radius), label: STR.wanderLabel, color: '#52df9a', dash: [6, 4], lineWidth: 2, fill: null });
-    }
-    if (OPTIONS.radiusActive > 0) {
-      OPTIONS.radii.push({ value: Math.round(OPTIONS.radiusActive), label: STR.activeRadiusLabel, color: '#6f8cff', dash: [3, 3], lineWidth: 1.5, fill: null });
-    }
-  }
   if (OPTIONS.preview) {
     STR.noPoint = STR.ready = LANG === 'en' ? 'Resource node preview' : 'Предпросмотр ресурсных узлов';
     STR.hint = LANG === 'en' ? 'Drag to pan · wheel to zoom · green rings show resource nodes with switch numbers'

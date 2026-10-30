@@ -594,11 +594,8 @@
         highlightTiles: ui.highlightTiles ?? [],
         highlightLayer: ui.highlightLayer,
         switchShowID: ui.switchShowID,
-        radiusPath: ui.radiusPath,
-        activeRadiusPath: ui.activeRadiusPath,
-        radius: ui.radius,
-        radiusActive: ui.radiusActive,
-        // Массив радиусов: цвет, пунктир и подпись задаёт каждый редактор.
+        // Радиусы карты — только массивом `ui.radii`: цвет, пунктир и подпись
+        // задаёт каждый редактор. Одиночных radiusPath/radius/radiusActive нет.
         // Значение поля подставляем из данных — так окружность видна даже в
         // скрытой сейчас секции, а PositionPicker уточнит его из DOM при
         // открытии карты (правки в форме учитываются).

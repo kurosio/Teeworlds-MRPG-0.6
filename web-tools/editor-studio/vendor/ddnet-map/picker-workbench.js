@@ -9,7 +9,7 @@
       const text = en ? {
         title:'Placement tools', collision:'Gameplay layer', spawn:'To spawn', measure:'Measure (M)', clear:'Clear measurement',
         from:'From selected point', use:'B → position', radius:'Radius preview, px', layers:'Show all layers', noGame:'No gameplay layer in this map.', zoom:'Zoom in to see gameplay tiles.',
-        wanderLabel:'Wander radius', activeRadiusLabel:'Active radius', previewLabel:'Preview',
+        previewLabel:'Preview',
         legend:'1 solid · 2 death · 3 no-hook · green rings: selected tile IDs · blue: other tile IDs',
         blocked:'Red tiles are forbidden here',
         solid:'Solid', death:'Death', nohook:'No-hook', empty:'Empty', outside:'Outside gameplay layer', point:'Selected point',
@@ -18,7 +18,7 @@
       } : {
         title:'Инструменты размещения', collision:'Игровой слой', spawn:'К спавну', measure:'Измерить (M)', clear:'Очистить замер',
         from:'От выбранной точки', use:'B → позиция', radius:'Предпросмотр радиуса, px', layers:'Показать все слои', noGame:'В карте нет игрового слоя.', zoom:'Приблизьте карту для просмотра игровых тайлов.',
-        wanderLabel:'Радиус блуждания', activeRadiusLabel:'Радиус активности', previewLabel:'Предпросмотр',
+        previewLabel:'Предпросмотр',
         legend:'1 стена · 2 смерть · 3 без крюка · зелёный: спавны · синий: прочие ID',
         blocked:'Красные тайлы здесь запрещены',
         solid:'Стена', death:'Смерть', nohook:'Без крюка', empty:'Пусто', outside:'Вне игрового слоя', point:'Выбранная точка',

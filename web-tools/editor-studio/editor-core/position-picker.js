@@ -13,8 +13,10 @@
  * например `{ safeTiles: true, highlightTiles: [209], radii: [...] }`.
  * Они едут в окно карты через `PointMap.open()` и подсвечивают нужные слои.
  *
- * Радиусы объявляются массивом, поэтому у каждого редактора свои окружности,
- * их количество, цвет пунктира и подпись:
+ * Радиусы объявляются ТОЛЬКО массивом `radii`: у каждого редактора свои
+ * окружности, их количество, цвет пунктира и подпись. Одиночные
+ * `radiusPath` / `activeRadiusPath` / `radius` / `radiusActive` больше не
+ * поддерживаются — старый конфиг нужно переписать на `radii`:
  *
  *   radii: [
  *     { path: 'Radius', label: 'Spawn radius', color: '#52df9a', dash: [6, 4] },
@@ -91,19 +93,17 @@
     const limit = Number.isFinite(Number(max)) && Number(max) > 0 ? Math.min(Number(max), RADIUS_MAX) : RADIUS_MAX;
     return Number.isFinite(n) && n > 0 ? Math.min(Math.round(n), limit) : 0;
   };
-  const normalizeRadiusEntry = (entry, index = 0, legacyKey = '') => {
+  const normalizeRadiusEntry = (entry, index = 0) => {
     const source = entry && typeof entry === 'object' ? entry : { value: entry };
-    const raw = source.value ?? source.radius ?? source.px ?? null;
     return {
       path: source.path == null ? '' : String(source.path),
-      value: radiusPx(raw, source.max),
+      value: radiusPx(source.value, source.max),
       label: source.label == null ? '' : String(source.label).slice(0, 80),
       color: radiusColor(source.color) || RADIUS_COLORS[index % RADIUS_COLORS.length],
       dash: radiusDash(source.dash),
       lineWidth: Number.isFinite(Number(source.lineWidth)) && Number(source.lineWidth) >= 0.5
         ? Math.min(Number(source.lineWidth), 8) : 2,
       fill: radiusFill(source.fill),
-      legacyKey: legacyKey || (typeof source.legacyKey === 'string' ? source.legacyKey : ''),
     };
   };
 
@@ -124,21 +124,11 @@
     const showTiles = !!o.showTiles;
     const highlightTiles = [...new Set((Array.isArray(o.highlightTiles) ? o.highlightTiles : [])
       .filter((id) => Number.isInteger(id) && id >= 0 && id <= 255))];
-    // Радиусы: массив задания + старые одиночные флаги. Старый способ
-    // (`radiusPath`, `activeRadiusPath`, `radius`, `radiusActive`) остаётся
-    // рабочим и превращается в такие же окружности со своими подписями.
+    // Радиусы — только массив `radii`. Одиночные `radiusPath` / `radius` /
+    // `activeRadiusPath` / `radiusActive` удалены из конфига: их больше нет ни
+    // в объявлении, ни в `data-map-options`, поэтому старые ключи игнорируются.
     const radii = (Array.isArray(o.radii) ? o.radii.slice(0, RADIUS_LIMIT) : [])
       .map((entry, index) => normalizeRadiusEntry(entry, index));
-    const legacyRadii = [
-      ['radius', o.radiusPath, o.radius],
-      ['radiusActive', o.activeRadiusPath, o.radiusActive],
-    ];
-    legacyRadii.forEach(([key, path, value]) => {
-      const entryPath = path == null ? '' : String(path);
-      if (!entryPath && !(Number(value) > 0)) return;
-      if (entryPath && radii.some((entry) => entry.path === entryPath)) return;
-      radii.push(normalizeRadiusEntry({ path: entryPath, value }, radii.length, key));
-    });
     return {
       safe,
       showTiles,
@@ -149,10 +139,6 @@
       highlightTiles,
       highlightLayer: o.highlightLayer === 'switch' ? 'switch' : 'game',
       switchShowID: Number.isInteger(o.switchShowID) && o.switchShowID >= 1 && o.switchShowID <= 255 ? o.switchShowID : null,
-      radiusPath: o.radiusPath == null ? '' : String(o.radiusPath),
-      activeRadiusPath: o.activeRadiusPath == null ? '' : String(o.activeRadiusPath),
-      radius: o.radius == null ? '' : o.radius,
-      radiusActive: o.radiusActive == null ? '' : o.radiusActive,
       radii,
       snap: typeof o.snap === 'boolean' ? o.snap : null,
       grid: typeof o.grid === 'boolean' ? o.grid : null,
@@ -163,8 +149,6 @@
     safe: () => t('No collision tiles'),
     highlightTiles: () => t('Tile highlights'),
     tiles: () => t('Gameplay layer'),
-    radius: () => t('Wander radius'),
-    radiusActive: () => t('Active radius'),
     snap: () => t('Tile centers'),
     grid: () => t('Grid'),
   };
@@ -172,8 +156,6 @@
     safe: () => t('A point cannot be placed on a solid, death or no-hook tile'),
     highlightTiles: () => t('Highlight selected tile IDs on the map'),
     tiles: () => t('Show the map gameplay layer'),
-    radius: () => t('Show the wander radius around the point'),
-    radiusActive: () => t('Show the active (aggro) radius around the point'),
     snap: () => t('Snap the point to tile centers'),
     grid: () => t('Show the tile grid'),
   };
@@ -181,18 +163,12 @@
     safe: o.safe.length > 0,
     highlightTiles: o.highlightTiles.length > 0,
     tiles: o.showTiles,
-    radius: o.radii.length > 0,
-    radiusActive: o.radii.some((entry) => entry.legacyKey === 'radiusActive'),
     snap: o.snap === true,
     grid: o.grid === true,
   })[key];
 
-  /** Подпись окружности: из объявления либо из старого одиночного флага. */
-  const radiusEntryLabel = (entry) => {
-    if (entry?.label) return t(entry.label);
-    if (entry?.legacyKey && FLAG_LABELS[entry.legacyKey]) return FLAG_LABELS[entry.legacyKey]();
-    return t('Radius');
-  };
+  /** Подпись окружности: поле label из объявления radii (переводится через i18n). */
+  const radiusEntryLabel = (entry) => (entry?.label ? t(entry.label) : t('Radius'));
 
   const flagHtml = (key) => `<span class="position-picker__flag position-picker__flag--${key}"`
     + ` data-position-flag="${key}" title="${esc(FLAG_TITLES[key]())}">${esc(FLAG_LABELS[key]())}</span>`;
@@ -200,7 +176,7 @@
   // Окружности показываются своими чипами: цвет пунктира — точка в чипе,
   // подпись — та же, что у окружности на карте.
   const radiusFlagHtml = (entry, index) => `<span class="position-picker__flag position-picker__flag--radius"`
-    + ` data-position-flag="${entry.legacyKey || 'radius'}" data-position-radius-chip="${index}"`
+    + ` data-position-flag="radius" data-position-radius-chip="${index}"`
     + ` data-position-flag-label="${esc(entry.label)}" style="--position-flag-color:${esc(entry.color)}"`
     + ` title="${esc(t('Radius shown on the map: {0}', [radiusEntryLabel(entry)]))}">`
     + `${esc(radiusEntryLabel(entry))}</span>`;
@@ -284,8 +260,6 @@
       highlightTiles: o.highlightTiles,
       highlightLayer: o.highlightLayer,
       switchShowID: o.switchShowID,
-      radius: resolveRadius(o.radiusPath, o.radius),
-      radiusActive: resolveRadius(o.activeRadiusPath, o.radiusActive),
       radii,
       snap: o.snap,
       grid: o.grid,

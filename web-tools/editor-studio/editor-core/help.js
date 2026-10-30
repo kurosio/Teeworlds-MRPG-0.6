@@ -33,9 +33,10 @@
     ],
     bots_mobs: [
       'A mob spawn belongs to a world and a mob; both are picked by name.',
-      'The map shows forbidden tiles, spawns and the radii declared for the position (each with its own color and caption); a point on a wall cannot be applied.',
-      'The wander radius is the maximum distance from the spawn point — crossing it teleports the mob back.',
+      'The map shows forbidden tiles, spawns and the radii declared for the position: the spawn radius in green and the active radius in blue.',
+      'The spawn radius is the area around the point where the mob can appear.',
       'The active radius is the field of view in which the mob reacts to players.',
+      'The wander radius still limits how far the mob may move, but it is not drawn on the map.',
       'The level and stats affect how the mob behaves in game.',
       'Drop is up to five slots: item, amount and chance in percent (the “Drop” tab).',
     ],
