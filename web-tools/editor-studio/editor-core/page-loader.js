@@ -53,6 +53,7 @@
     '<script src="editor-core/db.js"></script>',
     '<script src="editor-core/db-crud.js"></script>',
     '<script src="editor-core/ui.js"></script>',
+    '<script src="editor-core/validation.js"></script>',
     '<script src="editor-core/ui-manager.js"></script>',
     '<script src="editor-core/defaults.js"></script>',
     // Языки интерфейса: манифест папки `localization/` (какие файлы грузить,

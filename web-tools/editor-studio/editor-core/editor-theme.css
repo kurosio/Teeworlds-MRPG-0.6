@@ -428,6 +428,12 @@
   transform:translateX(0);
 }
 
+.editor-toast-container .toast{display:flex;align-items:flex-start;gap:12px;pointer-events:auto;}
+.editor-toast-message{min-width:0;flex:1;overflow-wrap:anywhere;white-space:pre-line;}
+.editor-toast-close{flex:0 0 28px;min-height:28px;border-radius:6px;font-size:20px;line-height:1;
+  color:var(--editor-text-muted);background:transparent;border:0;cursor:pointer;}
+.editor-toast-close:hover{background:var(--editor-soft-bg);color:var(--editor-text);}
+.editor-toast-close:focus-visible{outline:2px solid var(--editor-primary);outline-offset:2px;}
 .editor-toast-container .toast.bg-red-500{--toast-accent:var(--editor-danger);}
 .editor-toast-container .toast.bg-yellow-500{--toast-accent:var(--editor-warning);}
 .editor-toast-container .toast.bg-green-500{--toast-accent:var(--editor-success);}

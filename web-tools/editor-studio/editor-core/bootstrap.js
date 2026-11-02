@@ -40,14 +40,14 @@
     }
   };
 
+  let initialization = null;
   const bootstrapEditor = () => {
     assertReady();
+    if (initialization) return initialization;
 
-    whenBodyReady(() => {
-      window.EditorCore.UI.mountScenarioEditorUI();
-
-      // fire-and-forget; the calls below are idempotent
-      Promise.resolve().then(async () => {
+    const ready = new Promise(resolve => whenBodyReady(resolve)).then(async () => {
+      try {
+        window.EditorCore.UI.mountScenarioEditorUI();
         // Core UI init (DB-backed selects, validation hints, etc.)
         if (window.EditorCore.UIManager?.init) {
           await window.EditorCore.UIManager.init(document);
@@ -57,12 +57,17 @@
         if (window.EditorCore.Sync?.mountSyncButton) {
           mountSyncButtonWhenReady();
         }
-      });
+      } catch (error) {
+        window.EditorCore.Page?.report?.('Editor initialization failed', error);
+        window.EditorCore.Page?.toast?.('Some editor tools could not load. Refresh the page to retry.', 'error');
+      }
     });
 
-    return {
+    initialization = {
+      ready,
       fieldRenderOptions: window.EditorCore.defaults.getFieldRenderOptions('scenario'),
     };
+    return initialization;
   };
 
   window.EditorCore = window.EditorCore || {};

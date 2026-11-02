@@ -11,6 +11,9 @@
     mount(root, cfg = {}) {
       const resource = String(cfg.resource || '').trim();
       if (!resource) throw new Error('DbEditor: resource is required');
+      root.__editorDbRuntime?.destroy();
+      const events = new AbortController();
+      const timers = new Set();
 
       const els = {
         list: queryRole(root, 'list'),
@@ -52,6 +55,9 @@
         },
         visibleCount: 250,
         operation: false,
+        destroyed: false,
+        selectionVersion: 0,
+        discardPrompt: null,
       };
       let listRequestSeq = 0;
       let onSearch = null;
@@ -65,7 +71,17 @@
       /** Спрашивает подтверждение, если в форме есть несохранённые правки. */
       const canDiscardDirty = async () => {
         if (!state.dirty?.isDirty?.()) return true;
-        return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
+        if (!state.discardPrompt) {
+          state.discardPrompt = Promise.resolve()
+            .then(() => EditorCore.Page.confirm('You have unsaved changes. Continue without saving?'))
+            .finally(() => { state.discardPrompt = null; });
+        }
+        return state.discardPrompt;
+      };
+      const later = (fn, delay) => {
+        const timer = window.setTimeout(() => { timers.delete(timer); if (!state.destroyed) fn(); }, delay);
+        timers.add(timer);
+        return timer;
       };
 
       const makeDefault = () => {
@@ -290,6 +306,12 @@
           els.cancel.classList.toggle('hidden', !canCancel);
         }
         if (els.del) els.del.disabled = !canEdit || !hasSelectedRecord();
+        if (els.newBtn) els.newBtn.disabled = state.operation;
+        if (els.refresh) els.refresh.disabled = state.operation;
+        if (els.form) {
+          els.form.inert = state.operation;
+          els.form.setAttribute('aria-busy', String(state.operation));
+        }
       };
 
       const runOperation = async (task) => {
@@ -297,11 +319,10 @@
         state.operation = true;
         setButtons(false);
         try {
-          await task();
-          return true;
+          return await task();
         } finally {
           state.operation = false;
-          setButtons(!!state.model);
+          if (!state.destroyed) setButtons(!!state.model);
         }
       };
 
@@ -309,6 +330,8 @@
         if (!els.form) return;
         ensureGuestHint();
         if (!state.model) {
+          state.form?.destroy?.();
+          state.form = null;
           els.form.innerHTML = `<div class="editor-empty-state editor-field--span-all">Select a record on the left or create a new one to start editing.</div>`;
           if (guestHintEl) guestHintEl.classList.add('hidden');
           setButtons(false);
@@ -320,6 +343,7 @@
             data: state.model,
             fieldOptions,
             onChange: (data, meta) => {
+              if (state.operation || state.destroyed) return;
               state.model = data;
               state.dirty?.markDirty?.();
 
@@ -347,7 +371,7 @@
       };
 
       const renderList = () => {
-        if (!els.list) return;
+        if (state.destroyed || !els.list) return;
         const rows = state.rows || [];
         const requestTarget = window.EditorCore?.RequestContext?.target?.();
         const targetId = requestTarget?.resource === resource ? Number(requestTarget.id) : 0;
@@ -434,6 +458,8 @@
        */
       const openDeepLinkRecord = async () => {
         deepLinkPending = false;
+        const listVersion = listRequestSeq;
+        const selection = state.selectionVersion;
         const id = Number(deepLink?.record) || 0;
         if (!deepLink?.active) return false;
         const inList = state.rows.find((row) => Number(row?.ID) === id) || null;
@@ -442,6 +468,7 @@
           const response = await window.EditorCore.DBCrud.get(resource, id).catch(() => null);
           row = response?.row || null;
         }
+        if (state.destroyed || listVersion !== listRequestSeq || selection !== state.selectionVersion || state.model) return false;
         if (!row) {
           setStatus('The linked record was not found.', 'err');
           toast('The linked record was not found.', 'error');
@@ -455,11 +482,12 @@
           renderList();
         }
         await selectRow(row, { confirmDirty: false });
-        window.setTimeout(() => deepLink?.revealField?.(), 250);
+        later(() => deepLink?.revealField?.(), 250);
         return true;
       };
 
-      const applyRows = async (rows, { search, isRaw = false } = {}) => {
+      const applyRows = async (rows, { search, isRaw = false, isCurrent = () => true } = {}) => {
+        if (state.destroyed) return;
         const safeRows = Array.isArray(rows) ? rows : [];
         if (isRaw) state.rowsRaw = safeRows;
         state.search = normalizeSearchText(search ?? state.search);
@@ -478,6 +506,7 @@
           await selectRow(requestedRow, { confirmDirty: false });
         } else if (deepLinkPending && !state.model) {
           await openDeepLinkRecord();
+          if (!isCurrent()) return;
         } else if (hasSelectedRecord()) {
           const found = state.rows.find(r => Number(r.ID) === Number(state.selectedId));
           if (found && !state.dirty?.isDirty?.()) await selectRow(found, { confirmDirty: false, refresh: true });
@@ -491,12 +520,15 @@
       };
 
       const selectRow = async (row, options = {}) => {
+        if (state.destroyed || (state.operation && !options.internal)) return false;
+        const version = ++state.selectionVersion;
         const confirmDirty = options?.confirmDirty !== false;
         const nextId = Number(row?.ID || 0);
         const currentId = Number(state.selectedId || 0);
 
         if (row && hasSelectedRecord() && nextId === currentId && !options.refresh) return true;
-        if (confirmDirty && (!await canDiscardDirty() || state.operation)) return false;
+        if (confirmDirty && !await canDiscardDirty()) return false;
+        if (state.destroyed || (state.operation && !options.internal) || version !== state.selectionVersion) return false;
 
         if (!row) {
           state.selectedId = 0;
@@ -520,64 +552,49 @@
       };
 
       const loadList = async (options = {}) => {
+        if (state.destroyed) return;
         const requestId = ++listRequestSeq;
         const { forceServer = false, silent = false } = options;
         const search = normalizeSearchText(els.search?.value);
         state.search = search;
-
-        const canUseLocal = !forceServer
-          && Array.isArray(state.rowsRaw)
-          && state.rowsRaw.length
-          && search.length < localMinLength;
-
-        // Even local filtering supersedes the pending server search.
+        const current = () => !state.destroyed && requestId === listRequestSeq;
+        const canUseLocal = !forceServer && state.rowsRaw.length && search.length < localMinLength;
         state.searchRequest.controller?.abort?.();
+        state.searchRequest.controller = null;
         els.list?.setAttribute('aria-busy', 'false');
-
-        if (canUseLocal) {
-          const filtered = filterRowsLocally(state.rowsRaw, search);
-          const transformed = typeof cfg.transformList === 'function'
-            ? cfg.transformList(filtered, { search }) || []
-            : filtered;
-          await applyRows(transformed, { search });
-          return;
-        }
-
-        const token = state.searchRequest.token + 1;
-        state.searchRequest.token = token;
-        state.searchRequest.controller?.abort?.();
-        const controller = new AbortController();
-        state.searchRequest.controller = controller;
-
-        if (!silent) setStatus(search ? 'Searching…' : 'Loading list…');
-        els.list?.setAttribute('aria-busy', 'true');
         try {
+          if (canUseLocal) {
+            const filtered = filterRowsLocally(state.rowsRaw, search);
+            const transformed = cfg.transformList?.(filtered, { search }) || filtered;
+            if (current()) await applyRows(transformed, { search, isCurrent: current });
+            return;
+          }
+          const token = ++state.searchRequest.token;
+          const controller = new AbortController();
+          state.searchRequest.controller = controller;
+          if (!silent) setStatus(search ? 'Searching…' : 'Loading list…');
+          els.list?.setAttribute('aria-busy', 'true');
           const res = await window.EditorCore.DBCrud.list(resource, {
-            search,
-            limit: 2000,
-            offset: 0,
-            signal: controller.signal,
+            search, limit: 2000, offset: 0, signal: controller.signal,
           });
-          if (requestId !== listRequestSeq) return;
-          if (token !== state.searchRequest.token) return;
-
-          const rows = Array.isArray(res.rows) ? res.rows : [];
-          const transformed = typeof cfg.transformList === 'function'
-            ? cfg.transformList(rows, { search }) || []
-            : rows;
-          await applyRows(transformed, { search, isRaw: true });
-        } catch (err) {
-          if (requestId !== listRequestSeq || controller.signal.aborted || token !== state.searchRequest.token) return;
-          const msg = err?.message || 'Loading failed';
-          setStatus(msg, 'err');
-          toast(msg, 'error');
+          if (!current() || token !== state.searchRequest.token || controller.signal.aborted) return;
+          const rows = Array.isArray(res?.rows) ? res.rows : [];
+          const transformed = cfg.transformList?.(rows, { search }) || rows;
+          if (current()) await applyRows(transformed, { search, isRaw: true, isCurrent: current });
+        } catch (error) {
+          if (!current() || state.searchRequest.controller?.signal.aborted) return;
+          const message = error?.message || 'Loading failed';
+          setStatus(message, 'err');
+          toast(message, 'error');
         } finally {
-          if (requestId === listRequestSeq) els.list?.setAttribute('aria-busy', 'false');
+          if (current()) els.list?.setAttribute('aria-busy', 'false');
         }
       };
 
       const createNew = async () => {
-        if (state.operation || !await canDiscardDirty() || state.operation) return false;
+        if (state.destroyed || state.operation) return false;
+        const version = ++state.selectionVersion;
+        if (!await canDiscardDirty() || state.destroyed || state.operation || version !== state.selectionVersion) return false;
         state.lastSelectedIdBeforeCreate = Number(state.selectedId || 0);
         state.selectedId = 0;
         state.model = cloneData(makeDefault());
@@ -591,7 +608,8 @@
       };
 
       const cancelLocalChanges = async () => {
-        if (state.operation || !state.model) return false;
+        if (state.destroyed || state.operation || !state.model) return false;
+        const version = ++state.selectionVersion;
 
         // cancel creation of local draft
         if (!hasSelectedRecord()) {
@@ -608,6 +626,7 @@
         }
 
         if (!state.dirty?.isDirty?.()) return false;
+        if (!await canDiscardDirty() || state.destroyed || state.operation || version !== state.selectionVersion) return false;
         state.model = cloneData(state.persistedModel || state.model);
         state.dirty?.setClean?.();
         renderForm();
@@ -630,7 +649,14 @@
       };
 
       const save = async () => {
-        if (!state.model) return;
+        if (state.destroyed || state.operation || !state.model) return false;
+        const validation = state.form?.validate?.({ focus: true });
+        if (validation && !validation.ok) {
+          const message = validation.errors[0]?.message || 'Check the highlighted fields.';
+          setStatus(message, 'err');
+          toast(message, 'error');
+          return false;
+        }
         const validationError = typeof cfg.validateModel === 'function'
           ? cfg.validateModel(state.model)
           : '';
@@ -638,15 +664,27 @@
           const message = String(validationError);
           setStatus(message, 'err');
           toast(message, 'error');
-          return;
+          return false;
         }
-        const payload = toPayload(state.model);
+        const existing = hasSelectedRecord();
+        const id = state.selectedId;
+        const version = state.selectionVersion;
+        const snapshot = cloneData(state.model);
+        let payload;
+        try {
+          payload = cloneData(toPayload(snapshot));
+        } catch (error) {
+          setStatus(error?.message || 'Save failed', 'err');
+          return false;
+        }
         return runOperation(async () => {
           setStatus('Saving…');
           try {
-            if (hasSelectedRecord()) {
+            if (existing) {
               // DBCrud auto-records for sync
-              await window.EditorCore.DBCrud.update(resource, state.selectedId, payload);
+              await window.EditorCore.DBCrud.update(resource, id, payload);
+              if (state.destroyed || version !== state.selectionVersion) return false;
+              state.persistedModel = cloneData(snapshot);
               if (isRequestEditing()) {
                 setStatus('The new request version was saved. The game database was not changed.', 'ok');
                 toast('The request version has been updated', 'success');
@@ -659,7 +697,14 @@
               }
             } else {
               const res = await window.EditorCore.DBCrud.create(resource, payload);
-              state.selectedId = Number(res.id || 0);
+              const createdId = Number(res?.id);
+              if (res?.id == null || String(res.id).trim() === ''
+                || !Number.isSafeInteger(createdId) || createdId < 0 || (createdId === 0 && resource !== 'worlds')) {
+                throw new Error('The server did not confirm the new record ID. Refresh the list before retrying.');
+              }
+              if (state.destroyed || version !== state.selectionVersion) return false;
+              state.selectedId = createdId;
+              state.persistedModel = cloneData(snapshot);
               state.lastSelectedIdBeforeCreate = 0;
               if (isRequestEditing()) {
                 setStatus('The new record was added to the new request version. The game database was not changed.', 'ok');
@@ -672,29 +717,36 @@
                 toast('Created', 'success');
               }
             }
+            if (state.destroyed || version !== state.selectionVersion) return false;
             state.dirty?.setClean?.();
+            storeLastRecordId(state.selectedId);
+            renderList();
+            setHeader();
             await loadList({ forceServer: true });
             updateGuestHint();
           } catch (err) {
             const msg = err?.message || 'Save failed';
             setStatus(msg, 'err');
             toast(msg, 'error');
+            return false;
           }
         });
       };
 
       const remove = async () => {
         const id = Number(state.selectedId || 0);
-        if (state.operation || !hasSelectedRecord()) return false;
+        if (state.destroyed || state.operation || !hasSelectedRecord()) return false;
+        const version = state.selectionVersion;
         if (!await EditorCore.Page.confirm('Delete the record?')) return false;
         // A second confirmation or a background refresh must not delete another
         // record (or ID 0) after the selection changed while the dialog was open.
-        if (state.operation || Number(state.selectedId || 0) !== id) return false;
+        if (state.destroyed || state.operation || version !== state.selectionVersion || Number(state.selectedId || 0) !== id) return false;
         return runOperation(async () => {
           setStatus('Deleting…');
           try {
             // DBCrud auto-records for sync
             await window.EditorCore.DBCrud.remove(resource, id);
+            if (state.destroyed || version !== state.selectionVersion) return false;
             if (isRequestEditing()) {
               toast('The deletion was added to the new request version', 'success');
               setStatus('The deletion was saved in the request. The game database was not changed.', 'ok');
@@ -705,12 +757,13 @@
               toast('Deleted', 'success');
               setStatus('Deleted.', 'ok');
             }
-            await selectRow(null, { confirmDirty: false });
+            await selectRow(null, { confirmDirty: false, internal: true });
             await loadList({ forceServer: true });
           } catch (err) {
             const msg = err?.message || 'Delete failed';
             setStatus(msg, 'err');
             toast(msg, 'error');
+            return false;
           }
         });
       };
@@ -723,7 +776,7 @@
         event.preventDefault();
         event.stopPropagation();
         revertGuestField(button.dataset.guestRevert || '');
-      });
+      }, { signal: events.signal });
 
       if (els.list) {
         els.list.addEventListener('click', async (event) => {
@@ -739,14 +792,14 @@
           const id = Number(btn.getAttribute('data-id') || 0);
           const row = state.rows.find(r => Number(r.ID) === id);
           if (row) await selectRow(row);
-        });
+        }, { signal: events.signal });
       }
 
-      els.refresh?.addEventListener('click', loadList);
-      els.newBtn?.addEventListener('click', createNew);
-      els.save?.addEventListener('click', save);
-      els.cancel?.addEventListener('click', cancelLocalChanges);
-      els.del?.addEventListener('click', remove);
+      els.refresh?.addEventListener('click', loadList, { signal: events.signal });
+      els.newBtn?.addEventListener('click', createNew, { signal: events.signal });
+      els.save?.addEventListener('click', save, { signal: events.signal });
+      els.cancel?.addEventListener('click', cancelLocalChanges, { signal: events.signal });
+      els.del?.addEventListener('click', remove, { signal: events.signal });
 
       if (els.search) {
         const clearSearch = () => {
@@ -756,25 +809,25 @@
         };
 
         const clearBtn = root.querySelector('[data-editor-role="search-clear"]');
-        clearBtn?.addEventListener('click', clearSearch);
+        clearBtn?.addEventListener('click', clearSearch, { signal: events.signal });
 
         els.search.addEventListener('keydown', (event) => {
           if (event.key !== 'Escape') return;
           event.preventDefault();
           clearSearch();
-        });
+        }, { signal: events.signal });
 
         onSearch = debounce(() => loadList(), 250);
-        els.search.addEventListener('input', onSearch);
+        els.search.addEventListener('input', onSearch, { signal: events.signal });
       }
 
-      window.addEventListener('message', onDirtyStatusRequest);
+      window.addEventListener('message', onDirtyStatusRequest, { signal: events.signal });
 
       // Guest mode: the role and the local draft are resolved asynchronously.
-      const onGuestUpdated = () => { renderList(); updateGuestHint(); };
-      const onGuestReady = () => { renderList(); updateGuestHint(); if (!state.model) loadList({ forceServer: true }); };
+      const onGuestUpdated = () => { if (!state.destroyed) { renderList(); updateGuestHint(); } };
+      const onGuestReady = () => { if (state.destroyed) return; renderList(); updateGuestHint(); if (!state.model) loadList({ forceServer: true }); };
       const onGuestResolved = () => {
-        if (!isGuest()) return;
+        if (state.destroyed || !isGuest()) return;
         window.EditorCore?.DBCrud?.invalidateCache?.();
         loadList({ forceServer: true });
         updateGuestHint();
@@ -782,7 +835,7 @@
       window.addEventListener('editor-core:guest-updated', onGuestUpdated);
       window.addEventListener('editor-core:guest-ready', onGuestReady);
       window.addEventListener('editor-core:guest-request-resolved', onGuestResolved);
-      window.addEventListener('editor-core:guest-request-revised', onGuestResolved);
+      window.addEventListener('editor-core:guest-request-revised', onGuestResolved, { signal: events.signal });
 
       // Mount sync button in the toolbar if actions area exists
       const actionsArea = root.querySelector('.editor-page-actions') || root.querySelector('.flex.flex-wrap.gap-2');
@@ -791,15 +844,22 @@
         window.EditorCore.Sync.mountSyncButton(actionsArea, { editorName });
       }
 
-      loadList();
       setHeader();
+      const ready = loadList();
 
-      return {
+      const api = {
+        ready,
         getModel: () => cloneData(state.model),
         refresh: loadList,
         selectRow,
         setStatus,
         destroy: () => {
+          if (state.destroyed) return;
+          state.destroyed = true;
+          state.selectionVersion += 1;
+          events.abort();
+          timers.forEach(timer => window.clearTimeout(timer));
+          timers.clear();
           listRequestSeq += 1;
           onSearch?.cancel?.();
           state.searchRequest.controller?.abort?.();
@@ -809,8 +869,12 @@
           window.removeEventListener('editor-core:guest-ready', onGuestReady);
           window.removeEventListener('editor-core:guest-request-resolved', onGuestResolved);
           window.removeEventListener('editor-core:guest-request-revised', onGuestResolved);
+          guestHintEl?.remove();
+          if (root.__editorDbRuntime === api) delete root.__editorDbRuntime;
         },
       };
+      root.__editorDbRuntime = api;
+      return api;
     }
   };
 

@@ -13,7 +13,7 @@
 <script src="editor-core/page-loader.js" data-mode="scenario"></script>
 ```
 
-`data-mode` поддерживается для совместимости; базовый UI инициализируется в сценарном режиме. Лоадер подключает шрифты, tailwind, стили и все модули `editor-core` в правильной очередности, а также сохраняет результат `bootstrapEditor` в `window.EditorCoreBootstrap`.
+`data-mode` поддерживается для совместимости; базовый UI инициализируется в сценарном режиме. Лоадер подключает локальные стили и все модули `editor-core` в правильном порядке, а также сохраняет результат `bootstrapEditor` в `window.EditorCoreBootstrap`. Повторный вызов `bootstrapEditor()` возвращает тот же объект; `await EditorCoreBootstrap.ready` дожидается монтирования общего UI. Ошибка инициализации попадает в консоль и уведомление, а не в необработанное исключение.
 
 ### 2) Быстрый старт страницы
 
@@ -38,7 +38,14 @@ const form = EditorCore.FormRuntime.mount(root, {
 `FormRuntime` + `FieldRenderer` дают:
 - единые поля, валидацию, toggles
 - `db_select` и `db_multiselect` (авто-подгрузка из БД)
-- списки с add/remove
+- списки с add/remove и сохранением `itemDefault`
+- `form.validate({ focus: true })` перед сохранением; `form.destroy()` при закрытии редактора
+
+Правила `validate` задают `required`, `min`, `max`, `integer`, `pattern` и тексты
+ошибок. Пустое необязательное поле допустимо, число `0` не считается пустым.
+Скрытые и отключённые поля не блокируют сохранение. Ошибки получают связанный
+`aria-describedby`/подсказку; повторный `mount` или `setData` не накапливает
+обработчики и по возможности сохраняет фокус и позицию курсора.
 
 ## Быстрый CRUD-редактор (DB)
 Для стандартных таблиц (list + форма + сохранение) используйте `EditorCore.DbEditor`:
@@ -46,7 +53,7 @@ const form = EditorCore.FormRuntime.mount(root, {
 ```js
 const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor();
 
-EditorCore.DbEditor.mount(document.body, {
+const editor = EditorCore.DbEditor.mount(document.body, {
   resource: 'worlds',
   fields: schemaFields,
   fieldOptions: fieldRenderOptions,
@@ -58,8 +65,32 @@ EditorCore.DbEditor.mount(document.body, {
 
 Такой runtime уже решает:
 - загрузку списка, поиск, выбор записи
-- сохранение / удаление
+- валидацию и сохранение / удаление с блокировкой повторной операции
+- стабильный снимок данных и ID на время запроса; устаревший ответ не меняет новую запись
+- отмену поиска и загрузок справочников при смене формы
 - единый адаптивный макет (через `editor-template.css`)
+
+`await editor.ready` дожидается первой загрузки. `editor.destroy()` освобождает
+обработчики, таймеры и форму; повторное монтирование на том же корне сначала
+закрывает предыдущий runtime. Форматы строк БД и маршруты гостевых черновиков
+при этом не меняются.
+
+### Сеть и отмена
+
+`EditorCore.Http.json/text/request` принимают `timeout` (мс; по умолчанию 15000)
+и `signal` от `AbortController`. Таймаут охватывает получение CSRF, запрос и чтение
+тела; отменённая запись не повторяется после обновления CSRF. Для параллельных
+запросов обновление токена общее, но отмена одного вызова не отменяет остальных.
+`json` возвращает `{ ok, status, error, data, cancelled, retryAfter }`; `request`
+при ошибке бросает исключение с теми же метаданными. Тело Studio API — JSON-строка
+или обычный объект; заголовки можно передавать объектом или `Headers`.
+
+### Проверки
+
+Из `web-tools/editor-studio`: `npm test`, `npm run check`, `npm run test:php`,
+`npm run test:store`. Последние два скрипта используют опциональные PHP WASM
+пакеты; установка описана в `STRUCTURE.md`. `npm run test:browser` запускает
+локальный сценарий Chromium без подключения к игровой БД.
 
 ## DB Select (db_select)
 - В схеме поля указывайте `ui.dbKey` (предпочтительно) или `ui.datasource`.

@@ -3,7 +3,11 @@
   "private": true,
   "scripts": {
     "build:css": "tailwindcss -c tailwind.config.cjs -i editor-core/tailwind.input.css -o editor-core/tailwind.css --minify",
-    "test": "node --test tests/*.test.cjs"
+    "test": "node --test tests/*.test.cjs",
+    "check": "node tools/check.mjs",
+    "test:php": "node tests/php-harness.mjs",
+    "test:store": "node tests/store-history.mjs",
+    "test:browser": "node tests/browser-related.mjs"
   },
   "devDependencies": {
     "@tailwindcss/forms": "0.5.10",

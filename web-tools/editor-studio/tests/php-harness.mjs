@@ -51,7 +51,7 @@ await php.writeFile(`${VFS_ROOT}/editor-core/reference-schema.json`, fs.readFile
 
 async function syntaxCheck(file) {
   // token_get_all() compiles the source: a parse error shows up here.
-  const { output } = await run(`<?php token_get_all(file_get_contents(${JSON.stringify(`${VFS_ROOT}/${file}`)})); echo 'ok';`);
+  const { output } = await run(`<?php try { token_get_all(file_get_contents(${JSON.stringify(`${VFS_ROOT}/${file}`)}), TOKEN_PARSE); echo 'ok'; } catch (ParseError $e) { echo $e->getMessage(); }`);
   if (!output.includes('ok')) errors.push(`${file}: ${output.trim() || 'parse error'}`);
   return output.includes('ok');
 }
@@ -103,6 +103,41 @@ echo $failed === 0 ? "values: ok\\n" : "values: {$failed} failed\\n";
 `);
 if (!valueOutput.includes('values: ok')) errors.push(valueOutput.trim());
 process.stdout.write(valueOutput);
+
+// ── Generic CRUD: bounded IDs and a pure, missing-row-safe update plan ──────
+{
+  const { output } = await run(`<?php
+require_once '${VFS_ROOT}/api/db-resources.php';
+$failed = 0;
+$check = function ($label, $ok) use (&$failed) {
+    if (!$ok) { $failed++; echo "FAIL $label\n"; }
+};
+$check('world zero', crud_record_id('0', 'worlds') === 0);
+$check('padded world zero', crud_record_id('000', 'worlds') === 0);
+$check('other resource zero', crud_record_id('0', 'items') === null);
+$check('decimal ID', crud_record_id('42', 'items') === 42);
+$check('leading zeroes', crud_record_id('0042', 'items') === 42);
+$check('integer maximum', crud_record_id('2147483647', 'items') === 2147483647);
+foreach (['', '-1', '+1', '1.0', '1e3', ' 1', '1 ', "1\n", '2147483648', '999999999999999999999'] as $value) {
+    $check('reject ID ' . json_encode($value), crud_record_id($value, 'worlds') === null);
+}
+$current = ['ID' => 7, 'Name' => 'Old', 'Comment' => null, 'Data' => '{"a":1}'];
+$plan = crud_update_plan($current, [
+    'Name' => 'New', 'Comment' => '', 'Data' => '{"a":1}',
+], ['Data']);
+$check('missing row is not an insert', crud_update_plan(null, ['Name' => 'New'], []) === null);
+$check('only changed columns', $plan['data'] === ['Name' => 'New']);
+$check('before values for history', $plan['before'] === ['Name' => 'Old']);
+$check('label uses complete decoded row', $plan['values']['Data'] === ['a' => 1]);
+$noop = crud_update_plan($current, ['Comment' => 0, 'Data' => ['a' => 1]], ['Data']);
+$check('normalized no-op', $noop['data'] === [] && $noop['before'] === []);
+$json = crud_update_plan($current, ['Data' => '{"a":2}'], ['Data']);
+$check('JSON change', $json['data'] === ['Data' => '{"a":2}'] && $json['before'] === ['Data' => ['a' => 1]]);
+echo $failed === 0 ? "crud helpers: ok\n" : "crud helpers: {$failed} failed\n";
+`);
+  if (!output.includes('crud helpers: ok')) errors.push(output.trim() || 'crud helpers failed');
+  process.stdout.write(output);
+}
 
 // ── Resource / request helpers still load together ──────────────────────────
 const { output: libOutput } = await run(`<?php
