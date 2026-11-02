@@ -466,6 +466,146 @@ echo $failed ? ('db-core security helpers failed: ' . implode(', ', $failed)) : 
   console.log(output.trim());
 }
 
+// ── История изменений: запись изменения и план отмены ───────────────────────
+//
+// Правила отмены живут в чистой функции db_history_plan_revert(): по записи
+// журнала и текущей строке БД она решает, что делать. Поэтому их можно
+// проверить без базы данных — и здесь проверяется именно поведение, а не код.
+{
+  const { output } = await run(`<?php
+require_once '${VFS_ROOT}/api/db-history-lib.php';
+require_once '${VFS_ROOT}/api/change-requests-lib.php';
+
+$failed = 0;
+$check = function (string $label, bool $ok) use (&$failed): void {
+    if (!$ok) { $failed++; echo "FAIL {$label}\\n"; }
+};
+
+$worlds = editor_resources()['worlds'];
+
+// 1. Запись изменения: подпись из после-значений, before/after ровно по колонкам.
+$update = db_history_entry($worlds, 'worlds', 'update', 3,
+    ['Name' => 'Old', 'Path' => 'old.map'], ['Name' => 'New', 'Path' => 'old.map']);
+$check('update label', $update['label'] === 'New');
+$check('update before', $update['before'] === ['Name' => 'Old', 'Path' => 'old.map']);
+$check('update table', $update['table_name'] === 'tw_worlds' && $update['pk_col'] === 'ID');
+$check('update revertable', $update['revertable'] === true && $update['record_id'] === 3);
+$check('update source default', $update['source'] === 'editor');
+
+// 2. Создание: подпись и after без первичного ключа.
+$create = db_history_entry($worlds, 'worlds', 'create', 9,
+    [], ['ID' => 9, 'Name' => 'Fresh', 'Path' => 'fresh.map']);
+$check('create label', $create['label'] === 'Fresh');
+$check('create pk not duplicated', !array_key_exists('ID', $create['after']));
+
+// 3. Удаление без снимка строки отменить нельзя.
+$deleteEmpty = db_history_entry($worlds, 'worlds', 'delete', 4, [], []);
+$check('delete without snapshot', $deleteEmpty['revertable'] === false);
+
+// 4. Слишком большая полезная нагрузка: изменение в журнале, но без отмены.
+$huge = db_history_entry($worlds, 'worlds', 'update', 5,
+    ['Path' => str_repeat('x', 600000)], ['Path' => str_repeat('y', 600000)]);
+$check('huge payload not revertable', $huge['revertable'] === false);
+$check('huge payload emptied', $huge['before'] === [] && $huge['after'] === []);
+
+// 5. Метаданные гостевого запроса: автор — гость, кто применил — администратор.
+$guestEntry = db_history_entry($worlds, 'worlds', 'update', 6, ['Name' => 'A'], ['Name' => 'B'], [
+    'source' => 'request', 'request_id' => 'CR-1', 'actor_role' => 'guest',
+    'actor_id' => 'g1', 'actor_name' => 'artist', 'approved_by' => 'admin',
+]);
+$check('guest meta', $guestEntry['source'] === 'request' && $guestEntry['request_id'] === 'CR-1'
+    && $guestEntry['actor_role'] === 'guest' && $guestEntry['approved_by'] === 'admin');
+
+// 6. План отмены: создание → удалить добавленную строку.
+$entry = ['op' => 'create', 'before' => [], 'after' => ['Name' => 'New'], 'revertable' => true, 'reverted_at' => ''];
+$plan = db_history_plan_revert($worlds, $entry, ['Name' => 'New', 'Path' => 'p']);
+$check('create revert deletes', $plan['action'] === 'delete' && $plan['error'] === null);
+$plan = db_history_plan_revert($worlds, $entry, null);
+$check('create revert missing row', $plan['action'] === 'none' && $plan['code'] === 'history_record_missing');
+
+// 7. Изменение → вернуть прежние значения только тех колонок, что изменились.
+$entry = [
+    'op' => 'update', 'before' => ['Name' => 'Old', 'Path' => 'p'], 'after' => ['Name' => 'New', 'Path' => 'p'],
+    'revertable' => true, 'reverted_at' => '',
+];
+$row = ['Name' => 'New', 'Path' => 'p', 'Type' => 'default'];
+$plan = db_history_plan_revert($worlds, $entry, $row);
+$check('update revert restores', $plan['action'] === 'update' && $plan['data'] === ['Name' => 'Old']);
+
+// 8. Запись изменили после этого изменения: без force — конфликт, с force — перезапись.
+$row = ['Name' => 'Someone else', 'Path' => 'p'];
+$plan = db_history_plan_revert($worlds, $entry, $row);
+$check('update conflict', $plan['action'] === 'none' && $plan['code'] === 'history_conflict'
+    && isset($plan['conflicts']['Name']));
+$plan = db_history_plan_revert($worlds, $entry, $row, true);
+$check('update forced', $plan['action'] === 'update' && $plan['data'] === ['Name' => 'Old']);
+
+// 9. Значение уже вернули руками — писать нечего, изменение считается отменённым.
+$row = ['Name' => 'Old', 'Path' => 'p'];
+$plan = db_history_plan_revert($worlds, $entry, $row);
+$check('update noop', $plan['action'] === 'noop');
+
+// 10. Удаление → вернуть строку с прежним ID; занятый ID не перезаписываем.
+$entry = ['op' => 'delete', 'before' => ['Name' => 'Gone', 'Path' => 'gone.map'], 'after' => [],
+    'revertable' => true, 'reverted_at' => ''];
+$plan = db_history_plan_revert($worlds, $entry, null);
+$check('delete revert inserts', $plan['action'] === 'insert'
+    && $plan['data'] === ['Name' => 'Gone', 'Path' => 'gone.map']);
+$plan = db_history_plan_revert($worlds, $entry, ['Name' => 'Other', 'Path' => 'o']);
+$check('delete revert id taken', $plan['action'] === 'none' && $plan['code'] === 'history_id_taken');
+
+// 11. Отменённое изменение и запись без данных повторно не отменяются.
+$entry = ['op' => 'update', 'before' => ['Name' => 'Old'], 'after' => ['Name' => 'New'],
+    'revertable' => true, 'reverted_at' => '2026-11-02T10:00:00Z'];
+$plan = db_history_plan_revert($worlds, $entry, ['Name' => 'New']);
+$check('already reverted', $plan['code'] === 'history_already_reverted');
+$entry = ['op' => 'update', 'before' => ['Name' => 'Old'], 'after' => ['Name' => 'New'],
+    'revertable' => false, 'reverted_at' => ''];
+$plan = db_history_plan_revert($worlds, $entry, ['Name' => 'New']);
+$check('not revertable', $plan['code'] === 'history_not_revertable');
+
+// 12. JSON-колонки сравниваются по содержимому и пишутся в прежнем виде.
+$items = editor_resources()['items'];
+$entry = [
+    'op' => 'update',
+    'before' => ['Data' => ['random_box' => [['item_id' => 1, 'value' => 2]]]],
+    'after' => ['Data' => ['random_box' => [['item_id' => 1, 'value' => 3]]]],
+    'revertable' => true, 'reverted_at' => '',
+];
+$row = ['Data' => json_encode(['random_box' => [['item_id' => 1, 'value' => 3]]])];
+$plan = db_history_plan_revert($items, $entry, $row);
+$check('json revert', $plan['action'] === 'update'
+    && $plan['data']['Data'] === ['random_box' => [['item_id' => 1, 'value' => 2]]]);
+
+// 13. Средняя операция запроса: каждый элемент даёт свою запись истории с before.
+$ops = cr_normalize_ops([
+    ['type' => 'update', 'resource' => 'worlds', 'id' => 1, 'data' => ['Name' => 'New']],
+    ['type' => 'delete', 'resource' => 'items', 'id' => 5],
+], 10);
+$rows = [
+    'worlds:1' => ['ID' => 1, 'Name' => 'Old', 'Path' => 'p'],
+    'items:5' => ['ID' => 5, 'Name' => 'Sword'],
+];
+$result = cr_apply_sequence(
+    $ops,
+    function ($R, $data) use (&$rows) { $rows[$R['key'] . ':9'] = $data; return 9; },
+    function ($R, $id, $data) use (&$rows) { $rows[$R['key'] . ':' . $id] = array_replace($rows[$R['key'] . ':' . $id] ?? [], $data); },
+    function ($R, $id) use (&$rows) { unset($rows[$R['key'] . ':' . $id]); },
+    function ($R, $id) use (&$rows) { return $rows[$R['key'] . ':' . $id] ?? null; }
+);
+$history = $result['history'];
+$check('history per operation', count($history) === 2);
+$check('history update before', $history[0]['type'] === 'update' && $history[0]['before'] === ['Name' => 'Old']
+    && $history[0]['after'] === ['Name' => 'New']);
+$check('history delete snapshot', $history[1]['type'] === 'delete'
+    && $history[1]['before'] === ['ID' => 5, 'Name' => 'Sword'] && $history[1]['after'] === []);
+
+echo $failed === 0 ? 'db history: ok' : "db history: {$failed} failed";
+`);
+  if (!output.includes('db history: ok')) errors.push(output.trim() || 'db history failed');
+  console.log(output.trim());
+}
+
 if (errors.length) {
   console.log(`\n${errors.length} problem(s):`);
   errors.forEach((line) => console.log(' - ' + line));

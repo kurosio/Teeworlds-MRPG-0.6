@@ -15,6 +15,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/db-core.php';
 require_once __DIR__ . '/db-resources.php';
 require_once __DIR__ . '/reference-data.php';
+require_once __DIR__ . '/db-history-lib.php';
 
 const CR_NICK_MIN = 2;
 const CR_NICK_MAX = 32;
@@ -1162,6 +1163,10 @@ function cr_detect_conflicts(mysqli $db, array $ops, bool $forUpdate = false): a
  * порядок вставок и отложенная дозапись ссылок на саму запись. Колбэки выполняют
  * реальные запросы, поэтому логика проверяется отдельно от mysqli.
  *
+ * Возвращает также «history» — по элементу на каждую применённую операцию
+ * (before/after), чтобы вызывающий код записал каждое изменение в историю БД
+ * отдельной записью.
+ *
  * @param callable(array $R, array $data): int          $insert
  * @param callable(array $R, int $id, array $data): void $updateRow
  * @param callable(array $R, int $id): void              $deleteRow
@@ -1171,6 +1176,8 @@ function cr_apply_sequence(array $ops, callable $insert, callable $updateRow, ca
 {
     $idMap = [];
     $applied = [];
+    $appliedBefore = [];
+    $appliedLabel = [];
     $deferred = [];
     $skipped = [];
     foreach ($ops as $i => $op) {
@@ -1194,6 +1201,8 @@ function cr_apply_sequence(array $ops, callable $insert, callable $updateRow, ca
             }
             if ($pendingColumns) $deferred[] = ['resource' => $op['resource'], 'id' => $newId, 'data' => $pendingColumns, 'appliedIndex' => count($applied)];
             $applied[] = ['type' => 'create', 'resource' => $op['resource'], 'id' => $newId, 'tempId' => $op['tempId'], 'data' => decode_json_cols($data, $R['json'] ?? [])];
+            $appliedBefore[] = [];
+            $appliedLabel[] = '';
         } elseif ($op['type'] === 'update') {
             // Only columns that actually differ from the snapshot are written.
             $write = is_array($op['before'] ?? null) && $op['before'] ? array_intersect_key($data, $op['before']) : $data;
@@ -1212,10 +1221,21 @@ function cr_apply_sequence(array $ops, callable $insert, callable $updateRow, ca
             }
             if (!$write) continue;
             $updateRow($R, (int)$op['id'], $write);
+            $previous = [];
+            foreach (array_keys($write) as $col) {
+                $previous[$col] = $currentValues[$col] ?? null;
+            }
             $applied[] = ['type' => 'update', 'resource' => $op['resource'], 'id' => (int)$op['id'], 'data' => decode_json_cols($write, $R['json'] ?? [])];
+            $appliedBefore[] = $previous;
+            $appliedLabel[] = db_history_label($R, $currentValues ?? []);
         } else {
+            // Полная строка до удаления: по ней удаление можно отменить.
+            $removedRow = $fetchRow($R, (int)$op['id']);
+            $removedValues = $removedRow ? decode_json_cols($removedRow, $R['json'] ?? []) : [];
             $deleteRow($R, (int)$op['id']);
             $applied[] = ['type' => 'delete', 'resource' => $op['resource'], 'id' => (int)$op['id'], 'data' => []];
+            $appliedBefore[] = $removedValues;
+            $appliedLabel[] = db_history_label($R, $removedValues);
         }
     }
     foreach ($deferred as $pending) {
@@ -1226,7 +1246,36 @@ function cr_apply_sequence(array $ops, callable $insert, callable $updateRow, ca
             $applied[$pending['appliedIndex']]['data'], decode_json_cols($data, $R['json'] ?? [])
         );
     }
-    return ['idMap' => $idMap, 'applied' => $applied, 'skipped' => $skipped];
+
+    // История изменений: одна запись на элемент запроса. Для созданной записи
+    // берём фактическую строку из БД (после отложенных ссылок), для удалённой —
+    // снимок до удаления.
+    $history = [];
+    foreach ($applied as $index => $item) {
+        $R = cr_resource($item['resource'], true);
+        $before = $appliedBefore[$index] ?? [];
+        $after = $item['type'] === 'delete' ? [] : $item['data'];
+        // Подпись берём из полной строки (до изменения для update/delete или
+        // после вставки для create): изменённая колонка может быть не той,
+        // по которой запись узнают.
+        $label = (string)($appliedLabel[$index] ?? '');
+        if ($label === '' && $item['type'] === 'create') {
+            $stored = $fetchRow($R, (int)$item['id']);
+            if ($stored) {
+                $after = decode_json_cols($stored, $R['json'] ?? []);
+            }
+            $label = db_history_label($R, $after);
+        }
+        $history[] = [
+            'type' => $item['type'],
+            'resource' => $item['resource'],
+            'id' => (int)$item['id'],
+            'label' => $label,
+            'before' => $before,
+            'after' => $after,
+        ];
+    }
+    return ['idMap' => $idMap, 'applied' => $applied, 'skipped' => $skipped, 'history' => $history];
 }
 
 /**
@@ -1276,7 +1325,8 @@ function cr_apply(mysqli $db, array $req, bool $force): array
         $applied = $result['applied'];
         $skipped = $result['skipped'];
         $db->commit();
-        return ['idMap' => $idMap, 'applied' => $applied, 'skipped' => $skipped, 'conflicts' => $conflicts];
+        return ['idMap' => $idMap, 'applied' => $applied, 'skipped' => $skipped,
+            'history' => $result['history'] ?? [], 'conflicts' => $conflicts];
     } catch (CrInputError $e) {
         throw $e;
     } catch (Throwable $e) {

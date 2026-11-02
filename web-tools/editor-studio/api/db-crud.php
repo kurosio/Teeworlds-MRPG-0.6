@@ -9,12 +9,16 @@
 //  - delete (POST) : resource, id
 //  - rename_group (POST, crafts only): atomic hierarchy rename
 //
+// Every write is recorded in the change history (api/db-history.php): one entry
+// per changed record, together with the old values, so it can be reverted.
+//
 // Guest role: only list/get on resources with guest=true (see db-resources.php).
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/db-core.php';
 require_once __DIR__ . '/db-resources.php';
+require_once __DIR__ . '/db-history-lib.php';
 
 // Admin: full CRUD. Guest: read-only (list/get) and only guest-visible resources.
 // A guest can never write here — its edits become change requests (api/change-requests.php).
@@ -131,6 +135,13 @@ try {
       throw $e;
     }
 
+    // Переименование группы — одно действие пользователя, но каждая задетая
+    // запись крафта меняется отдельно: в истории столько записей, сколько строк.
+    foreach ($updates as $update) {
+      db_history_safe_record($R, $resource, 'update', (int)$update['ID'],
+        ['GroupName' => $update['old']], ['GroupName' => $update['new']]);
+    }
+
     $mysqli->close();
     respond(['ok' => true, 'changed' => $changed]);
   }
@@ -205,6 +216,14 @@ try {
     if (!$data) respond(['ok' => false, 'error' => 'Пустые данные: нечего сохранять'], 400);
 
     $newId = crud_insert($mysqli, $R, $data);
+    // Запись могла получить значения по умолчанию (NULL, счётчики, триггеры):
+    // в историю кладём фактическую строку, а не только то, что прислала форма.
+    $created = crud_fetch_row($mysqli, $R, $newId);
+    $after = db_history_row_values($R, $created);
+    if (!$after) {
+      $after = decode_json_cols($data, $jsonCols);
+    }
+    db_history_safe_record($R, $resource, 'create', $newId, [], $after);
     $mysqli->close();
     respond(['ok' => true, 'id' => $newId]);
   }
@@ -223,6 +242,7 @@ try {
     // '' / 0). Пишем только реально изменённые поля: иначе обычное сохранение
     // заменяло бы NULL в игровой БД на пустую строку или ноль.
     $current = crud_fetch_row($mysqli, $R, $iid);
+    $before = [];
     if ($current) {
       $currentValues = decode_json_cols($current, $jsonCols);
       $changed = [];
@@ -234,10 +254,21 @@ try {
         $mysqli->close();
         respond(['ok' => true, 'changed' => 0, 'unchanged' => true]);
       }
+      // Только изменённые колонки: этого достаточно, чтобы вернуть прежние
+      // значения, и в журнале видно ровно то, что изменилось.
+      foreach (array_keys($changed) as $col) {
+        $before[$col] = $currentValues[$col] ?? null;
+      }
       $data = $changed;
     }
 
     crud_update($mysqli, $R, $iid, $data);
+    if ($current) {
+      // Подпись — из полной строки: изменённое поле может быть не тем, по
+      // которому запись узнают в списке.
+      db_history_safe_record($R, $resource, 'update', $iid, $before, decode_json_cols($data, $jsonCols),
+        ['label' => db_history_label($R, $currentValues)]);
+    }
     $mysqli->close();
     respond(['ok' => true, 'changed' => count($data)]);
   }
@@ -246,7 +277,13 @@ try {
     $id = (string)($_GET['id'] ?? '');
     if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
     $iid = (int)$id;
+    // Полная строка до удаления — единственный способ вернуть запись обратно.
+    $removed = crud_fetch_row($mysqli, $R, $iid);
+    $before = db_history_row_values($R, $removed);
     crud_delete($mysqli, $R, $iid);
+    if ($before) {
+      db_history_safe_record($R, $resource, 'delete', $iid, $before, []);
+    }
     $mysqli->close();
     respond(['ok' => true]);
   }

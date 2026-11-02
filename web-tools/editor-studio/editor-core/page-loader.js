@@ -70,6 +70,8 @@
     '<script src="editor-core/point-map.js"></script>',
     '<script src="editor-core/position-picker.js"></script>',
     '<script src="editor-core/db-sync.js"></script>',
+    // История изменений БД: модель вкладки «История» (подписи, различия, отмена).
+    '<script src="editor-core/db-history.js"></script>',
     '<script src="editor-core/request-workbench.js"></script>',
     `<script>
       if (window.EditorCore?.bootstrapEditor) {
