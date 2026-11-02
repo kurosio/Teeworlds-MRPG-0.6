@@ -16,7 +16,7 @@
 
 declare(strict_types=1);
 
-const EDITOR_STORE_SCHEMA = 4;
+const EDITOR_STORE_SCHEMA = 5;
 const EDITOR_STORE_FILE = 'editor-studio.sqlite';
 
 /** Путь к файлу базы редактора (можно переопределить переменной окружения). */
@@ -222,6 +222,39 @@ function store_schema(PDO $pdo): void
             CREATE INDEX IF NOT EXISTS idx_submit_keys_created ON submit_keys(created_at);
 
             CREATE INDEX IF NOT EXISTS idx_cr_guest_status ON change_requests(guest_id, status, created_at DESC);
+
+            -- История изменений игровой БД: по одной записи на каждый элемент
+            -- (создание, изменение, удаление). before/after — JSON с колонками
+            -- записи, поэтому любое изменение можно отменить из вкладки
+            -- «История»: удаление восстанавливает строку, изменение возвращает
+            -- прежние значения, создание удаляет добавленную запись.
+            CREATE TABLE IF NOT EXISTS db_history (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                at          TEXT NOT NULL,
+                actor_role  TEXT NOT NULL DEFAULT '',
+                actor_id    TEXT NOT NULL DEFAULT '',
+                actor_name  TEXT NOT NULL DEFAULT '',
+                approved_by TEXT NOT NULL DEFAULT '',
+                source      TEXT NOT NULL DEFAULT 'editor',
+                request_id  TEXT NOT NULL DEFAULT '',
+                resource    TEXT NOT NULL,
+                table_name  TEXT NOT NULL DEFAULT '',
+                pk_col      TEXT NOT NULL DEFAULT 'ID',
+                record_id   INTEGER NOT NULL DEFAULT 0,
+                op          TEXT NOT NULL,
+                label       TEXT NOT NULL DEFAULT '',
+                before      TEXT NOT NULL DEFAULT '{}',
+                after       TEXT NOT NULL DEFAULT '{}',
+                revert_of   INTEGER NOT NULL DEFAULT 0,
+                reverted_at TEXT NOT NULL DEFAULT '',
+                reverted_by INTEGER NOT NULL DEFAULT 0,
+                revertable  INTEGER NOT NULL DEFAULT 1,
+                ip          TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_history_at ON db_history(at DESC, id DESC);
+            CREATE INDEX IF NOT EXISTS idx_history_record ON db_history(resource, record_id, id DESC);
+            CREATE INDEX IF NOT EXISTS idx_history_request ON db_history(request_id, id DESC);
+            CREATE INDEX IF NOT EXISTS idx_history_revert ON db_history(revert_of);
             SQL);
 
         // Схема v4: индивидуальные лимиты и срок действия гостевого аккаунта.
@@ -646,8 +679,210 @@ function store_audit_list(array $filters, int $limit, int $offset): array
     return ['rows' => $rows, 'total' => $total];
 }
 
-// ── Идемпотентность отправки запросов ────────────────────────────────────────
+// ── История изменений игровой БД ─────────────────────────────────────────────
+//
+// Одна строка — одно изменение одного элемента: создание, изменение или
+// удаление записи. before/after хранят значения колонок (JSON), поэтому запись
+// истории самодостаточна: её можно показать и по ней же отменить изменение.
+//
+// Журнал ограничен по размеру: храним последние STORE_HISTORY_KEEP записей.
+// Обрезка вероятностная (как у аудита), чтобы не платить COUNT(*) на каждой
+// вставке; удаляются только самые старые записи, у которых есть замена.
 
+const STORE_HISTORY_KEEP = 5000;
+
+/**
+ * Записывает изменение в историю и возвращает его id (0 при сбое хранилища).
+ * @param array<string, mixed> $entry
+ */
+function store_history_add(array $entry): int
+{
+    $encode = static function (mixed $value): string {
+        if (!is_array($value)) {
+            return '{}';
+        }
+        $json = json_encode(
+            $value,
+            JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR
+        );
+        return is_string($json) ? $json : '{}';
+    };
+
+    $stmt = store_db()->prepare(
+        'INSERT INTO db_history(
+            at, actor_role, actor_id, actor_name, approved_by, source, request_id,
+            resource, table_name, pk_col, record_id, op, label, before, after,
+            revert_of, revertable, ip
+         ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    $stmt->execute([
+        (string)($entry['at'] ?? store_now()),
+        (string)($entry['actor_role'] ?? ''),
+        (string)($entry['actor_id'] ?? ''),
+        (string)($entry['actor_name'] ?? ''),
+        (string)($entry['approved_by'] ?? ''),
+        (string)($entry['source'] ?? 'editor'),
+        (string)($entry['request_id'] ?? ''),
+        (string)($entry['resource'] ?? ''),
+        (string)($entry['table_name'] ?? ''),
+        (string)($entry['pk_col'] ?? 'ID'),
+        (int)($entry['record_id'] ?? 0),
+        (string)($entry['op'] ?? ''),
+        (string)($entry['label'] ?? ''),
+        $encode($entry['before'] ?? []),
+        $encode($entry['after'] ?? []),
+        (int)($entry['revert_of'] ?? 0),
+        // По умолчанию запись можно отменить: флаг ставят в false только когда
+        // в журнале заведомо нет данных для восстановления.
+        (array_key_exists('revertable', $entry) ? (bool)$entry['revertable'] : true) ? 1 : 0,
+        (string)($entry['ip'] ?? ''),
+    ]);
+    $id = (int)store_db()->lastInsertId();
+
+    if (random_int(1, 50) === 1) {
+        store_history_prune();
+    }
+    return $id;
+}
+
+/** Удаляет самые старые записи сверх лимита (по одной на вставку). */
+function store_history_prune(): void
+{
+    $count = (int)store_db()->query('SELECT COUNT(*) FROM db_history')->fetchColumn();
+    if ($count <= STORE_HISTORY_KEEP + 500) {
+        return;
+    }
+    store_db()->exec('DELETE FROM db_history WHERE id IN (
+        SELECT id FROM db_history ORDER BY id DESC LIMIT -1 OFFSET ' . STORE_HISTORY_KEEP . '
+    )');
+}
+
+/**
+ * Выборка истории с фильтрами и постраничной навигацией.
+ *
+ * @param array{q?:string, resource?:string, op?:string, source?:string,
+ *              actor_role?:string, request_id?:string, state?:string} $filters
+ * @return array{rows:list<array>, total:int}
+ */
+function store_history_list(array $filters, int $limit, int $offset): array
+{
+    $where = [];
+    $params = [];
+    foreach (['resource', 'op', 'source', 'actor_role', 'request_id'] as $field) {
+        $value = trim((string)($filters[$field] ?? ''));
+        if ($value === '') {
+            continue;
+        }
+        $where[] = $field . ' = ?';
+        $params[] = $value;
+    }
+    $state = (string)($filters['state'] ?? '');
+    if ($state === 'revertible') {
+        $where[] = "reverted_at = '' AND revertable = 1";
+    } elseif ($state === 'reverted') {
+        $where[] = "reverted_at <> ''";
+    }
+    $q = trim((string)($filters['q'] ?? ''));
+    if ($q !== '') {
+        $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $q) . '%';
+        $where[] = "(label LIKE ? ESCAPE '\\' OR resource LIKE ? ESCAPE '\\'"
+            . " OR actor_name LIKE ? ESCAPE '\\' OR actor_id LIKE ? ESCAPE '\\'"
+            . " OR request_id LIKE ? ESCAPE '\\' OR table_name LIKE ? ESCAPE '\\'"
+            . " OR CAST(record_id AS TEXT) = ?)";
+        array_push($params, $like, $like, $like, $like, $like, $like, $q);
+    }
+    $sqlWhere = $where ? (' WHERE ' . implode(' AND ', $where)) : '';
+    $pdo = store_db();
+
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM db_history' . $sqlWhere);
+    $stmt->execute($params);
+    $total = (int)$stmt->fetchColumn();
+
+    $stmt = $pdo->prepare('SELECT * FROM db_history' . $sqlWhere . ' ORDER BY id DESC LIMIT ? OFFSET ?');
+    $i = 1;
+    foreach ($params as $param) {
+        $stmt->bindValue($i++, $param);
+    }
+    $stmt->bindValue($i++, max(1, $limit), PDO::PARAM_INT);
+    $stmt->bindValue($i, max(0, $offset), PDO::PARAM_INT);
+    $stmt->execute();
+
+    $rows = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $rows[] = store_history_row($row);
+    }
+    return ['rows' => $rows, 'total' => $total];
+}
+
+/** @return array<string, mixed> */
+function store_history_row(array $row): array
+{
+    $before = json_decode((string)$row['before'], true);
+    $after = json_decode((string)$row['after'], true);
+    return [
+        'id' => (int)$row['id'],
+        'at' => (string)$row['at'],
+        'actor_role' => (string)$row['actor_role'],
+        'actor_id' => (string)$row['actor_id'],
+        'actor_name' => (string)$row['actor_name'],
+        'approved_by' => (string)$row['approved_by'],
+        'source' => (string)$row['source'],
+        'request_id' => (string)$row['request_id'],
+        'resource' => (string)$row['resource'],
+        'table_name' => (string)$row['table_name'],
+        'pk_col' => (string)$row['pk_col'],
+        'record_id' => (int)$row['record_id'],
+        'op' => (string)$row['op'],
+        'label' => (string)$row['label'],
+        'before' => is_array($before) ? $before : [],
+        'after' => is_array($after) ? $after : [],
+        'revert_of' => (int)$row['revert_of'],
+        'reverted_at' => (string)$row['reverted_at'],
+        'reverted_by' => (int)$row['reverted_by'],
+        'revertable' => (int)$row['revertable'] === 1,
+        'ip' => (string)$row['ip'],
+    ];
+}
+
+/** @return array<string, mixed>|null */
+function store_history_get(int $id): ?array
+{
+    $stmt = store_db()->prepare('SELECT * FROM db_history WHERE id = ? LIMIT 1');
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+    return is_array($row) ? store_history_row($row) : null;
+}
+
+/** Помечает изменение отменённым записью $revertId. */
+function store_history_mark_reverted(int $id, int $revertId): void
+{
+    $stmt = store_db()->prepare('UPDATE db_history SET reverted_at = ?, reverted_by = ? WHERE id = ?');
+    $stmt->execute([store_now(), $revertId, $id]);
+}
+
+/** Снимает отметку «отменено»: отмена отмены возвращает изменение в силу. */
+function store_history_unmark_reverted(int $id): void
+{
+    $stmt = store_db()->prepare("UPDATE db_history SET reverted_at = '', reverted_by = 0 WHERE id = ?");
+    $stmt->execute([$id]);
+}
+
+/**
+ * Сколько изменений и сколько из них ещё можно отменить.
+ * @return array{total:int, revertible:int}
+ */
+function store_history_counts(): array
+{
+    $row = store_db()->query(
+        "SELECT COUNT(*) AS total, SUM(CASE WHEN reverted_at = '' AND revertable = 1 THEN 1 ELSE 0 END) AS revertible FROM db_history"
+    )->fetch();
+    return [
+        'total' => (int)($row['total'] ?? 0),
+        'revertible' => (int)($row['revertible'] ?? 0),
+    ];
+}
+
+// ── Идемпотентность отправки запросов ────────────────────────────────────────
 function store_submit_key_get(string $key): ?string
 {
     $stmt = store_db()->prepare('SELECT request_id FROM submit_keys WHERE key = ?');

@@ -26,6 +26,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/change-requests-lib.php';
+require_once __DIR__ . '/db-history-lib.php';
 
 $ROLE = bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN, EDITOR_ROLE_GUEST]);
 $IS_ADMIN = $ROLE === EDITOR_ROLE_ADMIN;
@@ -531,6 +532,31 @@ try {
                 $res = cr_apply($db, $req, $force);
             } finally {
                 $db->close();
+            }
+            // История БД: каждое принятое изменение записывается отдельным
+            // элементом (автор — гость, кто применил — администратор). Пишем до
+            // сохранения статуса запроса: данные в базе уже применены.
+            $author = is_array($req['author'] ?? null) ? $req['author'] : [];
+            foreach (is_array($res['history'] ?? null) ? $res['history'] : [] as $change) {
+                $changedResource = (string)($change['resource'] ?? '');
+                $changedR = editor_resources()[$changedResource] ?? null;
+                if ($changedR === null) continue;
+                db_history_safe_record(
+                    $changedR,
+                    $changedResource,
+                    (string)($change['type'] ?? 'update'),
+                    (int)($change['id'] ?? 0),
+                    is_array($change['before'] ?? null) ? $change['before'] : [],
+                    is_array($change['after'] ?? null) ? $change['after'] : [],
+                    [
+                        'source' => 'request',
+                        'request_id' => (string)$req['id'],
+                        'actor_role' => 'guest',
+                        'actor_id' => (string)($author['guestId'] ?? ''),
+                        'actor_name' => (string)($author['nickname'] ?? ($author['guestLogin'] ?? '')),
+                        'approved_by' => $adminUser,
+                    ]
+                );
             }
             $req['status'] = 'approved';
             $req['updatedAt'] = cr_now();

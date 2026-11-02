@@ -25,9 +25,10 @@
   };
 
   const mountSyncButtonWhenReady = () => {
-    // Skip settings page and database page
+    // Skip settings, database and history pages: they do not edit records, so
+    // a "Sync" button would have nothing to push.
     const editorName = document.body?.dataset?.editor || '';
-    if (editorName === 'settings' || editorName === 'database') return;
+    if (editorName === 'settings' || editorName === 'database' || editorName === 'db-history') return;
 
     // Find toolbar actions area
     const actionsArea = document.querySelector('.editor-page-actions');

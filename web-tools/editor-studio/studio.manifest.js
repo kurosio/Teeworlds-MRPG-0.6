@@ -46,6 +46,7 @@ window.STUDIO_MANIFEST = [
     title: 'System',
     items: [
       { key: 'requests', title: 'Guest requests', guestTitle: 'My requests', icon: 'fa-code-pull-request', src: 'change-requests.html', hint: 'Reviewing guest edits', keywords: 'requests review approve reject audit draft changes' },
+      { key: 'history', title: 'Change history', icon: 'fa-clock-rotate-left', src: 'db-history.html', adminOnly: true, hint: 'Database changes and undo', keywords: 'history journal log undo revert rollback changes created deleted edited audit' },
       { key: 'guests', title: 'Guest users', icon: 'fa-user-shield', src: 'guests-editor.html', adminOnly: true, hint: 'Guest access by tab', keywords: 'guests users access accounts limits passwords' },
       { key: 'settings', title: 'Settings', icon: 'fa-gear', src: 'settings.html', adminOnly: true, hint: 'Database connection', keywords: 'settings database connection config sync' },
       { key: 'database', title: 'Database', icon: 'fa-database', src: 'database.html', adminOnly: true, hint: 'Dump and restore', keywords: 'database dump restore backup maintenance' },

@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Change history • Editor Studio</title>
+  <script src="studio.manifest.js"></script>
+  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <style>
+    .hx-hidden { display: none !important; }
+    .hx-muted { color: var(--editor-text-muted); }
+
+    .hx-filters { display: grid; grid-template-columns: minmax(220px, 1.6fr) repeat(4, minmax(140px, 1fr)); gap: 10px; }
+    @media (max-width: 1180px) { .hx-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 620px) { .hx-filters { grid-template-columns: minmax(0, 1fr); } }
+    .hx-filter { min-width: 0; }
+    .hx-filter-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--editor-text-muted); margin-bottom: 4px; }
+
+    .hx-list { display: grid; gap: 8px; margin-top: 14px; }
+    .hx-day { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--editor-text-muted); margin: 10px 2px 0; }
+
+    .hx-entry { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: start;
+      width: 100%; text-align: left; padding: 11px 13px; border-radius: 12px; cursor: pointer;
+      border: 1px solid var(--editor-soft-border); background: var(--editor-row-bg);
+      transition: background .12s, border-color .12s; }
+    .hx-entry:hover { background: var(--editor-row-hover-bg); border-color: var(--editor-row-hover-border); }
+    .hx-entry:focus-visible { outline: 2px solid var(--editor-primary); outline-offset: 2px; }
+    .hx-entry.is-reverted { opacity: .72; }
+    .hx-entry-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 13px; }
+    .hx-op--create .hx-entry-icon { background: color-mix(in srgb, var(--editor-success) 18%, transparent); color: var(--editor-success); }
+    .hx-op--update .hx-entry-icon { background: color-mix(in srgb, var(--editor-primary) 18%, transparent); color: var(--editor-primary); }
+    .hx-op--delete .hx-entry-icon { background: color-mix(in srgb, var(--editor-danger) 18%, transparent); color: var(--editor-danger); }
+    .hx-entry-main { min-width: 0; display: grid; gap: 3px; }
+    .hx-entry-title { font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+    .hx-entry-meta { font-size: 12px; color: var(--editor-text-muted); overflow-wrap: anywhere; }
+    .hx-entry-fields { font-size: 11.5px; color: var(--editor-text-muted); font-family: var(--editor-font-mono); overflow-wrap: anywhere; }
+    .hx-entry-side { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }
+
+    .hx-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px;
+      font-size: 11.5px; font-weight: 600; border: 1px solid var(--editor-soft-border-strong); white-space: nowrap; }
+    .hx-chip--create { color: var(--editor-success); border-color: color-mix(in srgb, var(--editor-success) 45%, transparent); background: color-mix(in srgb, var(--editor-success) 10%, transparent); }
+    .hx-chip--update { color: var(--editor-primary); border-color: color-mix(in srgb, var(--editor-primary) 45%, transparent); background: color-mix(in srgb, var(--editor-primary) 10%, transparent); }
+    .hx-chip--delete { color: var(--editor-danger); border-color: color-mix(in srgb, var(--editor-danger) 45%, transparent); background: color-mix(in srgb, var(--editor-danger) 10%, transparent); }
+    .hx-chip--revert { color: var(--editor-warning); border-color: color-mix(in srgb, var(--editor-warning) 45%, transparent); }
+    .hx-chip--undone { color: var(--editor-text-muted); }
+    .hx-chip--request { color: var(--editor-primary); }
+    .hx-chip--locked { color: var(--editor-text-muted); }
+
+    .hx-undo-btn { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 9px;
+      font-size: 12px; font-weight: 600; border: 1px solid var(--editor-soft-border-strong);
+      background: var(--editor-button-secondary-bg); color: var(--editor-text); cursor: pointer; }
+    .hx-undo-btn:hover { background: var(--editor-button-secondary-hover-bg); }
+
+    .hx-empty { display: grid; place-items: center; gap: 8px; padding: 34px 16px; text-align: center; color: var(--editor-text-muted); font-size: 13.5px; }
+    .hx-empty i { font-size: 22px; opacity: .7; }
+
+    .hx-note { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; line-height: 1.45;
+      padding: 8px 11px; border-radius: 10px; border: 1px solid var(--editor-soft-border); background: var(--editor-soft-bg); }
+    .hx-note--danger { border-color: color-mix(in srgb, var(--editor-danger) 45%, transparent); background: color-mix(in srgb, var(--editor-danger) 8%, transparent); }
+    .hx-note--danger i { color: var(--editor-danger); }
+    .hx-note--warning { border-color: color-mix(in srgb, var(--editor-warning) 45%, transparent); background: color-mix(in srgb, var(--editor-warning) 8%, transparent); }
+    .hx-note--warning i { color: var(--editor-warning); }
+    .hx-note--ok i { color: var(--editor-success); }
+
+    /* ── Окно записи истории ─────────────────────────────────────────────── */
+    .hx-modal { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; padding: 18px;
+      background: rgba(2, 6, 23, .55); backdrop-filter: blur(2px); }
+    .hx-modal-card { width: min(760px, 100%); max-height: calc(100dvh - 36px); display: flex; flex-direction: column;
+      background: var(--editor-surface); color: var(--editor-text); border-radius: 16px; overflow: hidden;
+      border: 1px solid var(--editor-soft-border-strong); box-shadow: 0 24px 60px rgba(2, 6, 23, .3); }
+    .hx-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      padding: 16px 18px; border-bottom: 1px solid var(--editor-line); }
+    .hx-modal-body { padding: 16px 18px; overflow-y: auto; display: grid; gap: 14px; }
+    .hx-modal-foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end;
+      padding: 14px 18px; border-top: 1px solid var(--editor-line); background: var(--editor-surface); }
+
+    .hx-kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 16px; font-size: 13px; }
+    .hx-kv dt { color: var(--editor-text-muted); }
+    .hx-kv dd { margin: 0; overflow-wrap: anywhere; }
+
+    .hx-diff { display: grid; border: 1px solid var(--editor-soft-border); border-radius: 12px; overflow: hidden; }
+    .hx-diff-row { display: grid; grid-template-columns: minmax(96px, .5fr) minmax(0, 1fr) minmax(0, 1fr); gap: 10px;
+      padding: 7px 11px; border-bottom: 1px solid var(--editor-soft-border); font-size: 12.5px; }
+    .hx-diff-row:last-child { border-bottom: 0; }
+    .hx-diff-row--head { background: var(--editor-soft-bg); font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .04em; color: var(--editor-text-muted); }
+    .hx-diff-col { font-family: var(--editor-font-mono); font-size: 12px; overflow-wrap: anywhere; }
+    .hx-diff-val { font-family: var(--editor-font-mono); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .hx-diff-val--removed { color: color-mix(in srgb, var(--editor-danger) 85%, var(--editor-text)); text-decoration: line-through;
+      text-decoration-color: color-mix(in srgb, var(--editor-danger) 55%, transparent); }
+    .hx-diff-val--added { color: color-mix(in srgb, var(--editor-success) 85%, var(--editor-text)); }
+    .hx-diff-val--empty { color: var(--editor-text-muted); font-style: italic; }
+    .hx-diff-row--changed { background: color-mix(in srgb, var(--editor-warning) 7%, transparent); }
+
+    .hx-modal-status { display: grid; gap: 8px; }
+
+    /* Страж видимости: по нему вкладка понимает, что её снова показали, и
+       обновляет список (оболочка держит редакторы в keep-alive кадрах). */
+    .hx-sentinel { position: fixed; top: 0; left: 0; width: 1px; height: 1px; pointer-events: none; }
+  </style>
+</head>
+
+<body class="editor-theme" data-editor="db-history">
+  <div class="editor-page">
+    <div class="editor-page-header">
+      <div class="editor-page-title">
+        <i class="fa-solid fa-clock-rotate-left text-accent text-xl"></i>
+        <div>
+          <h1>Change history</h1>
+          <div class="editor-page-sub" id="page-sub">Every change made in the editors and every approved guest request. Click an entry to undo it.</div>
+        </div>
+      </div>
+      <div class="editor-page-actions">
+        <div data-i18n-switcher-host></div>
+        <button id="btn-refresh" type="button" class="editor-btn editor-btn-secondary">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Refresh</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="editor-page-body">
+      <div id="view-loading" class="hx-empty">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <div>Loading the history…</div>
+      </div>
+
+      <div id="view-denied" class="hx-hidden">
+        <div class="hx-note hx-note--danger">
+          <i class="fa-solid fa-lock"></i>
+          <div>The change history is available to the administrator only.</div>
+        </div>
+      </div>
+
+      <div id="view-history" class="hx-hidden">
+        <section class="editor-panel-card">
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <div class="font-semibold flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-accent"></i>
+                <span>Recorded changes</span>
+              </div>
+              <div class="text-sm hx-muted mt-1" id="history-summary">—</div>
+            </div>
+            <div class="text-sm hx-muted" id="history-count"></div>
+          </div>
+
+          <div class="hx-filters mt-4">
+            <div class="hx-filter">
+              <div class="hx-filter-label"><label for="f-q">Search</label></div>
+              <div class="editor-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input id="f-q" type="search" class="w-full editor-input form-input" placeholder="Record, section, author, request ID…" />
+              </div>
+            </div>
+            <div class="hx-filter">
+              <div class="hx-filter-label"><label for="f-resource">Section</label></div>
+              <select id="f-resource" class="w-full editor-input form-input">
+                <option value="">All sections</option>
+              </select>
+            </div>
+            <div class="hx-filter">
+              <div class="hx-filter-label"><label for="f-op">Change</label></div>
+              <select id="f-op" class="w-full editor-input form-input">
+                <option value="">All types</option>
+                <option value="create">Create</option>
+                <option value="update">Edit</option>
+                <option value="delete">Delete</option>
+              </select>
+            </div>
+            <div class="hx-filter">
+              <div class="hx-filter-label"><label for="f-source">Source</label></div>
+              <select id="f-source" class="w-full editor-input form-input">
+                <option value="">All sources</option>
+                <option value="editor">Editor</option>
+                <option value="request">Guest request</option>
+                <option value="revert">Undo</option>
+              </select>
+            </div>
+            <div class="hx-filter">
+              <div class="hx-filter-label"><label for="f-state">State</label></div>
+              <select id="f-state" class="w-full editor-input form-input">
+                <option value="all">Any state</option>
+                <option value="revertible">Can be undone</option>
+                <option value="reverted">Already undone</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="history-error"></div>
+          <div id="history-list" class="hx-list editor-list-scroll editor-list-scroll--tall"></div>
+          <button id="btn-more" type="button" class="editor-btn editor-btn-secondary w-full mt-2 hx-hidden">
+            <i class="fa-solid fa-angles-down"></i>
+            <span>Load more</span>
+          </button>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Окно одной записи: различия и отмена -->
+  <div id="history-visible-sentinel" class="hx-sentinel" aria-hidden="true"></div>
+
+  <div id="entry-modal" class="hx-modal hx-hidden" role="dialog" aria-modal="true" aria-labelledby="entry-modal-title">
+    <div class="hx-modal-card">
+      <div class="hx-modal-head">
+        <div class="min-w-0">
+          <div id="entry-modal-title" class="font-semibold text-lg">Change details</div>
+          <div id="entry-modal-sub" class="text-sm hx-muted mt-1"></div>
+        </div>
+        <button id="entry-modal-close" type="button" class="editor-btn editor-btn-secondary editor-btn--sm" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="hx-modal-body">
+        <div id="entry-modal-busy" class="hx-empty">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <div>Loading…</div>
+        </div>
+        <div id="entry-modal-content" class="hx-hidden grid gap-3">
+          <dl class="hx-kv">
+            <dt>When</dt><dd id="entry-when">—</dd>
+            <dt>Who</dt><dd id="entry-who">—</dd>
+            <dt>Source</dt><dd id="entry-source">—</dd>
+            <dt>Section</dt><dd id="entry-section">—</dd>
+            <dt>Record</dt><dd id="entry-record">—</dd>
+            <dt>Change</dt><dd id="entry-op">—</dd>
+          </dl>
+          <div>
+            <div class="hx-filter-label"><label>Fields</label></div>
+            <div id="entry-diff" class="hx-diff"></div>
+          </div>
+          <div id="entry-status" class="hx-modal-status"></div>
+        </div>
+      </div>
+      <div class="hx-modal-foot">
+        <button id="entry-open" type="button" class="editor-btn editor-btn-secondary hx-hidden">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <span>Open in editor</span>
+        </button>
+        <button id="entry-cancel" type="button" class="editor-btn editor-btn-secondary">
+          <span>Close</span>
+        </button>
+        <button id="entry-undo" type="button" class="editor-btn editor-btn-primary" disabled>
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>Undo this change</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    if (!window.EditorCoreBootstrap) window.EditorCoreBootstrap = EditorCore.bootstrapEditor?.();
+
+    const $ = (id) => document.getElementById(id);
+    const Page = EditorCore.Page;
+    const esc = Page.esc;
+    const toast = Page.toast;
+    const fmtDate = (iso, options) => Page.fmtDate(iso, options);
+    const plural = Page.plural;
+    const H = EditorCore.DbHistory;
+    const API = 'api/db-history.php';
+
+    const api = (action, { method = 'GET', body = null, query = {} } = {}) => (
+      EditorCore.Http.json(`${API}?action=${encodeURIComponent(action)}`, { method, body, query })
+    );
+
+    const S = {
+      rows: [],
+      total: 0,
+      limit: 60,
+      filters: { q: '', resource: '', op: '', source: '', state: 'all' },
+      counts: { total: 0, revertible: 0 },
+      resources: [],
+      loading: false,
+      entry: null,
+      busy: false,
+    };
+
+    // ── Список ──────────────────────────────────────────────────────────
+
+    const opChip = (entry) => {
+      const meta = H.OP[entry.op] || { label: entry.op, icon: 'fa-circle', tone: 'update' };
+      return `<span class="hx-chip hx-chip--${esc(meta.tone)}"><i class="fa-solid ${esc(meta.icon)}"></i>${esc(meta.label)}</span>`;
+    };
+
+    const sourceChip = (entry) => {
+      if (entry.source === 'revert') {
+        return `<span class="hx-chip hx-chip--revert" title="This entry undoes another change"><i class="fa-solid fa-rotate-left"></i>${esc(H.SOURCE.revert.label)}</span>`;
+      }
+      if (entry.source === 'request') {
+        const request = String(entry.request_id || '');
+        return `<span class="hx-chip hx-chip--request" title="Approved guest request"><i class="fa-solid fa-code-pull-request"></i>${esc(H.SOURCE.request.label)}${request ? ` ${esc(request)}` : ''}</span>`;
+      }
+      return '';
+    };
+
+    const entryHtml = (entry) => {
+      const tone = H.OP[entry.op]?.tone || 'update';
+      const fields = H.changedColumns(entry);
+      const fieldText = fields.length
+        ? `${fields.slice(0, 6).map(esc).join(', ')}${fields.length > 6 ? ` +${fields.length - 6}` : ''}`
+        : '';
+      const undone = entry.reverted_at
+        ? `<span class="hx-chip hx-chip--undone" title="${esc(fmtDate(entry.reverted_at))}"><i class="fa-solid fa-check"></i>${esc('Undone')}</span>`
+        : (H.canRevert(entry)
+          ? `<button type="button" class="hx-undo-btn" data-undo="${entry.id}"><i class="fa-solid fa-rotate-left"></i><span>Undo</span></button>`
+          : `<span class="hx-chip hx-chip--locked" title="${esc(H.revertBlockReason(entry))}"><i class="fa-solid fa-lock"></i>${esc('Not undoable')}</span>`);
+      return `<div class="hx-entry hx-op--${esc(tone)}${entry.reverted_at ? ' is-reverted' : ''}" data-entry="${entry.id}" tabindex="0" role="button">
+        <span class="hx-entry-icon"><i class="fa-solid ${esc(H.OP[entry.op]?.icon || 'fa-circle')}"></i></span>
+        <span class="hx-entry-main">
+          <span class="hx-entry-title">${esc(H.entryTitle(entry))}</span>
+          <span class="hx-entry-meta">${esc(fmtDate(entry.at))} · ${esc(H.actorText(entry) || '—')}</span>
+          ${fieldText ? `<span class="hx-entry-fields">${fieldText}</span>` : ''}
+        </span>
+        <span class="hx-entry-side">${opChip(entry)}${sourceChip(entry)}${undone}</span>
+      </div>`;
+    };
+
+    const renderList = () => {
+      const box = $('history-list');
+      const summary = $('history-summary');
+      if (!S.rows.length) {
+        box.innerHTML = `<div class="hx-empty"><i class="fa-regular fa-folder-open"></i><div>${esc(S.loading ? 'Loading the history…' : 'No changes yet.')}</div></div>`;
+      } else {
+        const groups = H.groupByDay(S.rows);
+        box.innerHTML = groups.map((group) => {
+          const dayLabel = group.key === 'unknown' ? '' : fmtDate(`${group.key}T00:00:00Z`, { dateStyle: 'full' });
+          return `${dayLabel ? `<div class="hx-day">${esc(dayLabel)}</div>` : ''}${group.rows.map(entryHtml).join('')}`;
+        }).join('');
+      }
+      if (summary) {
+        summary.textContent = S.counts.total
+          ? `Undoable entries: ${S.counts.revertible} · ${plural(S.counts.total, 'entry', 'entries')} in total`
+          : '';
+      }
+      const count = $('history-count');
+      if (count) count.textContent = S.rows.length ? `Showing ${S.rows.length} of ${S.total}` : '';
+      $('btn-more').classList.toggle('hx-hidden', !(S.rows.length && S.rows.length < S.total));
+    };
+
+    const renderResourceOptions = () => {
+      const select = $('f-resource');
+      const current = S.filters.resource;
+      select.innerHTML = `<option value="">${esc('All sections')}</option>` + S.resources.map((item) => (
+        `<option value="${esc(item.key)}">${esc(H.resourceLabel({ resource: item.key, resource_title: item.title }))}</option>`
+      )).join('');
+      select.value = current;
+    };
+
+    const load = async (append = false) => {
+      if (S.loading) return;
+      S.loading = true;
+      if (!append) $('history-error').innerHTML = '';
+      try {
+        const res = await api('list', {
+          query: {
+            ...S.filters,
+            limit: S.limit,
+            offset: append ? S.rows.length : 0,
+          },
+        });
+        if (!res.ok) {
+          $('history-error').innerHTML = `<div class="hx-note hx-note--danger"><i class="fa-solid fa-ban"></i><div>${esc(res.error || 'Could not load the history')}</div></div>`;
+          if (!append) { S.rows = []; S.total = 0; renderList(); }
+          return;
+        }
+        const rows = res.rows || [];
+        S.rows = append ? S.rows.concat(rows.filter((row) => !S.rows.some((x) => x.id === row.id))) : rows;
+        S.total = Number(res.total) || S.rows.length;
+        S.counts = res.counts || S.counts;
+        if (Array.isArray(res.resources) && res.resources.length && !S.resources.length) {
+          S.resources = res.resources;
+          renderResourceOptions();
+        }
+        renderList();
+      } catch (error) {
+        Page.report('history list', error);
+        $('history-error').innerHTML = `<div class="hx-note hx-note--danger"><i class="fa-solid fa-ban"></i><div>${esc('Could not load the history')}</div></div>`;
+      } finally {
+        S.loading = false;
+      }
+    };
+
+    // ── Окно записи ─────────────────────────────────────────────────────
+
+    /** Кнопка отмены возвращается в обычное состояние (после конфликта она была «Undo anyway»). */
+    const resetUndoButton = () => {
+      const button = $('entry-undo');
+      button.dataset.force = '';
+      button.innerHTML = '<i class="fa-solid fa-rotate-left"></i><span>' + esc('Undo this change') + '</span>';
+    };
+
+    const closeModal = () => {
+      S.entry = null;
+      $('entry-modal').classList.add('hx-hidden');
+      $('entry-status').innerHTML = '';
+      $('entry-undo').disabled = true;
+    };
+
+    const renderDiff = (entry) => {
+      const rows = H.diffRows(entry);
+      const head = `<div class="hx-diff-row hx-diff-row--head"><span>${esc('Field')}</span><span>${esc('Before')}</span><span>${esc('After')}</span></div>`;
+      if (!rows.length) {
+        return head + `<div class="hx-diff-row"><span class="hx-diff-val hx-diff-val--empty">${esc('No field values were stored for this change.')}</span></div>`;
+      }
+      return head + rows.map((row) => {
+        const beforeClass = row.kind === 'added' ? 'hx-diff-val--empty' : (row.kind === 'removed' || row.kind === 'changed' ? 'hx-diff-val--removed' : '');
+        const afterClass = row.kind === 'removed' ? 'hx-diff-val--empty' : (row.kind === 'added' || row.kind === 'changed' ? 'hx-diff-val--added' : '');
+        const beforeText = row.before === '' ? esc('Empty') : esc(row.before);
+        const afterText = row.after === '' ? esc('Empty') : esc(row.after);
+        return `<div class="hx-diff-row${row.kind === 'changed' ? ' hx-diff-row--changed' : ''}">
+          <span class="hx-diff-col">${esc(row.column)}</span>
+          <span class="hx-diff-val ${beforeClass}">${beforeText}</span>
+          <span class="hx-diff-val ${afterClass}">${afterText}</span>
+        </div>`;
+      }).join('');
+    };
+
+    const renderEntry = (entry) => {
+      S.entry = entry;
+      resetUndoButton();
+      $('entry-modal-title').textContent = H.entryTitle(entry);
+      $('entry-modal-sub').textContent = fmtDate(entry.at);
+      $('entry-when').textContent = fmtDate(entry.at);
+      $('entry-who').textContent = H.actorText(entry) || '—';
+      $('entry-source').textContent = entry.source === 'request'
+        ? `${H.SOURCE.request.label}${entry.request_id ? ` ${entry.request_id}` : ''}`
+        : (H.SOURCE[entry.source]?.label || entry.source || '—');
+      $('entry-section').textContent = H.resourceLabel(entry);
+      $('entry-record').textContent = `#${entry.record_id}${entry.table_name ? ` · ${entry.table_name}` : ''}`;
+      $('entry-op').textContent = H.OP[entry.op]?.label || entry.op || '—';
+      $('entry-diff').innerHTML = renderDiff(entry);
+
+      const reason = H.revertBlockReason(entry);
+      $('entry-status').innerHTML = reason
+        ? `<div class="hx-note hx-note--warning"><i class="fa-solid fa-circle-info"></i><div>${esc(reason)}</div></div>`
+        : '';
+      $('entry-undo').disabled = !H.canRevert(entry);
+      $('entry-undo').classList.toggle('hx-hidden', !H.canRevert(entry));
+      $('entry-open').classList.toggle('hx-hidden', !H.editorPage(entry));
+    };
+
+    const openEntry = async (id) => {
+      const numericId = Number(id);
+      if (!numericId) return;
+      $('entry-modal').classList.remove('hx-hidden');
+      $('entry-modal-busy').classList.remove('hx-hidden');
+      $('entry-modal-content').classList.add('hx-hidden');
+      resetUndoButton();
+      $('entry-undo').disabled = true;
+      const res = await api('get', { query: { id: numericId } });
+      if (!res.ok) {
+        $('entry-modal-busy').classList.add('hx-hidden');
+        $('entry-modal-content').classList.remove('hx-hidden');
+        $('entry-status').innerHTML = `<div class="hx-note hx-note--danger"><i class="fa-solid fa-ban"></i><div>${esc(res.error || 'Could not load the change')}</div></div>`;
+        return;
+      }
+      $('entry-modal-busy').classList.add('hx-hidden');
+      $('entry-modal-content').classList.remove('hx-hidden');
+      renderEntry(res.entry);
+    };
+
+    const conflictList = (conflicts) => {
+      const columns = Object.keys(conflicts || {});
+      if (!columns.length) return '';
+      return `<div class="hx-note hx-note--danger"><i class="fa-solid fa-triangle-exclamation"></i><div>These fields were changed after this entry: <b>${columns.map(esc).join(', ')}</b></div></div>`;
+    };
+
+    const requestRevert = async (force = false) => {
+      if (!S.entry || S.busy) return;
+      const entry = S.entry;
+      const question = force
+        ? 'The record has changed since this entry. Undo anyway and overwrite those fields with the old values?'
+        : H.revertQuestion(entry);
+      const confirmed = await Page.confirm(question, {
+        title: force ? 'Overwrite newer edits?' : 'Undo this change?',
+        confirmText: force ? 'Undo anyway' : 'Undo',
+        danger: true,
+      });
+      if (!confirmed) return;
+      S.busy = true;
+      const button = $('entry-undo');
+      button.disabled = true;
+      $('entry-status').innerHTML = `<div class="hx-note"><i class="fa-solid fa-spinner fa-spin"></i><div>${esc('Undoing the change…')}</div></div>`;
+      try {
+        const res = await api('revert', { method: 'POST', body: { id: entry.id, force } });
+        if (!res.ok) {
+          if (res.code === 'history_conflict') {
+            $('entry-status').innerHTML = conflictList(res.conflicts)
+              + `<div class="hx-note hx-note--warning"><i class="fa-solid fa-circle-info"></i><div>${esc(res.error || 'The record changed after this entry.')}</div></div>`;
+            button.disabled = false;
+            // Повторное нажатие уже с force: перезаписываем более новые правки.
+            button.dataset.force = '1';
+            button.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><span>' + esc('Undo anyway') + '</span>';
+            toast(res.error || 'The record changed after this entry.', 'error');
+            return;
+          }
+          $('entry-status').innerHTML = `<div class="hx-note hx-note--danger"><i class="fa-solid fa-ban"></i><div>${esc(res.error || 'Could not undo the change')}</div></div>`;
+          button.disabled = !H.canRevert(entry);
+          toast(res.error || 'Could not undo the change', 'error');
+          return;
+        }
+        toast(res.unchanged ? 'The database already holds the previous values' : 'Change undone', 'success');
+        closeModal();
+        await load();
+      } catch (error) {
+        Page.report('history revert', error);
+        $('entry-status').innerHTML = `<div class="hx-note hx-note--danger"><i class="fa-solid fa-ban"></i><div>${esc('Could not undo the change')}</div></div>`;
+        button.disabled = false;
+      } finally {
+        S.busy = false;
+      }
+    };
+
+    // ── События ─────────────────────────────────────────────────────────
+
+    const onFilterChange = () => {
+      S.filters = {
+        q: $('f-q').value.trim(),
+        resource: $('f-resource').value,
+        op: $('f-op').value,
+        source: $('f-source').value,
+        state: $('f-state').value || 'all',
+      };
+      load();
+    };
+
+    const init = () => {
+      $('f-q').addEventListener('input', Page.debounce(onFilterChange, 300));
+      ['f-resource', 'f-op', 'f-source', 'f-state'].forEach((id) => {
+        $(id).addEventListener('change', onFilterChange);
+      });
+      $('btn-refresh').addEventListener('click', () => load());
+      $('btn-more').addEventListener('click', () => load(true));
+
+      $('history-list').addEventListener('click', (event) => {
+        const undo = event.target.closest('[data-undo]');
+        if (undo) {
+          event.stopPropagation();
+          openEntry(undo.dataset.undo);
+          return;
+        }
+        const row = event.target.closest('[data-entry]');
+        if (row) openEntry(row.dataset.entry);
+      });
+      $('history-list').addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const row = event.target.closest('[data-entry]');
+        if (!row) return;
+        event.preventDefault();
+        openEntry(row.dataset.entry);
+      });
+
+      $('entry-open').addEventListener('click', () => {
+        if (!S.entry) return;
+        const key = H.editorFor(S.entry);
+        if (!key) return;
+        const params = { resource: S.entry.resource, record: String(S.entry.record_id) };
+        // Внутри студии открываем вкладку через оболочку (keep-alive кадры);
+        // открытая отдельно страница просто переходит в редактор.
+        if (window.parent && window.parent !== window) {
+          EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:open-editor', key, params });
+          return;
+        }
+        const href = H.editorPage(S.entry);
+        if (!href) return;
+        const target = new URL(href, location.href);
+        for (const [name, value] of Object.entries(params)) target.searchParams.set(name, value);
+        location.href = target.href;
+      });
+
+      // Оболочка держит редакторы в живых кадрах: возвращаясь на вкладку,
+      // список нужно обновить, иначе в нём остаются только старые изменения.
+      let visible = true;
+      const sentinel = $('history-visible-sentinel');
+      if (sentinel && typeof IntersectionObserver === 'function') {
+        new IntersectionObserver((entries) => {
+          const now = !!entries[0]?.isIntersecting;
+          if (now && !visible) load();
+          visible = now;
+        }).observe(sentinel);
+      }
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') load();
+      });
+
+      $('entry-modal-close').addEventListener('click', closeModal);
+      $('entry-cancel').addEventListener('click', closeModal);
+      $('entry-modal').addEventListener('mousedown', (event) => {
+        if (event.target === $('entry-modal')) closeModal();
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !$('entry-modal').classList.contains('hx-hidden')) closeModal();
+      });
+      $('entry-undo').addEventListener('click', () => {
+        const button = $('entry-undo');
+        const force = button.dataset.force === '1';
+        if (force) {
+          // Уже показали конфликты: повторное нажатие — принудительная отмена.
+          resetUndoButton();
+          requestRevert(true);
+          return;
+        }
+        requestRevert(false);
+      });
+
+      load();
+    };
+
+    // ── Вход ────────────────────────────────────────────────────────────
+
+    EditorCore.Guest.ready().then((role) => {
+      $('view-loading').classList.add('hx-hidden');
+      if (role === 'admin') {
+        $('view-history').classList.remove('hx-hidden');
+        init();
+        return;
+      }
+      $('view-denied').classList.remove('hx-hidden');
+      $('page-sub').textContent = '';
+      EditorCore.Http.postMessage(window.top, { type: 'editor-shell:auth-required' });
+    });
+  })();
+  </script>
+</body>
+</html>
