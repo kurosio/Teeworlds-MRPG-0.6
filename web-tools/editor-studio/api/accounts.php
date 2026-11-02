@@ -199,6 +199,9 @@ try {
         $account = ensure_account_exists($mysqli, $accountId);
         update_account_password($mysqli, $accountId, $password);
         $mysqli->close();
+        // Пароли в историю изменений БД не попадают (восстановление старого
+        // хеша — утечка, а не отмена правки), поэтому след остаётся в аудите.
+        editor_audit('account.password', '', ['account_id' => $accountId]);
         respond(['ok' => true, 'account' => $account]);
     }
 
@@ -218,6 +221,7 @@ try {
         $stmt->execute();
         $stmt->close();
         $mysqli->close();
+        editor_audit('account.login', '', ['account_id' => $accountId, 'to' => $login]);
         $account['Username'] = $login;
         respond(['ok' => true, 'account' => $account]);
     }
@@ -229,6 +233,7 @@ try {
         $password = account_random_string(ACCOUNT_RESET_PASSWORD_LENGTH);
         update_account_password($mysqli, $accountId, $password);
         $mysqli->close();
+        editor_audit('account.password_reset', '', ['account_id' => $accountId]);
         respond(['ok' => true, 'account' => $account, 'password' => $password]);
     }
 
@@ -244,6 +249,7 @@ try {
         $stmt->execute();
         $stmt->close();
         $mysqli->close();
+        editor_audit('account.timeout_code_reset', '', ['account_id' => $accountId]);
         respond(['ok' => true, 'account' => $account]);
     }
 

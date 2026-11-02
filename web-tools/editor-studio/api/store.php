@@ -732,7 +732,9 @@ function store_history_add(array $entry): int
         $encode($entry['before'] ?? []),
         $encode($entry['after'] ?? []),
         (int)($entry['revert_of'] ?? 0),
-        !empty($entry['revertable']) ? 1 : 0,
+        // По умолчанию запись можно отменить: флаг ставят в false только когда
+        // в журнале заведомо нет данных для восстановления.
+        (array_key_exists('revertable', $entry) ? (bool)$entry['revertable'] : true) ? 1 : 0,
         (string)($entry['ip'] ?? ''),
     ]);
     $id = (int)store_db()->lastInsertId();

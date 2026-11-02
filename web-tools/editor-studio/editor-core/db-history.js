@@ -178,10 +178,16 @@
     return rows.filter((row) => row.kind !== 'unchanged').length;
   };
 
-  /** Короткий список изменённых колонок: «Name, Path, Type». */
-  const changedColumns = (entry) => diffRows(entry)
-    .filter((row) => row.kind !== 'unchanged')
-    .map((row) => row.column);
+  /**
+   * Короткий список изменённых колонок: «Name, Path, Type».
+   * В списке сервер не присылает before/after (запись может быть тяжёлой),
+   * поэтому при их отсутствии берём готовый список `changed`.
+   */
+  const changedColumns = (entry) => {
+    const rows = diffRows(entry);
+    if (rows.length) return rows.filter((row) => row.kind !== 'unchanged').map((row) => row.column);
+    return Array.isArray(entry?.changed) ? entry.changed.map(String) : [];
+  };
 
   const canRevert = (entry) => !!entry && entry.can_revert === true;
 

@@ -135,6 +135,24 @@ test('сложные значения (JSON) сравниваются по со�
   assert.equal(H.formatValue(0), '0');
 });
 
+test('в списке (без before/after) поля берутся из готового списка changed', () => {
+  // Список истории приходит без before/after: сервер отдаёт только имена полей.
+  const fromList = { op: 'update', changes: 2, changed: ['Name', 'Path'] };
+  eq(H.changedColumns(fromList), ['Name', 'Path']);
+  eq(H.changedCount(fromList), 2);
+  // В окне записи есть сами значения — считаем по различиям.
+  const full = {
+    op: 'update',
+    before: { Name: 'Old', Path: 'p', Flags: 1 },
+    after: { Name: 'New', Path: 'p', Flags: 1 },
+  };
+  eq(H.changedColumns(full), ['Name']);
+  eq(H.changedCount(full), 1);
+  // Ничего не известно — пустой список, а не падение.
+  eq(H.changedColumns({}), []);
+  eq(H.changedColumns(null), []);
+});
+
 test('отменять можно только действующее изменение известного раздела', () => {
   assert.equal(H.canRevert(entry()), true);
   assert.equal(H.revertBlockReason(entry()), '');
