@@ -95,7 +95,7 @@ test('Enter on Cancel never confirms a destructive dialog; Enter on OK does', as
     vm.runInContext(source('page-kit.js'), context);
     const result = context.window.EditorCore.Page.confirm('Delete?', { danger: true });
     if (confirm) elements.find(el => el.className === 'ec-ok is-danger').focus();
-    listeners.keydown({ key: 'Enter', preventDefault() {} });
+    listeners.keydown({ key: 'Enter', preventDefault() {}, stopImmediatePropagation() {} });
     assert.equal(await result, confirm);
     assert.equal(listeners.keydown, undefined);
   }
@@ -110,8 +110,9 @@ test('UIManager waits for DOMContentLoaded before accessing body and fields', as
     querySelectorAll() { queries++; return []; },
     querySelector() { return null; },
   };
-  const context = vm.createContext({ window: { EditorCore: {} }, document,
+  const context = vm.createContext({ window: { EditorCore: {} }, document, AbortController,
     localStorage: { getItem: () => null, setItem() {} } });
+  vm.runInContext(source('validation.js'), context);
   vm.runInContext(source('ui-manager.js'), context);
   const initialized = context.window.EditorCore.UIManager.init(document);
   assert.equal(queries, 0);
@@ -134,8 +135,9 @@ test('UIManager tolerates a missing body while an editor document is being repla
     querySelectorAll() { return []; },
     querySelector() { return null; },
   };
-  const context = vm.createContext({ window: { EditorCore: {} }, document,
+  const context = vm.createContext({ window: { EditorCore: {} }, document, AbortController,
     localStorage: { getItem: () => null, setItem() {} } });
+  vm.runInContext(source('validation.js'), context);
   vm.runInContext(source('ui-manager.js'), context);
 
   await assert.doesNotReject(context.window.EditorCore.UIManager.init(document));

@@ -259,6 +259,7 @@ test('quest tree: no shared bar under data-record-nav-off, arrows still walk nod
   });
   render('quest', 1);
 
+  window.eval(source('validation.js'));
   window.eval(source('ui-manager.js'));
   await window.EditorCore.UIManager.init(document);
   await tick();

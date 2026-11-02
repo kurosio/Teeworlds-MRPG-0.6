@@ -81,6 +81,8 @@
   // не переводится на английский одинаково во всех браузерах и выглядит
   // чужеродно. Здесь один модальный диалог на всю студию.
 
+  const dialogStack = [];
+  let dialogSequence = 0;
   const DIALOG_STYLE_ID = 'editor-core-dialog-style';
 
   const injectDialogStyles = () => {
@@ -136,6 +138,8 @@
     box.className = 'ec-dialog';
     box.setAttribute('role', 'alertdialog');
     box.setAttribute('aria-modal', 'true');
+    const dialogId = ++dialogSequence;
+    box.setAttribute('aria-labelledby', `ec-dialog-message-${dialogId}`);
 
     if (title) {
       const heading = document.createElement('h2');
@@ -143,6 +147,7 @@
       box.appendChild(heading);
     }
     const text = document.createElement('p');
+    text.id = `ec-dialog-message-${dialogId}`;
     // Переводим сразу: диалог живёт вне страницы и не должен ждать наблюдателя.
     text.textContent = t(message);
     box.appendChild(text);
@@ -164,12 +169,16 @@
 
     const previouslyFocused = document.activeElement;
     let finished = false;
+    const entry = { backdrop };
+    dialogStack.push(entry);
     const finish = (result) => {
       if (finished) return;
       finished = true;
+      const index = dialogStack.indexOf(entry);
+      if (index >= 0) dialogStack.splice(index, 1);
       document.removeEventListener('keydown', onKey, true);
       backdrop.remove();
-      if (previouslyFocused?.focus) {
+      if (previouslyFocused?.isConnected !== false && previouslyFocused?.focus) {
         try { previouslyFocused.focus(); } catch { /* элемент уже удалён */ }
       }
       resolve(result);
@@ -178,6 +187,8 @@
     const order = hideCancel ? [ok] : [cancel, ok];
 
     function onKey(event) {
+      if (dialogStack.at(-1) !== entry) return;
+      if (['Escape', 'Enter', 'Tab'].includes(event.key)) event.stopImmediatePropagation();
       // Escape = отказ; в информационном окне это и есть его единственная кнопка.
       if (event.key === 'Escape') { event.preventDefault(); finish(hideCancel); return; }
       if (event.key === 'Enter' && !event.shiftKey) {

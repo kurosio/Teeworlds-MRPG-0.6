@@ -639,6 +639,31 @@ function validate_quest_board_link(mysqli $mysqli, array $data, ?int $excludeId 
     if ($duplicate) throw new RuntimeException('Квест уже назначен другой доске. Переместите существующее назначение вместо создания второго.');
 }
 
+/** IDs are bounded database integers; only the built-in world may use zero. */
+function crud_record_id(string $value, string $resource): ?int
+{
+    if (!preg_match('/^\d+$/D', $value)) return null;
+    $normalized = ltrim($value, '0');
+    $id = $normalized === '' ? 0 : filter_var($normalized, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 2147483647]]);
+    if ($id === false || ($id === 0 && $resource !== 'worlds')) return null;
+    return $id;
+}
+
+/** Pure update plan: a missing row is never interpreted as permission to insert. */
+function crud_update_plan(?array $current, array $data, array $jsonCols): ?array
+{
+    if ($current === null) return null;
+    $values = decode_json_cols($current, $jsonCols);
+    $changed = [];
+    $before = [];
+    foreach ($data as $column => $value) {
+        if (editor_values_equal($values[$column] ?? null, $value, in_array($column, $jsonCols, true))) continue;
+        $changed[$column] = $value;
+        $before[$column] = $values[$column] ?? null;
+    }
+    return ['data' => $changed, 'before' => $before, 'values' => $values];
+}
+
 /** $data must be sanitized + JSON-encoded already. Returns the new id. */
 function crud_insert(mysqli $mysqli, array $R, array $data): int
 {

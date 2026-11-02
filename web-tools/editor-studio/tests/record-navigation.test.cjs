@@ -77,6 +77,7 @@ test('record nav: position counter, prev/next buttons and roving tabindex', { sk
   const { document } = window;
   window.eval(source('utils.js'));
   mountListEditor(window);
+  window.eval(source('validation.js'));
   window.eval(source('ui-manager.js'));
   await window.EditorCore.UIManager.init(document);
   await tick();
@@ -105,6 +106,7 @@ test('record nav: arrow keys move through the list and focus survives re-render'
   const { document } = window;
   window.eval(source('utils.js'));
   mountListEditor(window);
+  window.eval(source('validation.js'));
   window.eval(source('ui-manager.js'));
   await window.EditorCore.UIManager.init(document);
   await tick();
@@ -148,6 +150,7 @@ test('shell shortcuts are forwarded from inside the editor, but not out of text 
   Object.defineProperty(window, 'parent', { value: { shell: true }, configurable: true });
   assert.notEqual(window.parent, window, 'не удалось подменить parent: тест пересылки бессмыслен');
 
+  window.eval(source('validation.js'));
   window.eval(source('ui-manager.js'));
   await window.EditorCore.UIManager.init(document);
   await tick();

@@ -56,43 +56,89 @@
   try { csrfToken = csrfStorage()?.getItem(CSRF_KEY) || ''; } catch { /* приватный режим */ }
   if (!CSRF_RE.test(csrfToken)) csrfToken = '';
 
+  let csrfRevision = 0;
   function setCsrf(token) {
     if (typeof token !== 'string' || !CSRF_RE.test(token)) return;
+    if (token === csrfToken) return;
     csrfToken = token;
-    try { csrfStorage()?.setItem(CSRF_KEY, token); } catch { /* приватный режим */ }
+    csrfRevision += 1;
+    try { csrfStorage()?.setItem(CSRF_KEY, token); } catch { /* private browsing */ }
   }
 
-  function clearCsrf() {
+  function clearCsrf(expected) {
+    // A late 403 must not clear a newer token issued by login/another frame.
+    if (expected !== undefined && expected !== csrfToken) return;
+    if (!csrfToken) return;
     csrfToken = '';
-    try { csrfStorage()?.removeItem(CSRF_KEY); } catch { /* приватный режим */ }
+    csrfRevision += 1;
+    try { csrfStorage()?.removeItem(CSRF_KEY); } catch { /* private browsing */ }
   }
 
-  /** Адрес выдачи токена по адресу вызываемого API ('' — не наш API). */
-  const csrfUrlFor = (url) => {
+  // Login/logout in another iframe uses the same session cookie. Follow its
+  // rotated token instead of keeping a stale in-memory copy until a write fails.
+  window.addEventListener?.('storage', (event) => {
+    if (event.key !== CSRF_KEY && event.key !== null) return;
+    if (event.storageArea && event.storageArea !== csrfStorage()) return;
+    const next = event.newValue || '';
+    if (CSRF_RE.test(next)) setCsrf(next);
+    else clearCsrf();
+  });
+
+  const isStudioApi = (url) => {
     const value = String(url || '');
-    const idx = value.indexOf('api/');
-    if (idx >= 0) return `${value.slice(0, idx)}api/auth.php?action=csrf`;
-    const fileApi = value.match(/^(.*?)api\.php(?:\?.*)?$/);
-    return fileApi ? `${fileApi[1]}api/auth.php?action=csrf` : '';
+    try {
+      if (typeof URL === 'function' && window.location?.href) {
+        const resolved = new URL(value, window.location.href);
+        if (resolved.origin !== window.location.origin) return false;
+        return /(?:^|\/)api\/[^/]+\.php$/.test(resolved.pathname)
+          || /(?:^|\/)api\.php$/.test(resolved.pathname);
+      }
+    } catch { return false; }
+    // VM/older-webview fallback: relative URLs only, never credentials in a
+    // query string mistaken for an API path or an absolute foreign origin.
+    if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(value)) return false;
+    const path = value.split(/[?#]/, 1)[0];
+    return /(?:^|\/)api\/[^/]+\.php$/.test(path) || /(?:^|\/)api\.php$/.test(path);
+  };
+  const csrfUrlFor = (url) => {
+    if (!isStudioApi(url)) return '';
+    const path = String(url).split(/[?#]/, 1)[0];
+    const base = path.slice(0, path.lastIndexOf('/') + 1);
+    return `${base}${/(?:^|\/)api\.php$/.test(path) ? 'api/' : ''}auth.php?action=csrf`;
   };
 
-  let csrfPromise = null;
-  async function fetchCsrf(hintUrl, force = false) {
+  let csrfRequest = null;
+  async function fetchCsrf(hintUrl, force = false, options = {}) {
     if (csrfToken && !force) return csrfToken;
-    const target = csrfUrlFor(hintUrl || 'api/');
+    const target = csrfUrlFor(hintUrl || 'api/db.php');
     if (!target) return '';
-    if (!csrfPromise) {
-      csrfPromise = text(target)
-        .then((response) => {
-          const { data } = parseBody(response.data);
-          if (data && typeof data === 'object') setCsrf(data.csrf);
-          return csrfToken;
-        })
-        .catch(() => '')
-        .finally(() => { csrfPromise = null; });
-    }
-    return csrfPromise;
+    // Concurrent stale POSTs share one refresh, including a force refresh.
+    if (csrfRequest) return csrfRequest;
+    const revision = csrfRevision;
+    csrfRequest = text(target, options)
+      .then((response) => {
+        const { data } = parseBody(response.data);
+        // An auth response received while refresh was in flight is newer.
+        if (response.ok && revision === csrfRevision && data && typeof data === 'object') setCsrf(data.csrf);
+        return csrfToken;
+      })
+      .catch(() => '')
+      .finally(() => { csrfRequest = null; });
+    return csrfRequest;
   }
+
+  // A caller may cancel its own wait without cancelling a token refresh shared
+  // by other frames/requests. The shared refresh still has its own HTTP timeout.
+  const waitForToken = (promise, signal) => {
+    if (!signal) return promise;
+    let abort;
+    const cancelled = new Promise((resolve, reject) => {
+      abort = () => reject(new DOMException('Request cancelled', 'AbortError'));
+      if (signal.aborted) abort();
+      else signal.addEventListener('abort', abort, { once: true });
+    });
+    return Promise.race([promise, cancelled]).finally(() => signal.removeEventListener('abort', abort));
+  };
 
   const notifyAuthRequired = () => {
     postMessage(window.top, { type: 'editor-shell:auth-required' });
@@ -148,65 +194,70 @@
     }
   };
 
-  /** Общая реализация запроса; текстовый ответ затем разбирается в json(). */
+  /** One timeout covers CSRF preparation, headers and reading the body. */
   const text = async (url, options = {}) => {
     const {
-      method = 'GET',
-      body = null,
-      query = null,
-      headers = null,
-      timeout = DEFAULT_TIMEOUT,
-      signal: externalSignal = null,
-      credentials = 'same-origin',
-      cache = 'no-store',
+      method = 'GET', body = null, query = null, headers = null,
+      timeout: requestedTimeout = DEFAULT_TIMEOUT, signal: externalSignal = null,
+      credentials = 'same-origin', cache = 'no-store',
     } = options;
-
-    const writeMethod = !['GET', 'HEAD'].includes(String(method).toUpperCase());
-    let requestHeaders = headers;
-    if (writeMethod) {
-      if (!csrfToken) { try { await fetchCsrf(url); } catch { /* отправим без токена — сервер ответит 403 csrf_token */ } }
-      if (csrfToken) requestHeaders = { ...(headers || {}), 'X-Editor-CSRF': csrfToken };
-    }
-
+    const timeout = Number.isFinite(Number(requestedTimeout)) && Number(requestedTimeout) >= 0
+      ? Number(requestedTimeout) : DEFAULT_TIMEOUT;
     const controller = new AbortController();
     const { signal, cleanup } = combineSignals(controller.signal, externalSignal);
     let timedOut = false;
-    const timer = timeout > 0 ? setTimeout(() => { timedOut = true; controller.abort(); }, timeout) : null;
-
+    const startedAt = Date.now();
+    // Nested CSRF preparation has its own timer. Check the absolute deadline
+    // too: under load that timer may finish just before the parent timer runs.
+    const expired = () => {
+      if (timeout > 0 && Date.now() - startedAt >= timeout) {
+        timedOut = true;
+        controller.abort();
+      }
+      return timedOut;
+    };
+    const timer = timeout > 0 ? setTimeout(expired, timeout) : null;
+    const cancelled = () => ({ status: 0, ok: false, data: '', aborted: true,
+      cancelled: !timedOut, retryAfter: null,
+      error: timedOut ? TIMEOUT_ERROR : CANCELED_ERROR });
     try {
+      if (signal.aborted) return cancelled();
       const payload = body == null || typeof body === 'string' ? body : JSON.stringify(body);
+      const requestHeaders = typeof Headers === 'function' && headers instanceof Headers
+        ? Object.fromEntries(headers.entries()) : { ...(headers || {}) };
+      const hasContentType = Object.keys(requestHeaders).some(key => key.toLowerCase() === 'content-type');
+      if (payload != null && !hasContentType) requestHeaders['Content-Type'] = 'application/json';
+      const writeMethod = !['GET', 'HEAD'].includes(String(method).toUpperCase());
+      const apiWrite = writeMethod && isStudioApi(url);
+      if (apiWrite && !csrfToken) {
+        await waitForToken(fetchCsrf(url, false, {
+          timeout: timeout > 0 ? Math.max(1, timeout - (Date.now() - startedAt)) : 0,
+        }), signal);
+      }
+      if (signal.aborted || expired()) return cancelled();
+      const csrfAttempt = apiWrite ? csrfToken : '';
+      if (csrfAttempt) requestHeaders['X-Editor-CSRF'] = csrfAttempt;
       const response = await fetch(buildUrl(url, query), {
-        method,
-        credentials,
-        cache,
-        headers: payload == null ? (requestHeaders || undefined) : { 'Content-Type': 'application/json', ...(requestHeaders || {}) },
-        body: payload ?? undefined,
-        signal,
+        method, credentials, cache, headers: requestHeaders,
+        body: payload ?? undefined, signal,
       });
-      if (response.status === 401) notifyAuthRequired();
+      if (signal.aborted || expired()) return cancelled();
+      if (response.status === 401 && isStudioApi(url)) notifyAuthRequired();
       let retryAfter = null;
       try {
-        const seconds = Number(response.headers?.get?.('retry-after'));
-        if (Number.isFinite(seconds) && seconds > 0) retryAfter = seconds;
-      } catch { /* заголовки недоступны в тестовом окружении */ }
+        const value = response.headers?.get?.('retry-after');
+        const seconds = Number(value);
+        const date = Date.parse(value);
+        const delay = Number.isFinite(seconds) ? seconds : (date - Date.now()) / 1000;
+        if (Number.isFinite(delay) && delay > 0) retryAfter = Math.ceil(delay);
+      } catch { /* Headers are unavailable in some test environments. */ }
       const data = await response.text();
-      return {
-        status: response.status,
-        ok: response.ok,
-        error: response.ok ? '' : `HTTP ${response.status}`,
-        retryAfter,
-        data,
-      };
+      return { status: response.status, ok: response.ok,
+        error: response.ok ? '' : `HTTP ${response.status}`, retryAfter, data, csrfAttempt };
     } catch (error) {
-      const aborted = error?.name === 'AbortError';
-      return {
-        status: 0,
-        ok: false,
-        data: '',
-        aborted,
-        cancelled: aborted && !timedOut,
-        error: aborted ? (timedOut ? TIMEOUT_ERROR : CANCELED_ERROR) : NETWORK_ERROR,
-      };
+      if (signal.aborted || error?.name === 'AbortError' || expired()) return cancelled();
+      return { status: 0, ok: false, data: '', aborted: false, cancelled: false,
+        retryAfter: null, error: NETWORK_ERROR };
     } finally {
       if (timer) clearTimeout(timer);
       cleanup();
@@ -214,38 +265,35 @@
   };
 
   const json = async (url, options = {}) => {
-    const response = await text(url, options);
+    const result = await text(url, options);
+    const { csrfAttempt, ...response } = result;
     const { data, invalid } = parseBody(response.data);
-    // Ответы auth несут актуальный токен (вход/выход ротируют его).
-    if (data && typeof data === 'object' && typeof data.csrf === 'string') setCsrf(data.csrf);
-    // Устаревший токен: запрос отклонён ДО обработки, поэтому повтор безопасен.
+    if (isStudioApi(url) && data && typeof data === 'object' && typeof data.csrf === 'string') setCsrf(data.csrf);
     const writeMethod = !['GET', 'HEAD'].includes(String(options.method || 'GET').toUpperCase());
-    if (writeMethod && response.status === 403 && data?.code === 'csrf_token' && !options.__csrfRetried) {
-      clearCsrf();
-      await fetchCsrf(url, true);
-      if (csrfToken) return json(url, { ...options, __csrfRetried: true });
+    if (writeMethod && isStudioApi(url) && response.status === 403 && data?.code === 'csrf_token' && !options.__csrfRetried) {
+      clearCsrf(csrfAttempt);
+      const token = await waitForToken(fetchCsrf(url, true, { timeout: options.timeout }), options.signal)
+        .catch(() => '');
+      if (options.signal?.aborted) {
+        return { ...response, status: 0, ok: false, data: null, aborted: true,
+          cancelled: true, retryAfter: null, error: CANCELED_ERROR };
+      }
+      // Never replay a token already tried.
+      if (token && token !== csrfAttempt) {
+        return json(url, { ...options, __csrfRetried: true });
+      }
     }
     const failedByPayload = data !== null && typeof data === 'object'
       && (data.ok === false || data.success === false);
     const ok = response.ok && !failedByPayload && !invalid;
-
     let error = response.error;
     if (!ok && response.status !== 0) {
       error = (data && typeof data === 'object' && data.error) ? String(data.error)
-        : invalid ? BAD_RESPONSE_ERROR
-          : `HTTP ${response.status}`;
+        : invalid ? BAD_RESPONSE_ERROR : `HTTP ${response.status}`;
     }
-
     const retryAfter = Number(data?.retry_after) > 0 ? Number(data.retry_after) : response.retryAfter;
-    return {
-      ...response,
-      ...(data && typeof data === 'object' ? data : {}),
-      status: response.status,
-      ok,
-      error,
-      retryAfter: retryAfter ?? null,
-      data,
-    };
+    return { ...response, ...(data && typeof data === 'object' ? data : {}),
+      status: response.status, ok, error, retryAfter: retryAfter ?? null, data };
   };
 
   /** Как json(), но бросает Error с HTTP-статусом и исходным payload. */
@@ -255,6 +303,9 @@
       const error = new Error(response.error || 'The operation failed');
       error.status = response.status;
       error.payload = response.data;
+      error.code = response.code;
+      error.retryAfter = response.retryAfter;
+      error.cancelled = !!response.cancelled;
       throw error;
     }
     return response.data;
@@ -268,7 +319,7 @@
       get: () => csrfToken,
       set: setCsrf,
       clear: clearCsrf,
-      refresh: (hintUrl) => fetchCsrf(hintUrl || 'api/', true),
+      refresh: (hintUrl) => fetchCsrf(hintUrl || 'api/db.php', true),
     },
     postMessage,
     isSameOriginMessage,

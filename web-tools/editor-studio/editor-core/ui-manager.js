@@ -1,25 +1,4 @@
 (() => {
-  const cssEscape = (...args) => window.EditorCore?.utils?.cssEscape?.(...args) ?? String(args[0] ?? '');
-  const parseValidateSpec = (raw) => {
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
-  };
-
-  const setHint = (hintEl, message) => {
-    if (!hintEl) return;
-    if (!message) {
-      hintEl.textContent = '';
-      hintEl.classList.add('hidden');
-      return;
-    }
-    hintEl.textContent = message;
-    hintEl.classList.remove('hidden');
-  };
-
   const Productivity = (() => {
     const LS_KEY = 'editor-core:productivity-prefs:v1';
     const esc = (value) => window.EditorCore?.utils?.escapeHtml
@@ -654,45 +633,42 @@
     };
   })();
 
-  const validateValue = ({ value, spec, inputType }) => {
-    if (!spec) return { ok: true, message: '' };
-    const message = spec.message || 'Invalid value';
-
-    // Required
-    if (spec.required) {
-      const empty = value == null || value === '' || (Array.isArray(value) && value.length === 0);
-      if (empty) return { ok: false, message: spec.requiredMessage || 'Required field' };
-    }
-
-    // Number bounds
-    if (inputType === 'number' || typeof value === 'number') {
-      const num = typeof value === 'number' ? value : (value === '' ? NaN : Number(value));
-      if (Number.isFinite(num)) {
-        if (spec.min !== undefined && num < spec.min) return { ok: false, message: spec.minMessage || `Minimum:  ${spec.min}` };
-        if (spec.max !== undefined && num > spec.max) return { ok: false, message: spec.maxMessage || `Maximum:  ${spec.max}` };
-      }
-    }
-
-    // Pattern
-    if (spec.pattern) {
-      try {
-        const re = new RegExp(spec.pattern);
-        if (!re.test(String(value ?? ''))) return { ok: false, message };
-      } catch {
-        // ignore broken regex
-      }
-    }
-
-    return { ok: true, message: '' };
+  const initVersions = new WeakMap();
+  // Field bindings have one owner and one cleanup path, even after a rerender.
+  const bindFields = (root) => {
+    root.__editorFieldBindings?.();
+    const controller = new AbortController();
+    const disposeValidation = window.EditorCore.Validation.bind(root);
+    const syncToggles = () => root.querySelectorAll('.editor-toggle input[type=checkbox]').forEach(cb => {
+      const label = cb.closest('.editor-toggle');
+      if (label) label.dataset.checked = cb.checked ? '1' : '0';
+    });
+    root.addEventListener('change', (event) => {
+      if (event.target?.matches?.('.editor-toggle input[type=checkbox]')) syncToggles();
+    }, { signal: controller.signal });
+    syncToggles();
+    const dispose = () => {
+      controller.abort();
+      disposeValidation();
+      if (root.__editorFieldBindings === dispose) delete root.__editorFieldBindings;
+    };
+    root.__editorFieldBindings = dispose;
+    return dispose;
   };
 
   const UIManager = {
     async init(root = document) {
+      const version = (initVersions.get(root) || 0) + 1;
+      initVersions.set(root, version);
+      const current = () => initVersions.get(root) === version;
       // Scripts in <head> can initialize us before the page has a body.
       // Wait for the whole DOM so toolbar actions and fields are present too.
       if (document.readyState === 'loading') {
         await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }));
       }
+      if (!current()) return;
+      bindFields(root);
+
       // 0) TagSelect widgets (chips + search)
       // Reusable across editors:
       // - static options via ui.options
@@ -1012,6 +988,7 @@
 
       // Fire and forget inside init (awaited so first render gets real labels if DB is fast)
       await hydrateTagsFromDB();
+      if (!current()) return;
 
       // 0.1) Scenario field launcher (opens embedded scenario editor overlay)
       // `root` may be a document (bootstrap calls UIManager.init(document)).
@@ -1099,6 +1076,7 @@
       // 1.1) Adaptive DB selects: toggle helper dropdown vs manual input
       root.querySelectorAll('.editor-dbselect').forEach((wrapper) => {
         const sel = wrapper.querySelector('select[data-datasource]');
+        if (sel && window.EditorCore.DB?.isInitOwner && !window.EditorCore.DB.isInitOwner(root, sel)) return;
         if (!sel) {
           wrapper.dataset.dbState = 'disconnected';
           return;
@@ -1120,40 +1098,16 @@
         wrapper.dataset.dbState = loaded ? 'connected' : 'disconnected';
       });
 
-      // 2) Toggle state sync (for CSS styling)
-      root.querySelectorAll('.editor-toggle input[type=checkbox]').forEach((cb) => {
-        const label = cb.closest('.editor-toggle');
-        const sync = () => { if (label) label.dataset.checked = cb.checked ? '1' : '0'; };
-        cb.addEventListener('change', sync);
-        sync();
-      });
-
-      // 2) Validation hints
-      const inputs = Array.from(root.querySelectorAll('[data-validate]'));
-      for (const el of inputs) {
-        const spec = parseValidateSpec(el.getAttribute('data-validate'));
-        if (!spec) continue;
-        const path = el.getAttribute('data-path') || el.getAttribute('name') || el.getAttribute('data-key');
-        const hint = path ? root.querySelector(`[data-hint-for="${cssEscape(path)}"]`) : null;
-
-        const run = () => {
-          const value = window.EditorCore?.FieldRenderer?.getInputValue
-            ? window.EditorCore.FieldRenderer.getInputValue(el)
-            : (el.type === 'checkbox' ? el.checked : el.value);
-
-          const { ok, message } = validateValue({ value, spec, inputType: el.type });
-          el.classList.toggle('editor-invalid', !ok);
-          setHint(hint, ok ? '' : message);
-        };
-
-        el.addEventListener('input', run);
-        el.addEventListener('change', run);
-        run();
-      }
-
       // 3) Global productivity utilities (hotkeys + command palette + view modes)
-      Productivity.init(root);
+      if (current()) Productivity.init(root);
     },
+    cancelInit(root = document) {
+      initVersions.set(root, (initVersions.get(root) || 0) + 1);
+      root.__editorFieldBindings?.();
+      window.EditorCore?.DB?.cancelInit?.(root);
+    },
+    bindFields,
+    validate: (root, options) => window.EditorCore.Validation.validateRoot(root, options),
     getPrefs: () => Productivity.getPrefs(),
     setMode: (mode, enabled) => Productivity.setMode(mode, enabled),
     moveSelection: (...args) => Productivity.moveSelection(...args),

@@ -25,6 +25,7 @@ require_once __DIR__ . '/db-history-lib.php';
 $ROLE = bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN, EDITOR_ROLE_GUEST]);
 
 $RESOURCES = editor_resources();
+$transactionOpen = false;
 
 $action = (string)($_GET['action'] ?? '');
 $resource = (string)($_GET['resource'] ?? '');
@@ -89,7 +90,8 @@ try {
     }
 
     try {
-      $mysqli->begin_transaction();
+      if (!$mysqli->begin_transaction()) throw new RuntimeException('Не удалось начать транзакцию');
+      $transactionOpen = true;
       $updates = [];
       $merged = false;
       foreach (fetch_craft_group_rows($mysqli, true) as $row) {
@@ -106,6 +108,7 @@ try {
 
       if ($updates && $merged && ($body['mergeExisting'] ?? false) !== true) {
         $mysqli->rollback();
+        $transactionOpen = false;
         $mysqli->close();
         respond(['ok' => false, 'error' => 'Такое имя уже занято на этом уровне. Проверьте предупреждение и повторите.'], 409);
       }
@@ -125,13 +128,16 @@ try {
         }
         $stmt->close();
       }
-      $mysqli->commit();
+      if (!$mysqli->commit()) throw new RuntimeException('Не удалось завершить транзакцию');
+      $transactionOpen = false;
     } catch (DomainException $e) {
       $mysqli->rollback();
+      $transactionOpen = false;
       $mysqli->close();
       respond(['ok' => false, 'error' => $e->getMessage()], 400);
     } catch (Throwable $e) {
       $mysqli->rollback();
+      $transactionOpen = false;
       throw $e;
     }
 
@@ -199,9 +205,8 @@ try {
   }
 
   if ($action === 'get') {
-    $id = (string)($_GET['id'] ?? '');
-    if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
-    $iid = (int)$id;
+    $iid = crud_record_id((string)($_GET['id'] ?? ''), $resource);
+    if ($iid === null) respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
     $row = crud_fetch_row($mysqli, $R, $iid);
     $mysqli->close();
     if (!$row) respond(['ok' => true, 'row' => null]);
@@ -229,61 +234,57 @@ try {
   }
 
   if ($action === 'update') {
-    $id = (string)($_GET['id'] ?? '');
-    if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
-    $iid = (int)$id;
+    $iid = crud_record_id((string)($_GET['id'] ?? ''), $resource);
+    if ($iid === null) respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
     $body = read_json_body();
     $data = is_array($body['data'] ?? null) ? $body['data'] : [];
     $data = sanitize_columns($data, $cols);
     $data = encode_json_cols($data, $jsonCols);
     if (!$data) respond(['ok' => false, 'error' => 'Пустые данные: нечего сохранять'], 400);
 
-    // Форма присылает все поля записи, а читает их уже нормализованными (NULL →
-    // '' / 0). Пишем только реально изменённые поля: иначе обычное сохранение
-    // заменяло бы NULL в игровой БД на пустую строку или ноль.
-    $current = crud_fetch_row($mysqli, $R, $iid);
-    $before = [];
-    if ($current) {
-      $currentValues = decode_json_cols($current, $jsonCols);
-      $changed = [];
-      foreach ($data as $col => $value) {
-        if (editor_values_equal($currentValues[$col] ?? null, $value, in_array($col, $jsonCols, true))) continue;
-        $changed[$col] = $value;
-      }
-      if (!$changed) {
-        $mysqli->close();
-        respond(['ok' => true, 'changed' => 0, 'unchanged' => true]);
-      }
-      // Только изменённые колонки: этого достаточно, чтобы вернуть прежние
-      // значения, и в журнале видно ровно то, что изменилось.
-      foreach (array_keys($changed) as $col) {
-        $before[$col] = $currentValues[$col] ?? null;
-      }
-      $data = $changed;
+    // Compare and write under the same row lock. A concurrent delete cannot
+    // leave a successful no-op save or history entry for a nonexistent record.
+    if (!$mysqli->begin_transaction()) throw new RuntimeException('Не удалось начать транзакцию');
+    $transactionOpen = true;
+    $current = crud_fetch_row($mysqli, $R, $iid, true);
+    $plan = crud_update_plan($current, $data, $jsonCols);
+    if ($plan === null) {
+      $mysqli->rollback();
+      $transactionOpen = false;
+      respond(['ok' => false, 'error' => 'Запись уже удалена. Обновите список.', 'code' => 'record_not_found'], 404);
     }
-
+    if (!$plan['data']) {
+      if (!$mysqli->commit()) throw new RuntimeException('Не удалось завершить транзакцию');
+      $transactionOpen = false;
+      respond(['ok' => true, 'changed' => 0, 'unchanged' => true]);
+    }
+    $data = $plan['data'];
     crud_update($mysqli, $R, $iid, $data);
-    if ($current) {
-      // Подпись — из полной строки: изменённое поле может быть не тем, по
-      // которому запись узнают в списке.
-      db_history_safe_record($R, $resource, 'update', $iid, $before, decode_json_cols($data, $jsonCols),
-        ['label' => db_history_label($R, $currentValues)]);
-    }
+    if (!$mysqli->commit()) throw new RuntimeException('Не удалось завершить транзакцию');
+    $transactionOpen = false;
+    db_history_safe_record($R, $resource, 'update', $iid, $plan['before'], decode_json_cols($data, $jsonCols),
+      ['label' => db_history_label($R, $plan['values'])]);
     $mysqli->close();
     respond(['ok' => true, 'changed' => count($data)]);
   }
 
   if ($action === 'delete') {
-    $id = (string)($_GET['id'] ?? '');
-    if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
-    $iid = (int)$id;
+    $iid = crud_record_id((string)($_GET['id'] ?? ''), $resource);
+    if ($iid === null) respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
     // Полная строка до удаления — единственный способ вернуть запись обратно.
-    $removed = crud_fetch_row($mysqli, $R, $iid);
+    if (!$mysqli->begin_transaction()) throw new RuntimeException('Не удалось начать транзакцию');
+    $transactionOpen = true;
+    $removed = crud_fetch_row($mysqli, $R, $iid, true);
     $before = db_history_row_values($R, $removed);
-    crud_delete($mysqli, $R, $iid);
-    if ($before) {
-      db_history_safe_record($R, $resource, 'delete', $iid, $before, []);
+    if (!$before) {
+      $mysqli->rollback();
+      $transactionOpen = false;
+      respond(['ok' => false, 'error' => 'Запись уже удалена. Обновите список.', 'code' => 'record_not_found'], 404);
     }
+    crud_delete($mysqli, $R, $iid);
+    if (!$mysqli->commit()) throw new RuntimeException('Не удалось завершить транзакцию');
+    $transactionOpen = false;
+    db_history_safe_record($R, $resource, 'delete', $iid, $before, []);
     $mysqli->close();
     respond(['ok' => true]);
   }
@@ -292,5 +293,9 @@ try {
   respond(['ok' => false, 'error' => 'Неизвестное действие'], 400);
 
 } catch (Throwable $e) {
+  if ($transactionOpen && isset($mysqli) && $mysqli instanceof mysqli) {
+    try { $mysqli->rollback(); }
+    catch (Throwable $rollbackError) { error_log('[editor-studio] rollback: ' . $rollbackError->getMessage()); }
+  }
   editor_internal_error($e);
 }

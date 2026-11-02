@@ -611,24 +611,60 @@
   const showToast = (message, type = 'success', opts = {}) => {
     ensureUI();
     const container = window.EditorCore.UI.mountToastContainer({ id: opts.containerId || 'toast-container' });
+    while (container.children.length >= 5) {
+      const oldest = container.firstElementChild;
+      oldest.__editorDismiss?.();
+      if (oldest.isConnected) oldest.remove();
+    }
     const toast = document.createElement('div');
     const base = opts.baseClass || 'toast text-white font-semibold py-3 px-5 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full';
-    const cls = type === 'error'
-      ? (opts.errorClass || 'bg-red-500')
-      : type === 'warning'
-        ? (opts.warningClass || 'bg-yellow-500')
-        : type === 'info'
-          ? (opts.infoClass || 'bg-sky-600')
-          : (opts.successClass || 'bg-green-500');
-    toast.className = `${base} ${cls}`;
-    toast.textContent = String(message);
+    const toneClass = { error: opts.errorClass || 'bg-red-500', warning: opts.warningClass || 'bg-yellow-500',
+      info: opts.infoClass || 'bg-sky-600', success: opts.successClass || 'bg-green-500' };
+    toast.className = `${base} ${toneClass[type] || toneClass.success}`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+    toast.setAttribute('aria-atomic', 'true');
+    const text = document.createElement('span');
+    text.className = 'editor-toast-message';
+    text.textContent = String(message ?? '');
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'editor-toast-close';
+    close.textContent = '×';
+    close.title = 'Dismiss notification';
+    close.setAttribute('aria-label', close.title);
+    toast.append(text, close);
+    let enterTimer, exitTimer, hovered = false, focused = false, paused = false;
+    const dismiss = () => {
+      clearTimeout(enterTimer);
+      clearTimeout(exitTimer);
+      toast.remove();
+    };
+    toast.__editorDismiss = dismiss;
+    close.addEventListener('click', dismiss, { once: true });
+    const requestedTtl = Number(opts.ttl);
+    const ttl = Number.isFinite(requestedTtl) && requestedTtl >= 0 ? requestedTtl : (type === 'error' ? 6000 : 3000);
+    const scheduleDismiss = () => {
+      clearTimeout(exitTimer);
+      if (!paused) exitTimer = setTimeout(dismiss, ttl);
+    };
+    const syncPause = () => {
+      paused = hovered || focused;
+      clearTimeout(exitTimer);
+      if (!paused) scheduleDismiss();
+    };
+    toast.addEventListener('mouseenter', () => { hovered = true; syncPause(); });
+    toast.addEventListener('mouseleave', () => { hovered = false; syncPause(); });
+    toast.addEventListener('focusin', () => { focused = true; syncPause(); });
+    toast.addEventListener('focusout', (event) => {
+      if (toast.contains(event.relatedTarget)) return;
+      focused = false;
+      syncPause();
+    });
     container.appendChild(toast);
-    setTimeout(() => toast.classList.remove('translate-x-full'), 10);
-    const ttl = typeof opts.ttl === 'number' ? opts.ttl : 3000;
-    setTimeout(() => {
-      toast.classList.add('translate-x-full');
-      toast.addEventListener('transitionend', () => toast.remove(), { once: true });
-    }, ttl);
+    enterTimer = setTimeout(() => toast.classList.remove('translate-x-full'), 10);
+    scheduleDismiss();
+    return dismiss;
   };
 
   // ------------------------------------------------------------

@@ -17,6 +17,22 @@
     ttl: 5 * 60 * 1000,
     max: 200,
   });
+  const initScopes = new WeakMap();
+  const initElements = new WeakMap();
+  const claimElement = (element, root, scope) => {
+    const previous = initElements.get(element);
+    // A page-wide pass must not steal controls owned by an active nested form.
+    if (previous && !previous.signal.aborted && previous.root !== root && root.contains?.(previous.root)) return null;
+    previous?.controller.abort();
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    scope.signal.addEventListener('abort', abort, { once: true });
+    controller.signal.addEventListener('abort', () => scope.signal.removeEventListener('abort', abort), { once: true });
+    const entry = { scope, root, controller, signal: controller.signal };
+    initElements.set(element, entry);
+    if (scope.signal.aborted) controller.abort();
+    return entry;
+  };
   const cacheOptions = (signal) => ({
     dedupe: !signal,
     shouldCache: response => !!response?.ok,
@@ -270,7 +286,7 @@
     if (!cur) return;
     if (Array.from(el.options).some(o => o.value === cur)) return;
 
-    const one = await db.getOne(source, cur);
+    const one = await db.getOne(source, cur, { signal });
     if (!one?.ok || !one.item) return;
 
     const val = String(one.item.value);
@@ -285,7 +301,7 @@
     }
   };
 
-  const initSearchableSelect = async (db, source, el, root) => {
+  const initSearchableSelect = async (db, source, el, root, signal) => {
     const wrapper = el.closest('.editor-dbselect');
     if (wrapper) wrapper.setAttribute('data-db-state', 'connected');
 
@@ -300,7 +316,7 @@
     const multiple = !!el.multiple;
     const filter = readFilter(el);
 
-    const state = { q: '', loaded: 0, total: null, hasMore: false };
+    const state = { q: '', loaded: 0, total: null, hasMore: false, seq: 0, controller: null };
 
     const updateMeta = () => {
       if (!metaEl) return;
@@ -364,6 +380,11 @@
     }
 
     const loadPage = async ({ reset = false } = {}) => {
+      if (signal.aborted || !el.isConnected) return;
+      const seq = ++state.seq;
+      state.controller?.abort();
+      state.controller = new AbortController();
+      signal.addEventListener('abort', () => state.controller.abort(), { once: true, signal: state.controller.signal });
       const q = (searchInput ? searchInput.value : '').trim();
 
       if (reset || q !== state.q) {
@@ -380,8 +401,10 @@
         offset: state.loaded,
         withTotal: true,
         filterKey: filter?.key,
-        filterValues: filter?.values
+        filterValues: filter?.values,
+        signal: state.controller.signal,
       });
+      if (seq !== state.seq || signal.aborted || !el.isConnected) return;
       if (!res?.ok) {
         el.dataset.dbFailed = '1';
         el.dataset.dbLoaded = '0';
@@ -403,7 +426,8 @@
       state.total = (typeof res.total === 'number') ? res.total : null;
       state.hasMore = !!res.has_more;
 
-      await ensureCurrentOption(db, source, el, { root, bindInputPath, labelMode });
+      await ensureCurrentOption(db, source, el, { root, bindInputPath, labelMode, signal: state.controller.signal });
+      if (seq !== state.seq || signal.aborted || !el.isConnected) return;
 
       if (moreBtn) moreBtn.classList.toggle('hidden', !state.hasMore);
       updateMeta();
@@ -414,24 +438,35 @@
     let t = null;
     const debounced = () => {
       if (t) clearTimeout(t);
-      t = setTimeout(() => loadPage({ reset: true }), 200);
+      t = setTimeout(() => { t = null; loadPage({ reset: true }).catch(() => {}); }, 200);
     };
 
     if (searchInput && el.dataset.dbSearchBind !== '1') {
       el.dataset.dbSearchBind = '1';
-      searchInput.addEventListener('input', debounced);
-      searchInput.addEventListener('focus', debounced);
+      searchInput.addEventListener('input', debounced, { signal });
+      searchInput.addEventListener('focus', debounced, { signal });
     }
     if (moreBtn && moreBtn.dataset.dbMoreBind !== '1') {
       moreBtn.dataset.dbMoreBind = '1';
-      moreBtn.addEventListener('click', () => loadPage({ reset: false }));
+      moreBtn.addEventListener('click', () => loadPage({ reset: false }).catch(() => {}), { signal });
     }
 
+    signal.addEventListener('abort', () => {
+      if (t) clearTimeout(t);
+      state.seq += 1;
+      state.controller?.abort();
+      delete el.dataset.dbSearchBind;
+      delete el.dataset.dbMoreBind;
+      delete el.dataset.dbBindInit;
+      const input = root.querySelector(`[data-path="${cssEscape(bindInputPath)}"]`);
+      if (input) delete input.dataset.dbSelectSync;
+    }, { once: true });
     await loadPage({ reset: true });
   };
 
   const initBulkSelect = (source, els, root, items) => {
     for (const el of els) {
+      const signal = initElements.get(el)?.signal;
       el.dataset.dbFailed = '0';
       const wrapper = el.closest('.editor-dbselect');
       if (wrapper) wrapper.setAttribute('data-db-state', 'connected');
@@ -503,8 +538,8 @@
             opt.hidden = !String(opt.text || '').toLowerCase().includes(q);
           }
         };
-        searchInput.addEventListener('input', runFilter);
-        searchInput.addEventListener('focus', runFilter);
+        searchInput.addEventListener('input', runFilter, { signal });
+        searchInput.addEventListener('focus', runFilter, { signal });
       }
 
       // helper bind sync
@@ -517,7 +552,7 @@
           input.dispatchEvent(new Event('input', { bubbles: true }));
           input.dispatchEvent(new Event('change', { bubbles: true }));
         };
-        el.addEventListener('change', syncToInput);
+        el.addEventListener('change', syncToInput, { signal });
 
         const input = root.querySelector(`[data-path="${cssEscape(bindInputPath)}"]`);
         if (input && input.dataset.dbSelectSync !== '1') {
@@ -528,16 +563,22 @@
             if (has) el.value = v;
             else if (v === '0') el.value = '';
           };
-          input.addEventListener('input', syncToSelect);
-          input.addEventListener('change', syncToSelect);
+          input.addEventListener('input', syncToSelect, { signal });
+          input.addEventListener('change', syncToSelect, { signal });
         }
       }
+      signal?.addEventListener('abort', () => {
+        delete el.dataset.dbClientFilter;
+        delete el.dataset.dbBindInit;
+        const input = root.querySelector(`[data-path="${cssEscape(bindInputPath)}"]`);
+        if (input) delete input.dataset.dbSelectSync;
+      }, { once: true });
     }
   };
 
   // New UI: single searchable input + dropdown ("combo") for db_select.
   // It binds to an underlying numeric input via data-bind-input-path.
-  const initDbCombo = async (db, combo, root) => {
+  const initDbCombo = async (db, combo, root, signal) => {
     if (!combo || combo.dataset.dbComboInited === '1') return;
     combo.dataset.dbComboInited = '1';
 
@@ -613,6 +654,7 @@
       });
     };
 
+    let blurTimer = null;
     const state = {
       open: false,
       q: '',
@@ -664,6 +706,7 @@
     };
 
     const close = () => {
+      if (!state.open && !portal) { debouncedQuery.cancel(); state.queryController?.abort(); return; }
       state.open = false;
       state.activeIndex = -1;
       state.querySeq += 1;
@@ -687,6 +730,7 @@
     };
 
     const open = () => {
+      if (signal.aborted || !combo.isConnected) return;
       if (state.open) {
         placeDropdown();
         return;
@@ -828,7 +872,7 @@
       syncClearButton();
       close();
     };
-    dropdownLocal?.addEventListener('click', onDropdownClick);
+    dropdownLocal?.addEventListener('click', onDropdownClick, { signal });
 
     let displaySeq = 0;
     const ensureDisplay = async () => {
@@ -848,8 +892,8 @@
         return;
       }
       try {
-        const one = await db.getOne(source, cur);
-        if (seq !== displaySeq || readBoundValue() !== cur || state.open) return;
+        const one = await db.getOne(source, cur, { signal });
+        if (signal.aborted || !combo.isConnected || seq !== displaySeq || readBoundValue() !== cur || state.open) return;
         if (one?.ok && one.item) {
           input.value = formatLabel(one.item.value, one.item.label);
           input.dataset.lookupChangeKind = one.item[LOOKUP_CHANGE_KIND] || '';
@@ -861,7 +905,7 @@
         }
       } catch {}
       // A slow lookup must not replace a newer selection or a search query.
-      if (seq !== displaySeq || readBoundValue() !== cur || state.open) return;
+      if (signal.aborted || !combo.isConnected || seq !== displaySeq || readBoundValue() !== cur || state.open) return;
       // Fallback: show raw id
       input.value = cur;
       syncClearButton();
@@ -870,7 +914,7 @@
     if (clearBtn) {
       clearBtn.addEventListener('mousedown', (event) => {
         event.preventDefault();
-      });
+      }, { signal });
       clearBtn.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -880,12 +924,12 @@
         }
         writeBoundValue('');
         close();
-      });
+      }, { signal });
     }
 
     const loadClientItemsIfNeeded = async () => {
       if (state.items) return true;
-      const res = await db.list(source, { limit: 5000, offset: 0, filterKey: filter?.key, filterValues: filter?.values });
+      const res = await db.list(source, { limit: 5000, offset: 0, filterKey: filter?.key, filterValues: filter?.values, signal });
       if (!res?.ok) return false;
       state.items = res.items || [];
       return true;
@@ -954,11 +998,11 @@
       input.addEventListener('focus', () => {
         open();
         debouncedQuery(input.value);
-      });
+      }, { signal });
       input.addEventListener('click', () => {
         open();
         debouncedQuery(input.value);
-      });
+      }, { signal });
       input.addEventListener('input', () => {
         const raw = String(input.value || '').trim();
         if (!raw) {
@@ -968,7 +1012,7 @@
         }
         open();
         debouncedQuery(input.value);
-      });
+      }, { signal });
       input.addEventListener('keydown', (e) => {
         if (!dropdown) return;
         const opts = Array.from(dropdown.querySelectorAll('.editor-dbcombo-option'));
@@ -1011,28 +1055,35 @@
             close();
           }
         }
-      });
+      }, { signal });
       input.addEventListener('blur', () => {
         // Small delay so click on option works.
-        setTimeout(() => {
+        clearTimeout(blurTimer);
+        blurTimer = setTimeout(() => {
           const ae = document.activeElement;
           if (!combo.contains(ae) && !(portal && portal.contains(ae))) close();
         }, 150);
-      });
+      }, { signal });
     }
 
     // Keep display synced when underlying input changes
     if (bound && bound.dataset.dbComboSync !== '1') {
       bound.dataset.dbComboSync = '1';
-      bound.addEventListener('input', ensureDisplay);
-      bound.addEventListener('change', ensureDisplay);
+      bound.addEventListener('input', ensureDisplay, { signal });
+      bound.addEventListener('change', ensureDisplay, { signal });
     }
 
     combo.addEventListener('editor-db:refresh', () => {
       state.items = null;
       if (!state.open) ensureDisplay();
-    });
+    }, { signal });
 
+    signal.addEventListener('abort', () => {
+      close();
+      clearTimeout(blurTimer);
+      delete combo.dataset.dbComboInited;
+      if (bound) delete bound.dataset.dbComboSync;
+    }, { once: true });
     // Initial label
     await ensureDisplay();
   };
@@ -1092,7 +1143,7 @@
       return fetchJson(`${MAINT_ENDPOINT}?action=delete_dump`, { method: 'POST', body: payload });
     },
 
-    async getOne(source, id) {
+    async getOne(source, id, { signal } = {}) {
       const overlay = await lookupOverlay(source);
       const numericId = Number(id) || 0;
       const localOperation = overlay
@@ -1105,7 +1156,7 @@
 
       const key = `one:${source}:${id}`;
       const qs = new URLSearchParams({ action: 'get_one', source, id: String(id) }).toString();
-      const response = await cache.load(key, () => fetchJson(`${this.endpoint}?${qs}`), cacheOptions());
+      const response = await cache.load(key, () => fetchJson(`${this.endpoint}?${qs}`, { signal }), cacheOptions(signal));
       return overlayLookupOne(source, response, id, overlay);
     },
 
@@ -1131,11 +1182,29 @@
       return overlayLookupList(source, response, { search, offset, filterKey, filterValue, filterValues });
     },
 
+    isInitOwner(root, element) {
+      const entry = initElements.get(element);
+      return !!entry && entry.scope === initScopes.get(root) && !entry.signal.aborted;
+    },
+
+    cancelInit(root = document) {
+      initScopes.get(root)?.abort();
+      initScopes.delete(root);
+    },
+
     async init(root = document) {
+      this.cancelInit(root);
+      const controller = new AbortController();
+      const signal = controller.signal;
+      initScopes.set(root, controller);
+      const active = (el) => !signal.aborted && initElements.get(el)?.scope === controller
+        && !initElements.get(el)?.signal.aborted && el.isConnected && (root.contains?.(el) ?? true);
+      const list = (source, options) => this.list(source, { ...options, signal });
       window.EditorCore.RelatedRecords?.init(root);
       const selects = Array.from(root.querySelectorAll('select[data-datasource]'));
       const combos = Array.from(root.querySelectorAll('.editor-dbcombo[data-datasource]'));
       if (!selects.length && !combos.length) return;
+      for (const element of [...selects, ...combos]) claimElement(element, root, controller);
 
       const bySource = new Map();
       for (const el of selects) {
@@ -1153,6 +1222,7 @@
       for (const { source, filter, els } of bySource.values()) {
         // show loading
         for (const el of els) {
+          if (!active(el)) continue;
           const current = el.value || el.dataset.currentValue || '';
           if (!el.dataset.dbLoaded) {
             const hasMeaningful = !!current && current !== '0';
@@ -1172,15 +1242,16 @@
           // Searchable selects are handled individually (they fetch their own pages).
           for (const el of els) {
             if (el.dataset.dbSearchable === '1') {
-              await initSearchableSelect(this, source, el, root);
+              if (active(el)) await initSearchableSelect(this, source, el, root, initElements.get(el).signal);
             }
           }
           // For non-searchable selects of the same source in the same root, also populate them (bulk).
           const bulkEls = els.filter(e => e.dataset.dbSearchable !== '1');
           if (bulkEls.length) {
-            const res = await this.list(source, { limit: 5000, offset: 0, filterKey: filter?.key, filterValues: filter?.values });
+            const res = await list(source, { limit: 5000, offset: 0, filterKey: filter?.key, filterValues: filter?.values });
+            if (signal.aborted) return;
             if (!res?.ok) {
-              for (const el of bulkEls) {
+              for (const el of bulkEls.filter(active)) {
                 el.disabled = true;
                 el.innerHTML = '';
                 el.appendChild(new Option('No database connection', '', true, true));
@@ -1188,7 +1259,7 @@
                 if (wrapper) wrapper.setAttribute('data-db-state', 'disconnected');
               }
             } else {
-              initBulkSelect(source, bulkEls, root, res.items || []);
+              initBulkSelect(source, bulkEls.filter(active), root, res.items || []);
             }
           }
           continue;
@@ -1202,7 +1273,8 @@
         let ok = true;
 
         while (true) {
-          const res = await this.list(source, { limit: PAGE, offset, filterKey: filter?.key, filterValues: filter?.values });
+          const res = await list(source, { limit: PAGE, offset, filterKey: filter?.key, filterValues: filter?.values });
+          if (signal.aborted) return;
           if (!res?.ok) { ok = false; break; }
           const page = res.items || [];
           items = items.concat(page);
@@ -1213,7 +1285,7 @@
         }
 
         if (!ok) {
-          for (const el of els) {
+          for (const el of els.filter(active)) {
             el.dataset.dbFailed = '1';
             el.disabled = true;
             el.innerHTML = '';
@@ -1224,12 +1296,12 @@
           continue;
         }
 
-        initBulkSelect(source, els, root, items);
+        initBulkSelect(source, els.filter(active), root, items);
       }
 
       // Init new db_select combo widgets
-      await Promise.all(combos.map((combo) => initDbCombo(this, combo, root)));
-      window.EditorCore.RelatedRecords?.init(root);
+      await Promise.all(combos.filter(active).map((combo) => initDbCombo(this, combo, root, initElements.get(combo).signal)));
+      if (!signal.aborted) window.EditorCore.RelatedRecords?.init(root);
     }
   };
 
