@@ -33,6 +33,9 @@ public:
 	void Disband(GuildIdentifier GuildID) const;
 
 private:
+	bool HasAccess(CPlayer* pPlayer, int64_t Rights) const;
+	bool IsGuildLeader(CPlayer* pPlayer) const;
+
 	void ShowMenu(int ClientID) const;
 	void ShowUpgrades(CPlayer* pPlayer) const;
 	void ShowProgressionTree(CPlayer* pPlayer) const;

@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_CORE_COMPONENTS_GUILDS_GUILD_DATA_H
 #define GAME_SERVER_CORE_COMPONENTS_GUILDS_GUILD_DATA_H
+
 #include <components/houses/guild_house_data.h>
 #include "guild_war_data.h"
 
@@ -26,18 +27,6 @@ enum GuildMisc
 	GUILD_NEW_UPGRADE_DOOR_HEALTH = 1,     // New guilds start with 1 door health
 	GUILD_NEW_UPGRADE_DECORATION_SLOT = 5, // New guilds start with 1 door health
 	GUILD_RENT_DAYS_DEFAULT = 3,           // Default rent duration for a guild
-};
-
-// Enum for guild rank rights levels
-enum GuildRankRights
-{
-	GUILD_RANK_RIGHT_LEADER = -1,        // Highest access level for guild leaders
-	GUILD_RANK_RIGHT_START = 0,          // Start of rank rights range
-	GUILD_RANK_RIGHT_DEFAULT = 0,        // Default rights for new guild members
-	GUILD_RANK_RIGHT_INVITE_KICK,        // Right to invite and kick members
-	GUILD_RANK_RIGHT_UPGRADES_HOUSE,     // Right to upgrade guild house
-	GUILD_RANK_RIGHT_FULL,               // Full access to all guild functions
-	GUILD_RANK_RIGHT_END                 // End of rank rights range
 };
 
 // Enum for results of guild-related operations
@@ -97,6 +86,48 @@ enum GuildActivityLogFlags
 	| LOGFLAG_UPGRADES_CHANGES | LOGFLAG_RANKS_CHANGES | LOGFLAG_BANK_CHANGES
 	| LOGFLAG_GUILD_MAIN_CHANGES         // Log all guild activities
 };
+
+// enum for guild right rank settings
+enum GuildRankRights
+{
+	RANKFLAG_RIGHT_DEFAULT = 0,
+	RANKFLAG_RIGHT_WITHDRAW_GOLD = 1 << 0,
+	RANKFLAG_RIGHT_KICK_MEMBERS = 1 << 1,
+	RANKFLAG_RIGHT_ACCEPT_DENY_MEMBERS = 1 << 2,
+	RANKFLAG_RIGHT_HOUSE_BUY = 1 << 3,
+	RANKFLAG_RIGHT_HOUSE_SELL = 1 << 4,
+	RANKFLAG_RIGHT_HOUSE_RENT = 1 << 5,
+	RANKFLAG_RIGHT_HOUSE_DOORS = 1 << 6,
+	RANKFLAG_RIGHT_HOUSE_FARMS = 1 << 7,
+	RANKFLAG_RIGHT_HOUSE_VISITORS = 1 << 8,
+	RANKFLAG_RIGHT_HOUSE_DECORATIONS = 1 << 9,
+	RANKFLAG_RIGHT_HOUSE_UPGRADES = 1 << 10,
+	RANKFLAG_RIGHT_FULL = RANKFLAG_RIGHT_WITHDRAW_GOLD | RANKFLAG_RIGHT_KICK_MEMBERS | RANKFLAG_RIGHT_ACCEPT_DENY_MEMBERS
+	| RANKFLAG_RIGHT_HOUSE_BUY | RANKFLAG_RIGHT_HOUSE_SELL | RANKFLAG_RIGHT_HOUSE_RENT | RANKFLAG_RIGHT_HOUSE_DOORS
+	| RANKFLAG_RIGHT_HOUSE_FARMS | RANKFLAG_RIGHT_HOUSE_VISITORS | RANKFLAG_RIGHT_HOUSE_DECORATIONS | RANKFLAG_RIGHT_HOUSE_UPGRADES
+};
+
+struct GuildRankRightInfo
+{
+	int64_t Flag;
+	const char* Name;
+	bool IsHouse;
+};
+
+inline constexpr std::array<GuildRankRightInfo, 11> s_aGuildRankRights
+{ {
+	{ RANKFLAG_RIGHT_WITHDRAW_GOLD, "Withdraw gold from the bank", false },
+	{ RANKFLAG_RIGHT_KICK_MEMBERS, "Kick members from the guild", false },
+	{ RANKFLAG_RIGHT_ACCEPT_DENY_MEMBERS, "Accept/deny membership requests", false },
+	{ RANKFLAG_RIGHT_HOUSE_BUY, "Can buy a house", true },
+	{ RANKFLAG_RIGHT_HOUSE_SELL, "Can sell a house", true },
+	{ RANKFLAG_RIGHT_HOUSE_RENT, "Extend house rent", true },
+	{ RANKFLAG_RIGHT_HOUSE_DOORS, "Manage house doors", true },
+	{ RANKFLAG_RIGHT_HOUSE_FARMS, "Manage house farms", true },
+	{ RANKFLAG_RIGHT_HOUSE_VISITORS, "Manage house visitors", true },
+	{ RANKFLAG_RIGHT_HOUSE_DECORATIONS, "Manage house decorations", true },
+	{ RANKFLAG_RIGHT_HOUSE_UPGRADES, "Upgrade & Improve house", true }
+} };
 
 class CGuild : public MultiworldIdentifiableData< std::deque < CGuild* > >
 {
@@ -163,21 +194,20 @@ public:
 		CGS* GS() const;
 		GuildRankIdentifier m_ID {};
 		std::string m_Rank {};
-		GuildRankRights m_Rights {};
+		int64_t m_Rights {};
 		CGuild* m_pGuild {};
 
 	public:
 		CRank() = delete;
-		CRank(GuildRankIdentifier RID, std::string&& Rank, GuildRankRights Rights, CGuild* pGuild);
+		CRank(GuildRankIdentifier RID, std::string&& Rank, int64_t Rights, CGuild* pGuild);
 
 		GuildRankIdentifier GetID() const { return m_ID; }
-		const char* GetName() const{ return m_Rank.c_str(); }
-		const char* GetRightsName(GuildRankRights Right) const;
-		const char* GetRightsName() const { return GetRightsName(m_Rights); }
-		const GuildRankRights& GetRights() const { return m_Rights; }
+		const char* GetName() const { return m_Rank.c_str(); }
+		int64_t GetRights() const { return m_Rights; }
+		bool HasRight(int64_t Right) const { return (m_Rights & Right) != 0; }
 
 		[[nodiscard]] GuildResult Rename(std::string NewRank);
-		void SetRights(GuildRankRights Rights);
+		void ToggleRight(int64_t Right);
 	};
 
 	using RankContainer = std::deque<class CRank*>;
@@ -227,7 +257,8 @@ public:
 		int GetAccountID() const { return m_AccountID; }
 		BigInt GetDeposit() const { return m_Deposit; }
 		CRank* GetRank() const { return m_pRank; }
-		[[nodiscard]] bool CheckAccess(GuildRankRights RequiredAccess) const;
+		bool IsLeader() const { return m_pGuild->GetLeaderUID() == m_AccountID; }
+		[[nodiscard]] bool CheckAccess(int64_t RequiredRights) const;
 
 		void SetDeposit(const BigInt& Deposit) { m_Deposit = Deposit; }
 		[[nodiscard]] bool SetRank(GuildRankIdentifier RankID);

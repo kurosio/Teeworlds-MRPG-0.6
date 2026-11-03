@@ -157,7 +157,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
+		if(!pGuild || !HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_VISITORS))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -205,7 +205,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
+		if(!pGuild || !HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_DECORATIONS))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -233,7 +233,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !IsGuildLeader(pPlayer))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -260,7 +260,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !IsGuildLeader(pPlayer))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -289,7 +289,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !IsGuildLeader(pPlayer))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -312,7 +312,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !HasAccess(pPlayer, RANKFLAG_RIGHT_KICK_MEMBERS))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -373,12 +373,38 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		return true;
 	}
 
+	if(PPSTR(pCmd, "GUILD_WITHDRAW_GOLD") == 0)
+	{
+		auto* pGuild = pPlayer->Account()->GetGuild();
+		auto* pMember = pPlayer->Account()->GetGuildMember();
+		if(!pGuild || !pMember || !pMember->CheckAccess(RANKFLAG_RIGHT_WITHDRAW_GOLD))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		if(ReasonNumber < 100)
+		{
+			GS()->Chat(ClientID, "Minimum is 100 gold.");
+			return true;
+		}
+
+		if(!pMember->WithdrawFromBank(ReasonNumber))
+		{
+			GS()->Chat(ClientID, "Not enough gold.");
+			return true;
+		}
+
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD);
+		return true;
+	}
+
 	// extend rent
 	if(PPSTR(pCmd, "GUILD_HOUSE_EXTEND_RENT") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_RENT))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -426,7 +452,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !IsGuildLeader(pPlayer))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -459,7 +485,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !IsGuildLeader(pPlayer))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -499,7 +525,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !IsGuildLeader(pPlayer))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -530,21 +556,18 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		return true;
 	}
 
-	// set rights for rank
-	if(PPSTR(pCmd, "GUILD_RANK_SET_RIGHTS") == 0)
+	if(PPSTR(pCmd, "GUILD_RANK_TOGGLE_RIGHT") == 0)
 	{
-		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		auto* pSelfMember = pPlayer->Account()->GetGuildMember();
+		if(!pGuild || !pSelfMember || !pSelfMember->IsLeader())
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
 		}
 
-        const int GuildRankID = GetIfExists<int>(Extras, 0, NOPE);
-
-		// check rank valid
-		auto pRank = pGuild->GetRanks()->Get(GuildRankID);
+		const int RankID = GetIfExists<int>(Extras, 0, NOPE);
+		auto* pRank = pGuild->GetRanks()->Get(RankID);
 		if(!pRank)
 		{
 			GS()->Chat(ClientID, "Unforeseen error.");
@@ -552,18 +575,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
-        const int GuildRRights = GetIfExists<int>(Extras, 1, NOPE);
-
-		// check for same of rights
-		const auto Rights = static_cast<GuildRankRights>(GuildRRights);
-		if(pRank->GetRights() == Rights)
-		{
-			GS()->Chat(ClientID, "You already have current rights set.");
-			return true;
-		}
-
-		// update rights
-		pRank->SetRights(Rights);
+		pRank->ToggleRight(GetIfExists<int64_t>(Extras, 1, 0));
 		GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_SELECT);
 		return true;
 	}
@@ -573,7 +585,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_INVITE_KICK))
+		if(!pGuild || !HasAccess(pPlayer, RANKFLAG_RIGHT_ACCEPT_DENY_MEMBERS))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -600,7 +612,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_INVITE_KICK))
+		if(!pGuild || !HasAccess(pPlayer, RANKFLAG_RIGHT_ACCEPT_DENY_MEMBERS))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -670,7 +682,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !IsGuildLeader(pPlayer))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -724,7 +736,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
+		if(!pGuild || !HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_FARMS))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -768,7 +780,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
+		if(!pGuild || !HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_FARMS))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -838,7 +850,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
+		if(!pGuild || !HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_DOORS))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -864,7 +876,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_SELL))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -888,7 +900,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
+		if(!pGuild || !HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_UPGRADES))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -912,7 +924,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !IsGuildLeader(pPlayer))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -936,7 +948,7 @@ bool CGuildManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotd
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_BUY))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -1305,15 +1317,22 @@ void CGuildManager::ShowMenu(int ClientID) const
 	VoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u262B Guild Management");
 	VManagement.Add("Your: {$} | Bank: {$} gold", pPlayer->Account()->GetTotalGold(), pGuild->GetBankManager()->Get());
 	VManagement.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
+	if(HasAccess(pPlayer, RANKFLAG_RIGHT_WITHDRAW_GOLD))
+		VManagement.AddOption("GUILD_WITHDRAW_GOLD", "Withdraw. (Amount in a reason)");
 	VManagement.AddLine();
-	VManagement.AddMenu(MENU_GUILD_UPGRADES, "Improvements & Upgrades");
+	if(HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_UPGRADES))
+		VManagement.AddMenu(MENU_GUILD_UPGRADES, "Improvements & Upgrades");
 	VManagement.AddMenu(MENU_GUILD_PROGRESSION_TREE, "Progression tree");
 	VManagement.AddMenu(MENU_GUILD_MEMBER_LIST, "Membership list");
-	VManagement.AddMenu(MENU_GUILD_INVITATIONS, "Membership requests");
-	VManagement.AddMenu(MENU_GUILD_RANK_LIST, "Rank management");
+	if(HasAccess(pPlayer, RANKFLAG_RIGHT_ACCEPT_DENY_MEMBERS))
+		VManagement.AddMenu(MENU_GUILD_INVITATIONS, "Membership requests");
 	VManagement.AddMenu(MENU_GUILD_LOGS, "Logs of activity");
 	VManagement.AddMenu(MENU_GUILD_WARS, "Guild wars");
-	VManagement.AddMenu(MENU_GUILD_DISBAND, "Disband");
+	if(IsGuildLeader(pPlayer))
+	{
+		VManagement.AddMenu(MENU_GUILD_RANK_LIST, "Rank management");
+		VManagement.AddMenu(MENU_GUILD_DISBAND, "Disband");
+	}
 
 	// Guild append house menu
 	if(HasHouse)
@@ -1323,14 +1342,20 @@ void CGuildManager::ShowMenu(int ClientID) const
 		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management (rented for {# (day|days)})", pHouse->GetRentDays());
 		VHouse.Add("Bank: {$} | Rent per day: {$} gold", pGuild->GetBankManager()->Get(), pHouse->GetRentPrice());
-		VHouse.AddOption("GUILD_HOUSE_EXTEND_RENT", "Extend. (Amount in a reason)");
+		if(HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_RENT))
+			VHouse.AddOption("GUILD_HOUSE_EXTEND_RENT", "Extend. (Amount in a reason)");
 		VHouse.AddLine();
 		VHouse.AddOption("GUILD_HOUSE_TELEPORT", "Teleport to house");
-		VHouse.AddOption("GUILD_HOUSE_DECORATION", "Decoration editor");
-		VHouse.AddMenu(MENU_GUILD_HOUSE_DOOR_LIST, "Doors");
-		VHouse.AddMenu(MENU_GUILD_HOUSE_FARMZONE_LIST, "Farms");
-		VHouse.AddMenu(MENU_GUILD_HOUSE_MEMBERS, "House members");
-		VHouse.AddMenu(MENU_GUILD_SELL_HOUSE, "Sell");
+		if(HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_DECORATIONS))
+			VHouse.AddOption("GUILD_HOUSE_DECORATION", "Decoration editor");
+		if(HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_DOORS))
+			VHouse.AddMenu(MENU_GUILD_HOUSE_DOOR_LIST, "Doors");
+		if(HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_FARMS))
+			VHouse.AddMenu(MENU_GUILD_HOUSE_FARMZONE_LIST, "Farms");
+		if(HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_VISITORS))
+			VHouse.AddMenu(MENU_GUILD_HOUSE_MEMBERS, "House members");
+		if(HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_SELL))
+			VHouse.AddMenu(MENU_GUILD_SELL_HOUSE, "Sell");
 	}
 }
 
@@ -1473,10 +1498,9 @@ void CGuildManager::ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const
 	if(!pMember || !pSelfMember)
 		return;
 
-	// initialize variables
-	bool RightsLeader = pSelfMember->CheckAccess(GUILD_RANK_RIGHT_LEADER);
-	bool RightsInviteKick = pSelfMember->CheckAccess(GUILD_RANK_RIGHT_INVITE_KICK);
-	bool SelfSlot = (pMember->GetAccountID() == pSelfMember->GetAccountID());
+	const bool IsLeader = pSelfMember->IsLeader();
+	const bool CanKick = pSelfMember->CheckAccess(RANKFLAG_RIGHT_KICK_MEMBERS);
+	const bool SelfSlot = (pMember->GetAccountID() == pSelfMember->GetAccountID());
 
 	// top-middle
 	int ClientID = pPlayer->GetCID();
@@ -1486,15 +1510,15 @@ void CGuildManager::ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const
 	VTop.AddLine();
 	if(!SelfSlot)
 	{
-		if(RightsLeader)
+		if(IsLeader)
 			VTop.AddOption("GUILD_SET_LEADER", "Give Leader (in reason 134)");
-		if(RightsInviteKick)
+		if(CanKick)
 			VTop.AddOption("GUILD_KICK_MEMBER", AccountID, "Kick");
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// selector rights
-	if(RightsLeader)
+	if(IsLeader)
 	{
 		VoteWrapper VSelector(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "Set new rank for {~}", Server()->GetAccountNickname(pMember->GetAccountID()));
 		VSelector.ReinitNumeralDepthStyles({ {DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD} });
@@ -1502,8 +1526,7 @@ void CGuildManager::ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const
 		{
 			if(pMember->GetRank()->GetID() != pRank->GetID())
 			{
-				VSelector.MarkList().AddOption("GUILD_CHANGE_MEMBER_RANK", MakeAnyList(AccountID, pRank->GetID()), "Change rank to: {~}",
-					pRank->GetName(), pRank->GetRights() > GUILD_RANK_RIGHT_DEFAULT ? "*" : "");
+				VSelector.MarkList().AddOption("GUILD_CHANGE_MEMBER_RANK", MakeAnyList(AccountID, pRank->GetID()), "Change rank to: {~}", pRank->GetName());
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
@@ -1516,9 +1539,9 @@ void CGuildManager::ShowRanksList(CPlayer* pPlayer) const
 	if(!pGuild)
 		return;
 
-	int ClientID = pPlayer->GetCID();
-	int MaxRanksNum = (int)GUILD_RANKS_MAX_COUNT;
-	int CurrentRanksNum = (int)pPlayer->Account()->GetGuild()->GetRanks()->GetContainer().size();
+	const int ClientID = pPlayer->GetCID();
+	const int MaxRanksNum = (int)GUILD_RANKS_MAX_COUNT;
+	const int CurrentRanksNum = (int)pGuild->GetRanks()->GetContainer().size();
 
 	// information
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "\u2324 Rank management (Information)");
@@ -1529,18 +1552,18 @@ void CGuildManager::ShowRanksList(CPlayer* pPlayer) const
 
 	// top-middle
 	VoteWrapper VTop(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_SIMPLE, "Management");
-	VTop.AddOption("GUILD_RANK_CREATE", "New rank (by reason field)");
+	if(IsGuildLeader(pPlayer))
+		VTop.AddOption("GUILD_RANK_CREATE", "New rank (by reason field)");
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// ranks list
 	VoteWrapper VList(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "List of ranks ({} of {})", CurrentRanksNum, MaxRanksNum);
 	VList.ReinitNumeralDepthStyles({ {DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD} });
-	for(auto pRank : pPlayer->Account()->GetGuild()->GetRanks()->GetContainer())
+	for(auto* pRank : pGuild->GetRanks()->GetContainer())
 	{
-		GuildRankIdentifier ID = pRank->GetID();
-		bool IsDefaultRank = (pRank == pPlayer->Account()->GetGuild()->GetRanks()->GetDefaultRank());
-		std::string StrAppendRankInfo = IsDefaultRank ? "- Beginning" : "- " + std::string(pRank->GetRightsName());
-		VList.MarkList().AddMenu(MENU_GUILD_RANK_SELECT, ID, "{~} {}", pRank->GetName(), StrAppendRankInfo.c_str());
+		const auto RightsCount = std::popcount(static_cast<uint64_t>(pRank->GetRights()));
+		VList.MarkList().AddMenu(MENU_GUILD_RANK_SELECT, pRank->GetID(), "{~} - {} of {} rights",
+			pRank->GetName(), RightsCount, s_aGuildRankRights.size());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 }
@@ -1555,22 +1578,43 @@ void CGuildManager::ShowRankEdit(CPlayer* pPlayer, GuildRankIdentifier ID) const
 	if(!pRank)
 		return;
 
-	// top-middle
 	const int ClientID = pPlayer->GetCID();
+	const bool IsLeader = IsGuildLeader(pPlayer);
+	const auto RightsCount = std::popcount(static_cast<uint64_t>(pRank->GetRights()));
+
+	// top-middle
 	VoteWrapper VTop(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_SIMPLE, "Editing rank '{~}'", pRank->GetName());
-	VTop.Add("Rigths: {}", pRank->GetRightsName());
+	VTop.Add("Rights: {} of {}", RightsCount, s_aGuildRankRights.size());
 	VTop.AddLine();
-	VTop.AddOption("GUILD_RANK_RENAME", pRank->GetID(), "Rename (by reason field)");
-	VTop.AddOption("GUILD_RANK_REMOVE", pRank->GetID(), "Remove");
+	if(IsLeader)
+	{
+		VTop.AddOption("GUILD_RANK_RENAME", pRank->GetID(), "Rename (by reason field)");
+		VTop.AddOption("GUILD_RANK_REMOVE", pRank->GetID(), "Remove");
+	}
 	VoteWrapper::AddEmptyline(ClientID);
 
-	// selector rights
-	VoteWrapper VSelector(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "Setting rights");
-	for(int i = GUILD_RANK_RIGHT_START; i < GUILD_RANK_RIGHT_END; i++)
+	// right settings only for leader
+	if(!IsLeader)
+		return;
+
+	auto AddRights = [&](VoteWrapper& V, bool House)
 	{
-		bool IsSet = (pRank->GetRights() == static_cast<GuildRankRights>(i));
-		VSelector.AddOption("GUILD_RANK_SET_RIGHTS", MakeAnyList(pRank->GetID(), i), "[{}] {}", (IsSet ? "✔" : "×"), pRank->GetRightsName((GuildRankRights)i));
-	}
+		for(const auto& Info : s_aGuildRankRights)
+		{
+			if(Info.IsHouse != House)
+				continue;
+
+			V.AddOption("GUILD_RANK_TOGGLE_RIGHT", MakeAnyList(pRank->GetID(), Info.Flag), "[{}] {}",
+				pRank->HasRight(Info.Flag) ? "✔" : "×", Instance::Localize(ClientID, Info.Name));
+		}
+	};
+
+	VoteWrapper VGuild(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_SIMPLE, "\u262B Guild rights");
+	AddRights(VGuild, false);
+	VoteWrapper::AddEmptyline(ClientID);
+
+	VoteWrapper VHouse(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_SIMPLE, "\u2302 House rights");
+	AddRights(VHouse, true);
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
@@ -1580,8 +1624,10 @@ void CGuildManager::ShowRequests(CPlayer* pPlayer) const
 	if(!pGuild)
 		return;
 
-	// information
 	const int ClientID = pPlayer->GetCID();
+	const bool CanInvite = HasAccess(pPlayer, RANKFLAG_RIGHT_ACCEPT_DENY_MEMBERS);
+	
+	// information
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Membership requests (Information)");
 	VInfo.Add("Players can send requests to join the guild");
 	VInfo.Add("Guild members with the necessary rights,");
@@ -1601,8 +1647,11 @@ void CGuildManager::ShowRequests(CPlayer* pPlayer) const
 	for(const auto& pRequest : vRequests)
 	{
 		VoteWrapper VRequest(ClientID, VWF_UNIQUE, "Request from {~}", Server()->GetAccountNickname(pRequest->GetFromUID()));
-		VRequest.AddOption("GUILD_REQUESTS_ACCEPT", pRequest->GetFromUID(), "Accept");
-		VRequest.AddOption("GUILD_REQUESTS_DENY", pRequest->GetFromUID(), "Deny");
+		if(CanInvite)
+		{
+			VRequest.AddOption("GUILD_REQUESTS_ACCEPT", pRequest->GetFromUID(), "Accept");
+			VRequest.AddOption("GUILD_REQUESTS_DENY", pRequest->GetFromUID(), "Deny");
+		}
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 }
@@ -1805,7 +1854,7 @@ void CGuildManager::ShowDetail(CPlayer* pPlayer, CGuildHouse* pHouse) const
 		auto* pGuild = pPlayer->Account()->GetGuild();
 		MHouseDetail.AddText("Buying price: {$}", pHouse->GetInitialFee());
 
-		if(pGuild && pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(pGuild && HasAccess(pPlayer, RANKFLAG_RIGHT_HOUSE_BUY))
 		{
 			MHouseDetail.AddText("Bank: {$}", pGuild->GetBankManager()->Get());
 			MHouseDetail.AddOption("GUILD_HOUSE_BUY", "Purchase").Pack(pHouse);
@@ -1930,6 +1979,18 @@ CGuild* CGuildManager::GetGuildByName(const char* pGuildname) const
 	});
 
 	return itGuild != CGuild::Data().end() ? (*itGuild) : nullptr;
+}
+
+bool CGuildManager::HasAccess(CPlayer* pPlayer, int64_t Rights) const
+{
+	auto* pMember = pPlayer->Account()->GetGuildMember();
+	return pMember && pMember->CheckAccess(Rights);
+}
+
+bool CGuildManager::IsGuildLeader(CPlayer* pPlayer) const
+{
+	auto* pMember = pPlayer->Account()->GetGuildMember();
+	return pMember && pMember->IsLeader();
 }
 
 CGuildHouse* CGuildManager::GetHouseByID(const GuildHouseIdentifier& ID) const

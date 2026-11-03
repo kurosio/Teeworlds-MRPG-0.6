@@ -1282,7 +1282,7 @@ CREATE TABLE `tw_guilds_invites` (
 
 CREATE TABLE `tw_guilds_ranks` (
   `ID` int(11) NOT NULL,
-  `Rights` int(11) NOT NULL DEFAULT 3,
+  `Rights` bigint(20) NOT NULL DEFAULT 0,
   `Name` varchar(32) NOT NULL DEFAULT 'Rank name',
   `GuildID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

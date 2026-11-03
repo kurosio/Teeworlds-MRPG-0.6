@@ -234,11 +234,12 @@ bool CEntityHouseDoor::GuildHouseTick(CGuildHouse* pHouse)
 			const auto* pPlayer = pChar->GetPlayer();
 			const auto* pAccount = pPlayer->Account();
 			const auto* pGuild = pAccount->GetGuild();
+			const auto* pMember = pAccount->GetGuildMember();
 			const auto ClientID = pPlayer->GetCID();
 
 			// check valid
-			if(pGuild && HouseIsPurchased && pGuild->GetID() == pHouse->GetGuild()->GetID() &&
-				pAccount->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
+			if(pGuild && pMember && HouseIsPurchased && pGuild->GetID() == pHouse->GetGuild()->GetID() &&
+				pMember->CheckAccess(RANKFLAG_RIGHT_HOUSE_DOORS))
 			{
 				if(Server()->Input()->IsKeyClicked(ClientID, KEY_EVENT_FIRE_HAMMER))
 					Reverse();
