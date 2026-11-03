@@ -26,6 +26,7 @@
 #include <game/server/core/entities/items/fishing_rod.h>
 #include <game/server/core/entities/tools/multiple_orbit.h>
 #include <game/server/core/entities/weapons/rifle_tesla_serpent.h>
+#include <game/server/core/entities/weapons/gun_gravity.h>
 #include "character_bot.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
@@ -49,6 +50,7 @@ CCharacter::CCharacter(CGameWorld* pWorld)
 
 CCharacter::~CCharacter()
 {
+	CEntityGravityGun::Stop(this);
 	delete m_pTilesHandler;
 	m_pMultipleOrbit = nullptr;
 	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = nullptr;
@@ -111,6 +113,7 @@ void CCharacter::SetWeapon(int Weapon)
 	m_QueuedWeapon = -1;
 	m_Core.m_ActiveWeapon = Weapon;
 	GS()->CreateSound(m_Pos, SOUND_WEAPON_SWITCH);
+	CEntityGravityGun::Stop(this, CEntityGravityGun::StopScope::OwnerOnly);
 
 	if(m_Core.m_ActiveWeapon < 0 || m_Core.m_ActiveWeapon >= NUM_WEAPONS)
 		m_Core.m_ActiveWeapon = 0;
@@ -235,7 +238,7 @@ void CCharacter::FireWeapon()
 
 	// Check if the character has learned the skill for using weapons in full auto mode
 	const bool IsCharBot = m_pPlayer->IsBot();
-	bool FullAuto = (IsCharBot || m_pPlayer->GetSkill(SKILL_MASTER_WEAPON)->GetMod(SkillMod::MasterWeaponAutoFire) > 0);
+	bool FullAuto = !CEntityGravityGun::IsEquipped(this) && ((IsCharBot || m_pPlayer->GetSkill(SKILL_MASTER_WEAPON)->GetMod(SkillMod::MasterWeaponAutoFire) > 0));
 	bool WillFire = CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses;
 	if(FullAuto && (m_LatestInput.m_Fire & 1) && m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 	{
@@ -777,7 +780,12 @@ void CCharacter::TickDeferred()
 	}
 
 	CCharacterCore::CParams CoreTickParams(&m_pPlayer->m_NextTuningParams);
+	CEntityGravityGun::BeforeMove(this);
 	m_Core.Move(&CoreTickParams);
+	CEntityGravityGun::AfterMove(this);
+	if(!m_Alive)
+		return;
+
 	m_Core.Quantize();
 	m_PrevPos = m_Pos;
 	m_Pos = m_Core.m_Pos;
@@ -977,6 +985,7 @@ void CCharacter::HandleWater(CTuningParams* pTuningParams)
 void CCharacter::Die(int Killer, int Weapon)
 {
 	m_Alive = false;
+	CEntityGravityGun::Stop(this);
 
 	// send the kill message
 	CNetMsg_Sv_KillMsg Msg;
@@ -1052,7 +1061,7 @@ void CCharacter::SetVelocity(vec2 NewVelocity)
 
 void CCharacter::AddVelocity(vec2 Addition)
 {
-	SetVelocity(m_Core.m_Vel + Addition);
+	SetVelocity(GetVelocity() + Addition);
 }
 
 void CCharacter::ApplyMoveRestrictions()
@@ -1962,6 +1971,8 @@ void CCharacter::ChangePosition(vec2 NewPos)
 {
 	if(!m_Alive)
 		return;
+
+	CEntityGravityGun::Stop(this);
 
 	GS()->CreateSound(m_Core.m_Pos, SOUND_SFX_TELEPORT);
 	GS()->CreateSound(NewPos, SOUND_SFX_TELEPORT);

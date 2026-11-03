@@ -6,15 +6,20 @@
 
 class CEntityDropPickup : public CEntity
 {
-	vec2 m_Vel;
 	int m_Type;
 	int m_Subtype;
 	int m_Value;
 	int m_LifeSpan;
 	CFlashingTick m_Flash;
+	bool m_FromMap {};
 
 public:
 	CEntityDropPickup(CGameWorld* pGameWorld, vec2 Pos, vec2 Vel, int Type, int Subtype, int Value);
+
+	// Detached map pickups restore health/mana/ammo, rather than granting loot XP.
+	CEntityDropPickup(CGameWorld* pGameWorld, vec2 Pos, int Type, int Subtype);
+	~CEntityDropPickup() override;
+	bool IsVisibleForClient(int ClientID) const { return !m_Flash.IsFlashing() && (ClientID == -1 || IsValidSnappingState(ClientID)); }
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

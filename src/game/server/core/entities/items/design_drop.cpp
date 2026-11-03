@@ -5,7 +5,7 @@
 CEntityDesignDrop::CEntityDesignDrop(CGameWorld *pGameWorld, int LifeSpan, vec2 Pos, vec2 Vel, int Type, int Subtype, int64_t Mask)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_VISUAL, Pos, 24.f)
 {
-	m_Vel = Vel;
+	SetVelocity(Vel);
 	m_Type = Type;
 	m_Subtype = Subtype;
 	m_LifeSpan = LifeSpan;

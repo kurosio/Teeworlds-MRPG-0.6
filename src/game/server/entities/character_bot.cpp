@@ -10,6 +10,7 @@
 #include "ai_core/quest_mob_ai.h"
 #include "ai_core/quest_npc_ai.h"
 
+#include <game/server/core/entities/weapons/gun_gravity.h>
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/gamecontext.h>
 #include <game/server/playerbot.h>
@@ -19,6 +20,7 @@ MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_
 
 namespace AITuning
 {
+	constexpr float NPC_MAX_SPAWN_DISTANCE = 640.f;
 	constexpr float MAX_SIGHT_DISTANCE = 1000.0f;
 	constexpr float RETREAT_HP_THRESHOLD = 0.25f;    // 25% HP => start retreating
 	constexpr int   MEMORY_DURATION_TICKS = 200;     // 5 sec memory of target position
@@ -130,6 +132,8 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, int 
 
 void CCharacterBotAI::Die(int Killer, int Weapon)
 {
+	CEntityGravityGun::Stop(this);
+
 	if (Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
 	{
 		auto* pMobInfo = m_pBotPlayer->GetBotType() == TYPE_BOT_MOB ? &m_pBotPlayer->GetMobInfo() : nullptr;
@@ -296,10 +300,30 @@ bool CCharacterBotAI::GiveWeapon(int Weapon, int GiveAmmo)
 	return true;
 }
 
+void CCharacterBotAI::EnforceNpcSpawnRadius()
+{
+	const int BotType = m_pBotPlayer->GetBotType();
+	if(BotType != TYPE_BOT_NPC && BotType != TYPE_BOT_QUEST)
+		return;
+	if(distance(m_Core.m_Pos, m_RespawnedPos) <= AITuning::NPC_MAX_SPAWN_DISTANCE)
+		return;
+
+	// reset position to respawned position if the bot is outside the allowed spawn radius
+	ChangePosition(m_RespawnedPos);
+	SetVelocity(vec2(0.f, 0.f));
+	m_PrevPos = m_RespawnedPos;
+	m_LastPos = m_RespawnedPos;
+	m_StuckCount = 0;
+	m_ReckoningTick = 0;
+}
+
 void CCharacterBotAI::Tick()
 {
 	if (!IsAlive())
 		return;
+
+	// protect inactive NPCs displaced by external game logic.
+	EnforceNpcSpawnRadius();
 
 	if (!m_pBotPlayer->IsActive())
 	{
@@ -337,7 +361,13 @@ void CCharacterBotAI::TickDeferred()
 		return;
 
 	CCharacterCore::CParams PlayerTune(&m_pBotPlayer->m_NextTuningParams);
+	CEntityGravityGun::BeforeMove(this);
 	m_Core.Move(&PlayerTune);
+	EnforceNpcSpawnRadius();
+	CEntityGravityGun::AfterMove(this);
+	if(!IsAlive())
+		return;
+
 	m_Core.Quantize();
 	m_PrevPos = m_Pos;
 	m_Pos = m_Core.m_Pos;

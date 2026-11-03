@@ -63,7 +63,7 @@ void CPlayerBot::Tick()
 					vec2 OwnerPos = pOwner->GetCharacter()->GetPos();
 					m_pCharacter->ChangePosition(OwnerPos);
 
-					m_pCharacter->m_Core.m_Vel = pOwner->GetCharacter()->m_Core.m_Vel;
+					m_pCharacter->SetVelocity(pOwner->GetCharacter()->GetVelocity());
 					m_pCharacter->m_Core.m_Direction = pOwner->GetCharacter()->m_Core.m_Direction;
 					m_pCharacter->m_Core.m_Input = pOwner->GetCharacter()->m_Core.m_Input;
 				}

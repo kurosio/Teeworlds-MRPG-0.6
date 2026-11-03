@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "drop_items.h"
+#include <game/server/core/entities/weapons/gun_gravity.h>
 
 #include <base/tl/base.h>
 
@@ -17,7 +18,7 @@ CEntityDropItem::CEntityDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, flo
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PICKUP_ITEM, Pos, 24.0f)
 {
 	m_Pos = Pos;
-	m_Vel = Vel;
+	SetVelocity(Vel);
 	m_ClientID = OwnerID;
 	m_DropItem = DropItem;
 	m_DropItem.SetSettings(0);
@@ -28,10 +29,15 @@ CEntityDropItem::CEntityDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, flo
 	GameWorld()->InsertEntity(this);
 }
 
+CEntityDropItem::~CEntityDropItem()
+{
+	CEntityGravityGun::Stop(this);
+}
+
 bool CEntityDropItem::TakeItem(int ClientID)
 {
 	auto *pPlayer = GS()->GetPlayer(ClientID, true, true);
-	if(!pPlayer || (m_ClientID >= 0 && m_ClientID != ClientID))
+	if(!pPlayer || IsMarkedForDestroy() || !CanTake(ClientID))
 		return false;
 
 	// change of enchanted objects
@@ -71,7 +77,8 @@ void CEntityDropItem::Tick()
 	}
 	m_Flash.Tick(m_LifeSpan);
 
-	if(!HasPlayersInView())
+	const bool Captured = CEntityGravityGun::BeforeMove(this);
+	if(!HasPlayersInView() && !Captured)
 		return;
 
 	GS()->Collision()->MovePhysicalBox(&m_Pos, &m_Vel, vec2(m_Radius, m_Radius), 0.5f);
@@ -90,7 +97,7 @@ void CEntityDropItem::Tick()
 	auto *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 32.0f, CGameWorld::ENTTYPE_CHARACTER, nullptr);
 	if(pChar && !pChar->GetPlayer()->IsBot())
 	{
-		bool CanPick = m_ClientID == -1 || m_ClientID == pChar->GetClientID();
+		const bool CanPick = CanTake(pChar->GetClientID());
 		if(distance(pChar->m_Core.m_Pos, m_Pos) > 24.0f)
 		{
 			if(CanPick)
@@ -131,7 +138,7 @@ void CEntityDropItem::Tick()
 
 void CEntityDropItem::Snap(int SnappingClient)
 {
-	if(m_Flash.IsFlashing() || NetworkClipped(SnappingClient))
+	if(!IsVisibleForClient(SnappingClient) || NetworkClipped(SnappingClient))
 		return;
 
 	if(m_IsCurrency)

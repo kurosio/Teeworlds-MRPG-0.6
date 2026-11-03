@@ -1,4 +1,5 @@
 #include "weapons.h"
+#include "gun_gravity.h"
 
 #include <generated/server_data.h>
 #include <game/server/entities/character.h>
@@ -23,6 +24,7 @@ DECL_WEAPON_VARIANT(CHammerDefault)
 DECL_WEAPON_VARIANT(CHammerLamp)
 DECL_WEAPON_VARIANT(CHammerBlast)
 DECL_WEAPON_VARIANT(CGunDefault)
+DECL_WEAPON_VARIANT(CGunGravity)
 DECL_WEAPON_VARIANT(CGunPulse)
 DECL_WEAPON_VARIANT(CGunKill)
 DECL_WEAPON_VARIANT(CShotgunDefault)
@@ -127,6 +129,11 @@ void CHammerBlast::Fire(CCharacter* pChar, vec2 Direction, vec2, int Dmg) const
 	pGS->CreateExplosion(pChar->GetPos(), pChar->GetClientID(), WEAPON_HAMMER, Dmg);
 	pGS->CreateSound(pChar->GetPos(), SOUND_SFX_WEAPON_DEAF_BLOW);
 	pChar->SetAttackSpeedReloadTimer(WEAPON_HAMMER, 1.0f);
+}
+
+void CGunGravity::Fire(CCharacter* pChar, vec2, vec2, int) const
+{
+	CEntityGravityGun::Fire(pChar);
 }
 
 void CGunPulse::Fire(CCharacter* pChar, vec2 Direction, vec2, int Dmg) const
@@ -311,6 +318,7 @@ CWeaponVariantRegistry::CWeaponVariantRegistry()
 	m_HammerVariants.emplace(itHammerBlast, std::make_unique<CHammerBlast>());
 
 	// gun
+	m_GunVariants.emplace(itGravityGun, std::make_unique<CGunGravity>());
 	m_GunVariants.emplace(itGunPulse, std::make_unique<CGunPulse>());
 	m_GunVariants.emplace(itKillGun, std::make_unique<CGunKill>());
 

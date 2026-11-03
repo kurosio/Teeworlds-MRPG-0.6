@@ -137,7 +137,8 @@ public:
 	virtual void Die(int Killer, int Weapon);
 	virtual void HandleTuning();
 
-	void SetVelocity(vec2 NewVelocity);
+	vec2 GetVelocity() const override { return m_Core.m_Vel; }
+	void SetVelocity(vec2 NewVelocity) override;
 	void AddVelocity(vec2 Addition);
 	void ApplyMoveRestrictions();
 	void MovingDisable(bool State);

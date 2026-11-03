@@ -13,7 +13,7 @@ CEntityFlyingPoint::CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 In
 	m_ClientID = ClientID;
 	m_FromID = FromID;
 	m_Type = Type;
-	m_Vel = m_InitialVel;
+	SetVelocity(m_InitialVel);
 
 	GameWorld()->InsertEntity(this);
 }
@@ -49,7 +49,7 @@ void CEntityFlyingPoint::Tick()
 	}
 
 	vec2 Dir = normalize(pPlayer->GetCharacter()->m_Core.m_Pos - m_Pos);
-	m_Vel = Dir * clamp(Dist, 0.0f, 16.0f) * (1.0f - m_InitialAmount) + m_InitialVel * m_InitialAmount;
+	SetVelocity(Dir * clamp(Dist, 0.0f, 16.0f) * (1.0f - m_InitialAmount) + m_InitialVel * m_InitialAmount);
 	m_Pos += m_Vel;
 	m_InitialAmount *= 0.98f;
 }

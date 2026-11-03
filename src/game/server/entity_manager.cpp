@@ -230,7 +230,7 @@ void CEntityManager::HealthTurret(int ClientID, vec2 Position, int RestoreHealth
 				(!pBase->GetPlayer() || (pBase->GetClientID() == pChar->GetPlayer()->GetCID() || !pChar->IsAllowedPVP(pBase->GetClientID()))))
 			{
 				ShowRestoreHealth = true;
-				new CHeartHealer(pBase->GameWorld(), pBase->GetPos(), pChar->GetPlayer(), HealthRestored, pChar->m_Core.m_Vel / 2.f);
+				new CHeartHealer(pBase->GameWorld(), pBase->GetPos(), pChar->GetPlayer(), HealthRestored, pChar->GetVelocity() / 2.f);
 			}
 		}
 
@@ -356,7 +356,7 @@ void CEntityManager::FlameWall(int ClientID, vec2 Position, float Radius, int Li
 				if(pBase->Server()->Tick() % TickSpeed == 0)
 					pChar->TakeDamage(vec2(0, 0), DamagePerTick, pBase->GetClientID(), WEAPON_GAME);
 
-				vec2 NewVelocity = pChar->m_Core.m_Vel * SlowDownFactor;
+				vec2 NewVelocity = pChar->GetVelocity() * SlowDownFactor;
 				pChar->SetVelocity(NewVelocity);
 			}
 		}
@@ -1021,7 +1021,7 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 					if(pChar->GetPlayer()->GetCID() == ownerCID || !pChar->IsAllowedPVP(pBase->GetClientID()))
 					{
 						ShowRestoreHealth = true;
-						new CHeartHealer(pBase->GameWorld(), centerPos, pChar->GetPlayer(), healAmountPerPulse, pChar->m_Core.m_Vel / 2.f);
+						new CHeartHealer(pBase->GameWorld(), centerPos, pChar->GetPlayer(), healAmountPerPulse, pChar->GetVelocity() / 2.f);
 					}
 				}
 				if(ShowRestoreHealth)
@@ -1293,7 +1293,7 @@ void CEntityManager::VoidTether(int ClientID, vec2 Position, float MaxLength, in
 
 		// slow effect
 		const float slowPerTick = pBase->GetGroup()->GetConfig("slowFactor", 0.5f) * 0.15f;
-		pTargetChar->SetVelocity(pTargetChar->m_Core.m_Vel * (1.0f - slowPerTick));
+		pTargetChar->SetVelocity(pTargetChar->GetVelocity() * (1.0f - slowPerTick));
 
 		// pull effect
 		constexpr float PULL_START_STRETCH = 0.6f;

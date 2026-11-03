@@ -4,6 +4,7 @@
 #define GAME_SERVER_ENTITIES_PICKUP_H
 #include <game/server/entity.h>
 
+class CEntityDropPickup;
 class CPickup : public CEntity
 {
 	int m_Type;
@@ -15,11 +16,16 @@ public:
 	CPickup(CGameWorld *pGameWorld, int Type, int SubType, vec2 Pos);
 	CPickup(CGameWorld *pGameWorld, int ProjType, vec2 Pos);
 
+	bool CanMakeDrop() const;
+	CEntityDropPickup* MakeToDrop();
+	static bool ApplyTo(CCharacter* pCharacter, int Type, int Subtype);
+
 	void Reset() override;
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 
 private:
+	void ScheduleRespawn();
 	void Init(int Type, int Subtype, bool Projectile);
 };
 

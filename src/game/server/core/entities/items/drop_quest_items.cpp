@@ -9,7 +9,7 @@ CDropQuestItem::CDropQuestItem(CGameWorld* pGameWorld, vec2 Pos, vec2 Vel, float
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PICKUP_QUEST, Pos, 24.0f)
 {
 	m_Pos = Pos;
-	m_Vel = Vel;
+	SetVelocity(Vel);
 	m_Angle = 0.0f;
 	m_AngleForce = AngleForce;
 	m_ClientID = ClientID;

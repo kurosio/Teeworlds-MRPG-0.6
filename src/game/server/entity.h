@@ -34,6 +34,7 @@ private:
 protected:
 	vec2 m_Pos {};
 	vec2 m_PosTo {};
+	vec2 m_Vel {};
 	int m_ClientID {};
 	float m_Radius {};
 	ESnappingPriority m_NextCheckSnappingPriority {};
@@ -71,6 +72,9 @@ public:
 	void SetPos(vec2 Pos) { m_Pos = Pos; }
 	void SetPosTo(vec2 Pos) { m_PosTo = Pos; }
 	void SetClientID(int ClientID) { m_ClientID = ClientID; }
+
+	virtual vec2 GetVelocity() const { return m_Vel; }
+	virtual void SetVelocity(vec2 Velocity) { m_Vel = Velocity; }
 
 	virtual void Destroy() { delete this; }
 	virtual void Reset()  {}

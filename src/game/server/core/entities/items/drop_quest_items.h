@@ -12,7 +12,6 @@ class CDropQuestItem : public CEntity
 	};
 	int m_IDs[NUM_IDS];
 
-	vec2 m_Vel;
 	float m_Angle;
 	float m_AngleForce;
 	int m_LifeSpan;

@@ -99,6 +99,7 @@ private:
 	void UpdateJumping(const vec2& DirToWaypoint, int ActiveWayPoints);
 	void UpdateHooking(const vec2& DirToWaypoint, int ActiveWayPoints, bool HasTarget, const vec2& TargetPos);
 	void HandleAntiStuck();
+	void EnforceNpcSpawnRadius();
 
 	// fighting
 	float GetOptimalDistance() const;

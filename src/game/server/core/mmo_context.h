@@ -766,6 +766,7 @@ enum
 	itInjuryGrenade                = 210,   // Equipment Injury grenade
 	itLaserDamager                 = 211,   // Equipment Laser damager
 	itRifleTeslaSerpent            = 324,   // Equipment Tesla serpen
+	itGravityGun                   = 490,   // Precision gravity gun
 
 	// decoration items
 	itPickupHealth                 = 18,    // Pickup heart

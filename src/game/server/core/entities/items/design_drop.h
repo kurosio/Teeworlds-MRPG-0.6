@@ -5,7 +5,6 @@
 
 class CEntityDesignDrop : public CEntity
 {
-	vec2 m_Vel {};
 	int64_t m_Mask {};
 	int m_Type {};
 	int m_Subtype {};

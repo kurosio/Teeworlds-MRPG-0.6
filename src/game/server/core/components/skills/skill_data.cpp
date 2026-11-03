@@ -237,7 +237,7 @@ bool CSkill::Use()
 				continue;
 
 			// create healt
-			new CHeartHealer(&GS()->m_World, PlayerPosition, pSearch, Heal, pSearch->GetCharacter()->m_Core.m_Vel, true);
+			new CHeartHealer(&GS()->m_World, PlayerPosition, pSearch, Heal, pSearch->GetCharacter()->GetVelocity(), true);
 			GS()->CreateDeath(pSearch->GetCharacter()->GetPos(), i);
 		}
 
@@ -337,7 +337,7 @@ bool CSkill::Use()
 
 			// set agression
 			pSearchChar->AI()->GetTarget()->Set(ClientID, Agression);
-			GS()->EntityManager()->FlyingPoint(PlayerPosition, i, pSearchPl->GetCharacter()->m_Core.m_Vel);
+			GS()->EntityManager()->FlyingPoint(PlayerPosition, i, pSearchPl->GetCharacter()->GetVelocity());
 			GS()->CreatePlayerSpawn(pSearchPl->GetCharacter()->GetPos());
 			pSearchPl->GetCharacter()->SetEmote(EMOTE_ANGRY, 10, true);
 		}
