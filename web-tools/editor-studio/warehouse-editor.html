@@ -10,6 +10,23 @@
   <style>
     .warehouse-group-btn{border-bottom:1px solid var(--editor-soft-border)}
 
+    /* Метаданные склада: компактные чипы вместо крупных «пузырьков» —
+       строка списка остаётся плотной, а цифры читаются так же легко. */
+    .warehouse-row-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:4px}
+    .warehouse-row-meta .warehouse-chip{
+      display:inline-flex;align-items:center;
+      padding:2px 7px;border-radius:7px;
+      font-size:10.5px;font-weight:600;line-height:1.35;
+      color:var(--editor-text-muted);
+      background:var(--editor-soft-bg);
+      border:1px solid var(--editor-soft-border);
+      white-space:nowrap;
+    }
+    .editor-row-active .warehouse-chip{
+      color:var(--editor-text);
+      background:color-mix(in srgb, var(--editor-primary) 10%, transparent);
+      border-color:color-mix(in srgb, var(--editor-primary) 28%, transparent);
+    }
 
     #form-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start;}
     #form-main [data-field-path="Name"],
@@ -527,9 +544,9 @@
               <div class="min-w-0">
                 <div class="font-semibold text-sm truncate">${esc(r.Name) || '(no name)'}</div>
                 <div class="text-xs editor-muted-text mt-0.5">${esc(typeLabels)}</div>
-                <div class="mt-1 flex flex-wrap gap-1.5">
-                  <span class="editor-badge">positions:  ${tradesCount}</span>
-                  <span class="editor-badge">currency:  ${esc(getCurrencyLabel(r.Currency))}</span>
+                <div class="warehouse-row-meta">
+                  <span class="warehouse-chip">positions:  ${tradesCount}</span>
+                  <span class="warehouse-chip">currency:  ${esc(getCurrencyLabel(r.Currency))}</span>
                 </div>
               </div>
               <div class="text-xs editor-muted-text shrink-0">#${r.ID}</div>

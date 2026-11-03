@@ -59,7 +59,9 @@
   --editor-radius-lg:14px;
   --editor-radius:12px;
 
-  --editor-bg-gradient-1:rgba(129,140,248,.10);
+  /* Вторичные поверхности следуют за главным акцентом: при смене цвета вся
+     палитра редактора остаётся одной гаммы, а не «синие теги + зелёный акцент». */
+  --editor-bg-gradient-1:color-mix(in srgb, var(--editor-primary) 10%, transparent);
   --editor-bg-gradient-2:rgba(92,198,176,.07);
   --editor-bg-gradient-3:rgba(167,139,250,.05);
 
@@ -88,10 +90,10 @@
   --editor-icon-btn-border:rgba(255,255,255,.10);
   --editor-icon-btn-hover-bg:rgba(255,255,255,.09);
 
-  --editor-tag-bg:rgba(129,140,248,.14);
-  --editor-tag-border:rgba(129,140,248,.26);
-  --editor-tag-hover-bg:rgba(129,140,248,.20);
-  --editor-tag-hover-border:rgba(129,140,248,.40);
+  --editor-tag-bg:color-mix(in srgb, var(--editor-primary) 14%, transparent);
+  --editor-tag-border:color-mix(in srgb, var(--editor-primary) 26%, transparent);
+  --editor-tag-hover-bg:color-mix(in srgb, var(--editor-primary) 20%, transparent);
+  --editor-tag-hover-border:color-mix(in srgb, var(--editor-primary) 40%, transparent);
   --editor-badge-bg:rgba(255,255,255,.05);
   --editor-badge-border:rgba(255,255,255,.12);
 
@@ -159,7 +161,7 @@
   --editor-text-strong:#000000;
   --editor-color-scheme:light;
 
-  --editor-bg-gradient-1:rgba(79,70,229,.07);
+  --editor-bg-gradient-1:color-mix(in srgb, var(--editor-primary) 7%, transparent);
   --editor-bg-gradient-2:rgba(31,158,134,.05);
   --editor-bg-gradient-3:rgba(124,92,214,.04);
 
@@ -188,10 +190,10 @@
   --editor-icon-btn-border:rgba(16,23,34,.14);
   --editor-icon-btn-hover-bg:#f3f6fb;
 
-  --editor-tag-bg:rgba(79,70,229,.10);
-  --editor-tag-border:rgba(79,70,229,.22);
-  --editor-tag-hover-bg:rgba(79,70,229,.15);
-  --editor-tag-hover-border:rgba(79,70,229,.32);
+  --editor-tag-bg:color-mix(in srgb, var(--editor-primary) 10%, transparent);
+  --editor-tag-border:color-mix(in srgb, var(--editor-primary) 22%, transparent);
+  --editor-tag-hover-bg:color-mix(in srgb, var(--editor-primary) 15%, transparent);
+  --editor-tag-hover-border:color-mix(in srgb, var(--editor-primary) 32%, transparent);
   --editor-badge-bg:rgba(16,23,34,.04);
   --editor-badge-border:rgba(16,23,34,.12);
 
@@ -212,7 +214,7 @@
   --editor-shell-sidebar-bg:rgba(16,23,34,.015);
   --editor-shell-main-bg:transparent;
 
-  --editor-icon-bg:rgba(79,70,229,.10);
+  --editor-icon-bg:color-mix(in srgb, var(--editor-primary) 10%, transparent);
   --editor-icon-color:#4338ca;
   --editor-focus-ring:color-mix(in srgb, var(--editor-primary) 26%, transparent);
 
@@ -736,6 +738,8 @@
   color:#fff;
   border-color:transparent;
   box-shadow:none;
+  /* Светлые акценты (amber, sky, emerald) иначе плохо читаются с белым текстом. */
+  text-shadow:0 1px 2px rgba(0,0,0,.28);
 }
 
 .editor-btn-primary:hover{
@@ -2288,52 +2292,35 @@ html.editor-map-open{overflow:hidden;}
    (data-editor-density). Атрибуты ставит editor-core/tailwind-theme.js
    на <html> и <body class="editor-theme">; indigo/comfortable — значения
    по умолчанию из блоков выше.
+
+   Пресет задаёт только цвет для тёмной и светлой темы. Производные токены
+   (теги, активная строка, градиент, фокус, иконки) считаются от
+   --editor-primary в базовых блоках, поэтому новый акцент не требует
+   копирования всего набора правил. Список — editor-core/tailwind-theme.js.
    ============================================================= */
 
-:root[data-editor-theme="dark"][data-editor-accent="teal"],
-.editor-theme[data-editor-theme="dark"][data-editor-accent="teal"]{
-  --editor-primary:#2dd4bf;
-  --editor-icon-color:#99f6e4;
-}
-:root[data-editor-theme="light"][data-editor-accent="teal"],
-.editor-theme[data-editor-theme="light"][data-editor-accent="teal"]{
-  --editor-primary:#0d9488;
-  --editor-icon-color:#0f766e;
-}
-:root[data-editor-theme="dark"][data-editor-accent="violet"],
-.editor-theme[data-editor-theme="dark"][data-editor-accent="violet"]{
-  --editor-primary:#a78bfa;
-  --editor-icon-color:#ddd6fe;
-}
-:root[data-editor-theme="light"][data-editor-accent="violet"],
-.editor-theme[data-editor-theme="light"][data-editor-accent="violet"]{
-  --editor-primary:#7c3aed;
-  --editor-icon-color:#6d28d9;
-}
-:root[data-editor-theme="dark"][data-editor-accent="amber"],
-.editor-theme[data-editor-theme="dark"][data-editor-accent="amber"]{
-  --editor-primary:#fbbf24;
-  --editor-icon-color:#fde68a;
-}
-:root[data-editor-theme="light"][data-editor-accent="amber"],
-.editor-theme[data-editor-theme="light"][data-editor-accent="amber"]{
-  --editor-primary:#d97706;
-  --editor-icon-color:#b45309;
-}
+:root[data-editor-accent="indigo"],  .editor-theme[data-editor-accent="indigo"]  { --studio-accent-dark:#818cf8; --studio-accent-light:#4f46e5; }
+:root[data-editor-accent="violet"],  .editor-theme[data-editor-accent="violet"]  { --studio-accent-dark:#a78bfa; --studio-accent-light:#7c3aed; }
+:root[data-editor-accent="fuchsia"], .editor-theme[data-editor-accent="fuchsia"] { --studio-accent-dark:#e879f9; --studio-accent-light:#a21caf; }
+:root[data-editor-accent="rose"],    .editor-theme[data-editor-accent="rose"]    { --studio-accent-dark:#fb7185; --studio-accent-light:#be123c; }
+:root[data-editor-accent="orange"],  .editor-theme[data-editor-accent="orange"]  { --studio-accent-dark:#fb923c; --studio-accent-light:#c2410c; }
+:root[data-editor-accent="amber"],   .editor-theme[data-editor-accent="amber"]   { --studio-accent-dark:#fbbf24; --studio-accent-light:#d97706; }
+:root[data-editor-accent="emerald"], .editor-theme[data-editor-accent="emerald"] { --studio-accent-dark:#34d399; --studio-accent-light:#047857; }
+:root[data-editor-accent="teal"],    .editor-theme[data-editor-accent="teal"]    { --studio-accent-dark:#2dd4bf; --studio-accent-light:#0d9488; }
+:root[data-editor-accent="sky"],     .editor-theme[data-editor-accent="sky"]     { --studio-accent-dark:#38bdf8; --studio-accent-light:#0369a1; }
+:root[data-editor-accent="slate"],   .editor-theme[data-editor-accent="slate"]   { --studio-accent-dark:#94a3b8; --studio-accent-light:#475569; }
 
-/* Теги и градиенты следуют за выбранным акцентом (у indigo остаются базовые). */
-:root[data-editor-accent="teal"],
-:root[data-editor-accent="violet"],
-:root[data-editor-accent="amber"],
-.editor-theme[data-editor-accent="teal"],
-.editor-theme[data-editor-accent="violet"],
-.editor-theme[data-editor-accent="amber"]{
-  --editor-tag-bg:color-mix(in srgb, var(--editor-primary) 14%, transparent);
-  --editor-tag-border:color-mix(in srgb, var(--editor-primary) 30%, transparent);
-  --editor-tag-hover-bg:color-mix(in srgb, var(--editor-primary) 20%, transparent);
-  --editor-tag-hover-border:color-mix(in srgb, var(--editor-primary) 42%, transparent);
-  --editor-icon-bg:color-mix(in srgb, var(--editor-primary) 16%, transparent);
-  --editor-bg-gradient-1:color-mix(in srgb, var(--editor-primary) 10%, transparent);
+:root[data-editor-theme="dark"][data-editor-accent]:not([data-editor-accent="indigo"]),
+.editor-theme[data-editor-theme="dark"][data-editor-accent]:not([data-editor-accent="indigo"]){
+  --editor-primary:var(--studio-accent-dark, #818cf8);
+  --editor-secondary:color-mix(in srgb, var(--editor-primary) 68%, #ffffff);
+  --editor-icon-color:color-mix(in srgb, var(--editor-primary) 45%, #ffffff);
+}
+:root[data-editor-theme="light"][data-editor-accent]:not([data-editor-accent="indigo"]),
+.editor-theme[data-editor-theme="light"][data-editor-accent]:not([data-editor-accent="indigo"]){
+  --editor-primary:var(--studio-accent-light, #4f46e5);
+  --editor-secondary:color-mix(in srgb, var(--editor-primary) 78%, #000000);
+  --editor-icon-color:color-mix(in srgb, var(--editor-primary) 80%, #000000);
 }
 
 /* Компактная плотность: ниже контролы, теснее отступы — для больших таблиц. */

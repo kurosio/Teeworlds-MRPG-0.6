@@ -11,7 +11,22 @@
   const DENSITY_KEY = 'editor-density';
 
   const MODES = ['dark', 'light', 'system'];
-  const ACCENTS = ['indigo', 'teal', 'violet', 'amber'];
+  // One catalog drives the preference value, the swatch picker and the CSS
+  // presets in editor-theme.css. `dark`/`light` are the primary color used in
+  // the corresponding theme; `swatch` is the dot shown in the picker.
+  const ACCENT_PRESETS = [
+    { id: 'indigo',  label: 'Indigo',  swatch: '#818cf8', dark: '#818cf8', light: '#4f46e5' },
+    { id: 'violet',  label: 'Violet',  swatch: '#a78bfa', dark: '#a78bfa', light: '#7c3aed' },
+    { id: 'fuchsia', label: 'Fuchsia', swatch: '#e879f9', dark: '#e879f9', light: '#a21caf' },
+    { id: 'rose',    label: 'Rose',    swatch: '#fb7185', dark: '#fb7185', light: '#be123c' },
+    { id: 'orange',  label: 'Orange',  swatch: '#fb923c', dark: '#fb923c', light: '#c2410c' },
+    { id: 'amber',   label: 'Amber',   swatch: '#fbbf24', dark: '#fbbf24', light: '#d97706' },
+    { id: 'emerald', label: 'Emerald', swatch: '#34d399', dark: '#34d399', light: '#047857' },
+    { id: 'teal',    label: 'Teal',    swatch: '#2dd4bf', dark: '#2dd4bf', light: '#0d9488' },
+    { id: 'sky',     label: 'Sky',     swatch: '#38bdf8', dark: '#38bdf8', light: '#0369a1' },
+    { id: 'slate',   label: 'Slate',   swatch: '#94a3b8', dark: '#94a3b8', light: '#475569' },
+  ];
+  const ACCENTS = ACCENT_PRESETS.map((preset) => preset.id);
   const DENSITIES = ['comfortable', 'compact'];
 
   const read = (key) => {
@@ -155,6 +170,10 @@
   window.EditorCore.prefs = {
     modes: MODES,
     accents: ACCENTS,
+    // Picker metadata: adding a preset here + in editor-theme.css is enough
+    // to offer a new accent everywhere.
+    accentOptions: ACCENT_PRESETS.map(({ id, label, swatch }) => ({ id, label, swatch })),
+    accentPreset: (id) => ACCENT_PRESETS.find((preset) => preset.id === id) || null,
     densities: DENSITIES,
     keys: { mode: MODE_KEY, accent: ACCENT_KEY, density: DENSITY_KEY },
     get: getPrefs,

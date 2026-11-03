@@ -243,46 +243,51 @@
 
   <!-- Appearance preferences -->
   <div id="prefsModal" class="hidden fixed inset-0 z-[800] items-center justify-center editor-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="prefsTitle">
-    <div class="editor-modal-content p-6 w-full max-w-lg">
-      <div class="flex items-start justify-between gap-3 mb-4">
-        <div>
-          <h3 id="prefsTitle" class="text-xl font-bold flex items-center gap-2"><i class="fa-solid fa-sliders text-accent"></i>Appearance</h3>
-          <p class="editor-help-text mt-1">Applies to the shell and every editor. Stored in this browser.</p>
+    <div class="editor-modal-content studio-prefs-card p-6 w-full max-w-xl">
+      <div class="studio-prefs-head">
+        <span class="studio-prefs-head-icon"><i class="fa-solid fa-sliders"></i></span>
+        <div class="studio-prefs-head-text">
+          <h3 id="prefsTitle">Appearance</h3>
+          <p class="studio-prefs-hint">Applies to the shell and every editor. Stored in this browser.</p>
         </div>
         <button type="button" class="editor-icon-btn" data-close-prefs title="Close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <div class="space-y-5">
-        <div>
-          <div class="text-sm font-medium mb-2">Theme</div>
+      <div class="studio-prefs-body">
+        <section class="studio-prefs-section">
+          <div class="studio-prefs-section-head"><i class="fa-solid fa-circle-half-stroke"></i>Theme</div>
           <div class="studio-seg" role="group" aria-label="Theme">
             <button type="button" class="studio-seg-btn" data-pref-mode="dark"><i class="fa-solid fa-moon"></i>Dark</button>
             <button type="button" class="studio-seg-btn" data-pref-mode="light"><i class="fa-solid fa-sun"></i>Light</button>
             <button type="button" class="studio-seg-btn" data-pref-mode="system"><i class="fa-solid fa-display"></i>System</button>
           </div>
-        </div>
+        </section>
 
-        <div>
-          <div class="text-sm font-medium mb-2">Accent color</div>
-          <div class="flex items-center gap-2" role="group" aria-label="Accent color">
-            <button type="button" class="studio-swatch" data-pref-accent="indigo" title="Indigo" aria-label="Indigo accent"></button>
-            <button type="button" class="studio-swatch" data-pref-accent="teal" title="Teal" aria-label="Teal accent"></button>
-            <button type="button" class="studio-swatch" data-pref-accent="violet" title="Violet" aria-label="Violet accent"></button>
-            <button type="button" class="studio-swatch" data-pref-accent="amber" title="Amber" aria-label="Amber accent"></button>
-          </div>
-        </div>
+        <section class="studio-prefs-section">
+          <div class="studio-prefs-section-head"><i class="fa-solid fa-palette"></i>Accent color</div>
+          <div id="studioAccentSwatches" class="studio-swatches" role="group" aria-label="Accent color"></div>
+          <p class="studio-prefs-section-note">Accent is used for buttons, links and selections.</p>
+        </section>
 
-        <div>
-          <div class="text-sm font-medium mb-2">Density</div>
+        <section class="studio-prefs-section">
+          <div class="studio-prefs-section-head"><i class="fa-solid fa-table-cells"></i>Density</div>
           <div class="studio-seg" role="group" aria-label="Density">
             <button type="button" class="studio-seg-btn" data-pref-density="comfortable"><i class="fa-solid fa-expand"></i>Comfortable</button>
             <button type="button" class="studio-seg-btn" data-pref-density="compact"><i class="fa-solid fa-compress"></i>Compact</button>
           </div>
-          <p class="editor-help-text mt-2">Compact density fits more rows on screen — handy for large tables.</p>
+          <p class="studio-prefs-section-note">Compact density fits more rows on screen — handy for large tables.</p>
+        </section>
+
+        <div class="studio-prefs-preview" aria-hidden="true">
+          <span class="studio-prefs-preview-label">Live preview</span>
+          <div class="studio-prefs-preview-row">
+            <span class="editor-btn editor-btn-primary">Primary button</span>
+            <span class="studio-prefs-preview-row-item">Selected row</span>
+          </div>
         </div>
       </div>
 
-      <div class="flex justify-end gap-2 mt-6">
+      <div class="flex justify-end gap-2 mt-5">
         <button type="button" class="editor-btn editor-btn-secondary" data-close-prefs>Close</button>
       </div>
     </div>
@@ -1126,16 +1131,68 @@
       modal?.classList.toggle('flex', !!show);
     };
 
+    const accentHost = document.getElementById('studioAccentSwatches');
+
+    // Образцы берутся из общего каталога: новый акцент появляется в окне без
+    // правки разметки. Заливка задана всегда — меняется только рамка и галочка,
+    // поэтому невыбранные цвета больше не «исчезают».
+    const renderAccentSwatches = () => {
+      if (!accentHost || accentHost.childElementCount) return;
+      const options = EditorCore.prefs?.accentOptions || [];
+      options.forEach((option) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'studio-swatch';
+        btn.dataset.prefAccent = option.id;
+        btn.dataset.accent = option.id;
+        btn.style.setProperty('--swatch-color', option.swatch);
+        btn.title = option.label;
+        btn.setAttribute('aria-label', `${option.label} accent`);
+        btn.setAttribute('aria-pressed', 'false');
+
+        const dot = document.createElement('span');
+        dot.className = 'studio-swatch-dot';
+        dot.setAttribute('aria-hidden', 'true');
+        const check = document.createElement('i');
+        check.className = 'fa-solid fa-check studio-swatch-check';
+        check.setAttribute('aria-hidden', 'true');
+        dot.appendChild(check);
+
+        const label = document.createElement('span');
+        label.className = 'studio-swatch-label';
+        label.textContent = option.label;
+
+        btn.append(dot, label);
+        accentHost.appendChild(btn);
+      });
+    };
+
+    accentHost?.addEventListener('click', (event) => {
+      const btn = event.target.closest?.('[data-pref-accent]');
+      if (!btn || !accentHost.contains(btn)) return;
+      EditorCore.prefs?.set?.({ accent: btn.dataset.prefAccent });
+      syncPrefsUi();
+    });
+
     const syncPrefsUi = () => {
       const prefs = EditorCore.prefs?.get?.() || { mode: 'dark', accent: 'indigo', density: 'comfortable' };
-      document.querySelectorAll('[data-pref-mode]').forEach((b) => b.classList.toggle('active', b.dataset.prefMode === prefs.mode));
-      document.querySelectorAll('[data-pref-density]').forEach((b) => b.classList.toggle('active', b.dataset.prefDensity === prefs.density));
+      document.querySelectorAll('[data-pref-mode]').forEach((b) => {
+        const active = b.dataset.prefMode === prefs.mode;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-pref-density]').forEach((b) => {
+        const active = b.dataset.prefDensity === prefs.density;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
       document.querySelectorAll('[data-pref-accent]').forEach((b) => {
         const active = b.dataset.prefAccent === prefs.accent;
         b.classList.toggle('active', active);
-        b.innerHTML = active ? '<i class="fa-solid fa-check"></i>' : '';
+        b.setAttribute('aria-pressed', active ? 'true' : 'false');
       });
     };
+    renderAccentSwatches();
     const togglePrefs = (show) => {
       toggleModal(prefsModal, show);
       if (show) { syncPrefsUi(); prefsModal?.querySelector('[data-close-prefs]')?.focus(); }
@@ -1158,10 +1215,6 @@
     }));
     document.querySelectorAll('[data-pref-density]').forEach((b) => b.addEventListener('click', () => {
       EditorCore.prefs?.set?.({ density: b.dataset.prefDensity });
-      syncPrefsUi();
-    }));
-    document.querySelectorAll('[data-pref-accent]').forEach((b) => b.addEventListener('click', () => {
-      EditorCore.prefs?.set?.({ accent: b.dataset.prefAccent });
       syncPrefsUi();
     }));
     window.addEventListener('editor-core:prefs-changed', syncPrefsUi);
