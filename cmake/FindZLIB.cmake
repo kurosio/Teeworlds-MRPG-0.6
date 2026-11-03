@@ -42,6 +42,7 @@ if(NOT ZLIB_FOUND)
   add_library(zlib EXCLUDE_FROM_ALL OBJECT ${ZLIB_SRC})
   set(ZLIB_INCLUDEDIR ${ZLIB_SRC_DIR})
   target_include_directories(zlib PRIVATE ${ZLIB_INCLUDEDIR})
+  target_compile_definitions(zlib PRIVATE HAVE_UNISTD_H)
 
   set(ZLIB_DEP $<TARGET_OBJECTS:zlib>)
   set(ZLIB_INCLUDE_DIRS ${ZLIB_INCLUDEDIR})
