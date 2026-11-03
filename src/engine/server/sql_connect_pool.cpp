@@ -137,11 +137,9 @@ namespace
 
 	std::function<void(Connection*, int)> CreateAsyncSelectTask(const std::shared_ptr<CAsyncSelectContext>& pContext, CThreadPool* pThreadPool)
 	{
-		return [pContext, pThreadPool](Connection* /*pConnection*/, int RetryCount)
+		return [pContext, pThreadPool](Connection* pConnection, int RetryCount)
 		{
-			// Use a dedicated connection for async SELECT to avoid overlapping result sets on the worker connection.
-			auto ownedConnection = CConectionPool::CreateConnection();
-			if(!ownedConnection)
+			if(!pConnection)
 			{
 				if(RetryCount < g_Config.m_SvSqlSelectMaxRetries)
 				{
@@ -157,28 +155,24 @@ namespace
 				return;
 			}
 
-			auto sharedConnection = std::shared_ptr<Connection>(ownedConnection.release());
-
 			try
 			{
-				std::unique_ptr<Statement> pStmt(sharedConnection->createStatement());
+				std::unique_ptr<Statement> pStmt(pConnection->createStatement());
 				std::unique_ptr<ResultSet> pResult(pStmt->executeQuery(pContext->Query().c_str()));
-				auto result = std::make_shared<WrapperResultSet>(std::move(pStmt), std::move(pResult), std::move(sharedConnection));
+				auto result = std::make_shared<WrapperResultSet>(std::move(pStmt), std::move(pResult));
 				NotifySelect(pContext->Callback(), std::move(result));
 			}
 			catch(SQLException& e)
 			{
 				if(is_connection_lost(e))
 				{
-					CloseConnectionOnError(sharedConnection.get(), "Async SELECT");
-					if(RetryCount == 0)
+					CloseConnectionOnError(pConnection, "Async SELECT");
+					if(RetryCount < g_Config.m_SvSqlSelectMaxRetries)
 						throw;
 				}
 
 				dbg_msg("SQL Error", "Async SELECT failed: %s. Query: %s", e.what(), pContext->Query().c_str());
 				LogLostQuery("async select failed", pContext->Type(), pContext->Query());
-
-				// Notify the caller of the failure.
 				NotifySelect(pContext->Callback(), EmptyResult());
 			}
 		};
@@ -186,13 +180,12 @@ namespace
 
 	std::function<void(Connection*, int)> CreateAsyncDmlTask(const std::shared_ptr<CAsyncDmlContext>& pContext, CThreadPool* pThreadPool)
 	{
-		return [pContext, pThreadPool](Connection* /*pConnection*/, int RetryCount)
+		return [pContext, pThreadPool](Connection* pConnection, int RetryCount)
 		{
 			if(pContext->DelayMilliseconds() > 0)
 				std::this_thread::sleep_for(std::chrono::milliseconds(pContext->DelayMilliseconds()));
 
-			auto ownedConnection = CConectionPool::CreateConnection();
-			if(!ownedConnection)
+			if(!pConnection)
 			{
 				if(RetryCount < g_Config.m_SvSqlDmlMaxRetries)
 				{
@@ -208,11 +201,9 @@ namespace
 				return;
 			}
 
-			auto sharedConnection = std::shared_ptr<Connection>(ownedConnection.release());
-
 			try
 			{
-				std::unique_ptr<Statement> pStmt(sharedConnection->createStatement());
+				std::unique_ptr<Statement> pStmt(pConnection->createStatement());
 				const bool hasResultSet = pStmt->execute(pContext->Query().c_str());
 				const bool hasUpdated = !hasResultSet && pStmt->getUpdateCount() > 0;
 				if(hasResultSet)
@@ -224,7 +215,7 @@ namespace
 			{
 				if(is_connection_lost(e))
 				{
-					CloseConnectionOnError(sharedConnection.get(), "Async DML");
+					CloseConnectionOnError(pConnection, "Async DML");
 					if(RetryCount < g_Config.m_SvSqlDmlMaxRetries)
 					{
 						if(pThreadPool)
@@ -419,6 +410,7 @@ void CThreadPool::WorkerThread()
 			catch(const std::exception& e)
 			{
 				dbg_msg("Error", "Worker caught std::exception during task: %s", e.what());
+				LogLostQuery("worker caught std::exception, task dropped", task.m_Type, task.m_Query);
 			}
 		}
 		else if(timedOut)

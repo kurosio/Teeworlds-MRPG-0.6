@@ -466,7 +466,8 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	else if(Table == SAVE_LANGUAGE)
 	{
 		const char* pLanguage = pPlayer->GetLanguage();
-		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '{}' WHERE ID = '{}'", pLanguage, AccountID);
+		const auto cClearLanguage = CSqlString<16>(pLanguage);
+		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '{}' WHERE ID = '{}'", cClearLanguage.cstr(), AccountID);
 	}
 
 	// main data

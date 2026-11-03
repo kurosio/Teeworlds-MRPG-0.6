@@ -185,8 +185,11 @@ class DbRegistration
 		if(Data.m_InitID > 0)
 			Database->Execute<DB::REMOVE>("tw_accounts", "WHERE ID = '{}'", Data.m_InitID);
 		else
+		{
+			const auto cClearLogin = CSqlString<64>(Data.m_Login.c_str());
 			Database->Execute<DB::REMOVE>("tw_accounts", "WHERE Username = '{}' AND Password = '{}' AND PasswordSalt = '{}' ORDER BY ID DESC LIMIT 1",
-				Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt);
+				cClearLogin.cstr(), Data.m_PasswordHash.c_str(), Data.m_PasswordSalt.c_str());
+		}
 
 		pContext->GS()->Chat(pContext->GetClientID(), "Registration failed due to server error.");
 		pContext->GS()->Chat(pContext->GetClientID(), "Please try again a bit later.");

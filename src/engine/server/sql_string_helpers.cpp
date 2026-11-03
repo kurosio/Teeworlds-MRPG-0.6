@@ -9,7 +9,7 @@ void sqlstr::ClearString(char* pString, int size)
 	std::string newString;
 	newString.reserve(2 * size); // Preallocate memory for the new string
 
-	for(int i = 0; i < size; i++)
+	for(int i = 0; i < size && pString[i] != '\0'; i++)
 	{
 		switch(pString[i])
 		{
