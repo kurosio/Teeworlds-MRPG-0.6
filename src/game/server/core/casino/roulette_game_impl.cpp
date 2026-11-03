@@ -26,7 +26,7 @@ ERouletteColor CRouletteGame::GetNumberColor(int Number)
 }
 
 CRouletteGame::CRouletteGame(CGS* pGS, vec2 Pos, int LobbyDurationTicks, int ShowResultTicks)
-	: CCasinoGame(pGS, LobbyDurationTicks, ShowResultTicks), m_pGS(pGS), m_Pos(Pos)
+	: CCasinoGame(pGS, LobbyDurationTicks, ShowResultTicks), m_Pos(Pos)
 {
 	m_pArrow = new CEntityRouletteArrow(&m_pGS->m_World, -1, m_Pos);
 	EnterLobby();

@@ -66,11 +66,8 @@ const char* CDiceDuelGame::BetTypeName(EDiceBetType T)
 }
 
 CDiceDuelGame::CDiceDuelGame(CGS* pGS, vec2 Pos, int LobbyDurationTicks, int ShowResultTicks)
-	: CCasinoGame(pGS, LobbyDurationTicks, ShowResultTicks), m_pGS(pGS), m_Pos(Pos)
+	: CCasinoGame(pGS, LobbyDurationTicks, ShowResultTicks), m_Pos(Pos)
 {
-	m_LobbyDurationTicks = LobbyDurationTicks;
-	m_ShowResultTicks = ShowResultTicks;
-
 	const vec2 Off(90.0f, 0.0f);
 	m_apDice[0] = new CEntityDiceLaser(&m_pGS->m_World, -1, m_Pos - Off, 1, 2.0f);
 	m_apDice[1] = new CEntityDiceLaser(&m_pGS->m_World, -1, m_Pos + Off, 1, 2.0f);
@@ -85,11 +82,6 @@ CDiceDuelGame::~CDiceDuelGame()
 		if (pDice)
 			pDice->Destroy();
 	}
-}
-
-int CDiceDuelGame::GetTicksLeft() const
-{
-	return maximum(0, m_StateEndTick - m_pGS->Server()->Tick());
 }
 
 void CDiceDuelGame::EnterLobby()
@@ -151,11 +143,6 @@ void CDiceDuelGame::EnterShowResult()
 {
 	m_State = EDiceGameState::SHOW_RESULT;
 	m_StateEndTick = m_pGS->Server()->Tick() + m_ShowResultTicks;
-}
-
-void CDiceDuelGame::PurgeOutOfRange()
-{
-	CCasinoGame::PurgeOutOfRange();
 }
 
 void CDiceDuelGame::Tick()

@@ -25,20 +25,31 @@ public:
 
 	using FOnFinished = std::function<void(const RouletteResult&)>;
 
-	CRouletteGame(CGS* pGS, vec2 Pos, int LobbyDurationTicks = 15, int ShowResultTicks = 4);
-	~CRouletteGame();
+private:
+	vec2 m_Pos{};
+	CEntityRouletteArrow* m_pArrow{};
 
-	void Tick();
+	ERouletteState m_State = ERouletteState::LOBBY;
+	int m_ResultNumber{};
+	ERouletteColor m_ResultColor{};
+	FOnFinished m_pfnOnFinished;
+
+	void EnterLobby();
+	void EnterSpin();
+	void EnterShowResult();
+
+public:
+	CRouletteGame(CGS* pGS, vec2 Pos, int LobbyDurationTicks = 15, int ShowResultTicks = 4);
+	~CRouletteGame() override;
+
+	void Tick() override;
+	vec2 GetPos() const override { return m_Pos; }
+	bool Leave(int ClientID, int* pRefund = nullptr) override;
 
 	bool Join(int ClientID, int Bet, ERouletteBetKind Kind, int Value);
-	bool Leave(int ClientID, int* pRefund = nullptr);
-	bool IsPlayerJoined(int ClientID) const { return CCasinoGame::IsPlayerJoined(ClientID); }
 	void SetOnFinished(FOnFinished pfCallback) { m_pfnOnFinished = std::move(pfCallback); }
 
 	ERouletteState GetState() const { return m_State; }
-	vec2 GetPos() const { return m_Pos; }
-	int GetPlayersCount() const { return CCasinoGame::GetPlayersCount(); }
-	int GetTicksLeft() const { return CCasinoGame::GetTicksLeft(); }
 
 	// helpers
 	static const char* RangeName(ERouletteRange R);
@@ -49,20 +60,6 @@ public:
 	static ERouletteColor GetNumberColor(int Number);
 	static const char* BetKindName(ERouletteBetKind K);
 	static const char* ColorName(ERouletteColor C);
-
-private:
-	CGS* m_pGS{};
-	vec2 m_Pos{};
-	CEntityRouletteArrow* m_pArrow{};
-
-	ERouletteState m_State{};
-	int m_ResultNumber{};
-	ERouletteColor m_ResultColor{};
-	FOnFinished m_pfnOnFinished;
-
-	void EnterLobby();
-	void EnterSpin();
-	void EnterShowResult();
 };
 
-#endif
+#endif // GAME_SERVER_CORE_CASINO_ROULETTE_GAME_H
