@@ -204,6 +204,7 @@ MACRO_CONFIG_INT(SvGlobalPeriodCheckInterval, sv_global_check_interval, 900, 1, 
 MACRO_CONFIG_INT(SvGenerateMoneyBagPerMinute, sv_generate_money_bag_per_minute, 15, 0, 1020, CFGFLAG_SERVER, "Generate money bag per minute (in minutes)")
 MACRO_CONFIG_INT(SvChatMessageInterval, sv_chat_message_interval, 600, 0, 14400, CFGFLAG_SERVER, "Interval for displaying chat messages (in seconds)")
 MACRO_CONFIG_INT(SvChatTopMessageInterval, sv_chat_top_message_interval, 900, 0, 14400, CFGFLAG_SERVER, "Interval for displaying chat toplist messages (in seconds)")
+MACRO_CONFIG_INT(SvChatRestriction, sv_chat_restriction, 0, 0, 2, CFGFLAG_SERVER, "Global chat restriction: 0 = disabled, 1 = registered players only, 2 = authorized players only")
 MACRO_CONFIG_INT(SvHouseLimitDecoration, sv_house_limit_decorations, 10, 5, 20, CFGFLAG_SERVER, "Maximum number of decoration objects allowed")
 MACRO_CONFIG_STR(SvContentManagerCredits, sv_content_manager_credits, 32, "nope", CFGFLAG_SERVER, "Information about content manager")
 MACRO_CONFIG_STR(SvDiscordInviteLink, sv_discord_invite_link, 32, "nope", CFGFLAG_SERVER, "Link to server invitation")

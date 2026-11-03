@@ -898,10 +898,24 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			const auto firstChar = pMsg->m_pMessage[0];
 			if(firstChar == '/')
 				CommandProcessor()->ProcessClientChatCommand(ClientID, pMsg->m_pMessage);
-			else if(firstChar == '#')
-				ChatWorld(pPlayer->GetCurrentWorldID(), "Nearby:", "'{~}' performed an act '{~}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
 			else
-				SendChat(true, ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
+			{
+				const int AuthType = pPlayer->GetSharedData().m_AuthType;
+				const bool IsRegistered = pPlayer->IsAuthed() || AuthType == AUTH_TYPE_LOGIN || AuthType == AUTH_TYPE_GUEST || AuthType == AUTH_TYPE_TIMEOUT;
+				const bool IsAuthorized = pPlayer->IsAuthed() && !pPlayer->IsGuestLogin();
+				if (!pMsg->m_Team && ((g_Config.m_SvChatRestriction == 1 && !IsRegistered) || (g_Config.m_SvChatRestriction == 2 && !IsAuthorized)))
+				{
+					Chat(ClientID, g_Config.m_SvChatRestriction == 1
+						? "Chat is available only for registered players. Use /register <login> <pass>."
+						: "Chat is available only for authorized players. Use /login <login> <pass>.");
+					return;
+				}
+
+				if (firstChar == '#')
+					ChatWorld(pPlayer->GetCurrentWorldID(), "Nearby:", "'{~}' performed an act '{~}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
+				else
+					SendChat(true, ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
+			}
 
 			// set last message
 			g_EventListenerManager.Notify<IEventListener::PlayerChat>(pPlayer, pMsg->m_pMessage);
