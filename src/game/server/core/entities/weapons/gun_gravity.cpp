@@ -136,12 +136,23 @@ CEntityGravityGun::CEntityGravityGun(CCharacter* pOwner, CEntity* pTarget)
 	GS()->CreateHammerHit(PositionOf(pTarget), Mask);
 }
 
-CEntityGravityGun* CEntityGravityGun::FindCapture(const CEntity* pParticipant)
+CEntityGravityGun* CEntityGravityGun::FindOwnerCapture(const CEntity* pOwner)
 {
-	for(auto* pEntity = pParticipant->GameWorld()->FindFirst(CGameWorld::ENTTYPE_GRAVITY_GUN); pEntity; pEntity = pEntity->TypeNext())
+	for(auto* pEntity = pOwner->GameWorld()->FindFirst(CGameWorld::ENTTYPE_GRAVITY_GUN); pEntity; pEntity = pEntity->TypeNext())
 	{
 		auto* pCapture = static_cast<CEntityGravityGun*>(pEntity);
-		if(!pCapture->IsMarkedForDestroy() && (pCapture->m_pOwner == pParticipant || pCapture->m_pTarget == pParticipant))
+		if(!pCapture->IsMarkedForDestroy() && pCapture->m_pOwner == pOwner)
+			return pCapture;
+	}
+	return nullptr;
+}
+
+CEntityGravityGun* CEntityGravityGun::FindTargetCapture(const CEntity* pTarget)
+{
+	for(auto* pEntity = pTarget->GameWorld()->FindFirst(CGameWorld::ENTTYPE_GRAVITY_GUN); pEntity; pEntity = pEntity->TypeNext())
+	{
+		auto* pCapture = static_cast<CEntityGravityGun*>(pEntity);
+		if(!pCapture->IsMarkedForDestroy() && pCapture->m_pTarget == pTarget)
 			return pCapture;
 	}
 	return nullptr;
@@ -158,7 +169,7 @@ void CEntityGravityGun::Fire(CCharacter* pOwner)
 	if(!IsEquipped(pOwner) || !pOwner->IsAlive())
 		return;
 
-	auto* pTarget = FindCapture(pOwner) ? nullptr : FindTarget(pOwner);
+	auto* pTarget = FindOwnerCapture(pOwner) ? nullptr : FindTarget(pOwner);
 	if(pTarget && IsQuestNpc(pTarget))
 	{
 		pOwner->GS()->Chat(pOwner->GetClientID(), "This target cannot be grabbed: quest NPCs and quest givers are protected.");
@@ -189,7 +200,7 @@ CEntity* CEntityGravityGun::FindTarget(CCharacter* pOwner)
 			const float CursorDistanceSquared = distance_squared(Cursor, Position);
 			if(pTarget == pOwner || CursorDistanceSquared >= ClosestDistanceSquared || distance_squared(Origin, Position) > CaptureRange * CaptureRange)
 				continue;
-			if(!IsAvailable(pTarget, pOwner->GetClientID()) || !IsVisible(pTarget, pOwner->GetClientID()) || FindCapture(pTarget))
+			if(!IsAvailable(pTarget, pOwner->GetClientID()) || !IsVisible(pTarget, pOwner->GetClientID()) || FindTargetCapture(pTarget))
 				continue;
 			if(pOwner->GS()->Collision()->IntersectLineWithInvisible(Origin, Position, nullptr, nullptr))
 				continue;
@@ -221,13 +232,18 @@ void CEntityGravityGun::Release()
 
 void CEntityGravityGun::Stop(CEntity* pEntity, StopScope Scope)
 {
-	if(auto* pCapture = FindCapture(pEntity); pCapture && (Scope == StopScope::AnyParticipant || pCapture->m_pOwner == pEntity))
+	if(auto* pCapture = FindOwnerCapture(pEntity))
 		pCapture->Release();
+	if(Scope == StopScope::AnyParticipant)
+	{
+		if(auto* pCapture = FindTargetCapture(pEntity))
+			pCapture->Release();
+	}
 }
 
 int CEntityGravityGun::SecondsLeft(const CCharacter* pOwner)
 {
-	const auto* pCapture = FindCapture(pOwner);
+	const auto* pCapture = FindOwnerCapture(pOwner);
 	if(!pCapture || pCapture->m_pOwner != pOwner)
 		return 0;
 
@@ -256,7 +272,7 @@ void CEntityGravityGun::Tick()
 
 bool CEntityGravityGun::BeforeMove(CEntity* pEntity)
 {
-	auto* pCapture = FindCapture(pEntity);
+	auto* pCapture = FindTargetCapture(pEntity);
 	if(!pCapture)
 		return false;
 
@@ -280,7 +296,7 @@ bool CEntityGravityGun::BeforeMove(CEntity* pEntity)
 
 void CEntityGravityGun::AfterMove(CCharacter* pCharacter)
 {
-	auto* pCapture = FindCapture(pCharacter);
+	auto* pCapture = FindTargetCapture(pCharacter);
 	if(!pCapture || pCapture->m_pTarget != pCharacter || pCapture->m_PhysicsTick != pCharacter->Server()->Tick())
 		return;
 

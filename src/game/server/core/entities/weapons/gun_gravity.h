@@ -15,7 +15,8 @@ class CEntityGravityGun : public CEntity
 	vec2 m_VelocityBeforeMove {};
 
 	CEntityGravityGun(CCharacter* pOwner, CEntity* pTarget);
-	static CEntityGravityGun* FindCapture(const CEntity* pEntity);
+	static CEntityGravityGun* FindOwnerCapture(const CEntity* pOwner);
+	static CEntityGravityGun* FindTargetCapture(const CEntity* pTarget);
 	static CEntity* FindTarget(CCharacter* pOwner);
 	bool IsCaptureValid() const;
 	int RemainingSeconds() const;
