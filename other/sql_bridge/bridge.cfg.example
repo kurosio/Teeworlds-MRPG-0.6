@@ -14,9 +14,11 @@ listen_port = 33060
 max_clients = 64
 # Persistent read connections to the local replica.
 replica_pool_size = 4
+# Set false to route all queries to primary while diagnosing an incident.
+route_selects_to_replica = true
 # After a write, this client's reads go to the primary for this many
-# seconds, so a player never sees stale data right after changing
-# something (e.g. guild house). Replication lag is usually far below this.
+# seconds. This is only a heuristic, not a guarantee: replication can lag
+# longer, and other connections do not share this grace window.
 read_your_writes_grace_sec = 2.0
 
 [primary]
@@ -34,5 +36,6 @@ port = 3306
 user = mrpg_bridge
 password = changeme
 database = mmotee
-# Set true to use TLS between the bridge and the replica.
+# MySQL TLS is not implemented by the bridge. Keep false and use a
+# verified TLS tunnel/VPN if traffic leaves a trusted host/network.
 use_tls = false

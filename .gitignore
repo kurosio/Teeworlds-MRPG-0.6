@@ -84,3 +84,6 @@ web-tools/editor-studio/data/change-requests/
 
 # Editor Studio CSS build dependencies
 /web-tools/editor-studio/node_modules/
+
+# Local SQL bridge credentials
+/other/sql_bridge/bridge.cfg

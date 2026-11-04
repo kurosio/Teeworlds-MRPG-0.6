@@ -171,7 +171,7 @@ namespace
 						throw;
 				}
 
-				dbg_msg("SQL Error", "Async SELECT failed: %s. Query: %s", e.what(), pContext->Query().c_str());
+				dbg_msg("SQL Error", "Async SELECT failed (code=%d, SQLSTATE=%s): %s. Query: %s", e.getErrorCode(), e.getSQLStateCStr() ? e.getSQLStateCStr() : "unknown", e.what(), pContext->Query().c_str());
 				LogLostQuery("async select failed", pContext->Type(), pContext->Query());
 				NotifySelect(pContext->Callback(), EmptyResult());
 			}
@@ -473,8 +473,11 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 
 		// connection_properties["OPT_CHARSET_NAME"] = "utf8mb4"; // didn't find this one https://mariadb.com/docs/connectors/mariadb-connector-cpp/connect-with-mariadb-connectorcpp#optional-connection-parameters
 		connection_properties["autoReconnect"] = "true";
-		connection_properties["connectTimeout"] = "30";
-		connection_properties["socketTimeout"] = "60";
+		// MariaDB Connector/C++ expects milliseconds, not seconds. The previous
+		// values (30/60) became roughly one second in Connector/C, so a bridge
+		// waiting for a remote primary could time out during the handshake.
+		connection_properties["connectTimeout"] = "30000";
+		connection_properties["socketTimeout"] = "60000";
 		connection_properties["useTls"] = g_Config.m_SvMySqlUseTls ? "true" : "false";
 
 		auto pConnection = std::unique_ptr<Connection>(pDriver->connect(connection_properties));
@@ -530,7 +533,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 		{
 			dbg_msg("SQL Warning", "Slow sync SELECT failed (%.2fms). Query: %s", durationMs, m_Query.c_str());
 		}
-		dbg_msg("SQL Error", "Sync SELECT failed: %s. Query: %s", e.what(), m_Query.c_str());
+		dbg_msg("SQL Error", "Sync SELECT failed (code=%d, SQLSTATE=%s): %s. Query: %s", e.getErrorCode(), e.getSQLStateCStr() ? e.getSQLStateCStr() : "unknown", e.what(), m_Query.c_str());
 		if(is_connection_lost(e))
 		{
 			CloseConnectionOnError(pConnection.get(), "Sync SELECT");
@@ -548,7 +551,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 				}
 				catch(SQLException& retryError)
 				{
-					dbg_msg("SQL Error", "Sync SELECT retry failed: %s. Query: %s", retryError.what(), m_Query.c_str());
+					dbg_msg("SQL Error", "Sync SELECT retry failed (code=%d, SQLSTATE=%s): %s. Query: %s", retryError.getErrorCode(), retryError.getSQLStateCStr() ? retryError.getSQLStateCStr() : "unknown", retryError.what(), m_Query.c_str());
 					if(!is_connection_lost(retryError))
 						break;
 					CloseConnectionOnError(retryConnection.get(), "Sync SELECT retry");
