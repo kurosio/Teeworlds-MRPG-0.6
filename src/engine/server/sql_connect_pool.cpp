@@ -473,8 +473,8 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 
 		// connection_properties["OPT_CHARSET_NAME"] = "utf8mb4"; // didn't find this one https://mariadb.com/docs/connectors/mariadb-connector-cpp/connect-with-mariadb-connectorcpp#optional-connection-parameters
 		connection_properties["autoReconnect"] = "true";
-		connection_properties["connectTimeout"] = "10";
-		connection_properties["socketTimeout"] = "30";
+		connection_properties["connectTimeout"] = "30";
+		connection_properties["socketTimeout"] = "60";
 		connection_properties["useTls"] = g_Config.m_SvMySqlUseTls ? "true" : "false";
 
 		auto pConnection = std::unique_ptr<Connection>(pDriver->connect(connection_properties));
