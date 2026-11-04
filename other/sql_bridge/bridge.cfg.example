@@ -1,0 +1,38 @@
+# Bridge configuration.
+# Copy to bridge.cfg (chmod 600) and edit. Run: python3 mysql_bridge.py bridge.cfg
+# Every value can also be overridden with an environment variable
+# (BRIDGE_LISTEN_HOST, BRIDGE_LISTEN_PORT, BRIDGE_PRIMARY_HOST, BRIDGE_PRIMARY_PORT,
+#  BRIDGE_REPLICA_HOST, BRIDGE_REPLICA_PORT, BRIDGE_REPLICA_USER, BRIDGE_REPLICA_PASSWORD),
+# so secrets don't have to live in this file.
+
+[bridge]
+# Where game servers connect. DEFAULT IS LOCALHOST ONLY - the bridge must
+# not be reachable from the internet.
+listen_host = 127.0.0.1
+listen_port = 33060
+# Max simultaneous game-server connections (protects the DB from overload).
+max_clients = 64
+# Persistent read connections to the local replica.
+replica_pool_size = 4
+# After a write, this client's reads go to the primary for this many
+# seconds, so a player never sees stale data right after changing
+# something (e.g. guild house). Replication lag is usually far below this.
+read_your_writes_grace_sec = 2.0
+
+[primary]
+# The single central database. Writes (and everything non-SELECT) go here.
+host = db-central.example.com
+port = 3306
+
+[replica]
+# Local read replica in the SAME location as this bridge. Reads are served
+# from here, so cross-location latency only affects writes.
+# If you have no replica yet, point these at [primary] - the bridge then
+# works as a plain proxy.
+host = 127.0.0.1
+port = 3306
+user = mrpg_bridge
+password = changeme
+database = mmotee
+# Set true to use TLS between the bridge and the replica.
+use_tls = false
