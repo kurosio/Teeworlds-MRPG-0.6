@@ -376,7 +376,7 @@ sv_sql_port 33060
 sv_sql_login "mrpg_user"
 sv_sql_password "<GAME_PASSWORD>"
 sv_sql_database "mmotee"
-sv_sql_pool_size 3
+sv_sql_pool_size 8
 sv_sql_use_tls 0
 ```
 

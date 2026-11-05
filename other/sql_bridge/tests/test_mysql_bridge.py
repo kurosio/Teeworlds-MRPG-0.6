@@ -452,6 +452,7 @@ class TestConfig(unittest.TestCase):
                       "user=u\npassword=p\ndatabase=mmotee\n")
         self.assertEqual(c.max_clients, 256)
         self.assertEqual(c.pool_size, 16)
+        self.assertEqual(c.acquire_timeout, 0.25)
         self.assertEqual(c.grace, 0.0)
         self.assertEqual(c.ryw_scope, "table")
 

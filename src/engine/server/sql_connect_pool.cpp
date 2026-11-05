@@ -340,14 +340,12 @@ void CThreadPool::WorkerThread()
 		bool hasTask = false;
 
 		// Lock the queue to safely access it.
-		bool timedOut = false;
 		{
 			std::unique_lock<std::mutex> lock(m_mxQueue);
 
 			// Wait until there's a task or the pool is stopping.
 			// The lambda prevents spurious wakeups.
-			if(!m_cvCondition.wait_for(lock, std::chrono::seconds(60), [this]{ return m_bStop || !m_qTasks.empty(); }))
-				timedOut = true;
+			m_cvCondition.wait_for(lock, std::chrono::seconds(60), [this]{ return m_bStop || !m_qTasks.empty(); });
 
 			// If stopping and no tasks are left, exit the thread's loop.
 			if(m_bStop && m_qTasks.empty())
@@ -387,7 +385,15 @@ void CThreadPool::WorkerThread()
 					{
 						dbg_msg("SQL Worker", "Task waited %.2fms in queue (type: %s). Query: %s", waitMs, DbTypeName(task.m_Type), task.m_Query.c_str());
 					}
+					const int64_t execStart = time_get();
 					task.m_Task(pConnection.get(), task.m_RetryCount);
+					const double execMs = DurationMs(execStart, time_get());
+					if(execMs > static_cast<double>(g_Config.m_SvSqlQueueWaitWarnMs))
+					{
+						// Distinguish "queue was full" (wait log above) from
+						// "the query itself was slow" in production logs.
+						dbg_msg("SQL Worker", "Task executed in %.2fms (type: %s). Query: %s", execMs, DbTypeName(task.m_Type), task.m_Query.c_str());
+					}
 				}
 				else
 				{
@@ -413,13 +419,15 @@ void CThreadPool::WorkerThread()
 				LogLostQuery("worker caught std::exception, task dropped", task.m_Type, task.m_Query);
 			}
 		}
-		else if(timedOut)
-		{
-			if(pConnection && !pConnection->isClosed())
-				CloseConnectionOnError(pConnection.get(), "SQL Worker idle reset");
-			pConnection = nullptr;
-		}
-
+		// NOTE: an idle timeout must NOT close the worker connection.
+		// Reconnecting goes through the bridge to the remote primary
+		// (auth + Connector/C++ init: SET + SELECT @@... round trips over
+		// the WAN, ~100ms each), and that cost is paid by the first task
+		// of the next burst while every task queued behind it ages --
+		// this was the main source of ">1s in queue" warnings after a
+		// quiet minute. A connection that really died is detected by
+		// isClosed() above (and by the task retry logic) and only then
+		// re-created.
 	}
 }
 

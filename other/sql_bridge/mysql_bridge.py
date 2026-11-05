@@ -1232,7 +1232,7 @@ class ReplicaPool:
     by a failure is handed straight to the next waiter.
     """
 
-    def __init__(self, settings, size=8, acquire_timeout=1.0, query_timeout=30.0,
+    def __init__(self, settings, size=8, acquire_timeout=0.25, query_timeout=30.0,
                  buffer_limit=1024 * 1024, idle_ping=30.0, idle_close=300.0,
                  max_lag=0.0, lag_interval=2.0):
         self.cfg = settings
@@ -2108,9 +2108,9 @@ class Bridge:
             else:
                 state = "up"
             log.info("stats replica=%d primary=%d fallback=%d replica_errors=%d errors=%d "
-                     "clients=%d total_clients=%d rejected=%d pool=%d/%d replica=%s%s",
+                     "pool_timeouts=%d clients=%d total_clients=%d rejected=%d pool=%d/%d replica=%s%s",
                      STATS["replica"], STATS["primary"], STATS["fallback"],
-                     STATS["replica_errors"], STATS["errors"], len(self.sessions),
+                     STATS["replica_errors"], STATS["errors"], STATS["replica_pool_timeouts"], len(self.sessions),
                      STATS["clients_total"], STATS["rejected"], pool.total, pool.size, state,
                      "" if pool.lag is None else " lag=%.0fs" % pool.lag)
 
@@ -2218,7 +2218,7 @@ def build_config(cfg):
         c.ryw_scope = g("read_your_writes_scope", "table").strip().lower()
         c.idle_timeout = cfg.getfloat("bridge", "client_idle_timeout_sec", fallback=600.0)
         c.auth_timeout = cfg.getfloat("bridge", "auth_timeout_sec", fallback=10.0)
-        c.acquire_timeout = cfg.getfloat("bridge", "replica_acquire_timeout_sec", fallback=1.0)
+        c.acquire_timeout = cfg.getfloat("bridge", "replica_acquire_timeout_sec", fallback=0.25)
         c.replica_query_timeout = cfg.getfloat("bridge", "replica_query_timeout_sec", fallback=30.0)
         c.replica_buffer = int(cfg.getfloat("bridge", "replica_buffer_kb", fallback=1024) * 1024)
         c.max_lag = cfg.getfloat("bridge", "max_replica_lag_sec", fallback=0.0)

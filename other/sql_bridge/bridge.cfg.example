@@ -23,7 +23,12 @@ listen_port = 33060
 # Max simultaneous game-server connections (protects the DB from overload).
 max_clients = 64
 # Persistent read connections to the local replica (shared by all clients).
-replica_pool_size = 4
+# Must comfortably exceed the total number of concurrent SQL connections of
+# all game servers using this bridge (sv_sql_pool_size per server, plus its
+# synchronous/main-thread connections): when the pool is exhausted a read
+# waits replica_acquire_timeout_sec and then falls back to the remote
+# primary, which is exactly the latency the replica exists to avoid.
+replica_pool_size = 16
 # Set false to route all queries to primary while diagnosing an incident
 # (the bridge then is a plain, zero-overhead relay).
 route_selects_to_replica = true
@@ -62,7 +67,10 @@ read_your_writes_grace_sec = 2.0
 # A new client must finish logging in within this time.
 #auth_timeout_sec = 10
 # Wait at most this long for a free replica connection, else use the primary.
-#replica_acquire_timeout_sec = 1
+# Keep this well below the primary's round-trip cost: waiting ~1s for a local
+# slot and *then* paying a WAN query is worse than going to the primary at
+# once. With a correctly sized pool this wait is never reached in practice.
+#replica_acquire_timeout_sec = 0.25
 # A replica query slower than this is re-run on the primary.
 #replica_query_timeout_sec = 30
 # Replica responses up to this size are buffered completely, so a replica
