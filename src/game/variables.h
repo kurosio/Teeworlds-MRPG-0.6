@@ -71,6 +71,8 @@ MACRO_CONFIG_INT(ClStatboardInfos, cl_statboard_infos, 1259, 1, 2047, CFGFLAG_CL
 // Time and Periodic Events Configuration
 // -----------------------
 MACRO_CONFIG_INT(SvInfoChangeDelay, sv_info_change_delay, 5, 0, 9999, CFGFLAG_SERVER, "Delay (in seconds) between info changes (skin/color), set high to avoid rapid changes")
+MACRO_CONFIG_INT(SvSyncServerID, sv_sync_server_id, 0, 0, 100000, CFGFLAG_SERVER, "Server ID for cross-server synchronization via tw_server_sync (0 = synchronization disabled)")
+MACRO_CONFIG_INT(SvSyncServerInterval, sv_sync_server_interval, 1, 1, 100000, CFGFLAG_SERVER, "Interval (in seconds) for cross-server synchronization via tw_server_sync")
 
 // -----------------------
 // Message Configuration

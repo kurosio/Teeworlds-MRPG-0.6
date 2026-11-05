@@ -25,6 +25,7 @@ class CGuildManager : public MmoComponent
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;
 	void OnGlobalTimePeriod(ETimePeriod Period) override;
+	void OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req) override;
 
 	void InitWars() const;
 

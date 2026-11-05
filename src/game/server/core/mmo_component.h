@@ -3,6 +3,7 @@
 #ifndef GAME_SERVER_CORE_MMO_COMPONENT_H
 #define GAME_SERVER_CORE_MMO_COMPONENT_H
 
+#include <engine/server/server_sync.h>
 #include <engine/server/sql_string_helpers.h>
 #include "tools/event_listener.h"
 
@@ -86,6 +87,14 @@ private:
 	 * @brief Called on each tick of the game.
 	 */
 	virtual void OnTick() {}
+
+	/**
+	 * @brief Called when a synchronization event from another server is received.
+	 *
+	 * @param Event The type of the synchronization event.
+	 * @param Req The synchronization request with key data (KeyColumn, KeyValue, Query).
+	 */
+	virtual void OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req) {}
 
 	/**
 	 * @brief Called when a client is reset.

@@ -39,6 +39,7 @@
 #include "multi_worlds.h"
 #include "server_ban.h"
 #include "server_logger.h"
+#include "server_sync.h"
 #include "geo_ip.h"
 
 namespace
@@ -2069,6 +2070,11 @@ int CServer::Run(ILogger* pLogger)
 		{
 			dbg_msg("server", "rcon password: '%s'", g_Config.m_SvRconPassword);
 		}
+		if (g_Config.m_SvSyncServerID > 0)
+		{
+			Sync->Init(g_Config.m_SvSyncServerID);
+			Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "server", "initialized cross-server synchronization: 'server id %d'.", g_Config.m_SvSyncServerID);
+		}
 
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "----------------------------------------------------");
 	}
@@ -2157,6 +2163,10 @@ int CServer::Run(ILogger* pLogger)
 					IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->GameServer();
 					pGameServer->OnTick();
 				}
+
+				// synchronize server data with the database at specified intervals
+				if(Tick() % (TickSpeed() * g_Config.m_SvSyncServerInterval) == 0)
+					Sync->OnTick();
 			}
 
 			if(NewTicks)

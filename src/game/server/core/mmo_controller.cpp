@@ -61,6 +61,15 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 
 void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine* pStorage)
 {
+	// initialize cross-server synchronization
+	Sync->SetEventCallback([this](const std::string& EventName, const CServerSync::SRequest& Req) {
+		if(Req.WorldID < 0 || Req.WorldID >= Instance::Server()->GetWorldsSize())
+			return;
+		auto* pGS = static_cast<CGS*>(Instance::GameServer(Req.WorldID));
+		for(auto& pComponent : pGS->Core()->m_System.m_vComponents)
+			pComponent->OnSyncEvent(EventName, Req);
+	});
+
 	// initialize components
 	const auto isLastInitializedWorld = m_pGameServer->GetWorldID() == (Instance::Server()->GetWorldsSize() - 1);
 	for(auto& pComponent : m_System.m_vComponents)

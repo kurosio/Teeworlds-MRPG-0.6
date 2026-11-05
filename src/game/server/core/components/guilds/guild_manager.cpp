@@ -10,13 +10,11 @@
 
 #include <components/houses/entities/house_door.h>
 
-void CGuildManager::OnPreInit()
+namespace
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE);
-	while(pRes->next())
+	void InitGuildFromRow(ResultPtr& pRes)
 	{
-		// initialize variables
-		GuildIdentifier ID = pRes->getInt("ID");
+		const GuildIdentifier ID = pRes->getInt("ID");
 		const auto Name = pRes->getString("Name");
 		const auto JsonMembers = pRes->getString("Members");
 		const auto DefaultRankID = pRes->getInt("DefaultRankID");
@@ -26,9 +24,16 @@ void CGuildManager::OnPreInit()
 		const auto Bank = pRes->getBigInt("Bank");
 		const auto Score = pRes->getInt("Score");
 		const auto LogFlag = pRes->getInt64("LogFlag");
-
-		// initialize guild
 		CGuild::CreateElement(ID)->Init(Name, JsonMembers, DefaultRankID, Level, Experience, Score, LeaderUID, Bank, LogFlag, &pRes);
+	}
+}
+
+void CGuildManager::OnPreInit()
+{
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE);
+	while (pRes->next())
+	{
+		InitGuildFromRow(pRes);
 	}
 
 	InitWars();
@@ -1175,6 +1180,29 @@ void CGuildManager::OnGlobalTimePeriod(ETimePeriod Period)
 		pGuild->HandleTimePeriod(Period);
 }
 
+void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req)
+{
+	if (EventName == "guild_create")
+	{
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
+		if (pRes->next())
+		{
+			InitGuildFromRow(pRes);
+			GS()->Chat(-1, "New guilds '{~}' have been created!", pRes->getString("Name").c_str());
+		}
+	}
+	else if (EventName == "guild_disband")
+	{
+		auto pGuild = GetGuildByID(Req.Value);
+		if(pGuild)
+		{
+			delete pGuild;
+			CGuild::Data().erase(std::find(CGuild::Data().begin(), CGuild::Data().end(), pGuild));
+			GS()->Chat(-1, "The '{~}' guild has been disbanded.", pGuild->GetName());
+		}
+	}
+}
+
 void CGuildManager::InitWars() const
 {
 	/*ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_WARS_TABLE);
@@ -1182,7 +1210,7 @@ void CGuildManager::InitWars() const
 	{
 		// Get the ID of the guild that is not the current guild
 		const int GuildID1 = pRes->getInt("GuildID1");
-		const int GuildID2 = pRes->getInt("GuildID1");
+		const int GuildID2 = pRes->getInt("GuildID2");
 
 		// Get scores
 		const int Score1 = pRes->getInt("Score1");
@@ -1244,6 +1272,7 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 	pPlayer->Account()->ReinitializeGuild();
 	Database->Execute<DB::INSERT>(TW_GUILDS_TABLE, "(ID, Name, LeaderUID, Members) VALUES ('{}', '{}', '{}', '{}')",
 		InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
+	Sync->Push("guild_create", GS()->GetWorldID(), InitID);
 	GS()->Chat(-1, "New guilds '{~}' have been created!", GuildName.cstr());
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
 }
@@ -1282,6 +1311,7 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	Database->Execute<DB::REMOVE>(TW_GUILDS_HISTORY_TABLE, "WHERE GuildID = '{}'", pGuild->GetID());
 	Database->Execute<DB::REMOVE>(TW_GUILDS_RANKS_TABLE, "WHERE GuildID = '{}'", pGuild->GetID());
 	Database->Execute<DB::REMOVE>(TW_GUILDS_TABLE, "WHERE ID = '{}'", pGuild->GetID());
+	Sync->Push("guild_disband", GS()->GetWorldID(), pGuild->GetID());
 
 	// erase guild from server
 	delete pGuild;
