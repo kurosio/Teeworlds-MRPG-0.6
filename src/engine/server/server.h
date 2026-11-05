@@ -30,6 +30,7 @@ class CServer : public IServer
 	class CMultiWorlds* m_pMultiWorlds {};
 	class CServerBan* m_pServerBan {};
 	class IRegister* m_pRegister{};
+	char m_aServerRegionCountry[128] {};
 
 public:
 	class IGameServer* GameServer(int WorldID = 0) const override;
@@ -181,6 +182,7 @@ public:
 
 	const char* ClientContinent(int ClientID) const override;
 	const char* ClientCountryIsoCode(int ClientID) const override;
+	const char* GetServerRegionCuntry() const override { return m_aServerRegionCountry; }
 
 	const char* Localize(int ClientID, const char* pText) override;
 	void SetClientLanguage(int ClientID, const char* pLanguage) override;

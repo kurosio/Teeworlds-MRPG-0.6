@@ -42,6 +42,7 @@ public:
 	virtual const char *ClientClan(int ClientID) const = 0;
 	virtual const char* ClientContinent(int ClientID) const = 0;
 	virtual const char* ClientCountryIsoCode(int ClientID) const = 0;
+	virtual const char* GetServerRegionCuntry() const = 0;
 	virtual int ClientCountry(int ClientID) const = 0;
 	virtual bool ClientIngame(int ClientID) const = 0;
 	virtual int GetClientInfo(int ClientID, CClientInfo *pInfo) const = 0;

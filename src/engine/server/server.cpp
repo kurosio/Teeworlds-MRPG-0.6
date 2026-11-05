@@ -2025,6 +2025,10 @@ int CServer::Run(ILogger* pLogger)
 
 	// initialize geolite2pp
 	CGeoIP::init("server_data/Country.mmdb");
+	char aServerAddr[NETADDR_MAXSTRSIZE];
+	const NETADDR ServerAddr = m_NetServer.Address();
+	net_addr_str(&ServerAddr, aServerAddr, sizeof(aServerAddr), false);
+	str_copy(m_aServerRegionCountry, CGeoIP::getData("subdivision", aServerAddr).c_str(), sizeof(m_aServerRegionCountry));
 
 	// server name
 	str_format(aBuf, sizeof(aBuf), "server name is '%s'", g_Config.m_SvName);
