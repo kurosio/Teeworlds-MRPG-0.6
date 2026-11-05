@@ -2073,7 +2073,7 @@ int CServer::Run(ILogger* pLogger)
 		if (g_Config.m_SvSyncServerID > 0)
 		{
 			Sync->Init(g_Config.m_SvSyncServerID);
-			str_format(aBuf, sizeof(aBuf), "cross-server synchronization id: server id", g_Config.m_SvSyncServerID);
+			str_format(aBuf, sizeof(aBuf), "cross-server synchronization id: %d", g_Config.m_SvSyncServerID);
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 		}
 
