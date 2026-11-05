@@ -1,30 +1,107 @@
-# Bridge configuration.
+# Bridge configuration (mysql_bridge.py 2.0, Python 3.8+).
 # Copy to bridge.cfg (chmod 600) and edit. Run: python3 mysql_bridge.py bridge.cfg
-# Every value can also be overridden with an environment variable
-# (BRIDGE_LISTEN_HOST, BRIDGE_LISTEN_PORT, BRIDGE_PRIMARY_HOST, BRIDGE_PRIMARY_PORT,
-#  BRIDGE_REPLICA_HOST, BRIDGE_REPLICA_PORT, BRIDGE_REPLICA_USER, BRIDGE_REPLICA_PASSWORD),
-# so secrets don't have to live in this file.
+# Validate without starting:            python3 mysql_bridge.py bridge.cfg --check-config
+#
+# Environment variables override the file, so secrets don't have to live here:
+#   BRIDGE_LISTEN_HOST, BRIDGE_LISTEN_PORT, BRIDGE_LOG_LEVEL,
+#   BRIDGE_PRIMARY_HOST, BRIDGE_PRIMARY_PORT,
+#   BRIDGE_REPLICA_HOST, BRIDGE_REPLICA_PORT, BRIDGE_REPLICA_USER,
+#   BRIDGE_REPLICA_PASSWORD, BRIDGE_REPLICA_PASSWORD_FILE
+# Only the lines that are not commented out are required; everything else
+# shows its default.
 
 [bridge]
 # Where game servers connect. DEFAULT IS LOCALHOST ONLY - the bridge must
-# not be reachable from the internet.
+# not be reachable from the internet. Game server <-> bridge traffic is
+# plain MySQL protocol (the bridge does not terminate TLS): keep it on
+# localhost or a trusted private network and set sv_sql_use_tls 0.
 listen_host = 127.0.0.1
 listen_port = 33060
+# Optional source-address allowlist (comma-separated IPs/CIDRs). Anything
+# else is refused before a connection to the primary is opened.
+#allowed_clients = 127.0.0.1/32, 10.0.0.0/8
 # Max simultaneous game-server connections (protects the DB from overload).
 max_clients = 64
-# Persistent read connections to the local replica.
+# Persistent read connections to the local replica (shared by all clients).
 replica_pool_size = 4
-# Set false to route all queries to primary while diagnosing an incident.
+# Set false to route all queries to primary while diagnosing an incident
+# (the bridge then is a plain, zero-overhead relay).
 route_selects_to_replica = true
-# After a write, this client's reads go to the primary for this many
-# seconds. This is only a heuristic, not a guarantee: replication can lag
-# longer, and other connections do not share this grace window.
+
+# --- read-your-writes -------------------------------------------------------
+# After a write, matching reads go to the primary for this many seconds so
+# freshly written rows are visible. 0 disables it. Pick a value above your
+# usual replication lag (check Seconds_Behind_Master).
 read_your_writes_grace_sec = 2.0
+# Who is affected by a write (the writer's own connection always is):
+#   table      - reads (on ANY connection of this bridge) that mention a
+#                table written within the window. Recommended: the game
+#                server writes on one pooled connection and reads back on
+#                another (e.g. account registration).
+#   global     - every read through this bridge.
+#   connection - only the writing connection (pre-2.0 behaviour).
+# Writes made through OTHER bridges/locations are not visible to this
+# window; see "Consistency" in README.md.
+#read_your_writes_scope = table
+
+# --- replication lag guard ----------------------------------------------------
+# If > 0, the bridge polls SHOW ALL SLAVES STATUS (MariaDB; falls back to
+# SHOW REPLICA/SLAVE STATUS) and sends reads to the primary while the
+# replica is more than this many seconds behind, stopped, or unknown.
+# Needs: GRANT REPLICA MONITOR ON *.* TO 'mrpg_bridge'@'localhost';
+# (MariaDB 10.5+; older: REPLICATION CLIENT).
+#max_replica_lag_sec = 0
+#replica_lag_check_interval_sec = 2
+
+# --- timeouts and limits --------------------------------------------------------
+# Close clients that send nothing for this long. A query that is still
+# running does not count as idle (in pass-through mode, i.e.
+# route_selects_to_replica = false, only traffic counts). 0 disables it.
+# Keep it above the game server's own idle reuse (60 s).
+#client_idle_timeout_sec = 600
+# A new client must finish logging in within this time.
+#auth_timeout_sec = 10
+# Wait at most this long for a free replica connection, else use the primary.
+#replica_acquire_timeout_sec = 1
+# A replica query slower than this is re-run on the primary.
+#replica_query_timeout_sec = 30
+# Replica responses up to this size are buffered completely, so a replica
+# failure is invisible to the client (the query is re-run on the primary).
+# Bigger responses are streamed.
+#replica_buffer_kb = 1024
+# Largest packet accepted from a client (also max_allowed_packet-ish).
+#max_packet_mb = 64
+
+# --- operations --------------------------------------------------------------------
+# Log a stats line every N seconds (0 = off).
+#stats_interval_sec = 30
+# DEBUG logs every routing decision (string literals are removed).
+#log_level = INFO
+# Use uvloop if it is installed (pip install uvloop): typically 10-30%
+# more throughput.
+#use_uvloop = true
 
 [primary]
 # The single central database. Writes (and everything non-SELECT) go here.
+# Game servers log in through the bridge with their own account, which is
+# checked by the primary itself.
 host = db-central.example.com
 port = 3306
+#connect_timeout_sec = 5
+# Encrypt bridge -> primary traffic (recommended whenever it leaves the
+# host). tls_mode = mysql is the normal MariaDB/MySQL in-protocol upgrade;
+# "direct" is for TLS-terminating proxies/tunnels that expect TLS at once.
+# The certificate is verified against tls_ca_file (or the system CAs) and
+# tls_server_name (default: host). With use_tls = true the bridge refuses
+# to send credentials if the server does not offer TLS.
+use_tls = false
+#tls_mode = mysql
+#tls_ca_file = /etc/mysql/ssl/ca.pem
+#tls_verify = true
+#tls_server_name = db-central.example.com
+# Client certificate, only if the server requires X509:
+#tls_cert_file =
+#tls_key_file =
 
 [replica]
 # Local read replica in the SAME location as this bridge. Reads are served
@@ -33,9 +110,14 @@ port = 3306
 # works as a plain proxy.
 host = 127.0.0.1
 port = 3306
+#connect_timeout_sec = 3
+# SELECT-only account (see replica_setup.sql). mysql_native_password is
+# simplest; caching_sha2_password needs use_tls = true for the first login.
 user = mrpg_bridge
 password = changeme
+# Or keep the password out of this file (takes precedence over password):
+#password_file = /etc/mrpg/bridge_replica_password
 database = mmotee
-# MySQL TLS is not implemented by the bridge. Keep false and use a
-# verified TLS tunnel/VPN if traffic leaves a trusted host/network.
+# Same TLS keys as [primary]. Usually unnecessary for a replica on
+# 127.0.0.1; enable it if the replica is on another host.
 use_tls = false
