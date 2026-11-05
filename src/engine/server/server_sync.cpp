@@ -1,7 +1,7 @@
 #include "server_sync.h"
 
 #include <base/format.h>
-#include <engine/shared/config_variables.h>
+#include <engine/shared/config.h>
 #include <engine/server/sql_connect_pool.h>
 
 void CServerSync::Push(const char* pEvent, int WorldID, int Value)
