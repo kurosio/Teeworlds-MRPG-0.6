@@ -35,9 +35,9 @@
 <!--
   Одна панель управления картой, но внутри — отдельные секции. Инструмент
   выбирается переключателем «Клик по карте» (точка / тайл / замер), поэтому
-  режимы больше не спорят друг с другом порядком кнопок. Настройки позиции
-  (сетка, привязка, история) остаются в шапке панели, а всё, что добавляет
-  связанные точки или тайлы на карту, лежит в своих секциях.
+  режимы больше не спорят друг с другом порядком кнопок. Тексты секций
+  берутся из picker-text.js (RU/EN) и подставляются picker.js при запуске,
+  поэтому подписи в этой разметке — только до первой отрисовки.
 -->
 <aside class="pk-dock" id="pk-dock" aria-label="Инструменты карты">
   <header class="pk-dock-head">
@@ -57,7 +57,7 @@
       <section class="pk-sec" aria-labelledby="pk-sec-click-title">
         <h2 class="pk-sec-title" id="pk-sec-click-title">Клик по карте</h2>
         <div class="pk-sec-body">
-          <div class="pk-segmented" role="radiogroup" aria-label="Клик по карте">
+          <div class="pk-segmented" role="radiogroup" aria-label="Клик по карте" id="pk-click-group">
             <button type="button" class="pk-seg" id="pk-mode-point" role="radio" aria-checked="true">Ставит точку</button>
             <button type="button" class="pk-seg" id="pk-mode-tile" role="radio" aria-checked="false">Ставит тайл</button>
             <button type="button" class="pk-seg" id="pk-mode-measure" role="radio" aria-checked="false">Измеряет</button>
@@ -82,7 +82,7 @@
       <section class="pk-sec" id="pk-sec-edit" aria-labelledby="pk-sec-edit-title" hidden>
         <h2 class="pk-sec-title" id="pk-sec-edit-title">Правка точек и switch-тайлов</h2>
         <div class="pk-sec-body">
-          <div class="pk-segmented pk-segmented-sm" role="radiogroup" aria-label="Слой правки">
+          <div class="pk-segmented pk-segmented-sm" role="radiogroup" aria-label="Слой правки" id="pk-layer-group">
             <button type="button" class="pk-seg is-active" id="pk-edit-layer-game" role="radio" aria-checked="true">Игровой слой</button>
             <button type="button" class="pk-seg" id="pk-edit-layer-switch" role="radio" aria-checked="false">Switch-слой</button>
           </div>
@@ -133,7 +133,7 @@
       <section class="pk-sec" id="pk-sec-view" aria-labelledby="pk-sec-view-title">
         <h2 class="pk-sec-title" id="pk-sec-view-title">Видимость карты</h2>
         <div class="pk-sec-body">
-          <p class="pk-sec-hint">Что показать поверх карты. На выбор позиции не влияет, кроме запрещённых тайлов.</p>
+          <p class="pk-sec-hint" id="pk-view-hint">Что показать поверх карты. На выбор позиции не влияет, кроме запрещённых тайлов.</p>
           <label class="pk-check"><input type="checkbox" id="pk-collision" /> <span id="pk-collision-label">Игровой слой</span></label>
           <button type="button" class="pk-btn" id="pk-spawn">К спавну</button>
           <output id="pk-collision-status" class="pk-tool-status"></output>
@@ -143,7 +143,7 @@
       <section class="pk-sec" id="pk-sec-measure" aria-labelledby="pk-sec-measure-title">
         <h2 class="pk-sec-title" id="pk-sec-measure-title">Замер расстояния</h2>
         <div class="pk-sec-body">
-          <p class="pk-sec-hint">Две точки на карте: длина, тайлы и ΔX/ΔY. Позиция записи не меняется.</p>
+          <p class="pk-sec-hint" id="pk-measure-hint">Две точки на карте: длина, тайлы и ΔX/ΔY. Позиция записи не меняется.</p>
           <button type="button" class="pk-btn" id="pk-measure" aria-pressed="false">Измерить (M)</button>
           <button type="button" class="pk-btn" id="pk-measure-from-point">От выбранной точки</button>
           <button type="button" class="pk-btn" id="pk-measure-use">B → позиция</button>
@@ -155,7 +155,7 @@
       <section class="pk-sec" id="pk-sec-radius" aria-labelledby="pk-sec-radius-title">
         <h2 class="pk-sec-title" id="pk-sec-radius-title">Предпросмотр радиуса</h2>
         <div class="pk-sec-body">
-          <p class="pk-sec-hint">Дополнительная окружность вокруг точки: подберите радиус, не меняя поле записи.</p>
+          <p class="pk-sec-hint" id="pk-radius-hint">Дополнительная окружность вокруг точки: подберите радиус, не меняя поле записи.</p>
           <label class="pk-field"><span id="pk-radius-label">Радиус, px</span>
             <input id="pk-radius" type="number" min="0" max="100000" step="32" value="0" />
           </label>
@@ -165,7 +165,7 @@
       <section class="pk-sec" id="pk-sec-layers" aria-labelledby="pk-sec-layers-title">
         <h2 class="pk-sec-title" id="pk-sec-layers-title">Слои оформления</h2>
         <div class="pk-sec-body">
-          <p class="pk-sec-hint">Скройте мешающий фон или передний план. Действует только в этом окне.</p>
+          <p class="pk-sec-hint" id="pk-layers-hint">Скройте мешающий фон или передний план. Действует только в этом окне.</p>
           <div id="pk-layer-list" class="pk-layer-list"></div>
           <button type="button" class="pk-btn" id="pk-layers-reset">Показать все слои</button>
         </div>

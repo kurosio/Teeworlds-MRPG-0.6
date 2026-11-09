@@ -5,7 +5,7 @@
  * расходились. Теперь режим клика, секции панели и сообщения о тайлах берутся
  * отсюда, поэтому переименование раздела — это правка одной строки.
  *
- * Ключи намеренно плоские: `MapPickerText.get('ru').addTitle`.
+ * Ключи намеренно плоские: `MapPickerText.get('ru').editTitle`.
  */
 (() => {
   'use strict';
@@ -15,13 +15,12 @@
       // ── панель и режим клика ──────────────────────────────────────────────
       dockTitle: 'Инструменты карты',
       dockBadgeTiles: 'тайлов: {0}',
-      dockBadgePoints: 'точек: {0}',
       modeLabel: 'Клик по карте',
       modes: { point: 'ставит точку', tile: 'ставит тайл', measure: 'измеряет' },
       modeHints: {
         point: 'Клик — точка · перетаскивание — маркер или карта · Alt — без привязки · Shift+стрелки — на тайл · Alt+стрелки — на 1 px · G — сетка · S — привязка',
-        tile: 'Клик — поставить или выбрать точку · перетаскивание — перенести · Delete — удалить · 1/2 — слой · R — сбросить · Esc — выбор позиции.',
-        measure: 'Клик — точка A, второй клик — точка B. Позиция записи не меняется. M или Esc — закончить замер.',
+        tile: 'Клик — поставить или выбрать точку · перетаскивание точки — перенести · перетаскивание карты — сдвиг · Delete — удалить · 1/2 — слой · R — сбросить · Esc — выбор позиции.',
+        measure: 'Клик — точка A, второй клик — точка B · перетаскивание — сдвиг карты · позиция записи не меняется. M или Esc — закончить замер.',
       },
 
       // ── секция «Видимость карты» ──────────────────────────────────────────
@@ -44,8 +43,7 @@
       linkedNodes: 'Связанные узлы',
       noSwitchLayer: 'нет switch-слоя',
 
-      // ── секция «Существующие точки» ───────────────────────────────────────
-      pointsTitle: 'Существующие точки',
+      // ── секция «Точки на карте» (существующие тайлы) ───────────────────────
       pointsHint: 'Точки, которые уже стоят на карте. Выберите одну — её координаты станут позицией записи.',
       linkedLabel: 'Найденные тайлы',
       linkedUse: 'Использовать точку',
@@ -54,9 +52,7 @@
       linkedLimit: 'Показаны первые {0} точек.',
       linkedPoint: 'Точка',
 
-      // ── секция «Новая точка на карте» ─────────────────────────────────────
-      addTitle: 'Новая точка на карте',
-      addHint: 'Тайл ставится на свободную клетку, а точка — в её центр. Карта сохранится по «Применить» вместе с позицией.',
+      // ── установки тайла нет: объявлений редактора нет ──────────────────────
       editUnsupported: 'Установка требует игрового слоя, входа администратора и локальной папки карт с правом записи.',
       editNothingDeclared: 'Редактор не объявил highlightTiles — доступна только установка позиции, карта не меняется.',
 
@@ -105,9 +101,7 @@
       editDrift: 'Черновик разошёлся с картой (клеток: {0}). Перезагрузите окно, прежде чем сохранять.',
       editNoLayer: 'В этой карте нет switch-слоя — правка доступна только в игровом слое.',
       editNoGame: 'В этой карте нет игрового слоя.',
-      editCount: 'Точек на карте: {0}',
       editTileListTitle: 'Точки на карте',
-      editTileListHint: 'Все точки выбранного слоя. Выберите строку, чтобы перейти к ней и выделить клетку.',
       editCapReached: 'За одно сохранение можно изменить не более 1000 клеток.',
       editDelete: 'Удалить',
       editRestore: 'Вернуть',
@@ -128,13 +122,12 @@
     en: {
       dockTitle: 'Map tools',
       dockBadgeTiles: 'tiles: {0}',
-      dockBadgePoints: 'points: {0}',
       modeLabel: 'Map click',
       modes: { point: 'places the point', tile: 'places a tile', measure: 'measures' },
       modeHints: {
         point: 'Click — point · drag — marker or map · Alt — bypass snap · Shift+arrows — one tile · Alt+arrows — 1 px · G — grid · S — snap',
-        tile: 'Click to place or pick a point · drag to move · Delete to remove · 1/2 — layer · R — discard · Esc — position picking.',
-        measure: 'Click point A, then point B. The record position does not change. M or Esc ends measuring.',
+        tile: 'Click to place or pick a point · drag the point to move · drag the map to pan · Delete to remove · 1/2 — layer · R — discard · Esc — position picking.',
+        measure: 'Click — point A, next click — point B · drag to pan the map · the record position does not change. M or Esc ends measuring.',
       },
 
       viewTitle: 'Map visibility',
@@ -143,7 +136,7 @@
       spawn: 'To spawn',
       noGame: 'No gameplay layer in this map.',
       zoom: 'Zoom in to see gameplay tiles.',
-      legend: '1 solid · 2 death · 3 no-hook · green rings: selected tile IDs · blue: other tile IDs',
+      legend: '1 solid · 2 death · 3 no-hook · green: spawns · blue: other tile IDs',
       blocked: 'Red tiles are forbidden here',
       solid: 'Solid',
       death: 'Death',
@@ -156,7 +149,6 @@
       linkedNodes: 'Linked nodes',
       noSwitchLayer: 'no switch layer',
 
-      pointsTitle: 'Existing points',
       pointsHint: 'Points that already exist on the map. Pick one — its coordinates become this record’s position.',
       linkedLabel: 'Matching tiles',
       linkedUse: 'Use this point',
@@ -165,8 +157,6 @@
       linkedLimit: 'Showing the first {0} matches.',
       linkedPoint: 'Point',
 
-      addTitle: 'New point on the map',
-      addHint: 'A tile goes into an empty cell, and the point lands in its center. Apply saves the map together with the position.',
       editUnsupported: 'Tile placement needs an editable game layer and an administrator with a writable local map folder.',
       editNothingDeclared: 'The editor declared no highlightTiles, so only the position can be picked — the map stays unchanged.',
 
@@ -211,9 +201,7 @@
       editDrift: 'The draft no longer matches the map ({0} cells). Reload the window before saving.',
       editNoLayer: 'This map has no switch layer — only the gameplay layer can be edited.',
       editNoGame: 'This map has no gameplay layer.',
-      editCount: 'Points on the map: {0}',
       editTileListTitle: 'Points on the map',
-      editTileListHint: 'Every point of the selected layer. Pick a row to jump to it and select the cell.',
       editCapReached: 'A single save can change at most 1000 cells.',
       editDelete: 'Delete',
       editRestore: 'Revert cell',

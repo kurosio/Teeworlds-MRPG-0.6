@@ -6,6 +6,10 @@ bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN]);
 
 // Keep under the project's default PHP post_max_size (50M in Docker).
 const MAP_EDIT_MAX_BYTES = 50331648; // 48 MiB
+// Потолок распаковки: карта main.map — 1.1 MiB на диске, но ~101 MiB в блоках,
+// поэтому ограничение на распакованные данные должно быть заметно выше файла.
+// Защита от «бомб» остаётся: длина каждого блока ограничена в gzuncompress.
+const MAP_EDIT_MAX_UNCOMPRESSED = 512 * 1024 * 1024; // 512 MiB
 
 function map_edit_fail(string $code, string $message, int $status): never
 {
@@ -204,11 +208,11 @@ function map_edit_validate_datafile(string $bytes): array
         $off = map_edit_u32($bytes, $itemOffsetsEnd + $i * 4);
         $plainSize = map_edit_u32($bytes, $dataOffsetsEnd + $i * 4);
         $next = $i + 1 < $numData ? map_edit_u32($bytes, $itemOffsetsEnd + ($i + 1) * 4) : $dataSize;
-        if ($off < 0 || $off < $last || $next < $off || $next > $dataSize || $plainSize > MAP_EDIT_MAX_BYTES) {
+        if ($off < 0 || $off < $last || $next < $off || $next > $dataSize || $plainSize > MAP_EDIT_MAX_UNCOMPRESSED) {
             throw new EditorUserError('Таблица ресурсов карты повреждена.');
         }
         $compressed = substr($bytes, $dataStart + $off, $next - $off);
-        $plain = @gzuncompress($compressed, min($plainSize + 1, MAP_EDIT_MAX_BYTES));
+        $plain = @gzuncompress($compressed, min($plainSize + 1, MAP_EDIT_MAX_UNCOMPRESSED));
         if (!is_string($plain) || strlen($plain) !== $plainSize) throw new EditorUserError('Сжатый блок карты повреждён.');
         $rawHashes[] = hash('sha256', $compressed);
         $rawSizes[] = $plainSize;
@@ -223,7 +227,7 @@ function map_edit_validate_datafile(string $bytes): array
             }
         }
         $uncompressedTotal += $plainSize;
-        if ($uncompressedTotal > MAP_EDIT_MAX_BYTES * 2) throw new EditorUserError('Распакованные данные карты слишком велики.');
+        if ($uncompressedTotal > MAP_EDIT_MAX_UNCOMPRESSED) throw new EditorUserError('Распакованные данные карты слишком велики.');
         $last = $off;
     }
     if (!is_string($gamePlain)) throw new EditorUserError('Данные игрового слоя не найдены.');

@@ -412,7 +412,7 @@ if (fs.existsSync(pickerDir)) {
   if (!textCode) {
     problems.push('vendor/ddnet-map/picker-text.js: нет словаря панели карты');
   } else {
-    for (const key of ['dockTitle', 'modes', 'modeHints', 'pointsTitle', 'addTitle', 'viewTitle', 'measureTitle']) {
+    for (const key of ['dockTitle', 'modes', 'modeHints', 'viewTitle', 'measureTitle', 'radiusTitle', 'layersTitle', 'editLayerLabel']) {
       if (!textCode.includes(key)) problems.push(`vendor/ddnet-map/picker-text.js: нет раздела ${key}`);
     }
     // RU и EN должны описывать одни и те же ключи.
