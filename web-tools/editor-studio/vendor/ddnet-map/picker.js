@@ -25,6 +25,16 @@
  * в адресе окна нет, поэтому и «радиус блуждания» больше не подписывается
  * автоматически — подпись приходит из объявления `ui.radii`.
  *
+ * Панель карты устроена из трёх уровней:
+ *   1. шапка        — точка и камера (X/Y, зум, «Вся карта», «К точке»);
+ *   2. панель карты — переключатель «Клик по карте» (точка / тайл / замер) и
+ *                     секции: настройки точки, существующие точки, новая точка,
+ *                     видимость, замер, радиус, слои оформления;
+ *   3. подвал       — X/Y записи, предупреждение о запрещённом тайле и
+ *                     «Применить / Отмена».
+ * Режимы клика взаимоисключающие: замер — picker-measure.js, тайл —
+ * picker-workbench.js, обычная точка — этот файл.
+ *
  * Родительскому окну отправляются сообщения:
  *   editor-map:ready            — карта отрисована
  *   editor-map:change {x,y}     — точка сдвинута (ещё не применена)
@@ -37,6 +47,9 @@
   'use strict';
 
   const Model = window.MapPickerModel;
+  // Тексты панели «Инструменты карты» лежат в picker-text.js: раньше те же
+  // подписи дублировались здесь и в picker-workbench.js и расходились.
+  const QSText = window.MapPickerText || { get: () => ({}) };
   const qs = new URLSearchParams(window.location.search);
   const toNum = (value, fallback = 0) => {
     const n = Number(value);
@@ -49,10 +62,10 @@
       grid: 'Сетка 32×32', snap: 'Центры тайлов', align: 'В центр тайла',
       undo: 'Отменить (Ctrl+Z)', redo: 'Повторить (Ctrl+Shift+Z)', reset: 'Исходная точка',
       copy: 'Копировать X, Y', copied: 'Скопировано', copyFailed: 'Не удалось скопировать', tile: 'Тайл',
-      tools: 'Инструменты карты',
       loading: 'Загрузка карты…',
       loadingTitle: 'Загружаем карту',
       ready: 'Точка ставится кликом по карте',
+      modeLabel: 'Клик по карте',
       hint: 'Клик — точка · перетаскивание — карта/маркер · Alt — без привязки · Shift+стрелки — точка на 1 тайл · Alt+стрелки — на 1 px · G — сетка · S — привязка',
       noWorld: 'Мир не выбран',
       noWorldText: 'Сначала выберите мир в поле «Мир» — по нему редактор находит карту.',
@@ -81,16 +94,15 @@
       blockedTile: 'Нельзя ставить точку на этом игровом тайле',
       blockedHint: 'COLLIDE / DEATH / UNHOOK запрещены — выберите свободный тайл',
       blockedKinds: { 1: 'стена', 2: 'смерть', 3: 'без крюка' },
-      tileShort: 'Тайл',
     },
     en: {
       grid: '32×32 grid', snap: 'Tile centers', align: 'Center in tile',
       undo: 'Undo (Ctrl+Z)', redo: 'Redo (Ctrl+Shift+Z)', reset: 'Original point',
       copy: 'Copy X, Y', copied: 'Copied', copyFailed: 'Copy failed', tile: 'Tile',
-      tools: 'Map tools',
       loading: 'Loading map…',
       loadingTitle: 'Loading the map',
       ready: 'Click the map to place the point',
+      modeLabel: 'Map click',
       hint: 'Click — point · drag — pan/marker · Alt — bypass snap · Shift+arrows — move point 1 tile · Alt+arrows — 1 px · G — grid · S — snap',
       noWorld: 'No world selected',
       noWorldText: 'Choose a world in the “World” field first — the editor uses it to find the map.',
@@ -119,9 +131,19 @@
       blockedTile: 'A point cannot be placed on this gameplay tile',
       blockedHint: 'COLLIDE / DEATH / UNHOOK are forbidden — pick a free tile',
       blockedKinds: { 1: 'solid', 2: 'death', 3: 'no-hook' },
-      tileShort: 'Tile',
     },
   }[LANG];
+
+  // Тексты панели (секции, режимы, бейджи) — единый словарь picker-text.js.
+  // Вложенные словари приводим к полной форме: если словарь не подключён или
+  // в нём нет нового режима, панель не должна падать на чтении `modes.point`.
+  const DOCK_RAW = QSText.get(LANG) || {};
+  const DOCK = {
+    ...DOCK_RAW,
+    modes: { point: '', tile: '', measure: '', ...(DOCK_RAW.modes || {}) },
+    modeHints: { point: '', tile: '', measure: '', ...(DOCK_RAW.modeHints || {}) },
+  };
+  STR.tools = DOCK.dockTitle || STR.tools;
 
   const el = {
     grid: document.getElementById('pk-grid'),
@@ -154,6 +176,25 @@
     zoomOut: document.getElementById('pk-zoom-out'),
     fit: document.getElementById('pk-fit'),
     center: document.getElementById('pk-center'),
+    dock: document.getElementById('pk-dock'),
+    dockToggle: document.getElementById('pk-dock-toggle'),
+    dockTitle: document.getElementById('pk-dock-title'),
+    dockBadge: document.getElementById('pk-dock-badge'),
+    modePoint: document.getElementById('pk-mode-point'),
+    modeTile: document.getElementById('pk-mode-tile'),
+    modeMeasure: document.getElementById('pk-mode-measure'),
+    clickHint: document.getElementById('pk-sec-click-hint'),
+    pickSection: document.getElementById('pk-sec-pick'),
+    pickTitle: document.getElementById('pk-pick-title'),
+    measureSection: document.getElementById('pk-sec-measure'),
+    measure: document.getElementById('pk-measure'),
+    measureClear: document.getElementById('pk-measure-clear'),
+    measureFrom: document.getElementById('pk-measure-from-point'),
+    measureUse: document.getElementById('pk-measure-use'),
+    measureResult: document.getElementById('pk-measure-result'),
+    radius: document.getElementById('pk-radius'),
+    radiusLabel: document.getElementById('pk-radius-label'),
+    collisionStatus: document.getElementById('pk-collision-status'),
   };
 
   // Флаги приходят из объявления UI-элемента позиции (PositionPicker).
@@ -291,7 +332,17 @@
   el.fit.textContent = STR.fit;
   el.center.textContent = STR.center;
   el.cnvs.setAttribute('aria-label', STR.mapOf);
-  document.querySelector('.pk-options').setAttribute('aria-label', STR.tools);
+  el.dock.setAttribute('aria-label', DOCK.dockTitle);
+  el.dockTitle.textContent = DOCK.dockTitle;
+  el.modePoint.textContent = DOCK.modes.point;
+  el.modeTile.textContent = DOCK.modes.tile;
+  el.modeMeasure.textContent = DOCK.modes.measure;
+  el.pickTitle.textContent = LANG === 'en' ? 'Point settings' : 'Настройки точки';
+  el.measure.textContent = DOCK.measure;
+  el.measureClear.textContent = DOCK.clear;
+  el.measureFrom.textContent = DOCK.from;
+  el.measureUse.textContent = DOCK.use;
+  el.radiusLabel.textContent = DOCK.radius;
   for (const key of ['grid', 'snap']) document.getElementById(`pk-${key}-label`).textContent = STR[key];
   for (const key of ['align', 'reset', 'copy']) el[key].textContent = STR[key];
   for (const key of ['undo', 'redo']) {
@@ -301,20 +352,79 @@
   el.snap.title = LANG === 'ru' ? '16 + 32 × N; Alt — временно без привязки' : '16 + 32 × N; Alt bypasses snapping';
   el.grid.title = LANG === 'ru' ? 'При отдалении остаются только крупные линии' : 'Only major lines remain when zoomed out';
 
-  // Toolbars wrap on narrow screens and when the world name is long.
-  const layoutTools = () => {
-    const bar = document.querySelector('.pk-bar').getBoundingClientRect();
-    const options = document.querySelector('.pk-options');
-    document.documentElement.style.setProperty('--pk-toolbar-top', `${bar.bottom + 8}px`);
-    document.documentElement.style.setProperty('--pk-hint-top', `${options.getBoundingClientRect().bottom + 8}px`);
+  // ── панель карты: режим клика, свёрнутость, раскладка ─────────────────────
+  // Режим клика — единственное место, где решается, что делает клик по карте.
+  // Переключатель в панели и кнопки секций меняют одно и то же состояние,
+  // поэтому «Измерить» и «Ставить тайл» больше не могут быть включены разом.
+  const DOCK_STORAGE_KEY = 'editor-map-picker-dock-v3';
+  let layoutTools = () => {}; // объявляем до setDockOpen — он её вызывает
+  let clickMode = 'point';
+  let workbenchApi = null;
+  let measureApi = null;
+
+  const setClickHint = () => {
+    el.clickHint.textContent = DOCK.modeHints[clickMode] || DOCK.modeHints.point;
+    for (const [mode, button] of [['point', el.modePoint], ['tile', el.modeTile], ['measure', el.modeMeasure]]) {
+      const active = clickMode === mode;
+      button.setAttribute('aria-checked', String(active));
+      button.classList.toggle('is-active', active);
+    }
+  };
+  const setDockOpen = (open) => {
+    el.dock.classList.toggle('is-collapsed', !open);
+    el.dockToggle.setAttribute('aria-expanded', String(open));
+    el.dockToggle.title = open
+      ? (LANG === 'en' ? 'Collapse the panel' : 'Свернуть панель')
+      : (LANG === 'en' ? 'Expand the panel' : 'Развернуть панель');
+    try { localStorage.setItem(DOCK_STORAGE_KEY, open ? '1' : '0'); } catch { /* Storage is optional. */ }
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => layoutTools());
+    else layoutTools();
+  };
+
+  const setClickMode = (mode, { silent = false } = {}) => {
+    if (!['point', 'tile', 'measure'].includes(mode)) return;
+    if (clickMode === mode && !silent) {
+      // Повторное нажатие активного переключателя возвращает обычный клик.
+      if (mode !== 'point') { setClickMode('point'); return; }
+    }
+    clickMode = mode;
+    if (mode !== 'tile') workbenchApi?.cancelPlacement?.();
+    if (mode !== 'measure' && measureApi?.active) measureApi.setMeasuring(false);
+    if (mode === 'measure') {
+      setDockOpen(true);
+      measureApi?.setMeasuring(true);
+    }
+    if (mode === 'tile') setDockOpen(true);
+    setClickHint();
+    el.hint.hidden = false;
+    el.hint.textContent = DOCK.modeHints[clickMode];
+    el.dock.classList.toggle('is-measuring', mode === 'measure');
+    if (typeof tw !== 'undefined') { tw.mousePressed = false; tw.keyState = {}; }
+    tw.requestRender?.(1);
+  };
+
+  // Панель стоит под шапкой и не заходит на подвал. Подсказка режима — справа
+  // от панели, а на узком экране панель уходит вниз и подсказка скрыта CSS.
+  layoutTools = () => {
+    const bar = document.querySelector('.pk-bar');
+    const foot = document.querySelector('.pk-foot');
+    if (!bar) return;
+    const top = bar.getBoundingClientRect().bottom + 8;
+    const bottom = foot ? foot.getBoundingClientRect().top : window.innerHeight - 12;
+    const dockWidth = el.dock ? el.dock.getBoundingClientRect().width : 0;
+    document.documentElement.style.setProperty('--pk-dock-top', `${top}px`);
+    document.documentElement.style.setProperty('--pk-hint-top', `${top}px`);
+    document.documentElement.style.setProperty('--pk-hint-left', `${dockWidth + 24}px`);
+    document.documentElement.style.setProperty('--pk-dock-max', `${Math.max(180, bottom - top - 12)}px`);
   };
   if (typeof ResizeObserver === 'function') {
-    const observer = new ResizeObserver(layoutTools);
+    // Панель меняет высоту при раскрытии секций и в узком окне становится
+    // нижней: подсказка должна стоять под шапкой, а не под её краем.
+    const observer = new ResizeObserver(() => layoutTools());
+    observer.observe(el.dock);
     observer.observe(document.querySelector('.pk-bar'));
-    observer.observe(document.querySelector('.pk-options'));
   }
-  window.addEventListener('resize', layoutTools);
-  layoutTools();
+  window.addEventListener('resize', () => layoutTools());
 
   const showState = (kind, title, text, withRetry) => {
     el.state.hidden = false;
@@ -353,7 +463,7 @@
     state.invalidTile = tile;
     if (el.validity) {
       el.validity.hidden = valid;
-      const kind = STR.blockedKinds[tile] || `${STR.tileShort} ID ${tile}`;
+      const kind = STR.blockedKinds[tile] || `${DOCK.tileLabel} ID ${tile}`;
       el.validity.textContent = valid ? '' : `${STR.blockedTile}: ${kind}`;
     }
     if (el.apply) el.apply.title = valid ? '' : STR.blockedTile;
@@ -586,6 +696,27 @@
     }
 
     if (state.ready) workbench?.draw(overlay);
+    if (state.ready) measureApi?.draw(overlay);
+
+    // Радиусы объявлены редактором (ui.radii): у каждой окружности свой цвет,
+    // пунктир и подпись. Рисуются здесь, потому что это часть выбора позиции,
+    // а не панели инструментов.
+    if (state.ready && state.hasPoint) {
+      const editorRadii = Array.isArray(OPTIONS.radii) ? OPTIONS.radii : [];
+      for (const radius of editorRadii) {
+        if (!radius || !Number.isFinite(radius.value) || radius.value <= 0 || radius.value > 100000) continue;
+        Overlays.drawRadius(overlay, state.point, radius.value, worldToScreen, radius);
+      }
+      // Предпросмотр из поля «Радиус, px»: не дублирует объявленный радиус.
+      const manual = Number(el.radius.value);
+      const declared = editorRadii.map((radius) => Number(radius?.value));
+      if (Number.isFinite(manual) && manual > 0 && manual <= 100000 && !declared.includes(manual)) {
+        Overlays.drawRadius(overlay, state.point, manual, worldToScreen, {
+          color: '#ffda70', dash: [4, 3], lineWidth: 1.5,
+          fill: 'rgba(255,218,112,.06)', label: DOCK.previewLabel,
+        });
+      }
+    }
 
     if (state.ready && state.hasPoint) {
       const p = worldToScreen(state.point.x, state.point.y);
@@ -656,13 +787,87 @@
     overlay.restore();
   };
 
+  // ── инструменты панели ────────────────────────────────────────────────────
+  // Каждый режим живёт в своём модуле и получает только то, что ему нужно:
+  // workbench — связанные точки и черновик тайлов, measure — замер. Общий
+  // «переключатель клика» следит, чтобы активным был ровно один.
   workbench = window.MapPickerWorkbench.create({
-    tw, state, lang: LANG, screenToWorld, worldToScreen, screenSize,
+    tw, state, screenToWorld, worldToScreen, screenSize,
     getCursor: () => cursor,
     setCamera, fitZoom, setPoint,
     options: OPTIONS,
+    text: DOCK,
     redraw: () => tw.requestRender?.(2),
+    onModeChange: (mode) => { if (mode === 'tile' && clickMode !== 'tile') setClickMode('tile'); },
+    onBadge: (staged) => {
+      el.dockBadge.hidden = !staged;
+      if (staged) el.dockBadge.textContent = DOCK.dockBadgeTiles.replace('{0}', String(staged));
+    },
   });
+  workbenchApi = workbench;
+  measureApi = window.MapPickerMeasure.create({
+    canvas: el.cnvs, state, text: DOCK, setPoint, redraw: () => tw.requestRender?.(2),
+    point: () => state.point,
+    worldToScreen,
+    worldPoint: (event) => {
+      const p = screenToWorld(event.clientX, event.clientY);
+      const snapped = el.snap.checked && !event.altKey;
+      return Model.point(p.x, p.y, snapped);
+    },
+    onResult: (value) => { if (el.measureResult.textContent !== value) el.measureResult.textContent = value; },
+    onEndpoint: (ready) => { el.measureUse.disabled = !ready; },
+    onCanStart: (disabled) => { el.measureFrom.disabled = disabled; },
+    onStateChange: (active) => {
+      el.measure.setAttribute('aria-pressed', String(active));
+      el.cnvs.classList.toggle('is-measuring', active);
+      // Только отражение состояния: режим клика и так задан там, где замер
+      // включают, поэтому обратный вызов не должен переключать его снова
+      // (иначе setMeasuring ↔ setClickMode уходят в рекурсию).
+      if (active) setDockOpen(true);
+    },
+  });
+  el.measure.addEventListener('click', () => setClickMode(clickMode === 'measure' ? 'point' : 'measure'));
+  el.measureClear.addEventListener('click', () => measureApi.reset());
+  el.measureFrom.addEventListener('click', () => measureApi.startFromPoint());
+  el.measureUse.addEventListener('click', () => measureApi.useEndpoint());
+  el.modePoint.addEventListener('click', () => setClickMode('point'));
+  el.modeTile.addEventListener('click', () => {
+    if (clickMode === 'tile') { setClickMode('point'); return; }
+    const toggle = document.getElementById('pk-tile-edit-mode');
+    if (toggle.disabled) {
+      el.hint.hidden = false;
+      el.hint.textContent = DOCK.editUnsupported;
+      setDockOpen(true);
+      return;
+    }
+    // Режим включает сам workbench: у него есть и чекбокс в секции, и логика
+    // возврата прежних переключателей слоёв/сетки. Он же сообщает о смене
+    // режима через onModeChange, поэтому повторно переключать не нужно
+    // (иначе тумблер «нажался» бы дважды и выключился).
+    if (!workbenchApi?.startPlacement?.()) {
+      el.hint.hidden = false;
+      el.hint.textContent = DOCK.editUnsupported;
+      setDockOpen(true);
+      return;
+    }
+    if (clickMode !== 'tile') setClickMode('tile', { silent: true });
+  });
+  el.modeMeasure.addEventListener('click', () => setClickMode(clickMode === 'measure' ? 'point' : 'measure'));
+  el.dockToggle.addEventListener('click', () => setDockOpen(el.dock.classList.contains('is-collapsed')));
+  el.dockBadge.hidden = true;
+  // Кнопки-переключатели: у них нет checkbox-состояния, только aria-checked.
+  for (const button of [el.modePoint, el.modeTile, el.modeMeasure]) button.isSegmented = true;
+  setClickHint();
+  // «Радиус, px» стартует со значения первого объявленного радиуса: так поле
+  // сразу показывает то, что редактор уже рисует на карте.
+  const firstRadius = (Array.isArray(OPTIONS.radii) ? OPTIONS.radii : [])
+    .find((radius) => Number.isFinite(radius?.value) && radius.value > 0);
+  if (firstRadius) el.radius.value = String(firstRadius.value);
+  try {
+    // Панель запоминает свёрнутость: при повторном открытии карты она не
+    // занимает пол-экрана там, где пользователь оставил её свёрнутой.
+    if (localStorage.getItem(DOCK_STORAGE_KEY) === '0') setDockOpen(false);
+  } catch { /* Storage is optional. */ }
 
   // ── ввод: клик по карте, перетаскивание точки ──────────────────────────────
   const pointer = { down: false, moved: 0, startX: 0, startY: 0, lastX: 0, lastY: 0, dragMarker: false, at: 0 };
@@ -671,8 +876,10 @@
 
   // Capture-фаза: если пользователь схватил саму точку, гасим событие, чтобы
   // библиотека не начала панорамировать карту под курсором.
+  // Обычный клик ставит точку только в режиме «точка»: в режимах тайла и
+  // замера события уже перехвачены соответствующими модулями.
   window.addEventListener('mousedown', (evt) => {
-    if (!state.ready || evt.button !== 0) return;
+    if (!state.ready || evt.button !== 0 || clickMode !== 'point') return;
     if (evt.target !== el.cnvs) return;
     el.cnvs.focus({ preventScroll: true });
     const marker = markerScreen();
@@ -719,6 +926,7 @@
     pointer.down = false;
     pointer.dragMarker = false;
     if (wasMarker) { commitGesture(); return; }
+    if (clickMode !== 'point') return;
     if (moved <= 6 && slow && evt.target === el.cnvs) {
       const world = screenToWorld(evt.clientX, evt.clientY);
       placePoint(world.x, world.y, evt);
@@ -728,7 +936,7 @@
   // Тач: короткий тап ставит точку, движение — панорама (её делает библиотека).
   let touchStart = null;
   window.addEventListener('touchstart', (evt) => {
-    if (!state.ready || evt.target !== el.cnvs || evt.touches.length !== 1) { touchStart = null; return; }
+    if (!state.ready || clickMode !== 'point' || evt.target !== el.cnvs || evt.touches.length !== 1) { touchStart = null; return; }
     el.cnvs.focus({ preventScroll: true });
     const t = evt.touches[0];
     touchStart = { x: t.clientX, y: t.clientY, at: Date.now(), moved: 0 };
@@ -907,9 +1115,23 @@
       return;
     }
     if (command) return;
+    // Esc не закрывает окно молча, если включён инструмент: сначала он
+    // возвращает обычный выбор позиции, и только следующий Esc отменяет.
+    if (key === 'escape' && clickMode !== 'point') {
+      evt.preventDefault(); evt.stopImmediatePropagation();
+      setClickMode('point');
+      return;
+    }
     if (key === 'g' || key === 's') {
       evt.preventDefault(); evt.stopImmediatePropagation();
       el[key === 'g' ? 'grid' : 'snap'].click();
+      return;
+    }
+    // Хоткей замера живёт здесь же: панель одна, и «M» значит одно и то же
+    // в любом режиме.
+    if (key === 'm') {
+      evt.preventDefault(); evt.stopImmediatePropagation();
+      setClickMode(clickMode === 'measure' ? 'point' : 'measure');
       return;
     }
     if (key === 'escape') { evt.preventDefault(); el.cancel.click(); }
@@ -932,6 +1154,12 @@
     else {
       const c = centerOfMap();
       setCamera(c.x, c.y, fitZoom());
+    }
+    if (OPTIONS.preview) {
+      // Предпросмотр узлов: точка не выбирается, поэтому инструменты установки
+      // и «Измерить» скрыты — остаётся только осмотр карты и её слоёв.
+      el.pickSection.hidden = true;
+      el.measureSection.hidden = true;
     }
     el.sub.textContent = state.hasPoint ? STR.ready : STR.noPoint;
     reportMissingTextures();
@@ -959,7 +1187,8 @@
   const updateHintTimer = () => {
     if (!state.hasPoint) return;
     window.setTimeout(() => {
-      if (el.hint) el.hint.hidden = true;
+      // Подсказку режима не прячем: она объясняет, что делает клик.
+      if (el.hint && clickMode === 'point') el.hint.hidden = true;
     }, 9000);
   };
 

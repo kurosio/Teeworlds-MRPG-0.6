@@ -50,7 +50,11 @@ function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = 
     getElementById(id) {
       if (!nodes.has(id)) nodes.set(id, {
         value: '', checked: false, disabled: false, open: false, style: {setProperty() {}},
-        classList: {toggle() {}}, setAttribute() {}, focus() { document.activeElement = this; },
+        classList: {toggle() {}}, attributes: {},
+        setAttribute(name, value) { this.attributes[name] = String(value); },
+        getAttribute(name) { return this.attributes[name]; },
+        removeAttribute(name) { delete this.attributes[name]; },
+        focus() { document.activeElement = this; },
         clientWidth:800,clientHeight:600,width:800,height:600,
         getBoundingClientRect: () => ({bottom:80}),
         children: [], append(...items) { this.children.push(...items); },
@@ -59,7 +63,12 @@ function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = 
         handlers: {},
         addEventListener(type, fn) { (this.handlers[type] ||= []).push(fn); },
         emit(type, extra = {}) { for (const fn of this.handlers[type] || []) fn({target:this,...extra}); },
-        click() { if (this.disabled) return; this.checked = !this.checked; this.emit('click'); this.emit('change'); },
+        click() {
+          if (this.disabled) return;
+          // Переключатели режима — кнопки: у них только click, без change.
+          if (this.isSegmented) { this.emit('click'); return; }
+          this.checked = !this.checked; this.emit('click'); this.emit('change');
+        },
       });
       return nodes.get(id);
     },
@@ -83,6 +92,9 @@ function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = 
     localStorage:{ getItem:()=>JSON.stringify(savedOptions),setItem() {} },
     getComputedStyle:()=>({getPropertyValue:()=> '#6f8cff'}),
   });
+  // Порядок как в picker.html: словарь панели → замер → workbench → picker.
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../vendor/ddnet-map/picker-text.js'),'utf8'),context);
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../vendor/ddnet-map/picker-measure.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../vendor/ddnet-map/picker-workbench.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../vendor/ddnet-map/picker.js'),'utf8'),context);
   tw.onMapLoaded();
@@ -169,7 +181,8 @@ test('measurement isolates content position; using endpoint is explicit and undo
     p.emit('mousedown',{target:canvas,button:0,clientX:x,clientY:y});
     p.emit('mouseup',{target:canvas,button:0,clientX:x,clientY:y});
   };
-  p.node('measure').click();
+  p.node('mode-measure').click();
+  assert.equal(p.node('mode-measure').getAttribute('aria-checked'), 'true');
   click(400,300); click(500,300);
   assert.equal(p.node('out-x').textContent,'0');
   assert.equal(p.node('undo').disabled,true);
@@ -293,19 +306,24 @@ test('safeTiles can be a custom tile list and fails open without a gameplay laye
   const noGame = picker('?map=/map&x=16&y=16&safe=1,2,3', {groups:[]});
   assert.equal(noGame.node('apply').disabled,false); // проверять нечего — не блокируем
 });
-test('picker opens with collapsed tools, gameplay and grid off by default', () => {
+test('picker opens in point mode, gameplay and grid off by default', () => {
   const p = picker('?map=/map&x=48&y=48', safeMap(), {grid:true});
   assert.equal(p.node('collision').checked,false);
   assert.equal(p.node('grid').checked,false); // localStorage не задаёт умолчание для сетки
   assert.equal(p.node('snap').checked,false);
-  assert.equal(p.document.getElementById('pk-workbench').open,false);
+  // Режим клика один и по умолчанию — обычная точка; скрытые секции
+  // связанных точек не мешают карте.
+  assert.equal(p.node('mode-point').getAttribute('aria-checked'),'true');
+  assert.equal(p.node('mode-tile').getAttribute('aria-checked'),'false');
+  assert.equal(p.node('sec-points').hidden,true);
+  assert.equal(p.node('sec-add').hidden,true);
 });
 test('safe, highlightTiles and radius do not implicitly enable gameplay or expand tools', () => {
   const p = picker('?map=/map&x=48&y=48&safe=1,2,3&highlightTiles=209&radii=%5B%7B%22value%22%3A96%7D%5D', safeMap());
   assert.equal(p.node('collision').checked,false);
   assert.equal(p.node('grid').checked,false);
   assert.equal(p.node('radius').value,'96');
-  assert.equal(p.document.getElementById('pk-workbench').open,false);
+  assert.equal(p.node('mode-tile').getAttribute('aria-checked'),'false');
   p.tw.onAfterRender(); // спавны и радиус работают без полного игрового слоя
 });
 test('explicit map flags enable gameplay and grid without expanding tools', () => {
@@ -314,7 +332,7 @@ test('explicit map flags enable gameplay and grid without expanding tools', () =
   assert.equal(p.node('grid').checked,true);
   assert.equal(p.node('snap').checked,true);
   assert.equal(p.node('radius').value,'96');
-  assert.equal(p.document.getElementById('pk-workbench').open,false);
+  assert.equal(p.node('mode-point').getAttribute('aria-checked'),'true');
   p.tw.onAfterRender(); // спавны/запрещённые тайлы/маркер рисуются без ошибок
   assert.match(p.node('collision-status').textContent,/Красные тайлы здесь запрещены/);
 });
@@ -322,9 +340,13 @@ test('explicit map flags enable gameplay and grid without expanding tools', () =
 test('linked highlighted mob spawn tiles can be assigned as the current record position', () => {
   const map = {groups:[], gameplay:{width:4,height:1,indices:Uint8Array.from([209,0,209,18])}};
   const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209', map);
-  p.node('workbench').open = true;
-  assert.equal(p.node('linked-tiles-wrap').hidden, false);
-  assert.match(p.node('linked-tiles-status').textContent, /Связанных точек: 2/);
+  // Секция «Существующие точки» появляется сама (linkedTiles + highlightTiles),
+  // сворачивать общую панель инструментов больше не нужно.
+  assert.equal(p.node('sec-points').hidden, false);
+  assert.equal(p.node('sec-add').hidden, false);
+  // Список и кнопка доступны: секция раскрыта и они не отключены.
+  assert.equal(p.node('linked-tiles-use').disabled, false);
+  assert.match(p.node('linked-tiles-status').textContent, /Найдено точек: 2/);
   assert.equal(p.node('linked-tiles').children.length, 2);
   p.node('linked-tiles').value = '1';
   p.node('linked-tiles-use').click();
@@ -336,8 +358,10 @@ test('linked highlighted mob spawn tiles can be assigned as the current record p
 test('tile-placement mode stages a linked map tile and lets the user discard before Apply', () => {
   const map = {groups:[], gameplay:{width:4,height:1,indices:Uint8Array.from([209,0,0,18])}};
   const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209', map);
-  p.node('tile-edit-mode').click();
+  // Инструмент выбирается переключателем «Клик по карте»: «Ставит тайл».
+  p.node('mode-tile').click();
   assert.equal(p.node('tile-edit-mode').checked, true);
+  assert.equal(p.node('mode-tile').getAttribute('aria-checked'), 'true');
   assert.equal(p.node('collision').checked, true);
   const x = 48, y = 16;
   const screenW = 800, screenH = 600;
@@ -369,12 +393,14 @@ test('tile placement can be toggled off to resume ordinary position picking', ()
     p.emit('mousedown',{target:canvas,button:0,clientX,clientY});
     p.emit('mouseup',{target:canvas,button:0,clientX,clientY});
   };
-  p.node('tile-edit-mode').click();
+  p.node('mode-tile').click();
   assert.equal(p.node('tile-edit-mode').checked, true);
   clickWorld(48, 16);
   assert.equal(map.gameplay.indices[1], 209);
-  p.node('tile-edit-mode').click();
+  // Повторное нажатие того же инструмента возвращает обычный клик.
+  p.node('mode-tile').click();
   assert.equal(p.node('tile-edit-mode').checked, false);
+  assert.equal(p.node('mode-point').getAttribute('aria-checked'), 'true');
   assert.equal(p.node('collision').checked, false, 'leaving placement mode restores the prior gameplay-layer toggle');
   assert.equal(p.node('grid').checked, false, 'leaving placement mode restores the prior grid toggle');
   clickWorld(112, 16);

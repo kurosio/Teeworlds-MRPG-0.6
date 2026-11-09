@@ -31,48 +31,127 @@
   </div>
 </header>
 
-<section class="pk-options" aria-label="Инструменты карты">
-  <label><input type="checkbox" id="pk-grid" /> <span id="pk-grid-label">Сетка 32×32</span></label>
-  <label><input type="checkbox" id="pk-snap" /> <span id="pk-snap-label">Центры тайлов</span></label>
-  <button type="button" class="pk-btn" id="pk-align">В центр тайла</button>
-  <button type="button" class="pk-btn" id="pk-undo" title="Отменить действие (Ctrl+Z)" aria-label="Отменить действие">↶</button>
-  <button type="button" class="pk-btn" id="pk-redo" title="Повторить действие (Ctrl+Y)" aria-label="Повторить действие">↷</button>
-  <button type="button" class="pk-btn" id="pk-reset">Исходная точка</button>
-  <button type="button" class="pk-btn" id="pk-copy">Копировать X, Y</button>
-  <output id="pk-tile" class="pk-tile"></output>
-  <details class="pk-workbench" id="pk-workbench">
-    <summary id="pk-workbench-title">Инструменты размещения</summary>
-    <div class="pk-workbench-body">
-      <label><input type="checkbox" id="pk-collision" /> <span id="pk-collision-label">Игровой слой</span></label>
-      <label class="pk-field pk-linked-tiles" id="pk-linked-tiles-wrap" hidden>
-        <span id="pk-linked-tiles-label">Связанные точки</span>
-        <select id="pk-linked-tiles" aria-label="Связанные точки"></select>
-      </label>
-      <button type="button" class="pk-btn pk-linked-tiles" id="pk-linked-tiles-use" hidden>Использовать точку</button>
-      <output id="pk-linked-tiles-status" class="pk-tool-status pk-linked-tiles" hidden aria-live="polite"></output>
-      <label class="pk-linked-tiles" id="pk-tile-edit-mode-wrap" hidden>
-        <input type="checkbox" id="pk-tile-edit-mode" />
-        <span id="pk-tile-edit-mode-label">Добавлять выбранный тайл кликом по карте</span>
-      </label>
-      <label class="pk-field pk-linked-tiles" id="pk-tile-edit-type-wrap" hidden>
-        <span id="pk-tile-edit-type-label">Тип тайла</span>
-        <select id="pk-tile-edit-type" aria-label="Тип тайла"></select>
-      </label>
-      <button type="button" class="pk-btn pk-linked-tiles" id="pk-tile-edit-clear" hidden>Отменить добавленные тайлы</button>
-      <output id="pk-tile-edit-status" class="pk-tool-status pk-linked-tiles" hidden aria-live="polite"></output>
-      <button type="button" class="pk-btn" id="pk-spawn">К спавну</button>
-      <button type="button" class="pk-btn" id="pk-measure" aria-pressed="false">Измерить</button>
-      <button type="button" class="pk-btn" id="pk-measure-from-point">От выбранной точки</button>
-      <button type="button" class="pk-btn" id="pk-measure-use">B → позиция</button>
-      <button type="button" class="pk-btn" id="pk-measure-clear">Очистить замер</button>
-      <label class="pk-field"><span id="pk-radius-label">Радиус, px</span><input id="pk-radius" type="number" min="0" max="100000" step="32" value="0" /></label>
-      <output id="pk-measure-result" class="pk-tool-status" aria-live="polite"></output>
-      <output id="pk-collision-status" class="pk-tool-status"></output>
-      <div id="pk-layer-list" class="pk-layer-list"></div>
-      <button type="button" class="pk-btn" id="pk-layers-reset">Показать все слои</button>
+<!--
+  Одна панель управления картой, но внутри — отдельные секции. Инструмент
+  выбирается переключателем «Клик по карте» (точка / тайл / замер), поэтому
+  режимы больше не спорят друг с другом порядком кнопок. Настройки позиции
+  (сетка, привязка, история) остаются в шапке панели, а всё, что добавляет
+  связанные точки или тайлы на карту, лежит в своих секциях.
+-->
+<aside class="pk-dock" id="pk-dock" aria-label="Инструменты карты">
+  <header class="pk-dock-head">
+    <div class="pk-dock-title">
+      <span class="pk-dock-icon" aria-hidden="true">▦</span>
+      <span id="pk-dock-title">Инструменты карты</span>
+      <output class="pk-badge" id="pk-dock-badge" hidden></output>
     </div>
-  </details>
-</section>
+    <output class="pk-tile" id="pk-tile"></output>
+    <button type="button" class="pk-btn pk-btn-icon" id="pk-dock-toggle"
+            aria-expanded="true" aria-controls="pk-dock-body" title="Свернуть панель">▾</button>
+  </header>
+
+  <div class="pk-dock-body" id="pk-dock-body">
+    <div class="pk-dock-scroll">
+
+      <section class="pk-sec" aria-labelledby="pk-sec-click-title">
+        <h2 class="pk-sec-title" id="pk-sec-click-title">Клик по карте</h2>
+        <div class="pk-sec-body">
+          <div class="pk-segmented" role="radiogroup" aria-label="Клик по карте">
+            <button type="button" class="pk-seg" id="pk-mode-point" role="radio" aria-checked="true">Ставит точку</button>
+            <button type="button" class="pk-seg" id="pk-mode-tile" role="radio" aria-checked="false">Ставит тайл</button>
+            <button type="button" class="pk-seg" id="pk-mode-measure" role="radio" aria-checked="false">Измеряет</button>
+          </div>
+          <p class="pk-sec-hint" id="pk-sec-click-hint"></p>
+
+          <details class="pk-sub" id="pk-sec-pick">
+            <summary id="pk-pick-title">Настройки точки</summary>
+            <div class="pk-sub-body">
+              <label class="pk-check"><input type="checkbox" id="pk-grid" /> <span id="pk-grid-label">Сетка 32×32</span></label>
+              <label class="pk-check"><input type="checkbox" id="pk-snap" /> <span id="pk-snap-label">Центры тайлов</span></label>
+              <button type="button" class="pk-btn" id="pk-align">В центр тайла</button>
+              <button type="button" class="pk-btn" id="pk-undo" title="Отменить действие (Ctrl+Z)" aria-label="Отменить действие">↶</button>
+              <button type="button" class="pk-btn" id="pk-redo" title="Повторить действие (Ctrl+Y)" aria-label="Повторить действие">↷</button>
+              <button type="button" class="pk-btn" id="pk-reset">Исходная точка</button>
+              <button type="button" class="pk-btn" id="pk-copy">Копировать X, Y</button>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="pk-sec" id="pk-sec-points" aria-labelledby="pk-sec-points-title" hidden>
+        <h2 class="pk-sec-title" id="pk-sec-points-title">Существующие точки</h2>
+        <div class="pk-sec-body">
+          <p class="pk-sec-hint">Точки, которые уже стоят на карте. Выберите одну — её координаты станут позицией записи.</p>
+          <label class="pk-field" id="pk-linked-tiles-wrap">
+            <span id="pk-linked-tiles-label">Найденные тайлы</span>
+            <select id="pk-linked-tiles" aria-label="Связанные точки"></select>
+          </label>
+          <button type="button" class="pk-btn pk-btn-primary" id="pk-linked-tiles-use">Использовать точку</button>
+          <output id="pk-linked-tiles-status" class="pk-tool-status" aria-live="polite"></output>
+        </div>
+      </section>
+
+      <section class="pk-sec" id="pk-sec-add" aria-labelledby="pk-sec-add-title" hidden>
+        <h2 class="pk-sec-title" id="pk-sec-add-title">Новая точка на карте</h2>
+        <div class="pk-sec-body">
+          <p class="pk-sec-hint">Тайл ставится на свободную клетку, а точка — в её центр. Карта сохранится по «Применить» вместе с позицией.</p>
+          <label class="pk-check" id="pk-tile-edit-mode-wrap">
+            <input type="checkbox" id="pk-tile-edit-mode" />
+            <span id="pk-tile-edit-mode-label">Ставить тайл кликом по карте</span>
+          </label>
+          <label class="pk-field" id="pk-tile-edit-type-wrap">
+            <span id="pk-tile-edit-type-label">Тайл для установки</span>
+            <select id="pk-tile-edit-type" aria-label="Тип тайла"></select>
+          </label>
+          <button type="button" class="pk-btn" id="pk-tile-edit-clear">Отменить добавленные тайлы</button>
+          <output id="pk-tile-edit-status" class="pk-tool-status" aria-live="polite"></output>
+        </div>
+      </section>
+
+      <section class="pk-sec" id="pk-sec-view" aria-labelledby="pk-sec-view-title">
+        <h2 class="pk-sec-title" id="pk-sec-view-title">Видимость карты</h2>
+        <div class="pk-sec-body">
+          <p class="pk-sec-hint">Что показать поверх карты. На выбор позиции не влияет, кроме запрещённых тайлов.</p>
+          <label class="pk-check"><input type="checkbox" id="pk-collision" /> <span id="pk-collision-label">Игровой слой</span></label>
+          <button type="button" class="pk-btn" id="pk-spawn">К спавну</button>
+          <output id="pk-collision-status" class="pk-tool-status"></output>
+        </div>
+      </section>
+
+      <section class="pk-sec" id="pk-sec-measure" aria-labelledby="pk-sec-measure-title">
+        <h2 class="pk-sec-title" id="pk-sec-measure-title">Замер расстояния</h2>
+        <div class="pk-sec-body">
+          <p class="pk-sec-hint">Две точки на карте: длина, тайлы и ΔX/ΔY. Позиция записи не меняется.</p>
+          <button type="button" class="pk-btn" id="pk-measure" aria-pressed="false">Измерить (M)</button>
+          <button type="button" class="pk-btn" id="pk-measure-from-point">От выбранной точки</button>
+          <button type="button" class="pk-btn" id="pk-measure-use">B → позиция</button>
+          <button type="button" class="pk-btn" id="pk-measure-clear">Очистить замер</button>
+          <output id="pk-measure-result" class="pk-tool-status" aria-live="polite"></output>
+        </div>
+      </section>
+
+      <section class="pk-sec" id="pk-sec-radius" aria-labelledby="pk-sec-radius-title">
+        <h2 class="pk-sec-title" id="pk-sec-radius-title">Предпросмотр радиуса</h2>
+        <div class="pk-sec-body">
+          <p class="pk-sec-hint">Дополнительная окружность вокруг точки: подберите радиус, не меняя поле записи.</p>
+          <label class="pk-field"><span id="pk-radius-label">Радиус, px</span>
+            <input id="pk-radius" type="number" min="0" max="100000" step="32" value="0" />
+          </label>
+        </div>
+      </section>
+
+      <section class="pk-sec" id="pk-sec-layers" aria-labelledby="pk-sec-layers-title">
+        <h2 class="pk-sec-title" id="pk-sec-layers-title">Слои оформления</h2>
+        <div class="pk-sec-body">
+          <p class="pk-sec-hint">Скройте мешающий фон или передний план. Действует только в этом окне.</p>
+          <div id="pk-layer-list" class="pk-layer-list"></div>
+          <button type="button" class="pk-btn" id="pk-layers-reset">Показать все слои</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</aside>
 
 <div class="pk-hint" id="pk-hint">
   Клик по карте — поставить точку · перетаскивание — сдвиг · колесо — масштаб
@@ -139,8 +218,10 @@
 </script>
 <script src="twwebgl.js"></script>
 <script src="picker-model.js"></script>
+<script src="picker-text.js"></script>
 <script src="picker-map-edit.js"></script>
 <script src="picker-overlays.js"></script>
+<script src="picker-measure.js"></script>
 <script src="picker-workbench.js"></script>
 <script src="picker.js"></script>
 </body>
