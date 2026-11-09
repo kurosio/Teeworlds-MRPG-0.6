@@ -10,7 +10,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const { JSDOM } = require('jsdom');
+
+// jsdom — необязательная зависимость для тестов: без него тест пропускается,
+// как и остальные DOM-тесты репозитория (см. catalog-nav.test.cjs).
+let JSDOM = null;
+try { ({ JSDOM } = require('jsdom')); } catch { JSDOM = null; }
+const needsJsdom = JSDOM ? false : 'jsdom не установлен (npm install --no-save jsdom)';
 
 const root = path.join(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, 'vendor/ddnet-map', file), 'utf8');
@@ -41,7 +46,7 @@ const optionLabel = (catalog, names, layer, id) => {
   return `${id} · ${names[key] || key}`;
 };
 
-test('mob spawn reads as «Спавн мобов · 209», casino tiles keep their own ids', () => {
+test('mob spawn reads as «Спавн мобов · 209», casino tiles keep their own ids', { skip: needsJsdom }, () => {
   const { catalog, textFor } = loadPanel();
   const ru = textFor('ru').tileNames;
   assert.equal(optionLabel(catalog, ru, 'game', 209), '209 · Спавн мобов');
@@ -55,7 +60,7 @@ test('mob spawn reads as «Спавн мобов · 209», casino tiles keep the
   assert.equal(optionLabel(catalog, ru, 'game', 210), '210 · Тайл');
 });
 
-test('the English panel tells the same truth as the Russian one', () => {
+test('the English panel tells the same truth as the Russian one', { skip: needsJsdom }, () => {
   const { catalog, textFor } = loadPanel();
   const en = textFor('en').tileNames;
   assert.equal(optionLabel(catalog, en, 'game', 209), '209 · Mob spawn');
@@ -64,7 +69,7 @@ test('the English panel tells the same truth as the Russian one', () => {
   assert.equal(optionLabel(catalog, en, 'switch', 200), '200 · Ore');
 });
 
-test('the tile editor offers exactly the declared ids of the declared layer', () => {
+test('the tile editor offers exactly the declared ids of the declared layer', { skip: needsJsdom }, () => {
   const { catalog } = loadPanel('highlightTiles=209&highlightLayer=game');
   // Тот же фильтр, что в picker-workbench.js: правка только 4..255.
   const declared = [209].filter((id) => catalog.isEditable(id));
