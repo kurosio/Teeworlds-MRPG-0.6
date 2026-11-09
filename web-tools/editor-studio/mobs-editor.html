@@ -435,7 +435,9 @@
           axes: { x: 'PositionX', y: 'PositionY' },
           mapWorldPath: 'WorldID',
           safeTiles: false,
+          // 209 — ENTITY_SPAWN_MOBS в игровом слое (не switch-тип!).
           highlightTiles: [209],
+          highlightLayer: 'game',
           // Выбрать один из подсвеченных ENTITY_SPAWN_MOBS как точку записи;
           // радиус спавна/активности сразу показывается вокруг выбранной точки.
           linkedTiles: true,

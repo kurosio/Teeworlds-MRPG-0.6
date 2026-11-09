@@ -2,40 +2,53 @@
  *
  * Индексы — из src/game/mapitems.h (MRPG) и src/game/collision.cpp:
  *   • игровой слой хранит сущности с индексом >= ENTITY_OFFSET (255 − 16·4 = 191),
- *     поэтому 192..211 — это «точки» (спавны, пикапы, стены ботов, узлы сбора…);
+ *     поэтому индекс тайла = ENTITY_OFFSET + ENTITY_* (см. таблицу ниже);
  *   • switch-слой хранит CSwitchTileExtra: type тоже сравнивается с ENTITY_OFFSET
  *     (199/200/201 — растения, руда, рыба), number — номер switch (1..255).
  *
  * Каталог нужен, чтобы панель предлагала осмысленный список вместо ручного
  * ввода ID: у каждого тайла есть подпись и группа. Список не ограничивает
  * правки — сервер дополнительно сверяет ID с заголовком X-Map-Allowed-Tiles.
+ *
+ * ВАЖНО: подписи должны совпадать с mapitems.h, иначе панель врёт — например,
+ * 209 (ENTITY_SPAWN_MOBS) подписывался как «Кости казино», и редактор мобов
+ * показывал чужой тайл. Кости казино — это 242, рулетка — 243, а 210 не
+ * существует вовсе. Соответствие проверяет tests/picker-tile-catalog.test.cjs,
+ * который читает enum прямо из src/game/mapitems.h.
  */
 ((root) => {
   'use strict';
 
   // Коллизии игрового слоя: их нельзя ставить, удалять или перемещать.
   const COLLISION_IDS = [1, 2, 3];
+  // ENTITY_OFFSET из mapitems.h: индекс тайла = 191 + ENTITY_*.
   const ENTITY_OFFSET = 191;
 
   // Игровой слой: индекс → подпись. Порядок — как в mapitems.h.
+  //   192..198 — ENTITY_ARMOR_1..ENTITY_MOB_WALL,
+  //   199..201 — ENTITY_PLANT/ORE/FISH (метки узлов сбора в игровом слое),
+  //   208/209/211 — спавны игрока/мобов/тюрьмы,
+  //   241..243 — ритм-поле и казино.
   const GAME_TILES = [
-    { id: 192, key: 'spawn', group: 'spawn' },
-    { id: 193, key: 'spawnMobs', group: 'spawn' },
-    { id: 194, key: 'spawnPrison', group: 'spawn' },
-    { id: 195, key: 'armor', group: 'pickup' },
-    { id: 196, key: 'health', group: 'pickup' },
-    { id: 197, key: 'shotgun', group: 'pickup' },
-    { id: 198, key: 'grenade', group: 'pickup' },
-    { id: 199, key: 'laser', group: 'pickup' },
-    { id: 200, key: 'npcWall', group: 'wall' },
-    { id: 201, key: 'mobWall', group: 'wall' },
-    { id: 208, key: 'rhythm', group: 'effect' },
-    { id: 209, key: 'casinoDice', group: 'effect' },
-    { id: 210, key: 'casinoRoulette', group: 'effect' },
-    { id: 211, key: 'unknown', group: 'effect' },
+    { id: 192, key: 'armor', group: 'pickup' },
+    { id: 193, key: 'health', group: 'pickup' },
+    { id: 194, key: 'shotgun', group: 'pickup' },
+    { id: 195, key: 'grenade', group: 'pickup' },
+    { id: 196, key: 'laser', group: 'pickup' },
+    { id: 197, key: 'npcWall', group: 'wall' },
+    { id: 198, key: 'mobWall', group: 'wall' },
+    { id: 199, key: 'plant', group: 'resource' },
+    { id: 200, key: 'ore', group: 'resource' },
+    { id: 201, key: 'fish', group: 'resource' },
+    { id: 208, key: 'spawn', group: 'spawn' },
+    { id: 209, key: 'spawnMobs', group: 'spawn' },
+    { id: 211, key: 'spawnPrison', group: 'spawn' },
+    { id: 241, key: 'rhythm', group: 'effect' },
+    { id: 242, key: 'casinoDice', group: 'effect' },
+    { id: 243, key: 'casinoRoulette', group: 'effect' },
   ];
 
-  // Switch-слой: type → подпись. 199/200/201 — эталон «как в руде».
+  // switch-слой: type → подпись. 199/200/201 — эталон «как в руде».
   const SWITCH_TILES = [
     { id: 199, key: 'plant', group: 'resource' },
     { id: 200, key: 'ore', group: 'resource' },
