@@ -624,10 +624,7 @@
        ═══════════════════════════════════════════════════ */
 
     const Actions = {
-      async canDiscardDirty() {
-        if (!dirty?.isDirty?.()) return true;
-        return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
-      },
+      canDiscardDirty: () => EditorCore.Page.confirmDiscard(() => dirty?.isDirty?.()),
 
       async select(row, { confirmDirty = false } = {}) {
         if (row && num(row.ID) === num(state.selectedId) && state.model && confirmDirty) return;
@@ -755,16 +752,7 @@
 
     DOM.filterWorld?.addEventListener('change', () => UI.renderList());
 
-    window.addEventListener('message', (event) => {
-      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
-      const data = event.data || {};
-      if (data?.type !== 'editor-shell:request-dirty-status') return;
-      window.EditorCore.Http.postMessage(window.parent, {
-        type: 'editor-shell:dirty-status',
-        requestId: data.requestId,
-        dirty: !!dirty?.isDirty?.(),
-      });
-    });
+    EditorCore.Dirty.bindShellStatus(() => dirty?.isDirty?.());
 
     // Buttons
     DOM.btnRefresh?.addEventListener('click', () => Actions.loadList());

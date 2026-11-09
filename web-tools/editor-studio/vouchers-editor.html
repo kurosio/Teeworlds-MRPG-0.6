@@ -268,10 +268,7 @@
       setDirtyUi(true);
     };
 
-    const canDiscardDirty = async () => {
-      if (!DIRTY?.isDirty?.()) return true;
-      return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
-    };
+    const canDiscardDirty = () => EditorCore.Page.confirmDiscard(() => DIRTY?.isDirty?.());
 
     const applyListFilters = (rows) => {
       const multi = DOM.filterMulti?.value || '';
@@ -583,16 +580,7 @@
       setHeader();
     });
 
-    window.addEventListener('message', (event) => {
-      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
-      const data = event.data || {};
-      if (data?.type !== 'editor-shell:request-dirty-status') return;
-      window.EditorCore.Http.postMessage(window.parent, {
-        type: 'editor-shell:dirty-status',
-        requestId: data.requestId,
-        dirty: !!DIRTY?.isDirty?.(),
-      });
-    });
+    EditorCore.Dirty.bindShellStatus(() => DIRTY?.isDirty?.());
 
     // Wiring
     DOM.refresh.addEventListener('click', loadList);

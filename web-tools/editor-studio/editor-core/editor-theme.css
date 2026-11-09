@@ -757,19 +757,6 @@
   background:color-mix(in srgb, var(--editor-danger) 88%, #ffffff);
 }
 
-/* Тихое действие (иконка-текст без рамки) — для «Обновить», «Копировать». */
-.editor-btn-ghost{
-  background:transparent;
-  border-color:transparent;
-  color:var(--editor-text-muted);
-}
-
-.editor-btn-ghost:hover{
-  background:var(--editor-light-bg);
-  border-color:transparent;
-  color:var(--editor-text);
-}
-
 /* Строка списка: плоская, плотная, с полосой-индикатором выбора.
    В списке из сотни записей важнее плотность и ровный ритм, чем «карточность». */
 .editor-row{
@@ -886,24 +873,19 @@
    не знают, тёмная тема сейчас или светлая, и не могут «провалиться» в
    нечитаемый серый. */
 .editor-text{color:var(--editor-text);}
-.editor-text-strong{color:var(--editor-text-strong);}
 .editor-primary-text{color:var(--editor-primary);}
 .editor-hairline{border-color:var(--editor-line);}
 .editor-hairline-strong{border-color:var(--editor-line-strong);}
 .editor-soft{background:var(--editor-soft-bg);}
 .editor-soft-strong{background:var(--editor-soft-bg-strong);}
-.editor-primary-bg{background:var(--editor-primary);}
 .editor-primary-border{border-color:var(--editor-primary);}
 .editor-primary-tint{background:color-mix(in srgb, var(--editor-primary) 5%, transparent);}
-.editor-primary-dim{background:color-mix(in srgb, var(--editor-primary) 40%, transparent);}
 .editor-hover:hover{background:var(--editor-row-hover-bg);}
 .editor-hover-text:hover{color:var(--editor-text);}
 .editor-hover-danger:hover{color:var(--editor-danger);}
 .editor-hover-warning:hover{color:var(--editor-warning);}
 .editor-hover-accent:hover{color:var(--editor-primary);}
 .editor-hairline-l{border-left-color:var(--editor-line-strong);}
-/* Выделенная строка в списке: 2px кольцо вместо «светящейся» тени. */
-.editor-ring{box-shadow:0 0 0 2px color-mix(in srgb, var(--editor-primary) 40%, transparent);}
 
 /* Подпись поля: 12.5px, полужирная, приглушённая. Значение в контроле ярче
    подписи — глаз сначала читает данные, потом название поля. */
@@ -916,8 +898,6 @@
   letter-spacing:0;
   transition:color .14s ease;
 }
-.editor-label-block{display:block;margin-bottom:0;}
-.editor-label-with-icon{display:flex;align-items:center;gap:.45rem;}
 .editor-label-icon{
   width:var(--editor-icon-size);
   height:var(--editor-icon-size);
@@ -1395,21 +1375,6 @@
   opacity:.78;
 }
 .editor-search input{padding-left:2.35rem;}
-
-.editor-columns-header{
-  display:grid;
-  gap:12px;
-  align-items:center;
-  padding:9px 12px;
-  border:1px solid var(--editor-soft-border);
-  border-radius:14px;
-  background:var(--editor-soft-bg);
-  color:var(--editor-text-muted);
-  font-size:12px;
-  margin:10px 0;
-}
-
-.editor-columns-header .muted{color:var(--editor-text-muted);}
 
 .editor-details{
   border:1px solid var(--editor-soft-border);
@@ -1899,13 +1864,6 @@
   margin-bottom: 8px;
 }
 
-/* Sync settings section */
-.editor-sync-settings-section {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid var(--editor-border);
-}
-
 .editor-sync-profile-list {
   display: flex;
   flex-direction: column;
@@ -2010,7 +1968,6 @@
   border: 1px solid rgba(255, 194, 127, .3);
 }
 
-.editor-sync-summary-line,
 .editor-sync-pull-summary {
   font-size: 13px;
 }
@@ -2078,6 +2035,7 @@
   border-bottom: none;
 }
 
+/* Строка «не синхронизируется» в карте синхронизации: класс ставит settings.html. */
 .editor-sync-map-table tr.dir-none td {
   opacity: .6;
 }
@@ -2110,83 +2068,6 @@
   color: #c4b5fd;
   background: rgba(167, 139, 250, .12);
   border-color: rgba(167, 139, 250, .35);
-}
-
-/* ── Позиция (X/Y) и кнопка «Местоположение» ──────────────────────────────────
-   Один и тот же элемент во всех редакторах: X и Y в одной строке, рядом —
-   кнопка карты. Строка не переносится: на телефоне кнопка становится
-   иконкой, но оси остаются рядом друг с другом. */
-.editor-vec2{
-  display:flex;
-  align-items:center;
-  gap:var(--editor-gap-2);
-  flex-wrap:nowrap;
-  min-width:0;
-}
-
-.editor-vec2-axis{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  flex:1 1 0;
-  min-width:0;
-  margin:0;
-  cursor:text;
-}
-
-.editor-vec2-axis-name{
-  flex:0 0 auto;
-  font-size:var(--editor-text-xs);
-  font-weight:700;
-  line-height:1;
-  letter-spacing:.06em;
-  color:var(--editor-text-muted);
-  font-variant-numeric:tabular-nums;
-}
-
-.editor-vec2-input{
-  width:100%;
-  min-width:0;
-  text-align:right;
-  font-variant-numeric:tabular-nums;
-}
-
-.editor-vec2-map{
-  flex:0 0 auto;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  height:var(--editor-control-h);
-  padding:0 12px;
-  border:1px solid var(--editor-soft-border-strong);
-  border-radius:var(--editor-radius-md);
-  background:var(--editor-button-secondary-bg);
-  color:var(--editor-text);
-  font:inherit;
-  font-size:var(--editor-text-sm);
-  font-weight:600;
-  white-space:nowrap;
-  cursor:pointer;
-  transition:background-color .15s ease,border-color .15s ease,color .15s ease;
-}
-
-.editor-vec2-map i{font-size:13px;color:var(--editor-primary);}
-
-.editor-vec2-map:hover{
-  background:var(--editor-button-secondary-hover-bg);
-  border-color:color-mix(in srgb, var(--editor-primary) 45%, transparent);
-}
-
-.editor-vec2-map:focus-visible{
-  outline:2px solid var(--editor-primary);
-  outline-offset:2px;
-}
-
-/* Узкие экраны: остаётся иконка, подпись уходит в подсказку. */
-@media (max-width:720px){
-  .editor-vec2-map-label{display:none;}
-  .editor-vec2-map{padding:0;width:var(--editor-control-h);}
 }
 
 /* ── Окно карты ─────────────────────────────────────────────────────────────

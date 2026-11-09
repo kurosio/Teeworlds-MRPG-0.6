@@ -296,6 +296,17 @@
 
   const escapeHtml = (value) => window.EditorCore.utils.escapeHtml(value);
 
+  /** Плашка результата: иконка ошибки, заголовок и произвольное пояснение. */
+  const resultBox = (title, body) => `
+    <div class="editor-sync-schema-err">
+      <i class="fa-solid fa-circle-xmark text-red-400"></i>
+      <div>
+        <div class="font-semibold text-red-300">${title}</div>
+        ${body}
+      </div>
+    </div>`;
+  const checkFailedHtml = (message) => resultBox('Check failed', `<div class="text-xs">${escapeHtml(message)}</div>`);
+
   const RESOURCE_LABELS = {
     vouchers: 'Vouchers',
     bots_mobs: 'Mobs',
@@ -686,15 +697,8 @@
 
         } else {
           schemaOk = false;
-          html = `
-            <div class="editor-sync-schema-err">
-              <i class="fa-solid fa-circle-xmark text-red-400"></i>
-              <div>
-                <div class="font-semibold text-red-300">Schemas are incompatible</div>
-                <div class="text-xs editor-muted-text">Changes cannot be applied until the target database schema is updated.</div>
-              </div>
-            </div>
-          `;
+          html = resultBox('Schemas are incompatible',
+            '<div class="text-xs editor-muted-text">Changes cannot be applied until the target database schema is updated.</div>');
 
           if (c.issues.length) {
             html += `<div class="editor-sync-schema-issues">`;
@@ -714,15 +718,7 @@
 
       } catch (err) {
         schemaOk = false;
-        $('schema-result').innerHTML = `
-          <div class="editor-sync-schema-err">
-            <i class="fa-solid fa-circle-xmark text-red-400"></i>
-            <div>
-              <div class="font-semibold text-red-300">Check failed</div>
-              <div class="text-xs">${escapeHtml(err.message)}</div>
-            </div>
-          </div>
-        `;
+        $('schema-result').innerHTML = checkFailedHtml(err.message);
         btnApply.disabled = true;
       } finally {
         btnCheck.disabled = false;
@@ -877,14 +873,8 @@
       `;
 
       if (!c.compatible) {
-        html += `
-          <div class="editor-sync-schema-err">
-            <i class="fa-solid fa-circle-xmark text-red-400"></i>
-            <div>
-              <div class="font-semibold text-red-300">Schemas are incompatible</div>
-              <div class="text-xs editor-muted-text">Loading is impossible until the schemas match.</div>
-            </div>
-          </div>
+        html += resultBox('Schemas are incompatible',
+          '<div class="text-xs editor-muted-text">Loading is impossible until the schemas match.</div>') + `
           <div class="editor-sync-schema-issues">
             ${(c.issues || []).filter(i => i.level === 'critical').map(i =>
               `<div class="editor-sync-schema-issue"><i class="fa-solid fa-circle-xmark text-red-400"></i> ${escapeHtml(i.message)}</div>`
@@ -968,15 +958,7 @@
         renderPullPreview(res);
       } catch (err) {
         pullData = null;
-        setPullResult(`
-          <div class="editor-sync-schema-err">
-            <i class="fa-solid fa-circle-xmark text-red-400"></i>
-            <div>
-              <div class="font-semibold text-red-300">Check failed</div>
-              <div class="text-xs">${escapeHtml(err.message)}</div>
-            </div>
-          </div>
-        `);
+        setPullResult(checkFailedHtml(err.message));
       } finally {
         pullBusy = false;
         refreshReverseGate();
@@ -1033,16 +1015,8 @@
         setTimeout(() => window.location.reload(), 1500);
       } catch (err) {
         toast(err.message || 'Loading failed', 'error');
-        setPullResult(`
-          <div class="editor-sync-schema-err">
-            <i class="fa-solid fa-circle-xmark text-red-400"></i>
-            <div>
-              <div class="font-semibold text-red-300">Load failed</div>
-              <div class="text-xs">${escapeHtml(err.message)}</div>
-              ${backupFile ? `<div class="text-xs editor-muted-text mt-1">Backup saved: ${escapeHtml(backupFile)}</div>` : ''}
-            </div>
-          </div>
-        `);
+        setPullResult(resultBox('Load failed', `<div class="text-xs">${escapeHtml(err.message)}</div>`
+          + (backupFile ? `<div class="text-xs editor-muted-text mt-1">Backup saved: ${escapeHtml(backupFile)}</div>` : '')));
       } finally {
         pullBusy = false;
         refreshReverseGate();

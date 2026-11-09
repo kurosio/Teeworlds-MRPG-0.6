@@ -241,13 +241,14 @@
     const helpText = ui.help || ui.description || field?.help || '';
     const helpHtml = helpText ? `<div class="editor-help-text">${escapeHtml(helpText)}</div>` : '';
     const footerHtml = `${helpHtml}${hintHtml}`;
+    // Один и тот же дополнительный класс для input/textarea/select.
+    const controlClass = ui.controlClass ? ` ${String(ui.controlClass)}` : '';
 
     const includeName = options?.includeName !== false;
     const includeDataPath = options?.includeDataPath !== false;
     const includeDataKey = options?.includeDataKey === true;
 
     const renderInput = (type, overrideValue, extraAttrs = '') => {
-      const controlClass = ui.controlClass ? ` ${String(ui.controlClass)}` : '';
       const styleAttr = buildControlStyleAttr(ui);
       const attrs = buildInputAttributes({
         path,
@@ -281,7 +282,6 @@
     };
 
     const renderTextarea = () => {
-      const controlClass = ui.controlClass ? ` ${String(ui.controlClass)}` : '';
       const styleAttr = buildControlStyleAttr(ui);
       const attrs = buildInputAttributes({
         path,
@@ -337,7 +337,6 @@
     };
 
     const renderSelect = (multiple = false) => {
-      const controlClass = ui.controlClass ? ` ${String(ui.controlClass)}` : '';
       const styleAttr = buildControlStyleAttr(ui);
       const attrs = buildInputAttributes({
         path,

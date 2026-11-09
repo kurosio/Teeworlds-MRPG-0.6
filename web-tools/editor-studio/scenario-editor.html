@@ -4497,16 +4497,7 @@
                 const editor = new ScenarioEditor();
                 app.state.editor = editor;
                 editor.navigatorSearch?.addEventListener('input', () => editor.applyNavigatorFilter());
-                window.addEventListener('message', (event) => {
-                    if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
-                    const data = event.data || {};
-                    if (data?.type !== 'editor-shell:request-dirty-status') return;
-                    window.EditorCore.Http.postMessage(window.parent, {
-                        type: 'editor-shell:dirty-status',
-                        requestId: data.requestId,
-                        dirty: Boolean(editor.dirty?.isDirty?.()),
-                    });
-                });
+                EditorCore.Dirty.bindShellStatus(() => editor.dirty?.isDirty?.());
             }
         });
 

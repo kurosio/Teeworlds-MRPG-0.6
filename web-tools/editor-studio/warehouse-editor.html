@@ -856,10 +856,7 @@
       els.badgeId.style.display = 'inline-flex';
     };
 
-    const canDiscardDirty = async () => {
-      if (!STATE.isDirty) return true;
-      return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
-    };
+    const canDiscardDirty = () => EditorCore.Page.confirmDiscard(() => STATE.isDirty);
 
     const setSelected = (row, isNew = false) => {
       const prevId = STATE.selectedId;
@@ -1012,16 +1009,7 @@
     els.del.addEventListener('click', remove);
     els.cancel?.addEventListener('click', cancelChanges);
 
-    window.addEventListener('message', (event) => {
-      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
-      const data = event.data || {};
-      if (data?.type !== 'editor-shell:request-dirty-status') return;
-      window.EditorCore.Http.postMessage(window.parent, {
-        type: 'editor-shell:dirty-status',
-        requestId: data.requestId,
-        dirty: !!STATE.isDirty,
-      });
-    });
+    EditorCore.Dirty.bindShellStatus(() => STATE.isDirty);
 
     els.filterWorld.addEventListener('change', () => { STATE.filter.world = String(els.filterWorld.value || ''); renderList(); });
     els.filterType.addEventListener('change', () => { STATE.filter.type = String(els.filterType.value || ''); renderList(); });

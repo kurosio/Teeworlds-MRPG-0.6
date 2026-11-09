@@ -357,7 +357,6 @@
     try { window.EditorCore?.UI?.toast?.(text, tone); } catch {}
   };
 
-  const opRowKey = (resource, id) => `${resource}:${Number(id)}`;
   const hasSubmitted = (d, resource, id) => d.ops.some(o => o.reqId && o.resource === resource && Number(o.id) === Number(id));
   const submittedReqIds = (ops) => [...new Set(ops.filter(o => o.reqId).map(o => o.reqId))];
 
@@ -990,62 +989,14 @@
   };
 
   // ── Crafts group rename (port of the server logic, produces updates) ────
-  const parseCraftGroup = (value) => {
-    const raw = String(value || '').trim();
-    let main = '';
-    let nested = raw;
-    if (raw.startsWith('|')) {
-      const end = raw.indexOf('|', 1);
-      if (end >= 0) { main = raw.slice(1, end).trim(); nested = raw.slice(end + 1); } else { nested = raw.slice(1); }
-    }
-    const sep = nested.indexOf(':');
-    if (sep < 0) return { main, group: nested.trim(), sub: '' };
-    return { main, group: nested.slice(0, sep).trim(), sub: nested.slice(sep + 1).trim() };
-  };
-  const joinCraftGroup = (main, group, sub) => {
-    main = String(main || '').trim(); group = String(group || '').trim(); sub = String(sub || '').trim();
-    const nested = group && sub ? `${group}:${sub}` : (group || sub);
-    if (!main) return nested;
-    return nested ? `|${main}|${nested}` : `|${main}|`;
-  };
-
+  // The rename plan itself lives in utils.js and is shared with the request
+  // staging helper; here the rows are written into the guest draft.
   const renameCraftGroup = async (rows, target, newName, mergeExisting) => {
-    const level = String(target?.level || '');
-    const mainGroup = String(target?.mainGroup || '').trim();
-    const group = String(target?.group || '').trim();
-    const subGroup = String(target?.subGroup || '').trim();
-    const name = String(newName || '').trim();
-    const current = level === 'main' ? mainGroup : level === 'group' ? group : subGroup;
-    if (!['main', 'group', 'sub'].includes(level) || !current) throw new Error('Invalid craft group target');
-    if (!name || name.includes(':') || name.includes('|') || name.length > 256) {
-      throw new Error('Invalid new group name. Do not use : or |; 256 characters maximum.');
+    const { updates } = window.EditorCore.utils.planCraftGroupRename(rows, target, newName, mergeExisting);
+    for (const update of updates) {
+      await Draft.update('crafts', update.id, { GroupName: update.groupName }, isTempId(update.id) ? null : update.row);
     }
-    if (name === current) return { ok: true, changed: [] };
-    const parentMatches = p => level === 'main' || (p.main === mainGroup && (level === 'group' || p.group === group));
-    const matches = p => {
-      if (level === 'main') return p.main === mainGroup;
-      if (p.main !== mainGroup || p.group !== group) return false;
-      return level === 'group' || p.sub === subGroup;
-    };
-    const levelName = p => (level === 'main' ? p.main : level === 'group' ? p.group : p.sub);
-    const updates = [];
-    let merged = false;
-    for (const row of rows) {
-      const p = parseCraftGroup(row.GroupName);
-      if (!parentMatches(p)) continue;
-      if (levelName(p) === name) merged = true;
-      if (!matches(p)) continue;
-      const renamed = level === 'main' ? joinCraftGroup(name, p.group, p.sub)
-        : level === 'group' ? joinCraftGroup(p.main, name, p.sub) : joinCraftGroup(p.main, p.group, name);
-      updates.push({ ID: row.ID, row, newGroupName: renamed });
-    }
-    if (updates.length && merged && mergeExisting !== true) {
-      throw new Error('This name is already taken at this level. Check the warning and try again.');
-    }
-    for (const u of updates) {
-      await Draft.update('crafts', u.ID, { GroupName: u.newGroupName }, isTempId(u.ID) ? null : u.row);
-    }
-    return { ok: true, changed: updates.map(u => ({ ID: u.ID, newGroupName: u.newGroupName })) };
+    return { ok: true, changed: updates.map((update) => ({ ID: update.id, newGroupName: update.groupName })) };
   };
 
   // ── Page access guard (server-driven per-account tabs) ──────────────────

@@ -96,6 +96,16 @@ for (const file of sources) {
   if (/\.toast\(\s*\{/.test(text)) {
     problems.push(`${name}: toast({...}) — сигнатура toast(message, type)`);
   }
+  // Ответ оболочке «есть несохранённые правки» — один обработчик на всё ядро
+  // (EditorCore.Dirty.bindShellStatus), а не копия в каждой странице. Оболочка
+  // (index.html) сама запрашивает и слушает этот ответ, поэтому её не считаем.
+  if (name.endsWith('.html') && name !== 'index.html' && text.includes("'editor-shell:dirty-status'")) {
+    problems.push(`${name}: свой обработчик несохранённых правок — используйте EditorCore.Dirty.bindShellStatus`);
+  }
+  // Подтверждение потери правок — тоже одно место на все страницы.
+  if (name.endsWith('.html') && /You have unsaved changes\. Continue without saving\?/.test(text)) {
+    problems.push(`${name}: своё подтверждение потери правок — используйте EditorCore.Page.confirmDiscard`);
+  }
 }
 
 // Модули ядра должны быть подключены прежде, чем их используют: именно на этом

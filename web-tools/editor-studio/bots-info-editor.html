@@ -371,10 +371,7 @@
     };
 
     const esc = EditorCore.Page.esc;
-    const canDiscardDirty = async () => {
-      if (!dirty?.isDirty?.()) return true;
-      return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
-    };
+    const canDiscardDirty = () => EditorCore.Page.confirmDiscard(() => dirty?.isDirty?.());
 
     const setHeader = () => {
       if (!DOM.title && !DOM.subtitle) return;
@@ -690,16 +687,7 @@
       if (row) selectRow(row, { confirmDirty: true });
     });
 
-    window.addEventListener('message', (event) => {
-      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
-      const data = event.data || {};
-      if (data?.type !== 'editor-shell:request-dirty-status') return;
-      window.EditorCore.Http.postMessage(window.parent, {
-        type: 'editor-shell:dirty-status',
-        requestId: data.requestId,
-        dirty: !!dirty?.isDirty?.(),
-      });
-    });
+    EditorCore.Dirty.bindShellStatus(() => dirty?.isDirty?.());
 
     DOM.refresh?.addEventListener('click', loadList);
     DOM.newBtn?.addEventListener('click', createNew);

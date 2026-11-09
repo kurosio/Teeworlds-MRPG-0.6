@@ -92,6 +92,30 @@ const editor = EditorCore.DbEditor.mount(document.body, {
 пакеты; установка описана в `STRUCTURE.md`. `npm run test:browser` запускает
 локальный сценарий Chromium без подключения к игровой БД.
 
+## Несохранённые правки: подсказка, уход со страницы, оболочка
+
+Три вещи нужны каждому редактору, поэтому они живут в ядре, а не в странице:
+
+```js
+// 1. Плашка «Data not saved» + второй шанс при закрытии вкладки.
+const dirty = EditorCore.Dirty.create({ pill: document.getElementById('dirty-pill') });
+dirty.markDirty();
+dirty.setClean();
+
+// 2. Страховка браузера, когда правки не сохранены (свой счётчик — свой вызов).
+EditorCore.Page.guardUnsaved(() => dirty.isDirty());
+
+// 3. Ответ оболочке студии: она спрашивает, можно ли закрыть вкладку.
+EditorCore.Dirty.bindShellStatus(() => dirty.isDirty());
+
+// 4. Подтверждение перед переключением на другую запись.
+if (!await EditorCore.Page.confirmDiscard(() => dirty.isDirty())) return;
+```
+
+`bindShellStatus` сам проверяет источник сообщения и формат ответа: странице не
+нужно знать про `postMessage`. Если редактор считается «грязным» ещё и во время
+операции, это просто добавляется в переданную функцию.
+
 ## DB Select (db_select)
 - В схеме поля указывайте `ui.dbKey` (предпочтительно) или `ui.datasource`.
 
@@ -315,7 +339,7 @@ EditorCore.PositionPicker.getMapOptions(picker); // флаги, с которы�
 В `editor-core/editor-template.css` лежит тонкий слой разметки/макета:
 - `.editor-page` — общий контейнер страницы
 - `.editor-shell` — сетка Sidebar + Main (на мобилке складывается)
-- `.editor-section` + заголовок `.editor-section-head` — секции формы
+- `.editor-section` — секции формы
 - `.editor-form-grid-2` — быстрый 2-колоночный грид для форм
 
 Чтобы включить цветовые пресеты, просто поставьте атрибут:

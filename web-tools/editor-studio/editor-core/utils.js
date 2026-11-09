@@ -255,6 +255,81 @@
     return `|${mainName}|${nested}`;
   };
 
+  // ── Крафты: имя группы `|Main|Group:Sub` ────────────────────────────────
+  // Группа рецепта — одна строка GroupName. Переименование меняет все строки
+  // уровня, поэтому разбор, сборка и план правок живут здесь: гостевая правка
+  // (Draft) и запрос на изменение (RequestContext) считают одинаково.
+
+  const parseCraftGroup = (value) => {
+    const raw = String(value ?? '').trim();
+    let main = '';
+    let nested = raw;
+    if (raw.startsWith('|')) {
+      const end = raw.indexOf('|', 1);
+      if (end >= 0) { main = raw.slice(1, end).trim(); nested = raw.slice(end + 1); }
+      else nested = raw.slice(1);
+    }
+    const separator = nested.indexOf(':');
+    if (separator < 0) return { main, group: nested.trim(), sub: '' };
+    return { main, group: nested.slice(0, separator).trim(), sub: nested.slice(separator + 1).trim() };
+  };
+
+  const joinCraftGroup = (main, group, sub) => {
+    const mainName = String(main ?? '').trim();
+    const groupName = String(group ?? '').trim();
+    const subName = String(sub ?? '').trim();
+    const nested = groupName && subName ? `${groupName}:${subName}` : (groupName || subName);
+    if (!mainName) return nested;
+    return nested ? `|${mainName}|${nested}` : `|${mainName}|`;
+  };
+
+  /**
+   * План переименования группы: какие строки и на какое имя менять.
+   * `updates: []` — менять нечего (имя не изменилось). Ошибки те же, что
+   * показывает редактор крафтов: неверный уровень, пустое или занятое имя.
+   */
+  const planCraftGroupRename = (rows, target, newName, mergeExisting = false) => {
+    const level = String(target?.level || '');
+    const mainGroup = String(target?.mainGroup || '').trim();
+    const group = String(target?.group || '').trim();
+    const subGroup = String(target?.subGroup || '').trim();
+    const name = String(newName || '').trim();
+    const current = level === 'main' ? mainGroup : level === 'group' ? group : subGroup;
+    if (!['main', 'group', 'sub'].includes(level) || !current) {
+      throw new Error('Invalid craft group target');
+    }
+    if (!name || name.includes(':') || name.includes('|') || name.length > 256) {
+      throw new Error('Invalid new group name. Do not use : or |; 256 characters maximum.');
+    }
+    if (name === current) return { updates: [] };
+
+    const inParent = (parsed) => level === 'main'
+      || (parsed.main === mainGroup && (level === 'group' || parsed.group === group));
+    const isTarget = (parsed) => {
+      if (level === 'main') return parsed.main === mainGroup;
+      if (parsed.main !== mainGroup || parsed.group !== group) return false;
+      return level === 'group' || parsed.sub === subGroup;
+    };
+    const levelName = (parsed) => (level === 'main' ? parsed.main : level === 'group' ? parsed.group : parsed.sub);
+
+    const updates = [];
+    let merged = false;
+    for (const row of Array.isArray(rows) ? rows : []) {
+      const parsed = parseCraftGroup(row?.GroupName);
+      if (!inParent(parsed)) continue;
+      if (levelName(parsed) === name) merged = true;
+      if (!isTarget(parsed)) continue;
+      const groupName = level === 'main' ? joinCraftGroup(name, parsed.group, parsed.sub)
+        : level === 'group' ? joinCraftGroup(parsed.main, name, parsed.sub)
+          : joinCraftGroup(parsed.main, parsed.group, name);
+      updates.push({ row, id: row?.ID, groupName });
+    }
+    if (updates.length && merged && mergeExisting !== true) {
+      throw new Error('This name is already taken at this level. Check the warning and try again.');
+    }
+    return { updates };
+  };
+
   // ── Каталог крафтов: навигация «путь + плоский список» ──────────────────
   // Рецепт описывается цепочкой сегментов [{kind:'main'|'group'|'sub', name}]:
   // главная группа — только если задана, группа — всегда (имя может быть
@@ -672,33 +747,6 @@
   // ------------------------------------------------------------
   // Shared helper for DB editors: shows a small "Данные не сохранены" pill
   // and warns on page unload. Editors can call setClean() after load/save.
-  const ensureDirtyPill = ({
-    id = 'dirty-pill',
-    text = 'Data not saved',
-    saveButton = null,
-    container = null,
-  } = {}) => {
-    let pill = document.getElementById(id);
-    if (pill) return pill;
-
-    pill = document.createElement('span');
-    pill.id = id;
-    pill.className = 'editor-dirty-pill hidden';
-    pill.textContent = text;
-    pill.setAttribute('aria-hidden', 'true');
-
-    // Prefer inserting next to the save button.
-    if (saveButton?.parentElement) {
-      saveButton.parentElement.insertBefore(pill, saveButton);
-      return pill;
-    }
-    if (container) {
-      container.appendChild(pill);
-      return pill;
-    }
-    return pill;
-  };
-
   const createDirtyTracker = ({
     root = document,
     pill = null,
@@ -787,6 +835,36 @@
     };
   };
 
+  /**
+   * Отвечает оболочке студии на вопрос «есть ли несохранённые правки?».
+   *
+   * Каждый редактор открыт во вкладке-iframe, поэтому оболочка не может
+   * заглянуть в его состояние сама: она присылает `request-dirty-status`,
+   * а страница отвечает `dirty-status`. Один обработчик на все редакторы —
+   * раньше эта связка копировалась в каждую страницу.
+   *
+   *   EditorCore.Dirty.bindShellStatus(() => dirty.isDirty());
+   *
+   * Возвращает функцию отписки.
+   */
+  const bindShellDirtyStatus = (isDirty) => {
+    const onRequest = (event) => {
+      const http = window.EditorCore?.Http;
+      if (!http?.isSameOriginMessage?.(event, window.parent)) return;
+      const data = event.data || {};
+      if (data.type !== 'editor-shell:request-dirty-status') return;
+      let dirty = false;
+      try { dirty = !!isDirty?.(); } catch { dirty = false; }
+      http.postMessage(window.parent, {
+        type: 'editor-shell:dirty-status',
+        requestId: data.requestId,
+        dirty,
+      });
+    };
+    window.addEventListener('message', onRequest);
+    return () => window.removeEventListener('message', onRequest);
+  };
+
   window.EditorCore = window.EditorCore || {};
   window.EditorCore.utils = {
     uuid,
@@ -807,6 +885,9 @@
     joinComposite,
     splitGroupHierarchy,
     joinGroupHierarchy,
+    parseCraftGroup,
+    joinCraftGroup,
+    planCraftGroupRename,
     craftNavSegments,
     craftNavInPath,
     craftNavChildren,
@@ -832,14 +913,13 @@
     getBotSkinsMap,
     getSkinsApi,
     showToast,
-    ensureDirtyPill,
     createDirtyTracker,
   };
 
-  // Convenience alias (so editors can do EditorCore.Dirty.create(...))
+  // Общий помощник «несохранённые правки»: трекер состояния и ответ оболочке.
   window.EditorCore.Dirty = {
-    ensurePill: ensureDirtyPill,
     create: createDirtyTracker,
+    bindShellStatus: bindShellDirtyStatus,
   };
 
   // Also expose at top-level for convenience in editors.

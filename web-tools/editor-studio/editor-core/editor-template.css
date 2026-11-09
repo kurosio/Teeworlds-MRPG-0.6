@@ -324,110 +324,11 @@ body[data-editor="database"]{ --editor-accent:#34d399; }
   box-shadow:none;
 }
 
-.editor-card-head{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:14px;
-  padding-bottom:12px;
-  border-bottom:1px solid var(--editor-line);
-  margin-bottom:16px;
-}
-
-.editor-card-head h2{
-  margin:0;
-  font-size:var(--editor-text-lg);
-  font-weight:650;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  letter-spacing:-.005em;
-  line-height:1.3;
-}
-
-/* Декоративную точку перед заголовком убрали: заголовок и так отличается
-   размером и весом. */
-.editor-card-head h2::before{content:none;}
-
-.editor-card-head h2 > i{color:var(--editor-accent);font-size:14px;}
-
-.editor-card-head .editor-card-sub{
-  margin-top:4px;
-  font-size:var(--editor-text-sm);
-  line-height:1.45;
-  color:var(--editor-text-muted);
-}
-
-@media (max-width:640px){
-  .editor-card-head{
-    flex-direction:column;
-    align-items:stretch;
-  }
-}
-
 /* -------------------------------------------------------------
    Sections + field grids
 ------------------------------------------------------------- */
 .editor-section{
   padding:var(--editor-space, 14px);
-}
-
-.editor-section-head{
-  display:flex;
-  align-items:baseline;
-  justify-content:space-between;
-  gap:12px;
-  margin-bottom:12px;
-}
-
-/* Заголовок группы полей внутри формы: мелкий, с разрядкой и линией —
-   он делит форму на смысловые куски, не добавляя рамок. */
-.editor-section-title{
-  font-size:var(--editor-text-xs);
-  font-weight:700;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  color:var(--editor-text-muted);
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-
-.editor-section-title::before{content:none;}
-
-.editor-section-title::after{
-  content:"";
-  flex:1 1 auto;
-  height:1px;
-  background:var(--editor-line);
-}
-
-.editor-section-hint{
-  font-size:var(--editor-text-sm);
-  color:var(--editor-text-muted);
-}
-
-.editor-fields{
-  display:grid;
-  grid-template-columns:repeat(12, minmax(0, 1fr));
-  gap:var(--editor-fields-gap);
-  align-items:stretch;
-  min-width:0;
-}
-
-.editor-span-12{grid-column:span 12;}
-.editor-span-8{grid-column:span 8;}
-.editor-span-6{grid-column:span 6;}
-.editor-span-4{grid-column:span 4;}
-.editor-span-3{grid-column:span 3;}
-.editor-span-2{grid-column:span 2;}
-
-@media (max-width:900px){
-  .editor-span-8,
-  .editor-span-6,
-  .editor-span-4,
-  .editor-span-3,
-  .editor-span-2{grid-column:span 12;}
 }
 
 /* Сетка полей формы: колонок столько, сколько помещается. На 1280px это три
@@ -1264,11 +1165,6 @@ body.editor-focus .editor-sidebar-meta{
   .editor-dock-pad{
     padding:12px;
   }
-
-  .editor-section-head{
-    flex-direction:column;
-    align-items:flex-start;
-  }
 }
 
 /* -------------------------------------------------------------
@@ -1454,8 +1350,7 @@ body.editor-focus .editor-sidebar-meta{
   line-height:1.55;
   pointer-events:none;
 }
-.change-row-marker.is-submitted,
-.change-row-marker--request{
+.change-row-marker.is-submitted{
   color:var(--editor-primary,#6366f1);
   border-color:color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent);
 }
@@ -1599,27 +1494,8 @@ body.editor-focus .editor-sidebar-meta{
   overscroll-behavior:contain;
 }
 
-.editor-list-scroll--bare{
-  border:0;
-  border-radius:0;
-  background:none;
-}
-
 .editor-list-scroll--tall{max-height:min(900px, 72vh);max-height:min(900px, 72dvh);}
 .editor-list-scroll--short{max-height:min(320px, 42vh);max-height:min(320px, 42dvh);}
-
-/* Панель инструментов: кнопки переносятся, ничего не вылезает за край. */
-.editor-toolbar{
-  display:flex;
-  flex-wrap:wrap;
-  align-items:center;
-  gap:8px;
-  min-width:0;
-}
-
-.editor-toolbar--end{justify-content:flex-end;}
-
-.editor-toolbar-spacer{flex:1 1 auto;}
 
 /* Компактные кнопки одного вида (было height:32px / 28px в style). */
 .editor-btn--sm{height:32px;padding:0 12px;font-size:12.5px;}
@@ -1743,14 +1619,11 @@ body.editor-focus .editor-sidebar-meta{
 @media (pointer:coarse){
   .editor-btn{min-height:44px;}
   .editor-icon-btn{min-width:44px;min-height:44px;}
-  .editor-nav-item{padding-top:12px;padding-bottom:12px;}
 }
 
 /* Длинные слова (имена таблиц, логины, значения из базы) не рвут вёрстку. */
 .editor-page-sub,
-.editor-card-sub,
-.editor-help-text,
-.editor-section-hint{overflow-wrap:anywhere;}
+.editor-help-text{overflow-wrap:anywhere;}
 
 .editor-page :is(td, th, dd, dt) code,
 .editor-page :is(td, th, dd, dt) a{overflow-wrap:anywhere;}
@@ -1791,7 +1664,6 @@ body.editor-focus .editor-sidebar-meta{
   .editor-page-header{flex-wrap:wrap;gap:12px;}
   .editor-page-actions{flex-wrap:wrap;max-width:100%;}
   .editor-page-actions .editor-btn{white-space:normal;height:auto;min-height:40px;}
-  .editor-section-head{flex-wrap:wrap;}
   .related-record-dialog{width:100%;max-width:none;height:100vh;height:100dvh;border:0;border-radius:0;}
   .related-record-header{padding:8px max(8px,env(safe-area-inset-right)) 8px max(8px,env(safe-area-inset-left));}
   .related-record-header .editor-btn{min-height:44px;}

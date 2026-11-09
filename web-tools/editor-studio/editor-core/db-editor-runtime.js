@@ -637,16 +637,9 @@
         return true;
       };
 
-      const onDirtyStatusRequest = (event) => {
-        if (!window.EditorCore.Http.isSameOriginMessage(event, window.parent)) return;
-        const data = event.data || {};
-        if (data?.type !== 'editor-shell:request-dirty-status') return;
-        window.EditorCore.Http.postMessage(window.parent, {
-          type: 'editor-shell:dirty-status',
-          requestId: data.requestId,
-          dirty: state.operation || !!state.dirty?.isDirty?.(),
-        });
-      };
+      // Оболочка студии спрашивает, есть ли несохранённые правки: пока идёт
+      // операция, вкладку тоже нельзя закрывать молча.
+      const isDirty = () => state.operation || !!state.dirty?.isDirty?.();
 
       const save = async () => {
         if (state.destroyed || state.operation || !state.model) return false;
@@ -821,7 +814,7 @@
         els.search.addEventListener('input', onSearch, { signal: events.signal });
       }
 
-      window.addEventListener('message', onDirtyStatusRequest, { signal: events.signal });
+      const offDirtyStatus = window.EditorCore.Dirty.bindShellStatus(isDirty);
 
       // Guest mode: the role and the local draft are resolved asynchronously.
       const onGuestUpdated = () => { if (!state.destroyed) { renderList(); updateGuestHint(); } };
@@ -864,7 +857,7 @@
           onSearch?.cancel?.();
           state.searchRequest.controller?.abort?.();
           state.form?.destroy?.();
-          window.removeEventListener('message', onDirtyStatusRequest);
+          offDirtyStatus();
           window.removeEventListener('editor-core:guest-updated', onGuestUpdated);
           window.removeEventListener('editor-core:guest-ready', onGuestReady);
           window.removeEventListener('editor-core:guest-request-resolved', onGuestResolved);
