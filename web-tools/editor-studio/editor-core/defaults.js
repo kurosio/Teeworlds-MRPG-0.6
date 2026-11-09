@@ -7,43 +7,38 @@
   const INPUT_CLASS = 'editor-input form-input';
 
   const FIELD_RENDER_OPTIONS = {
-    scenario: {
-      classes: {
-        input: INPUT_CLASS,
-        textarea: `${INPUT_CLASS} editor-textarea`,
-        multiselect: INPUT_CLASS,
-        label: 'editor-label',
-        nestedLabel: 'editor-nested-label',
-        fieldWrapper: 'editor-field',
-        nestedFieldWrapper: 'editor-field-nested',
-        checkboxWrapper: 'flex items-center space-x-3 cursor-pointer',
-        // Unified list wrapper (spacing + optional table mode)
-        listWrapper: 'editor-list',
-        listItem: 'editor-list-item',
-        listAdd: 'editor-btn editor-btn-primary text-sm',
-        listRemove: 'editor-icon-btn editor-icon-danger',
-        checkbox: 'h-4 w-4 rounded editor-hairline editor-soft editor-primary-text',
-      },
-      includeName: true,
-      includeDataPath: true,
-      includeDataKey: false,
-    }
+    classes: {
+      input: INPUT_CLASS,
+      textarea: `${INPUT_CLASS} editor-textarea`,
+      multiselect: INPUT_CLASS,
+      label: 'editor-label',
+      nestedLabel: 'editor-nested-label',
+      fieldWrapper: 'editor-field',
+      nestedFieldWrapper: 'editor-field-nested',
+      checkboxWrapper: 'flex items-center space-x-3 cursor-pointer',
+      // Unified list wrapper (spacing + optional table mode)
+      listWrapper: 'editor-list',
+      listItem: 'editor-list-item',
+      listAdd: 'editor-btn editor-btn-primary text-sm',
+      listRemove: 'editor-icon-btn editor-icon-danger',
+      checkbox: 'h-4 w-4 rounded editor-hairline editor-soft editor-primary-text',
+    },
+    includeName: true,
+    includeDataPath: true,
+    includeDataKey: false,
   };
 
-  const getFieldRenderOptions = () => {
-    const base = FIELD_RENDER_OPTIONS.scenario;
-    // return a shallow clone so editors can mutate safely
-    return {
-      ...base,
-      classes: { ...(base.classes || {}) },
-    };
-  };
+  // Один профиль отрисовки на все редакторы: параметра режима нет, поэтому и
+  // аргумента у функции нет — копия защищает набор классов от случайной правки.
+  const getFieldRenderOptions = () => ({
+    ...FIELD_RENDER_OPTIONS,
+    classes: { ...(FIELD_RENDER_OPTIONS.classes || {}) },
+  });
 
   window.EditorCore = window.EditorCore || {};
   window.EditorCore.defaults = {
     getFieldRenderOptions,
-    FIELD_RENDER_OPTIONS,
-    fieldOptions: FIELD_RENDER_OPTIONS.scenario,
+    fieldOptions: FIELD_RENDER_OPTIONS,
   };
 
   // UI presets to keep schemas small and consistent across editors.

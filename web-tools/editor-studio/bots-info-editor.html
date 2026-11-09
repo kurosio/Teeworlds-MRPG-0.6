@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bots • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
 
   <style>
     .skin-preview-frame{
@@ -120,7 +120,7 @@
   </div>
 
   <script>
-    const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor();
 
     const DOM = {
       list: document.querySelector('[data-editor-role="list"]'),
@@ -144,13 +144,11 @@
       skinPreviewMeta: document.getElementById('skinPreviewMeta')
     };
 
-    const dirty = EditorCore.Dirty?.create
-      ? EditorCore.Dirty.create({
-          root: document.querySelector('.editor-main') || document.body,
-          pill: document.getElementById('dirty-pill'),
-          beforeUnload: true,
-        })
-      : { markDirty: () => {}, setClean: () => {} };
+    const dirty = EditorCore.Dirty.create({
+      root: document.querySelector('.editor-main') || document.body,
+      pill: document.getElementById('dirty-pill'),
+      beforeUnload: true,
+    });
 
     const STATE = {
       rows: [],
@@ -315,11 +313,8 @@
       }
     };
 
-    const normalizeSlot = (value) => {
-      const num = Number(value || 0);
-      if (!Number.isFinite(num) || num <= 0) return null;
-      return num;
-    };
+    // «Положительное число или null» — общий помощник студии (как в квестах и предметах).
+    const normalizeSlot = EditorCore.utils.toPositiveNumber;
 
     const toModel = (row) => ({
       ID: Number(row?.ID || 0),
@@ -371,10 +366,7 @@
     };
 
     const esc = EditorCore.Page.esc;
-    const canDiscardDirty = async () => {
-      if (!dirty?.isDirty?.()) return true;
-      return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
-    };
+    const canDiscardDirty = () => EditorCore.Page.confirmDiscard(() => dirty?.isDirty?.());
 
     const setHeader = () => {
       if (!DOM.title && !DOM.subtitle) return;
@@ -690,16 +682,7 @@
       if (row) selectRow(row, { confirmDirty: true });
     });
 
-    window.addEventListener('message', (event) => {
-      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
-      const data = event.data || {};
-      if (data?.type !== 'editor-shell:request-dirty-status') return;
-      window.EditorCore.Http.postMessage(window.parent, {
-        type: 'editor-shell:dirty-status',
-        requestId: data.requestId,
-        dirty: !!dirty?.isDirty?.(),
-      });
-    });
+    EditorCore.Dirty.bindShellStatus(() => dirty?.isDirty?.());
 
     DOM.refresh?.addEventListener('click', loadList);
     DOM.newBtn?.addEventListener('click', createNew);

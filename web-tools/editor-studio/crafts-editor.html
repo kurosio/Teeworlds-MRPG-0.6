@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Crafts • Editor Studio</title>
 
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
 
   <style>
     /* Catalog navigation: breadcrumb path + next-level chips + one flat
@@ -231,7 +231,7 @@
   </div>
 
   <script>
-    const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor();
 
     const RESOURCE = 'crafts';
 
@@ -828,10 +828,7 @@
       els.badgeId.style.display = 'inline-flex';
     };
 
-    const canDiscardDirty = async () => {
-      if (!STATE.isDirty) return true;
-      return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
-    };
+    const canDiscardDirty = () => EditorCore.Page.confirmDiscard(() => STATE.isDirty);
 
     const applyEditorInputs = () => {
       if (!STATE.selected) {
@@ -1109,16 +1106,7 @@
       setStatus('Creating a new record… (press Save)');
     });
 
-    window.addEventListener('message', (event) => {
-      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
-      const data = event.data || {};
-      if (data?.type !== 'editor-shell:request-dirty-status') return;
-      window.EditorCore.Http.postMessage(window.parent, {
-        type: 'editor-shell:dirty-status',
-        requestId: data.requestId,
-        dirty: !!STATE.isDirty,
-      });
-    });
+    EditorCore.Dirty.bindShellStatus(() => STATE.isDirty);
 
     els.search.addEventListener('input', EditorCore.utils.debounce(() => {
       STATE.search = els.search.value || '';

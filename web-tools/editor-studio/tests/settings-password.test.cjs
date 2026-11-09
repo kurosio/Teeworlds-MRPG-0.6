@@ -16,7 +16,9 @@ const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 function harness({ stored = null, activeId = null, password = 'secret' } = {}) {
   const scripts = [...read('settings.html').matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)]
     .map((m) => m[1]);
-  let source = scripts.find((s) => s.includes('bootstrapEditor'));
+  // Ищем главный inline-скрипт страницы по её собственному признаку (профили БД),
+  // а не по вызову общего бутстрапа: страницы больше не упоминают его без нужды.
+  let source = scripts.find((s) => s.includes('es_db_profiles'));
   assert.ok(source, 'inline-скрипт settings.html не найден');
 
   // init() вызывается в конце скрипта — перехватываем промис, чтобы дождаться
@@ -87,7 +89,7 @@ function harness({ stored = null, activeId = null, password = 'secret' } = {}) {
     },
     Page: {
       esc: String, toast() {}, confirm: async () => false,
-      guardUnsaved() {}, alert() {},
+      guardUnsaved() {}, alert() {}, byId,
     },
     utils: { setStatus() {} },
     theme: { get: () => 'dark', set() {} },

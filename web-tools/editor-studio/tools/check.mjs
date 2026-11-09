@@ -96,6 +96,41 @@ for (const file of sources) {
   if (/\.toast\(\s*\{/.test(text)) {
     problems.push(`${name}: toast({...}) — сигнатура toast(message, type)`);
   }
+  // Ответ оболочке «есть несохранённые правки» — один обработчик на всё ядро
+  // (EditorCore.Dirty.bindShellStatus), а не копия в каждой странице. Оболочка
+  // (index.html) сама запрашивает и слушает этот ответ, поэтому её не считаем.
+  if (name.endsWith('.html') && name !== 'index.html' && text.includes("'editor-shell:dirty-status'")) {
+    problems.push(`${name}: свой обработчик несохранённых правок — используйте EditorCore.Dirty.bindShellStatus`);
+  }
+  // Подтверждение потери правок — тоже одно место на все страницы.
+  if (name.endsWith('.html') && /You have unsaved changes\. Continue without saving\?/.test(text)) {
+    problems.push(`${name}: своё подтверждение потери правок — используйте EditorCore.Page.confirmDiscard`);
+  }
+  // Общая обвязка страницы: EditorCore.bootstrapEditor() идемпотентна, поэтому
+  // страница зовёт её напрямую — без глобальной копии и без «режимов».
+  if (name.endsWith('.html') && /\bEditorCoreBootstrap\b/.test(text)) {
+    problems.push(`${name}: глобальный EditorCoreBootstrap — используйте EditorCore.bootstrapEditor()`);
+  }
+  if (name.endsWith('.html') && /bootstrapEditor\s*\(\s*\{/.test(text)) {
+    problems.push(`${name}: bootstrapEditor({ mode }) — режимов нет, аргумент не нужен`);
+  }
+  // Заглушки «если общий инструмент вдруг не загрузился» дублируют его поведение:
+  // модули подключает page-loader.js, поэтому fallback-копии не нужны.
+  if (name.endsWith('.html') && /EditorCore\.Dirty\?\.create/.test(text)) {
+    problems.push(`${name}: fallback-заглушка трекера правок — зовите EditorCore.Dirty.create напрямую`);
+  }
+  // Своё экранирование HTML — только EditorCore.Page.esc.
+  if (name.endsWith('.html') && /\{\s*'&'\s*:\s*'&amp;'/.test(text)) {
+    problems.push(`${name}: своя функция экранирования — используйте EditorCore.Page.esc`);
+  }
+  // `data-mode` у лоадера никто не читал: режимов нет, атрибут только путал.
+  if (name.endsWith('.html') && /page-loader\.js"\s+data-mode=/.test(text)) {
+    problems.push(`${name}: data-mode у page-loader.js ничего не делает`);
+  }
+  // Локальный $-алиас повторяет EditorCore.Page.byId.
+  if (name.endsWith('.html') && /const \$ ?= ?\(?id\)? => document\.getElementById/.test(text)) {
+    warnings.push(`${name}: локальный $ — используйте EditorCore.Page.byId`);
+  }
 }
 
 // Модули ядра должны быть подключены прежде, чем их используют: именно на этом

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Settings • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
   <style>
     /* Профили подключения: чипы со статусной точкой. */
     .profiles-bar {
@@ -395,12 +395,10 @@
   </div>
 
   <script>
-    window.EditorCoreBootstrap = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
-
     /* ═══════════════════════════════════════════
        DOM refs
        ═══════════════════════════════════════════ */
-    const $ = id => document.getElementById(id);
+    const $ = EditorCore.Page.byId;
 
     const F = {
       host: $('f-host'), port: $('f-port'), db: $('f-db'),
@@ -802,7 +800,7 @@
        ═══════════════════════════════════════════ */
     // Общие помощники страниц (editor-core/page-kit.js).
     const esc = EditorCore.Page.esc;
-    const toast = (msg, type) => EditorCore.Page.toast(msg, type);
+    const toast = EditorCore.Page.toast;
 
     EditorCore.Page.guardUnsaved(() => formBaseline && formSnapshot() !== formBaseline);
 

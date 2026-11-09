@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Change history • Editor Studio</title>
   <script src="studio.manifest.js"></script>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
   <style>
     .hx-hidden { display: none !important; }
     .hx-muted { color: var(--editor-text-muted); }
@@ -251,13 +251,11 @@
 
   <script>
   (() => {
-    if (!window.EditorCoreBootstrap) window.EditorCoreBootstrap = EditorCore.bootstrapEditor?.();
-
-    const $ = (id) => document.getElementById(id);
+    const $ = EditorCore.Page.byId;
     const Page = EditorCore.Page;
     const esc = Page.esc;
     const toast = Page.toast;
-    const fmtDate = (iso, options) => Page.fmtDate(iso, options);
+    const fmtDate = Page.fmtDate;
     const plural = Page.plural;
     const H = EditorCore.DbHistory;
     const API = 'api/db-history.php';

@@ -18,6 +18,12 @@
   /** Экранирование HTML. Данные из БД и от гостя проходят только через него. */
   const escapeHtml = (value) => namespace.utils.escapeHtml(value ?? '');
 
+  /**
+   * Короткий доступ к элементу по id — вместо копии `(id) => document.getElementById(id)`
+   * в каждой странице: `const $ = EditorCore.Page.byId;`.
+   */
+  const byId = (id) => document.getElementById(id);
+
   const i18n = () => namespace.I18n || null;
 
   /** Перевод строки (если модуль языка уже загружен). */
@@ -245,6 +251,20 @@
   };
 
   /**
+   * Подтверждение потери несохранённых правок.
+   *
+   *   if (!await EditorCore.Page.confirmDiscard(() => dirty.isDirty())) return;
+   *
+   * Без правок возвращает `true` сразу — лишний диалог не показывается.
+   */
+  const confirmDiscard = async (isDirty) => {
+    let dirty = false;
+    try { dirty = !!isDirty?.(); } catch { dirty = false; }
+    if (!dirty) return true;
+    return confirmDialog('You have unsaved changes. Continue without saving?');
+  };
+
+  /**
    * Единая точка журналирования неожиданных ошибок. Пустой `catch` скрывает
    * сбой; здесь он попадает в консоль с понятным контекстом.
    */
@@ -286,6 +306,7 @@
   };
 
   namespace.Page = {
+    byId,
     esc: escapeHtml,
     escapeHtml,
     t,
@@ -299,6 +320,7 @@
     withBusy,
     confirm: confirmDialog,
     alert: alertDialog,
+    confirmDiscard,
     guardUnsaved,
     report,
   };

@@ -556,13 +556,8 @@
           }
         }
 
-        // Ctrl+S is handled centrally by Help module when loaded; fallback only if Help is absent.
-        if (ctrl && !e.altKey && key === 's') {
-          if (document.body?.dataset?.ownSaveShortcut === '1' || window.EditorCore?.Help) return;
-          e.preventDefault();
-          clickIfEnabled(actions.save);
-          return;
-        }
+        // Ctrl+S живёт в одном месте — editor-core/help.js (единый список
+        // кнопок сохранения и учёт data-own-save-shortcut).
         if (e.altKey && !ctrl && key === 'n') {
           if (clickIfEnabled(actions.newItem)) e.preventDefault();
           return;

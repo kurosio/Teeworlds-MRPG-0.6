@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scenarios • Editor Studio</title>
-    <script src="editor-core/page-loader.js" data-mode="scenario"></script>
+    <script src="editor-core/page-loader.js"></script>
     
     <!-- Библиотека для Drag-and-Drop -->
     <script src="vendor/sortable/Sortable.min.js"></script>
@@ -891,22 +891,6 @@
     </template>
 
     <script type="module">
-        // Fallback: scenario editor depends on EditorCore.bootstrapEditor(), but in some setups editor-core/bootstrap.js may not load.
-        // If it's missing, define a compatible version here so the editor keeps working.
-        if (typeof window.EditorCore !== "undefined" && typeof window.EditorCore.bootstrapEditor !== "function") {
-            window.EditorCore.bootstrapEditor = ({ mode = "scenario" } = {}) => {
-                if (!window.EditorCore?.UI) throw new Error("EditorCore.UI is missing. Load ui.js first.");
-                if (!window.EditorCore?.defaults) {
-                    // Minimal safe defaults (scenario) in case defaults.js also didn't load.
-                    window.EditorCore.defaults = { getFieldRenderOptions: () => ({ classes: {} }) };
-                }
-                window.EditorCore.UI.mountScenarioEditorUI?.();
-                return { fieldRenderOptions: window.EditorCore.defaults.getFieldRenderOptions(mode) };
-            };
-        }
-
-
-
         class ScenarioEditor {
             constructor() {
                 this.bindElements();
@@ -1033,17 +1017,15 @@
                     worldId: null,
                     scenarioText: ""
                 };
-                this.dirty = EditorCore.Dirty?.create
-                    ? EditorCore.Dirty.create({
-                        root: document.body,
-                        pill: this.dirtyPill,
-                        beforeUnload: true,
-                        onDirtyChange: (dirty) => {
-                            this.saveButton?.classList.toggle('ring-2', dirty);
-                            this.saveButton?.classList.toggle('ring-amber-400/40', dirty);
-                        }
-                      })
-                    : { markDirty: () => {}, setClean: () => {} };
+                this.dirty = EditorCore.Dirty.create({
+                    root: document.body,
+                    pill: this.dirtyPill,
+                    beforeUnload: true,
+                    onDirtyChange: (dirty) => {
+                        this.saveButton?.classList.toggle('ring-2', dirty);
+                        this.saveButton?.classList.toggle('ring-amber-400/40', dirty);
+                    }
+                });
 
                 // ---- Undo/Redo history -------------------------------------
                 // Snapshots of scenarioData (deep clones). We wrap dirty.markDirty
@@ -3095,7 +3077,7 @@
             }
 
             buildModalForm(data, step) {
-                const renderOptions = window.EditorCore.defaults.getFieldRenderOptions('scenario');
+                const renderOptions = window.EditorCore.defaults.getFieldRenderOptions();
                 renderOptions.listAddLabel = 'Add an item';
 
                 // Поля — ячейки .sc-modal-field с шириной по типу поля.
@@ -4488,7 +4470,6 @@
             id: 'scenario-editor',
             state: {},
             init: async (app) => {
-                window.EditorCoreBootstrap = window.EditorCoreBootstrap || EditorCore.bootstrapEditor();
                 EditorCore.UI.mountListContainer({
                     id: 'navigator-tree',
                     parent: document.getElementById('navigator-tree-root'),
@@ -4497,16 +4478,7 @@
                 const editor = new ScenarioEditor();
                 app.state.editor = editor;
                 editor.navigatorSearch?.addEventListener('input', () => editor.applyNavigatorFilter());
-                window.addEventListener('message', (event) => {
-                    if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
-                    const data = event.data || {};
-                    if (data?.type !== 'editor-shell:request-dirty-status') return;
-                    window.EditorCore.Http.postMessage(window.parent, {
-                        type: 'editor-shell:dirty-status',
-                        requestId: data.requestId,
-                        dirty: Boolean(editor.dirty?.isDirty?.()),
-                    });
-                });
+                EditorCore.Dirty.bindShellStatus(() => editor.dirty?.isDirty?.());
             }
         });
 

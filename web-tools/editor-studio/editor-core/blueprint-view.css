@@ -139,18 +139,11 @@ body.bp-mode #bp-canvas { display: block; }
   border-bottom: 1px solid rgba(0, 0, 0, 0.35);
 }
 .bp-node.is-dragging .bp-node-header { cursor: grabbing; }
-.bp-node-header .bp-node-icon { opacity: .9; }
 .bp-node-header .bp-node-title {
   flex: 1 1 auto;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.bp-node-header .bp-node-sub {
-  font-size: 10px;
-  font-weight: 600;
-  opacity: .75;
-  white-space: nowrap;
 }
 .bp-node-actions { display: flex; gap: 2px; opacity: 0; transition: opacity .12s ease; }
 .bp-node:hover .bp-node-actions { opacity: 1; }
@@ -203,12 +196,6 @@ body.bp-mode #bp-canvas { display: block; }
 }
 .bp-pin.bp-pin-in { left: -8px; top: 9px; }
 .bp-pin.bp-pin-out { right: -10px; }
-.bp-pin.bp-pin-data::before {
-  width: 11px; height: 11px;
-  border: 2px solid var(--bp-pin-color, var(--bp-wire-data));
-  border-radius: 50%;
-  background: transparent;
-}
 
 .bp-pin-label {
   position: absolute;

@@ -432,7 +432,8 @@ test('dynamic page loader awaits every dependency and runs inline bootstrap last
   const networkSequence = executions.filter(value => value !== 'inline' && value !== 'bootstrap');
   assert.deepEqual(networkSequence, expected.flatMap(src => [`start:${src}`, `load:${src}`]));
   assert.deepEqual(executions.slice(-2), ['inline', 'bootstrap']);
-  assert.equal(context.window.EditorCoreBootstrap.ready, true);
+  // Страницы зовут EditorCore.bootstrapEditor() напрямую — глобального алиаса нет.
+  assert.equal(context.window.EditorCoreBootstrap, undefined);
 });
 
 test('compiled utilities follow component styles in both page entry points', () => {

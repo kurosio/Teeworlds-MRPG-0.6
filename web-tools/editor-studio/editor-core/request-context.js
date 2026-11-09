@@ -494,66 +494,23 @@
     }
   };
 
-  // Craft group names are a UI-level bulk operation. Keep the same semantics
-  // as the guest draft helper, but stage every row in this request instead of
-  // calling the direct database rename endpoint.
-  const parseCraftGroup = (value) => {
-    const raw = String(value || '').trim();
-    let main = '';
-    let nested = raw;
-    if (raw.startsWith('|')) {
-      const end = raw.indexOf('|', 1);
-      if (end >= 0) { main = raw.slice(1, end).trim(); nested = raw.slice(end + 1); } else nested = raw.slice(1);
-    }
-    const sep = nested.indexOf(':');
-    if (sep < 0) return { main, group: nested.trim(), sub: '' };
-    return { main, group: nested.slice(0, sep).trim(), sub: nested.slice(sep + 1).trim() };
-  };
-  const joinCraftGroup = (main, group, sub) => {
-    main = String(main || '').trim(); group = String(group || '').trim(); sub = String(sub || '').trim();
-    const nested = group && sub ? `${group}:${sub}` : (group || sub);
-    if (!main) return nested;
-    return nested ? `|${main}|${nested}` : `|${main}|`;
-  };
+  // Craft group names are a UI-level bulk operation. The plan (which rows get
+  // which name) is shared with the guest draft helper in utils.js; here every
+  // row is staged in this request instead of the direct database rename.
   const renameCraftGroup = async (rows, targetGroup, newName, mergeExisting) => {
     assertEditable();
-    const level = String(targetGroup?.level || '');
-    const mainGroup = String(targetGroup?.mainGroup || '').trim();
-    const group = String(targetGroup?.group || '').trim();
-    const subGroup = String(targetGroup?.subGroup || '').trim();
-    const name = String(newName || '').trim();
-    const current = level === 'main' ? mainGroup : level === 'group' ? group : subGroup;
-    if (!['main', 'group', 'sub'].includes(level) || !current) throw new Error('Invalid craft group target');
-    if (!name || name.includes(':') || name.includes('|') || name.length > 256) {
-      throw new Error('Invalid new group name. Do not use : or |; 256 characters maximum.');
-    }
-    if (name === current) return { ok: true, changed: [] };
-    const parentMatches = (p) => level === 'main' || (p.main === mainGroup && (level === 'group' || p.group === group));
-    const matches = (p) => {
-      if (level === 'main') return p.main === mainGroup;
-      if (p.main !== mainGroup || p.group !== group) return false;
-      return level === 'group' || p.sub === subGroup;
-    };
-    const levelName = (p) => level === 'main' ? p.main : level === 'group' ? p.group : p.sub;
-    const updates = [];
-    let merged = false;
-    for (const row of rows || []) {
-      const parsed = parseCraftGroup(row.GroupName);
-      if (!parentMatches(parsed)) continue;
-      if (levelName(parsed) === name) merged = true;
-      if (!matches(parsed)) continue;
-      const renamed = level === 'main' ? joinCraftGroup(name, parsed.group, parsed.sub)
-        : level === 'group' ? joinCraftGroup(parsed.main, name, parsed.sub) : joinCraftGroup(parsed.main, parsed.group, name);
-      updates.push({ ID: Number(row.ID), newGroupName: renamed });
-    }
-    if (updates.length && merged && mergeExisting !== true) {
-      throw new Error('This name is already taken at this level. Check the warning and try again.');
-    }
+    const { updates } = window.EditorCore.utils.planCraftGroupRename(rows, targetGroup, newName, mergeExisting);
+    if (!updates.length) return { ok: true, changed: [] };
     return batch(async () => {
       for (const update of updates) {
-        await mutateRequest({ action: 'update', resource: 'crafts', id: update.ID, data: { GroupName: update.newGroupName } });
+        await mutateRequest({
+          action: 'update',
+          resource: 'crafts',
+          id: Number(update.id),
+          data: { GroupName: update.groupName },
+        });
       }
-      return { ok: true, changed: updates };
+      return { ok: true, changed: updates.map((update) => ({ ID: Number(update.id), newGroupName: update.groupName })) };
     });
   };
 

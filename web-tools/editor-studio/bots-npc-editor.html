@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NPC • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
 
   <style>
     .npc-skin-frame {
@@ -235,8 +235,7 @@
        UTILITIES
        ═══════════════════════════════════════════════════ */
 
-    const { fieldRenderOptions } =
-      window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor();
 
     /** Safe deep cloning */
     const clone = EditorCore.utils.cloneData;
@@ -245,11 +244,8 @@
     const $  = (key) => document.querySelector(`[data-bind="${key}"]`);
     const $a = (key) => document.querySelector(`[data-action="${key}"]`);
 
-    /** Safe numeric cast */
-    const num = (v, fallback = 0) => {
-      const n = Number(v);
-      return Number.isFinite(n) ? n : fallback;
-    };
+    /** Безопасное приведение к числу — общий помощник студии. */
+    const num = EditorCore.utils.toFiniteNumber;
 
     /** Normalize DialogData from any format */
     const parseDialogData = (raw) => {
@@ -362,13 +358,11 @@
       forms: { basic: null, dialog: null },
     };
 
-    const dirty = EditorCore.Dirty?.create
-      ? EditorCore.Dirty.create({
-          root: document.querySelector('.editor-main') || document.body,
-          pill: DOM.dirtyPill,
-          beforeUnload: true,
-        })
-      : { markDirty() {}, setClean() {}, isDirty: () => false };
+    const dirty = EditorCore.Dirty.create({
+      root: document.querySelector('.editor-main') || document.body,
+      pill: DOM.dirtyPill,
+      beforeUnload: true,
+    });
 
     /* ═══════════════════════════════════════════════════
        UI RENDERING (pure functions, no side effects
@@ -624,10 +618,7 @@
        ═══════════════════════════════════════════════════ */
 
     const Actions = {
-      async canDiscardDirty() {
-        if (!dirty?.isDirty?.()) return true;
-        return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
-      },
+      canDiscardDirty: () => EditorCore.Page.confirmDiscard(() => dirty?.isDirty?.()),
 
       async select(row, { confirmDirty = false } = {}) {
         if (row && num(row.ID) === num(state.selectedId) && state.model && confirmDirty) return;
@@ -755,16 +746,7 @@
 
     DOM.filterWorld?.addEventListener('change', () => UI.renderList());
 
-    window.addEventListener('message', (event) => {
-      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
-      const data = event.data || {};
-      if (data?.type !== 'editor-shell:request-dirty-status') return;
-      window.EditorCore.Http.postMessage(window.parent, {
-        type: 'editor-shell:dirty-status',
-        requestId: data.requestId,
-        dirty: !!dirty?.isDirty?.(),
-      });
-    });
+    EditorCore.Dirty.bindShellStatus(() => dirty?.isDirty?.());
 
     // Buttons
     DOM.btnRefresh?.addEventListener('click', () => Actions.loadList());

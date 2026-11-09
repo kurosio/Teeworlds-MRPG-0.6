@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Database • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
 </head>
 
 <body class="editor-theme" data-editor="database">
@@ -139,8 +139,6 @@
   </div>
 
   <script>
-    window.EditorCoreBootstrap = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
-
     const esc = EditorCore.Page.esc;
 
     const els = {

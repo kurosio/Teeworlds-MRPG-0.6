@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quests • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
   <style>
     body[data-editor="quests"] {
       --editor-page-max: 1560px;
@@ -952,8 +952,8 @@
   <script>
     'use strict';
 
-    const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
-    const $ = (id) => document.getElementById(id);
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor();
+    const $ = EditorCore.Page.byId;
 
     const DOM = Object.freeze({
       tree: $('tree'), questCount: $('questCount'), stepCount: $('stepCount'),
@@ -1088,10 +1088,8 @@
       try { return JSON.parse(raw); } catch { return null; }
     };
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-    const toNum = (v, fb = 0) => {
-      const n = Number(v);
-      return Number.isFinite(n) ? n : fb;
-    };
+    // Безопасное приведение к числу — общий помощник студии (с запасным значением).
+    const toNum = EditorCore.utils.toFiniteNumber;
     const norm = (v) => String(v ?? '').toLowerCase();
     // Экранирование — общее для всех страниц (editor-core/page-kit.js):
     // старый вариант через innerHTML медленнее и не экранирует кавычки.
@@ -3148,16 +3146,7 @@
       });
     });
 
-    window.addEventListener('message', (event) => {
-      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
-      const data = event.data || {};
-      if (data?.type !== 'editor-shell:request-dirty-status') return;
-      window.EditorCore.Http.postMessage(window.parent, {
-        type: 'editor-shell:dirty-status',
-        requestId: data.requestId,
-        dirty: Boolean(isDirty()),
-      });
-    });
+    EditorCore.Dirty.bindShellStatus(isDirty);
 
     loadData();
   </script>

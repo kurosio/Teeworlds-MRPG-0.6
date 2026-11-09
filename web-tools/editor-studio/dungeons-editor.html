@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dungeons • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
 </head>
 
 <body class="editor-theme" data-editor="dungeons">
@@ -86,7 +86,7 @@
   </div>
 
   <script>
-    const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor();
 
     const toNullableInt = (value, fallback = 0) => EditorCore.utils.toNullableInt(value, fallback);
 
@@ -112,13 +112,11 @@
       Scenario: { type: 'scenario', label: 'Dungeon scenario', ui: { scenarioMode: 'dungeon', mapWorldPath: 'WorldID', spanAll: true } },
     };
 
-    const dirty = EditorCore.Dirty?.create
-      ? EditorCore.Dirty.create({
-          root: document.querySelector('.editor-main') || document.body,
-          pill: document.getElementById('dirty-pill'),
-          beforeUnload: true,
-        })
-      : { markDirty: () => {}, setClean: () => {} };
+    const dirty = EditorCore.Dirty.create({
+      root: document.querySelector('.editor-main') || document.body,
+      pill: document.getElementById('dirty-pill'),
+      beforeUnload: true,
+    });
 
     const filterWorld = document.getElementById('filterWorld');
 

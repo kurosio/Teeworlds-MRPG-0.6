@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Collecting nodes • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
 </head>
 
 <body class="editor-theme" data-editor="nodes_collecting">
@@ -97,7 +97,7 @@
 
   <script src="editor-core/collecting-properties.js"></script>
   <script>
-    const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor();
     const codec = EditorCore.CollectingProperties;
     const worldFilter = document.getElementById('filterWorld');
     const typeFilter = document.getElementById('filterType');
@@ -124,13 +124,11 @@
         }
       }
     };
-    let hasChanges = false;
-    const setDirty = value => {
-      hasChanges = value;
-      document.getElementById('dirty-pill').classList.toggle('hidden', !value);
-    };
-    const dirty = { markDirty: () => setDirty(true), setClean: () => setDirty(false), isDirty: () => hasChanges };
-    EditorCore.Page.guardUnsaved(dirty.isDirty);
+    const dirty = EditorCore.Dirty.create({
+      root: document.querySelector('.editor-main') || document.body,
+      pill: document.getElementById('dirty-pill'),
+      beforeUnload: true,
+    });
     const editor = EditorCore.DbEditor.mount(document.body, {
       resource: 'nodes_collecting', fields, fieldOptions: fieldRenderOptions, dirty,
       defaults: () => ({ Name: '', WorldID: worldFilter.value === '' ? 0 : Number(worldFilter.value), Type: typeFilter.value || 'ore', SwitchID: 1, Level: 1, Health: 3, Items: [] }),

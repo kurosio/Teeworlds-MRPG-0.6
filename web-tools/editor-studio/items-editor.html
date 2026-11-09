@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Items • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
 
   <style>
     .items-form [data-field-path="Comment"],
@@ -113,7 +113,7 @@
   </div>
 
   <script>
-    const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor();
 
     const GROUPS = [
       'Other',
@@ -211,14 +211,11 @@
     const parseSet = (value, allowed = []) =>
       EditorCore.utils.parseStringList(value, { allowed });
 
-    const joinSet = (value) => EditorCore.utils.stringifyStringList(value);
-    const toNullableInt = (value) => EditorCore.utils.toNullableInt(value);
+    const joinSet = EditorCore.utils.stringifyStringList;
+    const toNullableInt = EditorCore.utils.toNullableInt;
 
-    const toNullableId = (value) => {
-      const num = toNullableInt(value);
-      if (!num || num <= 0) return null;
-      return num;
-    };
+    // ID записи: положительное целое или null — общий помощник студии.
+    const toNullableId = EditorCore.utils.toPositiveInt;
 
     const toNonNegativeNumber = (value) => {
       const num = Number(value);
@@ -746,13 +743,11 @@
       },
     };
 
-    const dirty = EditorCore.Dirty?.create
-      ? EditorCore.Dirty.create({
-          root: document.querySelector('.editor-main') || document.body,
-          pill: document.getElementById('dirty-pill'),
-          beforeUnload: true,
-        })
-      : { markDirty: () => {}, setClean: () => {} };
+    const dirty = EditorCore.Dirty.create({
+      root: document.querySelector('.editor-main') || document.body,
+      pill: document.getElementById('dirty-pill'),
+      beforeUnload: true,
+    });
 
     const filterGroup = document.getElementById('filterGroup');
     const filterType = document.getElementById('filterType');
