@@ -106,6 +106,14 @@ function map_edit_expand_tiles(string $plain, int $count, int $version): string
     return $tiles;
 }
 
+/** Switch layer is CSwitchTileExtra per cell: number, type, flags, delay. */
+function map_edit_expand_switch(string $plain, int $count): string
+{
+    if ($count < 1 || $count > 4000000) throw new RuntimeException('Данные switch-слоя повреждены.');
+    if (strlen($plain) < $count * 4) throw new RuntimeException('Switch-слой обрезан.');
+    return substr($plain, 0, $count * 4);
+}
+
 /** Validate a complete datafile and return only its compact structure summary. */
 function map_edit_validate_datafile(string $bytes): array
 {
@@ -136,8 +144,13 @@ function map_edit_validate_datafile(string $bytes): array
         throw new RuntimeException('Таблицы или размеры карты не согласованы.');
     }
 
-    // Locate the actual game-layer raw-data index from the unmodified item table.
+    // Locate the actual game-layer and switch-layer raw-data indexes from the
+    // unmodified item table. Both tables are read from the same $flags field:
+    // TILESLAYERFLAG_GAME (1) marks the gameplay layer, TILESLAYERFLAG_SWITCH
+    // (16) marks the switch layer, whose extra data lives in m_Switch (offset
+    // 84 for current maps, 72 for legacy ones).
     $game = null;
+    $switch = null;
     for ($i = 0; $i < $numTypes; $i++) {
         $type = map_edit_u32($bytes, $typesStart + $i * 12);
         if ($type !== 5) continue; // MAPITEMTYPE_LAYER
@@ -159,12 +172,23 @@ function map_edit_validate_datafile(string $bytes): array
             $flags = map_edit_u32($bytes, $payload + 24);
             $image = map_edit_i32($bytes, $payload + 52);
             $rawIndex = map_edit_i32($bytes, $payload + 56);
-            if (($flags & 1) === 0 || $image !== -1) continue;
-            if ($width < 1 || $height < 1 || $width * $height > 4000000 || $rawIndex < 0 || $rawIndex >= $numData) {
-                throw new RuntimeException('Игровой слой карты имеет неверные размеры.');
+            if ($width < 1 || $height < 1 || $width * $height > 4000000) {
+                throw new RuntimeException('Слой карты имеет неверные размеры.');
             }
-            $game = ['data' => $rawIndex, 'width' => $width, 'height' => $height, 'version' => $tileVersion];
-            break 2;
+            $switchAt = $tileVersion <= 2 ? 72 : 84;
+            if ($switch === null && ($flags & 16) !== 0 && $payload + $switchAt + 4 <= $payload + $payloadSize) {
+                $switchIndex = map_edit_i32($bytes, $payload + $switchAt);
+                if ($switchIndex >= 0 && $switchIndex < $numData) {
+                    $switch = ['data' => $switchIndex, 'width' => $width, 'height' => $height, 'rows_bytes' => 4];
+                }
+            }
+            if ($game === null && ($flags & 1) !== 0 && $image === -1) {
+                if ($rawIndex < 0 || $rawIndex >= $numData) {
+                    throw new RuntimeException('Игровой слой карты имеет неверные размеры.');
+                }
+                $game = ['data' => $rawIndex, 'width' => $width, 'height' => $height, 'version' => $tileVersion];
+            }
+            if ($game !== null && $switch !== null) break 2;
         }
     }
     if ($game === null) throw new RuntimeException('В карте не найден поддерживаемый игровой слой.');
@@ -173,6 +197,7 @@ function map_edit_validate_datafile(string $bytes): array
     $rawHashes = [];
     $rawSizes = [];
     $gamePlain = null;
+    $switchPlain = null;
     $last = -1;
     $uncompressedTotal = 0;
     for ($i = 0; $i < $numData; $i++) {
@@ -188,12 +213,26 @@ function map_edit_validate_datafile(string $bytes): array
         $rawHashes[] = hash('sha256', $compressed);
         $rawSizes[] = $plainSize;
         if ($i === $game['data']) $gamePlain = $plain;
+        if ($switch !== null && $i === $switch['data']) {
+            // A switch layer shorter than width*height*4 is ignored by the game
+            // engine itself, so it is not editable either.
+            if (strlen($plain) >= $switch['width'] * $switch['height'] * $switch['rows_bytes']) {
+                $switchPlain = $plain;
+            } else {
+                $switch = null;
+            }
+        }
         $uncompressedTotal += $plainSize;
         if ($uncompressedTotal > MAP_EDIT_MAX_BYTES * 2) throw new RuntimeException('Распакованные данные карты слишком велики.');
         $last = $off;
     }
     if (!is_string($gamePlain)) throw new RuntimeException('Данные игрового слоя не найдены.');
     $gameTiles = map_edit_expand_tiles($gamePlain, $game['width'] * $game['height'], $game['version']);
+    $switchTiles = null;
+    if ($switch !== null) {
+        if (!is_string($switchPlain)) throw new RuntimeException('Данные switch-слоя не найдены.');
+        $switchTiles = map_edit_expand_switch($switchPlain, $switch['width'] * $switch['height']);
+    }
     return [
         'counts' => [$numTypes, $numItems, $numData, $itemSize],
         'types_hash' => hash('sha256', substr($bytes, $typesStart, $numTypes * 12)),
@@ -203,42 +242,102 @@ function map_edit_validate_datafile(string $bytes): array
         'raw_sizes' => $rawSizes,
         'game' => $game,
         'game_tiles' => $gameTiles,
+        'switch' => $switch,
+        'switch_tiles' => $switchTiles,
     ];
 }
 
-/** Only a single game-layer edit from empty to a non-collision entity is allowed. */
-function map_edit_assert_tile_only_change(array $before, array $after, array $allowedTileIds): int
+/**
+ * Game-layer cells may be added, moved and deleted; switch-layer cells may be
+ * added, moved, edited and deleted. Everything else about the map must stay
+ * byte-identical, and every entity/switch type has to come from the allowlist
+ * supplied by the editor (X-Map-Allowed-Tiles).
+ *
+ * Returns `['game' => n, 'switch' => m]` counts for the audit log.
+ */
+function map_edit_assert_tile_only_change(array $before, array $after, array $allowedTileIds): array
 {
-    foreach (['counts', 'types_hash', 'item_offsets_hash', 'items_hash', 'game'] as $key) {
-        if ($before[$key] !== $after[$key]) throw new RuntimeException('Можно менять только игровые тайлы; структура карты не должна изменяться.');
+    foreach (['counts', 'types_hash', 'item_offsets_hash', 'items_hash', 'game', 'switch'] as $key) {
+        if ($before[$key] !== $after[$key]) throw new RuntimeException('Можно менять только тайлы игрового и switch-слоя; структура карты не должна изменяться.');
     }
+    $editable = [$before['game']['data']];
+    if (is_array($before['switch'])) $editable[] = $before['switch']['data'];
     $changedRaw = [];
     for ($i = 0; $i < count($before['raw_hashes']); $i++) {
-        if ($i === $before['game']['data']) continue;
+        if (in_array($i, $editable, true)) continue;
         if ($before['raw_hashes'][$i] !== $after['raw_hashes'][$i] || $before['raw_sizes'][$i] !== $after['raw_sizes'][$i]) {
             throw new RuntimeException('Изменён посторонний ресурс карты; сохранение отклонено.');
         }
     }
-    $rawIndex = $before['game']['data'];
-    if ($before['raw_hashes'][$rawIndex] !== $after['raw_hashes'][$rawIndex]) $changedRaw[] = $rawIndex;
-    if (!$changedRaw || $after['raw_sizes'][$rawIndex] < 4) throw new RuntimeException('В карте не обнаружены добавленные тайлы.');
+    foreach ($editable as $rawIndex) {
+        if ($before['raw_hashes'][$rawIndex] !== $after['raw_hashes'][$rawIndex]) $changedRaw[] = $rawIndex;
+    }
+    if (!$changedRaw) throw new RuntimeException('В карте не обнаружены изменённые тайлы.');
+    $allowed = array_fill_keys($allowedTileIds, true);
+
+    // Game layer: 3 bytes per cell (index, flags, reserved). Flags and the
+    // reserved byte must stay untouched; only the entity index changes.
     $old = $before['game_tiles'];
     $new = $after['game_tiles'];
     if (strlen($old) !== strlen($new)) throw new RuntimeException('Размер игрового слоя изменился.');
-    $changes = 0;
+    $gameChanges = 0;
     for ($offset = 0, $length = strlen($old); $offset < $length; $offset += 3) {
         if ($old[$offset] === $new[$offset] && $old[$offset + 1] === $new[$offset + 1] && $old[$offset + 2] === $new[$offset + 2]) continue;
         $oldIndex = ord($old[$offset]);
         $newIndex = ord($new[$offset]);
-        if ($oldIndex !== 0 || $newIndex < 4 || !in_array($newIndex, $allowedTileIds, true)
-            || $new[$offset + 1] !== $old[$offset + 1] || $new[$offset + 2] !== $old[$offset + 2]) {
-            throw new RuntimeException('Разрешено только добавлять сущности в пустые клетки игрового слоя.');
+        if ($old[$offset + 1] !== $new[$offset + 1] || $old[$offset + 2] !== $new[$offset + 2]) {
+            throw new RuntimeException('У тайла игрового слоя нельзя менять флаги.');
         }
-        $changes++;
+        if ($newIndex !== 0 && !isset($allowed[$newIndex])) {
+            throw new RuntimeException('Тайл не входит в список разрешённых сущностей.');
+        }
+        if ($oldIndex !== 0 && $oldIndex <= 3) {
+            throw new RuntimeException('Тайлы столкновений (1–3) нельзя удалять или перемещать.');
+        }
+        if ($oldIndex !== 0 && !isset($allowed[$oldIndex])) {
+            throw new RuntimeException('На карте нашлись тайлы вне списка разрешённых сущностей; сохранение отклонено.');
+        }
+        $gameChanges++;
     }
-    if ($changes < 1) throw new RuntimeException('В карте не обнаружены добавленные тайлы.');
-    if ($changes > 1000) throw new RuntimeException('За одно применение можно добавить не более 1000 тайлов.');
-    return $changes;
+    if ($gameChanges > 1000) throw new RuntimeException('За одно применение можно изменить не более 1000 тайлов игрового слоя.');
+
+    // Switch layer: 4 bytes per cell (number, type, flags, delay). The switch
+    // type is the entity: type 0 clears the cell, otherwise the type has to be
+    // in the allowlist and the switch number must be a real 1–255 value.
+    $switchChanges = 0;
+    if (is_array($before['switch'])) {
+        $oldSwitch = (string)$before['switch_tiles'];
+        $newSwitch = (string)$after['switch_tiles'];
+        if ($oldSwitch === '' || strlen($oldSwitch) !== strlen($newSwitch)) throw new RuntimeException('Размер switch-слоя изменился.');
+        for ($offset = 0, $length = strlen($oldSwitch); $offset < $length; $offset += 4) {
+            if (substr($oldSwitch, $offset, 4) === substr($newSwitch, $offset, 4)) continue;
+            $oldNumber = ord($oldSwitch[$offset]);
+            $oldType = ord($oldSwitch[$offset + 1]);
+            $oldFlags = $oldSwitch[$offset + 2];
+            $oldDelay = $oldSwitch[$offset + 3];
+            $newNumber = ord($newSwitch[$offset]);
+            $newType = ord($newSwitch[$offset + 1]);
+            if ($newSwitch[$offset + 2] !== $oldFlags || $newSwitch[$offset + 3] !== $oldDelay) {
+                throw new RuntimeException('У switch-тайла нельзя менять флаги и задержку.');
+            }
+            if ($newType !== 0 && !isset($allowed[$newType])) {
+                throw new RuntimeException('Switch-тайл не входит в список разрешённых сущностей.');
+            }
+            if ($oldType !== 0 && !isset($allowed[$oldType])) {
+                throw new RuntimeException('На карте нашлись switch-тайлы вне списка разрешённых сущностей; сохранение отклонено.');
+            }
+            if ($newType !== 0 && ($newNumber < 1)) {
+                throw new RuntimeException('Номер switch должен быть от 1 до 255.');
+            }
+            $switchChanges++;
+        }
+        if ($switchChanges > 1000) throw new RuntimeException('За одно применение можно изменить не более 1000 switch-тайлов.');
+    } elseif (is_array($after['switch'])) {
+        throw new RuntimeException('Карта потеряла switch-слой; сохранение отклонено.');
+    }
+
+    if ($gameChanges + $switchChanges < 1) throw new RuntimeException('В карте не обнаружены изменённые тайлы.');
+    return ['game' => $gameChanges, 'switch' => $switchChanges];
 }
 
 map_edit_guard();
@@ -309,7 +408,7 @@ try {
     }
     if (hash_equals(hash('sha256', $oldBytes), hash('sha256', $newBytes))) {
         flock($lock, LOCK_UN); fclose($lock);
-        respond(['ok' => true, 'changed' => false, 'sha256' => $expectedHash]);
+        respond(['ok' => true, 'changed' => false, 'sha256' => $expectedHash, 'tiles' => 0, 'switch_tiles' => 0]);
     }
     $oldMapInfo = map_edit_validate_datafile($oldBytes);
     $tileChanges = map_edit_assert_tile_only_change($oldMapInfo, $newMapInfo, $allowedTileIds);
@@ -347,7 +446,8 @@ try {
     foreach (array_slice($backups, 10) as $staleBackup) @unlink($staleBackup);
     flock($lock, LOCK_UN); fclose($lock);
     if (function_exists('editor_audit')) editor_audit('map.tiles.save', '', ['world_id' => (int)$worldId, 'tiles' => $tileChanges, 'bytes' => strlen($newBytes)]);
-    respond(['ok' => true, 'changed' => true, 'sha256' => $newHash]);
+    respond(['ok' => true, 'changed' => true, 'sha256' => $newHash,
+        'tiles' => $tileChanges['game'], 'switch_tiles' => $tileChanges['switch']]);
 } catch (Throwable $e) {
     if (isset($lock) && is_resource($lock)) { @flock($lock, LOCK_UN); @fclose($lock); }
     editor_internal_error($e);

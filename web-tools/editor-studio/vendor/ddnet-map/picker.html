@@ -78,33 +78,57 @@
         </div>
       </section>
 
-      <section class="pk-sec" id="pk-sec-points" aria-labelledby="pk-sec-points-title" hidden>
-        <h2 class="pk-sec-title" id="pk-sec-points-title">Существующие точки</h2>
+      <section class="pk-sec" id="pk-sec-edit" aria-labelledby="pk-sec-edit-title" hidden>
+        <h2 class="pk-sec-title" id="pk-sec-edit-title">Правка точек и switch-тайлов</h2>
         <div class="pk-sec-body">
-          <p class="pk-sec-hint">Точки, которые уже стоят на карте. Выберите одну — её координаты станут позицией записи.</p>
+          <p class="pk-sec-hint" id="pk-edit-hint"></p>
+
+          <div class="pk-segmented pk-segmented-sm" role="radiogroup" aria-label="Слой правки">
+            <button type="button" class="pk-seg is-active" id="pk-edit-layer-game" role="radio" aria-checked="true">Игровой слой</button>
+            <button type="button" class="pk-seg" id="pk-edit-layer-switch" role="radio" aria-checked="false">Switch-слой</button>
+          </div>
+
+          <div class="pk-edit-pane" id="pk-edit-pane-game">
+            <label class="pk-field" id="pk-edit-tile-wrap">
+              <span id="pk-edit-tile-label">Тайл</span>
+              <select id="pk-edit-tile" aria-label="Тайл для установки"></select>
+            </label>
+            <p class="pk-sec-hint" id="pk-edit-type-hint"></p>
+          </div>
+
+          <div class="pk-edit-pane" id="pk-edit-pane-switch" hidden>
+            <label class="pk-field" id="pk-switch-type-wrap">
+              <span id="pk-switch-type-label">Тип switch-тайла</span>
+              <select id="pk-switch-type" aria-label="Тип switch-тайла"></select>
+            </label>
+            <label class="pk-field" id="pk-switch-number-wrap">
+              <span id="pk-switch-number-label">Номер switch</span>
+              <input type="number" id="pk-switch-number" min="1" max="255" step="1" inputmode="numeric" value="1" />
+            </label>
+            <p class="pk-sec-hint" id="pk-switch-hint"></p>
+          </div>
+
+          <div class="pk-edit-actions">
+            <button type="button" class="pk-btn" id="pk-edit-jump" title="Перейти к выбранной клетке">К точке</button>
+            <button type="button" class="pk-btn" id="pk-edit-delete" title="Удалить выбранную клетку (Delete)">Удалить</button>
+            <button type="button" class="pk-btn" id="pk-edit-restore" title="Вернуть выбранную клетку как было">Вернуть</button>
+            <button type="button" class="pk-btn" id="pk-edit-reset" title="Отменить все правки карты">Сбросить правки</button>
+          </div>
+          <output id="pk-edit-selected" class="pk-tool-status" aria-live="polite"></output>
+          <output id="pk-edit-status" class="pk-tool-status" aria-live="polite"></output>
+        </div>
+      </section>
+
+      <section class="pk-sec" id="pk-sec-points" aria-labelledby="pk-sec-points-title" hidden>
+        <h2 class="pk-sec-title" id="pk-sec-points-title">Точки на карте</h2>
+        <div class="pk-sec-body">
+          <p class="pk-sec-hint" id="pk-points-hint"></p>
           <label class="pk-field" id="pk-linked-tiles-wrap">
             <span id="pk-linked-tiles-label">Найденные тайлы</span>
             <select id="pk-linked-tiles" aria-label="Связанные точки"></select>
           </label>
           <button type="button" class="pk-btn pk-btn-primary" id="pk-linked-tiles-use">Использовать точку</button>
           <output id="pk-linked-tiles-status" class="pk-tool-status" aria-live="polite"></output>
-        </div>
-      </section>
-
-      <section class="pk-sec" id="pk-sec-add" aria-labelledby="pk-sec-add-title" hidden>
-        <h2 class="pk-sec-title" id="pk-sec-add-title">Новая точка на карте</h2>
-        <div class="pk-sec-body">
-          <p class="pk-sec-hint">Тайл ставится на свободную клетку, а точка — в её центр. Карта сохранится по «Применить» вместе с позицией.</p>
-          <label class="pk-check" id="pk-tile-edit-mode-wrap">
-            <input type="checkbox" id="pk-tile-edit-mode" />
-            <span id="pk-tile-edit-mode-label">Ставить тайл кликом по карте</span>
-          </label>
-          <label class="pk-field" id="pk-tile-edit-type-wrap">
-            <span id="pk-tile-edit-type-label">Тайл для установки</span>
-            <select id="pk-tile-edit-type" aria-label="Тип тайла"></select>
-          </label>
-          <button type="button" class="pk-btn" id="pk-tile-edit-clear">Отменить добавленные тайлы</button>
-          <output id="pk-tile-edit-status" class="pk-tool-status" aria-live="polite"></output>
         </div>
       </section>
 
@@ -219,6 +243,9 @@
 <script src="twwebgl.js"></script>
 <script src="picker-model.js"></script>
 <script src="picker-text.js"></script>
+<script src="picker-tile-catalog.js"></script>
+<script src="picker-tiles.js"></script>
+<script src="picker-map.js"></script>
 <script src="picker-map-edit.js"></script>
 <script src="picker-overlays.js"></script>
 <script src="picker-measure.js"></script>

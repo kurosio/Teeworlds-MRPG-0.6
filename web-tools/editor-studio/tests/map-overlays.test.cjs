@@ -16,11 +16,12 @@ test('collision culling clips to the viewport and limits distant zoom work', () 
 });
 test('linked highlighted tiles resolve to tile-center world coordinates and honor their cap', () => {
   const source = {width:4,height:2,indices:Uint8Array.from([209,0,18,209,18,209,0,0])};
+  // index — номер клетки слоя: по нему панель выделяет ровно эту точку.
   assert.deepEqual(O.findHighlightedTiles(source,[209]), [
-    {x:16,y:16,tile:209}, {x:112,y:16,tile:209}, {x:48,y:48,tile:209},
+    {x:16,y:16,tile:209,index:0}, {x:112,y:16,tile:209,index:3}, {x:48,y:48,tile:209,index:5},
   ]);
   assert.deepEqual(O.findHighlightedTiles(source,[209],2), [
-    {x:16,y:16,tile:209}, {x:112,y:16,tile:209},
+    {x:16,y:16,tile:209,index:0}, {x:112,y:16,tile:209,index:3},
   ]);
   assert.deepEqual(O.findHighlightedTiles(source,[1]), []);
   assert.deepEqual(O.findHighlightedTiles(null,[209]), []);

@@ -182,12 +182,20 @@
     if (data.type === 'editor-map:apply') {
       if (session.mapOptions?.preview) return;
       if (applyPoint(data.x, data.y)) {
-        const tilesSaved = Number.isInteger(Number(data.tilesSaved)) ? Math.max(0, Number(data.tilesSaved)) : 0;
+        const count = (value) => (Number.isInteger(Number(value)) ? Math.max(0, Number(value)) : 0);
+        const tilesSaved = count(data.tilesSaved);
+        const switchTilesSaved = count(data.switchTilesSaved);
         dispatch('editor-map:applied', {
-          x: Number(data.x), y: Number(data.y), worldId: session.worldId, tilesSaved,
+          x: Number(data.x), y: Number(data.y), worldId: session.worldId, tilesSaved, switchTilesSaved,
         });
-        if (tilesSaved > 0) {
-          window.EditorCore?.UI?.toast?.(t('Saved {0} map tile(s). The game server uses the new map after it reloads this world.', [tilesSaved]), 'success');
+        if (tilesSaved > 0 || switchTilesSaved > 0) {
+          // Оба слоя пишутся одним запросом, поэтому и одно сообщение: столько
+          // клеток игрового слоя и столько switch-тайлов.
+          const text = switchTilesSaved > 0
+            ? t('Saved {0} map tile(s) and {1} switch tile(s). The game server uses the new map after it reloads this world.',
+              [tilesSaved, switchTilesSaved])
+            : t('Saved {0} map tile(s). The game server uses the new map after it reloads this world.', [tilesSaved]);
+          window.EditorCore?.UI?.toast?.(text, 'success');
         }
         close('apply');
       }

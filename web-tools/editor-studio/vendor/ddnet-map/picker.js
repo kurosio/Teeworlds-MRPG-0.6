@@ -518,13 +518,13 @@
   };
 
   // ── геометрия камеры ──────────────────────────────────────────────────────
-  // tw.cameraPos — центр вида, tw.worldView — «базовая» высота вида в пикселях
-  // мира при зуме 1 (по умолчанию 1000). Эти формулы повторяют рендер
-  // библиотеки (tw.Map.Group.initMapScreen), поэтому точка на экране совпадает
-  // с картой пиксель в пиксель.
+  // Формулы экран↔мир и размеры вида живут в picker-map.js: там же зум «вся
+  // карта» и границы карты. Здесь остаются только обёртки над `tw` и `state`,
+  // чтобы остальной код вызывал screenToWorld(x, y) как раньше.
   // Размер окна в CSS-пикселях: координаты мыши и тача приходят именно в них.
   // Канва рендера может быть крупнее (плотность экрана), но карта на экране
   // всё равно занимает CSS-размер — иначе метка уезжает на retina.
+  const MapMath = window.MapPickerMap;
   const screenSize = () => {
     const canvas = el.cnvs;
     // clientWidth — размер в CSS-пикселях; width — резерв, если вёрстка ещё
@@ -534,49 +534,12 @@
     return { w: Math.max(1, w), h: Math.max(1, h) };
   };
 
-  const viewSize = () => {
-    const zoom = tw.cameraZoom || 1;
-    const screen = screenSize();
-    return {
-      w: (tw.worldView[0] * (screen.w / screen.h)) / zoom,
-      h: tw.worldView[1] / zoom,
-    };
-  };
-
-  const screenToWorld = (sx, sy) => {
-    const view = viewSize();
-    const screen = screenSize();
-    return {
-      x: tw.cameraPos[0] - view.w / 2 + (sx / screen.w) * view.w,
-      y: tw.cameraPos[1] - view.h / 2 + (sy / screen.h) * view.h,
-    };
-  };
-
-  const worldToScreen = (wx, wy) => {
-    const view = viewSize();
-    const screen = screenSize();
-    const scale = screen.w / view.w; // CSS-пикселей экрана на пиксель мира
-    return {
-      x: (wx - (tw.cameraPos[0] - view.w / 2)) * scale,
-      y: (wy - (tw.cameraPos[1] - view.h / 2)) * scale,
-    };
-  };
-
-  const clampZoom = (zoom) => Math.min(tw.ZOOM_MAX, Math.max(tw.ZOOM_MIN, zoom));
-
-  const fitZoom = () => {
-    const { w, h } = state.extent;
-    if (!w || !h) return 1;
-    const screen = screenSize();
-    const aspect = screen.w / screen.h;
-    return clampZoom(Math.min(tw.worldView[1] / h, (tw.worldView[0] * aspect) / w) * 0.94);
-  };
-
-  const pointZoom = () => {
-    const fit = fitZoom();
-    // При открытии показываем окрестности точки: примерно 1400 px мира по высоте.
-    return clampZoom(Math.max(fit, Math.min(1.6, tw.worldView[1] / 1400)));
-  };
+  const viewSize = () => MapMath.viewSize(tw, screenSize());
+  const screenToWorld = (sx, sy) => MapMath.screenToWorld(tw, screenSize(), sx, sy);
+  const worldToScreen = (wx, wy) => MapMath.worldToScreen(tw, screenSize(), wx, wy);
+  const clampZoom = (zoom) => MapMath.clampZoom(tw, zoom);
+  const fitZoom = () => MapMath.fitZoom(tw, screenSize(), state.extent);
+  const pointZoom = () => MapMath.pointZoom(tw, screenSize(), state.extent);
 
   const setCamera = (x, y, zoom) => {
     tw.cameraPos[0] = x;
@@ -613,40 +576,7 @@
   };
 
   // ── рамка карты и точка ───────────────────────────────────────────────────
-  const computeExtent = () => {
-    let w = tw.map?.gameplay?.width * 32 || 0;
-    let h = tw.map?.gameplay?.height * 32 || 0;
-    if (w && h) { state.extent = { w, h }; return; }
-    const groups = (tw.map && tw.map.groups) || [];
-    for (const group of groups) {
-      for (const layer of group.layers || []) {
-        if (layer.type === tw.LAYERTYPE_TILES || layer.type === tw.LAYERTYPE_QUADS) {
-          const tw32 = layer.tileSize || 32;
-          const lw = layer.width || 0;
-          const lh = layer.height || 0;
-          if (lw && lh) {
-            w = Math.max(w, lw * tw32);
-            h = Math.max(h, lh * tw32);
-          }
-        }
-      }
-    }
-    // Слой-квады хранит координаты вершин, а не размер в тайлах: если карта
-    // состоит только из квадов, берём границы из них.
-    if (!w || !h) {
-      for (const group of groups) {
-        for (const layer of group.layers || []) {
-          for (const quad of layer.quads || []) {
-            for (const p of quad.points || []) {
-              w = Math.max(w, p.x || 0);
-              h = Math.max(h, p.y || 0);
-            }
-          }
-        }
-      }
-    }
-    state.extent = { w: Math.max(w, 1024), h: Math.max(h, 1024) };
-  };
+  const computeExtent = () => { state.extent = MapMath.computeExtent(tw); };
 
   const overlay = el.ovl.getContext('2d');
   const overlayRatio = Math.min(window.devicePixelRatio || 1, 2);
@@ -803,6 +733,14 @@
       el.dockBadge.hidden = !staged;
       if (staged) el.dockBadge.textContent = DOCK.dockBadgeTiles.replace('{0}', String(staged));
     },
+    onPointer: (event) => {
+      // Двигать выбранную точку можно и мышью, и тачем.
+      if (event.type === 'touch') {
+        const point = event.touches?.[0];
+        return point ? screenToWorld(point.clientX, point.clientY) : null;
+      }
+      return screenToWorld(event.clientX, event.clientY);
+    },
   });
   workbenchApi = workbench;
   measureApi = window.MapPickerMeasure.create({
@@ -833,20 +771,12 @@
   el.modePoint.addEventListener('click', () => setClickMode('point'));
   el.modeTile.addEventListener('click', () => {
     if (clickMode === 'tile') { setClickMode('point'); return; }
-    const toggle = document.getElementById('pk-tile-edit-mode');
-    if (toggle.disabled) {
-      el.hint.hidden = false;
-      el.hint.textContent = DOCK.editUnsupported;
-      setDockOpen(true);
-      return;
-    }
-    // Режим включает сам workbench: у него есть и чекбокс в секции, и логика
-    // возврата прежних переключателей слоёв/сетки. Он же сообщает о смене
-    // режима через onModeChange, поэтому повторно переключать не нужно
-    // (иначе тумблер «нажался» бы дважды и выключился).
+    // Режим включает сам workbench: он показывает игровой слой и сетку, знает
+    // про слои карты и сообщает о смене режима через onModeChange. Повторно
+    // переключать его здесь нельзя — тумблер «нажался» бы дважды.
     if (!workbenchApi?.startPlacement?.()) {
       el.hint.hidden = false;
-      el.hint.textContent = DOCK.editUnsupported;
+      el.hint.textContent = DOCK.editNoLayer || DOCK.editUnsupported;
       setDockOpen(true);
       return;
     }
@@ -1026,18 +956,27 @@
   el.zoomOut.addEventListener('click', () => zoomBy(1 / 1.35));
   el.fit.addEventListener('click', fitMap);
   el.center.addEventListener('click', centerOnPoint);
-  const saveMapTileChanges = async (changes) => {
-    if (!changes.length) return 0;
+  /**
+   * Сохраняет черновик правок одним запросом. Тело — целый датафайл, поэтому
+   * сервер сверяет структуру, разрешённые ID и контрольную сумму исходной
+   * карты. `X-Map-Allowed-Tiles` — объединение ID обоих слоёв: игровой слой
+   * и switch-слой проверяются одним списком.
+   */
+  const saveMapTileChanges = async (plan) => {
+    const changes = plan || { game: [], switch: [] };
+    const total = (changes.game?.length || 0) + (changes.switch?.length || 0);
+    if (!total) return { tiles: 0, switchTiles: 0 };
     const worldId = Number(qs.get('worldId'));
     if (!Number.isSafeInteger(worldId) || worldId < 0) throw new Error(LANG === 'en'
       ? 'Cannot save map tiles: no world ID was provided.' : 'Не удалось сохранить тайлы: не передан ID мира.');
-    if (!window.MapPickerMapEdit || !tw.map?.dataFile?.fileData) throw new Error(LANG === 'en'
+    const editor = window.MapPickerMapEdit;
+    if (!editor || !tw.map?.dataFile?.fileData) throw new Error(LANG === 'en'
       ? 'This map format cannot be edited in the picker.' : 'Этот формат карты нельзя редактировать в map-picker.');
     const original = new Uint8Array(tw.map.dataFile.fileData);
     const originalHash = window.crypto?.subtle
       ? [...new Uint8Array(await crypto.subtle.digest('SHA-256', original))].map((byte) => byte.toString(16).padStart(2, '0')).join('')
-      : window.MapPickerMapEdit.sha256(original);
-    const updated = window.MapPickerMapEdit.patch(tw, changes);
+      : editor.sha256(original);
+    const updated = editor.patch(tw, changes);
     const base = new URL('../../api/', window.location.href);
     const csrfResponse = await fetch(new URL('auth.php?action=csrf', base), { credentials: 'same-origin', cache: 'no-store' });
     const csrfPayload = await csrfResponse.json().catch(() => ({}));
@@ -1046,7 +985,17 @@
         ? 'Map tile editing requires an administrator session.' : 'Добавлять тайлы может только администратор.'));
     }
     const endpoint = new URL(`map-edit.php?world=${worldId}`, base);
-    const allowedTiles = [...new Set(OPTIONS.highlightTiles.filter((id) => Number.isInteger(id) && id >= 4 && id <= 255))];
+    // Разрешённые ID: подсвеченные редактором сущности + всё, что реально
+    // правит черновик. Сервер отвергнет посторонние изменения карты.
+    const allowedTiles = [...new Set([
+      ...OPTIONS.highlightTiles,
+      // Новое значение и то, что стояло в клетке: сервер не даёт удалять
+      // сущности, которых редактор не объявлял.
+      ...changes.game.flatMap((change) => [change.tile, change.from]),
+      ...changes.switch.flatMap((change) => [change.type, change.from?.type]),
+    ].filter((id) => Number.isInteger(id) && id >= 4 && id <= 255))];
+    if (!allowedTiles.length) throw new Error(LANG === 'en'
+      ? 'No allowed map tiles were listed.' : 'Список разрешённых тайлов пуст.');
     const response = await fetch(endpoint, {
       method: 'POST', credentials: 'same-origin', cache: 'no-store',
       headers: {
@@ -1058,13 +1007,16 @@
     const payload = await response.json().catch(() => ({}));
     if (!response.ok || payload.ok !== true) throw new Error(payload.error || (LANG === 'en'
       ? `Map save failed (HTTP ${response.status}).` : `Не удалось сохранить карту (HTTP ${response.status}).`));
-    return changes.length;
+    // Карта записана: следующая правка должна считаться от нового файла,
+    // иначе повторное сохранение отменило бы это (и сервер вернул бы 409).
+    try { editor.reload(tw, updated); } catch { /* перезагрузка не критична для ответа */ }
+    return { tiles: changes.game.length, switchTiles: changes.switch.length, sha256: payload.sha256 || '' };
   };
   el.apply.addEventListener('click', async () => {
     if (OPTIONS.preview || !state.hasPoint || el.apply.disabled) return;
     commitGesture();
-    const changes = workbench?.getPendingTileChanges?.() || [];
-    if (!changes.length) {
+    const plan = workbench?.getPendingChanges?.() || { game: [], switch: [] };
+    if (!plan.game.length && !plan.switch.length) {
       post('editor-map:apply', { x: Math.round(state.point.x), y: Math.round(state.point.y), tilesSaved: 0 });
       return;
     }
@@ -1072,12 +1024,19 @@
     el.apply.disabled = true;
     el.apply.textContent = LANG === 'en' ? 'Saving map…' : 'Сохранение карты…';
     try {
-      const tilesSaved = await saveMapTileChanges(changes);
-      post('editor-map:apply', { x: Math.round(state.point.x), y: Math.round(state.point.y), tilesSaved });
+      const saved = await saveMapTileChanges(plan);
+      workbench?.markSaved?.();
+      post('editor-map:apply', {
+        x: Math.round(state.point.x), y: Math.round(state.point.y),
+        tilesSaved: saved.tiles, switchTilesSaved: saved.switchTiles,
+      });
     } catch (error) {
       el.apply.disabled = false;
       el.apply.textContent = applyLabel;
-      workbench?.setEditStatus?.(error?.message || (LANG === 'en' ? 'Map save failed.' : 'Не удалось сохранить карту.'));
+      workbench?.setStatus?.('editError');
+      workbench?.paintStatus?.();
+      el.hint.hidden = false;
+      el.hint.textContent = error?.message || (LANG === 'en' ? 'Map save failed.' : 'Не удалось сохранить карту.');
     }
   });
   el.cancel.addEventListener('click', () => post('editor-map:close'));
@@ -1120,6 +1079,13 @@
     if (key === 'escape' && clickMode !== 'point') {
       evt.preventDefault(); evt.stopImmediatePropagation();
       setClickMode('point');
+      return;
+    }
+    // Delete/Backspace удаляют выбранную точку: в режиме правки это основная
+    // операция, и мышь с клавиатурой должны делать одно и то же.
+    if ((key === 'delete' || key === 'backspace') && clickMode === 'tile') {
+      evt.preventDefault(); evt.stopImmediatePropagation();
+      workbenchApi?.deleteSelected?.();
       return;
     }
     if (key === 'g' || key === 's') {

@@ -345,10 +345,20 @@ if (fs.existsSync(pickerDir)) {
   // Инструменты делятся на три уровня: шапка (точка и камера), панель
   // «Инструменты карты» (режим клика + секции) и подвал (X/Y и Применить).
   // Режим клика выбирается один раз в переключателе, а не «кнопка за кнопкой».
+  // Секция правки заменила «Новую точку»: теперь в одном месте видны и
+  // существующие точки карты, и добавление, и switch-тайлы.
   for (const id of ['pk-dock', 'pk-mode-point', 'pk-mode-tile', 'pk-mode-measure',
-    'pk-sec-pick', 'pk-sec-points', 'pk-sec-add', 'pk-sec-measure', 'pk-sec-layers']) {
+    'pk-sec-pick', 'pk-sec-edit', 'pk-sec-points', 'pk-sec-measure', 'pk-sec-layers',
+    'pk-edit-layer-game', 'pk-edit-layer-switch', 'pk-switch-number', 'pk-switch-type']) {
     if (!pickerHtmlCode.includes(`id="${id}"`)) {
       problems.push(`vendor/ddnet-map/picker.html: панель потеряла ${id} (инструменты должны быть разделены по секциям)`);
+    }
+  }
+  // Слои правки живут в отдельных модулях: байтовый писатель карты, модель
+  // черновика и каталог ID. Без них панель молча теряет switch-тайлы.
+  for (const name of ['picker-map-edit.js', 'picker-tiles.js', 'picker-tile-catalog.js', 'picker-map.js']) {
+    if (!pickerHtmlCode.includes(name)) {
+      problems.push(`vendor/ddnet-map/picker.html: не подключён ${name}`);
     }
   }
   if (/<details class="pk-workbench"/.test(pickerHtmlCode)) {
@@ -392,6 +402,21 @@ if (fs.existsSync(pickerDir)) {
   }
   if (!workbenchCode.includes('startPlacement') || !workbenchCode.includes('cancelPlacement')) {
     problems.push('vendor/ddnet-map/picker-workbench.js: режим тайла должен включаться/выключаться через startPlacement/cancelPlacement');
+  }
+  // Правка карты — это не только добавление: удаление, перенос и switch-слой
+  // должны остаться в модели черновика, иначе панель снова станет «ставилкой».
+  for (const token of ['getPendingChanges', 'deleteSelected', 'move(', 'switch']) {
+    if (!workbenchCode.includes(token)) problems.push(`vendor/ddnet-map/picker-workbench.js: нет правки точек (${token})`);
+  }
+  const tilesCode = fs.existsSync(path.join(pickerDir, 'picker-tiles.js'))
+    ? read(path.join(pickerDir, 'picker-tiles.js'))
+    : '';
+  if (!tilesCode) {
+    problems.push('vendor/ddnet-map/picker-tiles.js: нет модели черновика правок');
+  } else {
+    for (const token of ['createDraft', 'move', 'restore', 'changes']) {
+      if (!tilesCode.includes(token)) problems.push(`vendor/ddnet-map/picker-tiles.js: черновик потерял ${token}`);
+    }
   }
 }
 

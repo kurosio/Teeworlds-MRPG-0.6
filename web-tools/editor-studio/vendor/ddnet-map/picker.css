@@ -510,6 +510,18 @@ canvas#ovl {
 .pk-layer-list:empty { display: none; }
 .pk-layer-list label { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; min-width: 0; overflow-wrap: anywhere; }
 .pk-tool-status { flex: 1 0 100%; font-size: 11.5px; color: var(--pk-muted); overflow-wrap: anywhere; }
+/* ── правка точек: компактные сегменты слоя и панели слоёв ─────────────── */
+.pk-segmented-sm .pk-seg { height: 26px; font-size: 11.5px; padding: 0 8px; }
+.pk-edit-pane { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pk-edit-pane[hidden] { display: none !important; }
+.pk-edit-pane .pk-sec-hint { flex: 1 0 100%; margin: 0; }
+.pk-edit-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.pk-edit-actions .pk-btn { height: 26px; padding: 0 10px; font-size: 11.5px; }
+.pk-dock .pk-field input#pk-switch-number { width: 76px; }
+#pk-edit-selected:empty, #pk-edit-status:empty { display: none; }
+#pk-edit-selected { color: var(--pk-text); }
+canvas.is-editing-tiles { cursor: crosshair; }
+
 .pk-tool-status:empty { display: none; }
 .pk-tool-status.is-warning { color: var(--pk-warning); }
 .pk-btn[aria-pressed="true"] { background: var(--pk-primary); border-color: transparent; color: #fff; }

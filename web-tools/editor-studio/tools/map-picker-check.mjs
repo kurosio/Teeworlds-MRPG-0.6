@@ -355,4 +355,88 @@ if (fs.existsSync(emptyQuadMapPath)) {
   assert.ok(rhythmMap.groups.length > 0);
 }
 
+
+// ── Правка карты: игровой и switch-слой ─────────────────────────────────────
+// Черновик правок — чистая модель: добавление, перенос, удаление и откат.
+const Tiles = (await import('node:module')).createRequire(import.meta.url)('../vendor/ddnet-map/picker-tiles.js');
+{
+  const cells = { game: [209, 0, 0, 18], switched: [] };
+  const draft = Tiles.createDraft({
+    sizes: { game: { width: 4, height: 1 } },
+    read: (layer, index) => (layer === 'game' ? cells.game[index] : null),
+  });
+  assert.equal(draft.set('game', 1, 0, 209), true, 'place a point into an empty cell');
+  assert.deepEqual(draft.changes().game, [{ x: 1, y: 0, tile: 209, from: 0 }]);
+  assert.equal(draft.move('game', { x: 0, y: 0 }, { x: 2, y: 0 }), true, 'move a point into an empty cell');
+  assert.deepEqual(
+    draft.changes().game.map((c) => [c.x, c.tile]).sort((a, b) => a[0] - b[0]),
+    [[0, 0], [1, 209], [2, 209]],
+  );
+  assert.equal(draft.move('game', { x: 2, y: 0 }, { x: 3, y: 0 }), false, 'occupied target is rejected');
+  // Перенос пишет и исходное значение: сервер сверяет его со своим allowlist.
+  const movedCell = draft.changes().game.find((change) => change.x === 0);
+  assert.deepEqual([movedCell.tile, movedCell.from], [0, 209]);
+  assert.equal(draft.set('game', 3, 0, 0), true, 'delete a point');
+  assert.equal(draft.list('game').length, 4);
+  // Возврат клетки к исходному значению убирает её из плана.
+  draft.restore('game', 1, 0);
+  assert.equal(draft.changes().game.some((change) => change.x === 1 && change.tile === 209), false);
+  draft.reset();
+  assert.equal(draft.size, 0, 'reset drops every edit');
+  assert.equal(Tiles.normalizeGame(300), 0, 'out-of-range tile ids are ignored');
+  assert.deepEqual(Tiles.normalizeSwitch({ number: 5, type: 200 }), { number: 5, type: 200 });
+  assert.equal(Tiles.normalizeSwitch({ number: 5, type: 0 }), null, 'type 0 means an empty switch cell');
+}
+
+// Байтовый писатель: switch-слой правится отдельно от игрового, а правки
+// соседних ресурсов не появляются.
+const switchMapPath = path.join(repoRoot, 'maps/main.map');
+if (fs.existsSync(switchMapPath)) {
+  const rawSwitchMap = fs.readFileSync(switchMapPath);
+  const switchAb = vm.runInContext(`new Uint8Array(${rawSwitchMap.length})`, context);
+  switchAb.set(rawSwitchMap);
+  const switchFile = new TwDataFile('main-switch', switchAb.buffer);
+  assert.equal(switchFile.parse(), true);
+  const found = MapPickerMapEdit.locateLayers(tw, switchFile);
+  assert.ok(found.game, 'main.map must expose a gameplay layer');
+  assert.ok(found.switch, 'main.map must expose a switch layer');
+  const switchSize = found.switch.tileLayer;
+  const cells = switchSize.width * switchSize.height;
+  const source = new Uint8Array(switchFile.getData(found.switch.rawIndex));
+  const records = MapPickerMapEdit.readSwitchRecords(source, cells);
+  assert.equal(records.length, cells * 4, 'switch records are four bytes per cell');
+  // Ищем занятую руду и свободную клетку, затем переносим первую во вторую.
+  const gameTiles = tw.parseGameplayIndices(switchFile.getData(found.game.rawIndex),
+    found.game.tileLayer.width * found.game.tileLayer.height, found.game.tileLayer.version);
+  let ore = -1, empty = -1;
+  for (let i = 0; i < cells; i++) {
+    if (ore < 0 && records[i * 4 + 1] === 200 && gameTiles[i] === 0) ore = i;
+    if (empty < 0 && records[i * 4 + 1] === 0 && gameTiles[i] === 0) empty = i;
+  }
+  assert.ok(ore >= 0 && empty >= 0, 'main.map needs an ore cell and an empty cell');
+  const out = MapPickerMapEdit.patch(tw, {
+    switch: [
+      { x: ore % switchSize.width, y: Math.floor(ore / switchSize.width), number: 0, type: 0 },
+      { x: empty % switchSize.width, y: Math.floor(empty / switchSize.width), number: 77, type: 200 },
+    ],
+  }, switchFile);
+  const patched = new TwDataFile('main-switch-out', out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength));
+  assert.equal(patched.parse(), true, 'patched map must parse');
+  const patchedLayers = MapPickerMapEdit.locateLayers(tw, patched);
+  const patchedSwitch = new Uint8Array(patched.getData(patchedLayers.switch.rawIndex));
+  assert.equal(patchedSwitch[ore * 4 + 1], 0, 'the source ore cell is cleared');
+  assert.equal(patchedSwitch[empty * 4], 77, 'the target cell keeps the switch number');
+  assert.equal(patchedSwitch[empty * 4 + 1], 200, 'the target cell keeps the ore type');
+  // Игровой блок не менялся, остальные ресурсы — байт в байт.
+  for (let i = 0; i < switchFile.numRawData; i++) {
+    const before = Buffer.from(new Uint8Array(switchFile.getData(i)));
+    const after = Buffer.from(new Uint8Array(patched.getData(i)));
+    if (i === patchedLayers.switch.rawIndex) continue;
+    assert.ok(before.equals(after), `raw block ${i} must stay untouched by a switch edit`);
+  }
+  // Коллизии игрового слоя правками не трогаются.
+  assert.throws(() => MapPickerMapEdit.patch(tw, { game: [{ x: 0, y: 0, tile: 1 }] }, switchFile),
+    /collision layer/, 'collision tiles are read-only');
+}
+
 console.log('Map picker clipping/culling, visibility, parallax, textures and quad parsing: ALL PASSED');

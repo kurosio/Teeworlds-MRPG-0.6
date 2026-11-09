@@ -17,7 +17,9 @@
     for (let i = 0; i < size && points.length < limit; i++) {
       if (!ids.has(game.indices[i])) continue;
       const x = i % game.width, y = Math.floor(i / game.width);
-      points.push({ x: x * 32 + 16, y: y * 32 + 16, tile: game.indices[i] });
+      // index — номер клетки в слое: по нему черновик правок и панель
+      // выделяют ровно ту точку, которую выбрал пользователь.
+      points.push({ x: x * 32 + 16, y: y * 32 + 16, tile: game.indices[i], index: i });
     }
     return points;
   };
@@ -105,6 +107,131 @@
     ctx.restore();
     return count;
   };
+  /**
+   * Кольца всех точек игрового слоя в видимой области. `isPoint(index)`
+   * решает, что считать точкой (обычно индекс >= 192), поэтому каталог ID
+   * остаётся в вызывающем коде.
+   */
+  const drawGamePoints = (ctx, game, bounds, project, isPoint, style = {}) => {
+    if (!bounds || !game || typeof isPoint !== 'function') return 0;
+    const origin = project(0, 0), end = project(32, 32);
+    const size = Math.max(1, Math.min(Math.abs(end.x - origin.x), Math.abs(end.y - origin.y)));
+    const color = style.color || '#52df9a';
+    let count = 0;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    for (let y = bounds.y0; y < bounds.y1; y++) {
+      for (let x = bounds.x0; x < bounds.x1; x++) {
+        const index = game.indices[y * game.width + x];
+        if (!isPoint(index)) continue;
+        count++;
+        const p = project(x * 32 + 16, y * 32 + 16);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(3, size / 3), 0, Math.PI * 2);
+        ctx.stroke();
+        if (style.labels && size >= 18) {
+          const text = String(index);
+          ctx.font = '10px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = 'rgba(0,0,0,.55)';
+          ctx.fillText(text, p.x, p.y - Math.max(6, size / 3) - 3);
+        }
+      }
+    }
+    ctx.restore();
+    return count;
+  };
+
+  /**
+   * Точки switch-слоя: `cells` — Map(index → { number, type }) с координатами
+   * слоя, `size` — { width, height }. Показываются только занятые клетки.
+   */
+  const drawSwitchPoints = (ctx, cells, size, project, style = {}) => {
+    if (!cells || !size) return 0;
+    const origin = project(0, 0), end = project(32, 32);
+    const radius = Math.max(3, Math.min(Math.abs(end.x - origin.x), Math.abs(end.y - origin.y)) / 3);
+    let count = 0;
+    ctx.save();
+    ctx.strokeStyle = style.color || '#52df9a';
+    ctx.lineWidth = 2;
+    for (const [index, value] of cells) {
+      if (!value || !value.type) continue;
+      const x = index % size.width, y = Math.floor(index / size.width);
+      const p = project(x * 32 + 16, y * 32 + 16);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      count++;
+      if (style.labels && radius >= 6) {
+        const label = `#${value.number}`;
+        ctx.fillStyle = '#101722';
+        ctx.fillRect(p.x + 4, p.y - 16, label.length * 7 + 4, 14);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px monospace';
+        ctx.fillText(label, p.x + 6, p.y - 5);
+      }
+    }
+    ctx.restore();
+    return count;
+  };
+
+  /**
+   * Черновые правки: зелёная заливка — добавлено, красный крест — удалено,
+   * жёлтая рамка — клетка, которую перенесли.
+   */
+  const drawEditMarks = (ctx, marks, project) => {
+    if (!Array.isArray(marks) || !marks.length) return;
+    ctx.save();
+    for (const mark of marks) {
+      if (!mark || !Number.isFinite(mark.x) || !Number.isFinite(mark.y)) continue;
+      const p = project(mark.x * 32, mark.y * 32), q = project(mark.x * 32 + 32, mark.y * 32 + 32);
+      const w = Math.max(2, q.x - p.x), h = Math.max(2, q.y - p.y);
+      if (mark.kind === 'delete') {
+        ctx.strokeStyle = '#ff536b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(p.x + 4, p.y + 4); ctx.lineTo(p.x + w - 4, p.y + h - 4);
+        ctx.moveTo(p.x + w - 4, p.y + 4); ctx.lineTo(p.x + 4, p.y + h - 4);
+        ctx.stroke();
+      } else if (mark.kind === 'move') {
+        ctx.strokeStyle = '#ffda70';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(p.x + 1, p.y + 1, w - 2, h - 2);
+      } else {
+        ctx.fillStyle = 'rgba(82,223,154,.3)';
+        ctx.fillRect(p.x, p.y, w, h);
+        ctx.strokeStyle = '#52df9a';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(p.x + 1, p.y + 1, w - 2, h - 2);
+      }
+    }
+    ctx.restore();
+  };
+
+  /** Выделенная клетка: заметная рамка с подписью. */
+  const drawSelection = (ctx, cell, project, caption, color = '#ffda70') => {
+    if (!cell || !Number.isFinite(cell.x) || !Number.isFinite(cell.y)) return;
+    const p = project(cell.x * 32, cell.y * 32), q = project(cell.x * 32 + 32, cell.y * 32 + 32);
+    const w = Math.max(2, q.x - p.x), h = Math.max(2, q.y - p.y);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,.6)';
+    ctx.lineWidth = 5;
+    ctx.strokeRect(p.x + 1, p.y + 1, w - 2, h - 2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(p.x + 1, p.y + 1, w - 2, h - 2);
+    if (caption) {
+      const width = String(caption).length * 6.3 + 10;
+      ctx.fillStyle = 'rgba(0,0,0,.78)';
+      ctx.fillRect(p.x, p.y - 18, width, 16);
+      ctx.fillStyle = color;
+      ctx.font = '600 11px Inter, system-ui, sans-serif';
+      ctx.fillText(String(caption), p.x + 5, p.y - 6);
+    }
+    ctx.restore();
+  };
+
   /** Рамка одного тайла под курсором/точкой (цвет задаёт вызывающий код). */
   const drawTileBox = (ctx, worldX, worldY, project, fill, stroke) => {
     const tx = Math.floor(worldX / 32), ty = Math.floor(worldY / 32);
@@ -167,7 +294,7 @@
     for (const p of [start, end]) { ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
   };
-  const api = { drawSwitchTiles, tileAt, findHighlightedTiles, blockedTile, distance, visibleTiles, drawCollision, drawHighlightedTiles, drawTileBox, drawRadius, drawMeasure };
+  const api = { drawSwitchTiles, drawGamePoints, drawSwitchPoints, drawEditMarks, drawSelection, tileAt, findHighlightedTiles, blockedTile, distance, visibleTiles, drawCollision, drawHighlightedTiles, drawTileBox, drawRadius, drawMeasure };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.MapPickerOverlays = api;
 })(typeof window !== 'undefined' ? window : globalThis);
