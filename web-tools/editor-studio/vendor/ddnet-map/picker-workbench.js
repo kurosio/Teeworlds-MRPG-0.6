@@ -43,8 +43,8 @@
         'edit-tile-wrap', 'edit-tile-label', 'edit-tile', 'edit-type-hint',
         'switch-type-wrap', 'switch-type-label', 'switch-type',
         'switch-number-wrap', 'switch-number-label', 'switch-number', 'switch-hint',
-        'edit-jump', 'edit-delete', 'edit-restore', 'edit-reset',
-        'edit-selected', 'edit-status', 'edit-hint', 'sec-edit-title', 'sec-points-title',
+        'edit-delete', 'edit-restore', 'edit-reset',
+        'edit-selected', 'edit-status', 'sec-edit-title', 'sec-points-title',
         'linked-tiles-wrap', 'linked-tiles', 'linked-tiles-label',
         'linked-tiles-use', 'linked-tiles-status', 'points-hint',
       ];
@@ -84,14 +84,11 @@
       el.spawn.textContent = text.spawn;
       el['layers-reset'].textContent = text.layers;
       // Подписи кнопок — из общего словаря, как и остальные секции панели.
-      el['edit-jump'].textContent = text.editJump;
       el['edit-delete'].textContent = text.editDelete;
       el['edit-restore'].textContent = text.editRestore;
       el['edit-reset'].textContent = text.editReset;
       get('sec-edit-title').textContent = text.editTitle;
       get('sec-points-title').textContent = text.editTileListTitle;
-      el['edit-hint'] = get('edit-hint');
-      el['edit-hint'].textContent = text.editHint;
 
       el.collision.checked = options.tiles === true;
 
@@ -117,7 +114,8 @@
       const paintStatus = () => {
         const message = statusKey ? fill(text[statusKey], ...statusArgs) : '';
         if (el['edit-status'].textContent !== message) el['edit-status'].textContent = message;
-        el['edit-status'].classList.toggle('is-warning', statusKey === 'editCapReached' || statusKey === 'editCollision');
+        el['edit-status'].classList.toggle('is-warning',
+          statusKey === 'editCapReached' || statusKey === 'editCollision' || statusKey === 'editDrift');
       };
 
       // ── чтение слоёв карты ────────────────────────────────────────────────
@@ -126,7 +124,11 @@
       const gameLayer = () => sizes.game;
       const switchLayer = () => sizes.switch;
       const sizeOf = (target) => (target === 'switch' ? sizes.switch : sizes.game) || null;
-      /** Значение клетки в исходной карте (для черновика и сравнения). */
+      /**
+       * Значение клетки в живой карте. Внимание: черновик пишет сюда же,
+       * поэтому исходное состояние для сравнения берётся из `baseline`
+       * (см. `readOriginal`).
+       */
       const readCell = (target, index) => {
         if (target === 'switch') {
           const cells = tw.map?.switchCells;
@@ -153,15 +155,61 @@
         y: Math.floor(index / sizeOf(target).width),
       });
 
+      /**
+       * Исходное значение клетки — всегда из первоначальной карты, а не из
+       * живого просмотра: черновик сам меняет `tw.map`, и читать оттуда
+       * значило бы сравнивать правку саму с собой. `baseline` запоминает
+       * исходные значения при первом касании клетки.
+       */
+      const baseline = new Map(); // `${layer}:${index}` → исходное значение
+      const readOriginal = (target, index) => {
+        const key = `${target}:${index}`;
+        if (baseline.has(key)) return baseline.get(key);
+        return readCell(target, index);
+      };
       const ensureDraft = () => {
         if (draft) return draft;
         draft = model.createDraft({
           sizes,
-          read: readCell,
+          // read() должен быть неизменным: карта в `tw.map` живёт своей
+          // жизнью, поэтому читаем из снимка исходного состояния.
+          read: readOriginal,
           onCell: applyCell,
           limit: model.MAX_EDITS,
+          onChange: () => { paintSelection(); paintDraftStatus(); redraw(); },
         });
         return draft;
+      };
+      /** Запомнить исходное значение клетки до первой правки. */
+      const remember = (target, index) => {
+        const key = `${target}:${index}`;
+        if (!baseline.has(key)) baseline.set(key, readCell(target, index));
+      };
+      /**
+       * Проблемы черновика. Модель сверяет правки со своим неизменным
+       * снимком, но живая карта — отдельная копия: черновик пишет в неё сам,
+       * а другие окна/повторная загрузка могут её поменять. Поэтому
+       * дополнительно сверяем каждую правку с живым значением: оно должно
+       * совпадать с тем, что черновик туда записал.
+       */
+      const consistencyProblems = () => {
+        if (!draft) return [];
+        const problems = draft.problems().slice();
+        const known = new Set(problems.map((item) => `${item.layer}:${item.index}`));
+        const normalize = (target, value) => (target === 'switch'
+          ? model.normalizeSwitch(value) : model.normalizeGame(value));
+        for (const target of model.LAYERS) {
+          for (const entry of draft.list(target)) {
+            const key = `${target}:${entry.index}`;
+            if (known.has(key)) continue;
+            const live = normalize(target, readCell(target, entry.index));
+            if (!model.same(live, draft.get(target, entry.index))) {
+              problems.push({ layer: target, index: entry.index, reason: 'drift' });
+              known.add(key);
+            }
+          }
+        }
+        return problems;
       };
 
       // ── списки тайлов ─────────────────────────────────────────────────────
@@ -231,7 +279,9 @@
         // «Вернуть» доступно только для клетки, у которой есть правка.
         el['edit-restore'].disabled = empty || !draft?.list(layer).some((entry) => entry.index === selection.index);
         if (empty) {
-          el['edit-selected'].textContent = text.editNoSelection;
+          // Пустое выделение не дублирует подсказку режима: строка скрывается,
+          // а состояние объясняет статус секции.
+          el['edit-selected'].textContent = '';
           return;
         }
         const spot = cell(layer, selection.index);
@@ -258,18 +308,42 @@
           else counts.moved++;
         }
         api.onBadge?.(list.length, counts);
-        if (list.length) setStatus('editPending', counts.added, counts.moved, counts.deleted);
+        // Рассинхронизация важнее сводки: иначе пользователь видел бы
+        // «всё готово» рядом с заблокированным «Применить».
+        const problems = consistencyProblems();
+        if (problems.length) setStatus('editDrift', problems.length);
+        else if (list.length) setStatus('editPending', counts.added, counts.moved, counts.deleted);
         else if (editMode) setStatus('editPendingEmpty');
         else setStatus('');
+        // Кнопка «Применить» зависит от состояния черновика (в том числе от
+        // рассинхронизации с картой) — сообщаем об этом окну.
+        api.onDraftChange?.(list.length);
       };
 
       // ── выбор клетки и правки ─────────────────────────────────────────────
       const canEditLayer = () => (layer === 'switch' ? !!switchLayer() : !!gameLayer());
 
+      /**
+       * Можно ли двигать/удалять это значение. В игровом слое правим только
+       * сущности (индекс > 191): вода, зоны и стены — часть геометрии карты,
+       * их сервер всё равно отклонит. У switch-слоя правится любой занятый
+       * тайл, потому что там всё и есть switch-тайлы.
+       */
+      const editableValue = (target, value) => (target === 'switch'
+        ? !!(value && value.type)
+        : catalog.isEntity(Number(value) || 0));
+
       const selectCell = (target, index, { reveal = false } = {}) => {
         if (!model.LAYERS.includes(target)) return false;
         const size = sizeOf(target);
         if (!size || index === null || index < 0 || index >= size.width * size.height) return false;
+        const value = draft ? draft.get(target, index) : readCell(target, index);
+        // Занятую клетку, которую нельзя править (вода, зона, стена),
+        // не выделяем: иначе Delete молча пытался бы её удалить.
+        if (value && !editableValue(target, value)) {
+          setStatus(target === 'switch' ? 'editNoLayer' : 'editNotEntity');
+          return false;
+        }
         layer = target;
         selection = { target, index };
         if (reveal) {
@@ -293,6 +367,7 @@
         const occupied = target === 'switch' ? !!(current && current.type) : (current > 0);
         if (!occupied) {
           const value = valueFor();
+          remember(target, selection.index);
           if (target === 'game' && catalog.isCollision(value)) { setStatus('editCollision'); paintLayers(); return false; }
           if (!edit.set(target, x, y, value)) { setStatus('editCapReached'); paintLayers(); return false; }
           const world = { x: x * TILE + TILE / 2, y: y * TILE + TILE / 2 };
@@ -300,13 +375,20 @@
           paintLayers();
           return true;
         }
+        if (!editableValue(target, current)) {
+          // Вода/зона/стена — не точка: подсказываем, что тут править нечего,
+          // и не превращаем клетку в «выбранную» с активным Delete.
+          selection = null;
+          paintLayers();
+          setStatus('editNotEntity');
+          return false;
+        }
         // Занятая клетка того же значения просто выбирается: так руда с
         // нужным номером не перезаписывается случайным кликом.
         const same = target === 'switch'
           ? current.number === switchNumberValue() && current.type === switchTypeValue()
           : current === Math.round(Number(el['edit-tile'].value));
-        if (!same) setStatus(target === 'switch' ? 'editOccupied' : 'editOccupied');
-        else setStatus('');
+        setStatus(same ? '' : 'editOccupied');
         paintLayers();
         return false;
       };
@@ -315,19 +397,27 @@
         if (!selection || selection.target !== layer || !canEditLayer()) return false;
         const edit = ensureDraft();
         const current = edit.get(layer, selection.index);
-        const occupied = layer === 'switch' ? !!(current && current.type) : current > 0;
-        if (!occupied) {
-          // Уже пустая клетка: убираем только черновик, если он был.
+        if (!editableValue(layer, current)) {
+          // Пустая клетка или геометрия карты: удалять нечего.
           paintDraftStatus();
           return false;
         }
         const spot = cell(layer, selection.index);
+        remember(layer, selection.index);
         if (!edit.set(layer, spot.x, spot.y, layer === 'switch' ? { number: 0, type: 0 } : 0)) {
           setStatus('editCapReached');
           return false;
         }
         paintLayers();
         return true;
+      };
+
+      /** Отбросить весь черновик (кнопка «Сбросить правки» и клавиша R). */
+      const resetEdits = () => {
+        ensureDraft().reset();
+        baseline.clear();
+        selection = null;
+        paintLayers();
       };
 
       const restoreSelected = () => {
@@ -347,13 +437,14 @@
         if (target === selection.index) return false;
         const edit = ensureDraft();
         const current = edit.get(layer, selection.index);
-        const occupied = layer === 'switch' ? !!(current && current.type) : current > 0;
-        if (!occupied) {
+        if (!editableValue(layer, current)) {
           // Пустая «выбранная» клетка просто переезжает вместе с кликом.
           selection = { target: layer, index: target };
           paintSelection();
           return false;
         }
+        remember(layer, selection.index);
+        remember(layer, target);
         const moved = edit.move(layer, cell(layer, selection.index), { x: tx, y: ty });
         if (!moved) { setStatus('editOccupied'); return false; }
         selection = { target: layer, index: target };
@@ -395,7 +486,10 @@
         if (selection && selection.target === 'game' && canEditLayer()) {
           const spot = cell('game', selection.index);
           const current = ensureDraft().get('game', selection.index);
-          if (current > 0) ensureDraft().set('game', spot.x, spot.y, Math.round(Number(el['edit-tile'].value)));
+          if (current > 0) {
+            remember('game', selection.index);
+            ensureDraft().set('game', spot.x, spot.y, Math.round(Number(el['edit-tile'].value)));
+          }
         }
         paintLayers();
       });
@@ -405,6 +499,7 @@
             const spot = cell('switch', selection.index);
             const current = ensureDraft().get('switch', selection.index);
             if (current && current.type) {
+              remember('switch', selection.index);
               ensureDraft().set('switch', spot.x, spot.y, { number: switchNumberValue(), type: switchTypeValue() });
             }
           }
@@ -413,15 +508,7 @@
       }
       el['edit-delete'].addEventListener('click', deleteSelected);
       el['edit-restore'].addEventListener('click', restoreSelected);
-      el['edit-reset'].addEventListener('click', () => {
-        ensureDraft().reset();
-        selection = null;
-        paintLayers();
-      });
-      el['edit-jump'].addEventListener('click', () => {
-        if (!selection) return;
-        selectCell(selection.target, selection.index, { reveal: true });
-      });
+      el['edit-reset'].addEventListener('click', resetEdits);
       el['linked-tiles-use'].addEventListener('click', () => {
         const index = Number(el['linked-tiles'].value);
         const point = Number.isInteger(index) ? linkedPoints[index] : null;
@@ -574,12 +661,16 @@
           return draft ? draft.changes() : { game: [], switch: [] };
         },
         get pendingCount() { return draft ? draft.size : 0; },
+        /** Рассинхронизация черновика с картой — повод не сохранять. */
+        problems: consistencyProblems,
+        isConsistent: () => consistencyProblems().length === 0,
         /**
          * После успешного сохранения карта уже записана: черновик очищается,
          * а `tw.map` пересобран в picker.js (MapPickerMapEdit.reload).
          */
         markSaved() {
           draft = null;
+          baseline.clear();
           selection = null;
           paintLayers();
         },
@@ -591,9 +682,28 @@
         },
         cancelPlacement() { if (editMode) setEditMode(false); },
         selectCell: (target, index) => selectCell(target, index, { reveal: true }),
+        /** Слой правки по кнопке/клавише: недоступный слой не включается. */
+        selectLayer(target) {
+          if (target === 'switch' && !switchLayer()) { setStatus('editNoLayer'); return false; }
+          if (target === 'game' && !gameLayer()) { setStatus('editNoGame'); return false; }
+          layer = target;
+          if (selection && selection.target !== layer) selection = null;
+          paintLayers();
+          return true;
+        },
+        /** «Сбросить правки» кнопкой и клавишей R — одно и то же действие. */
+        resetEdits,
         deleteSelected,
         setStatus,
         paintStatus,
+        /** Готовый текст (например ошибка сохранения) без ключа словаря. */
+        setStatusText(message) {
+          statusKey = '';
+          statusArgs.length = 0;
+          const value = String(message || '');
+          if (el['edit-status'].textContent !== value) el['edit-status'].textContent = value;
+          el['edit-status'].classList.toggle('is-warning', !!value);
+        },
         /** Вызывается после (пере)загрузки карты и после сохранения. */
         ready() {
           // Размеры слоёв берём из уже разобранной карты (gameplay/switchLayer):
@@ -614,6 +724,7 @@
             tw.map.switchCells = cells;
           }
           draft = null;
+          baseline.clear();
           selection = null;
           if (layer === 'switch' && !sizes.switch) layer = 'game';
           fillGameTiles();

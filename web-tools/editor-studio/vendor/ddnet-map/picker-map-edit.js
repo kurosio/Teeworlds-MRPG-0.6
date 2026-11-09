@@ -23,6 +23,7 @@
   const TILE_STRIDE = 3;   // index, flags, reserved
   const SWITCH_STRIDE = 4; // number, type, flags, delay
   const COLLISION_MAX = 3; // 1..3 — стена/смерть/без крюка: их не правим никогда
+  const MAX_EDITS = 1000;  // столько же, сколько принимает api/map-edit.php
 
   const writeU32 = (view, offset, value) => view.setUint32(offset, value >>> 0, true);
 
@@ -284,6 +285,20 @@
   };
 
   /**
+   * Значение клетки игрового слоя. `undefined`/`null` — это удаление (0), а
+   * мусор, дроби и выход за 0–255 отвергаются: молча превращать их в «пусто»
+   * значило бы терять данные карты.
+   */
+  const valueOrZero = (value) => {
+    if (value === undefined || value === null) return 0;
+    const number = Number(value);
+    if (!Number.isInteger(number) || number < 0 || number > 255) {
+      throw new Error(`Tile id ${String(value)} is not a valid tile index.`);
+    }
+    return number;
+  };
+
+  /**
    * Правит клетки и возвращает готовый файл карты.
    *
    * `plan` — `{ game: [{ x, y, tile }], switch: [{ x, y, number, type, flags, delay }] }`;
@@ -294,8 +309,26 @@
     if (!dataFile?.fileData) throw new Error('This map cannot be edited in the picker.');
     if (dataFile.fileData.byteLength > MAX_BYTES) throw new Error('This map exceeds the supported 48 MiB save limit.');
     const edits = Array.isArray(plan) ? { game: plan } : (plan || {});
+    if (!edits || typeof edits !== 'object') throw new Error('Tile edit plan is malformed.');
+    for (const key of Object.keys(edits)) {
+      if (key !== 'game' && key !== 'switch') throw new Error(`Unknown tile edit layer: ${key}.`);
+      if (edits[key] !== undefined && !Array.isArray(edits[key])) {
+        throw new Error(`Tile edit list for "${key}" must be an array.`);
+      }
+    }
+    const explicit = (Array.isArray(edits.game) ? edits.game.length : 0)
+      + (Array.isArray(edits.switch) ? edits.switch.length : 0);
+    if (explicit > MAX_EDITS) throw new Error(`A single save can change at most ${MAX_EDITS} cells.`);
     const layers = locateLayers(tw, dataFile);
     const replacements = new Map();
+    // Одна клетка не может встретиться в плане дважды: иначе итог зависит от
+    // порядка правок, а такие планы почти всегда означают баг вызывающего кода.
+    const seen = new Set();
+    const claim = (target, index) => {
+      const key = `${target}:${index}`;
+      if (seen.has(key)) throw new Error(`Cell ${index} of the ${target} layer is edited twice.`);
+      seen.add(key);
+    };
 
     if (Array.isArray(edits.game) && edits.game.length) {
       if (!layers.game) throw new Error('This map has no editable game tile layer.');
@@ -305,7 +338,8 @@
       const records = readTileRecords(new Uint8Array(dataFile.getData(layers.game.rawIndex)), count, tileLayer.version);
       for (const change of edits.game) {
         const index = cellIndex(change, tileLayer, 'game');
-        const tile = byteValue(change.tile);
+        claim('game', index);
+        const tile = valueOrZero(change.tile);
         if (tile > 0 && tile <= COLLISION_MAX) throw new Error(`Tile ${change.x}, ${change.y} is part of the collision layer.`);
         const current = records[index * TILE_STRIDE];
         if (current > 0 && current <= COLLISION_MAX && tile !== current) {
@@ -324,6 +358,7 @@
       const records = readSwitchRecords(new Uint8Array(dataFile.getData(layers.switch.rawIndex)), count);
       for (const change of edits.switch) {
         const index = cellIndex(change, tileLayer, 'switch');
+        claim('switch', index);
         const cursor = index * SWITCH_STRIDE;
         records[cursor] = byteValue(change.number);
         records[cursor + 1] = byteValue(change.type);
@@ -354,7 +389,7 @@
   };
 
   root.MapPickerMapEdit = {
-    MAX_BYTES, MAX_CELLS, TILE_STRIDE, SWITCH_STRIDE, switchOffset,
+    MAX_BYTES, MAX_CELLS, MAX_EDITS, TILE_STRIDE, SWITCH_STRIDE, switchOffset,
     sha256, readTileRecords, encodeTileRecords, readSwitchRecords, encodeSwitchRecords,
     locateLayer, locateLayers, locateGameLayer: (tw, dataFile) => locateLayer(tw, dataFile, 'game'),
     serializeDataFile, patch, reload,

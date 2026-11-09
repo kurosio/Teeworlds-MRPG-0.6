@@ -476,8 +476,18 @@
   // ── готовая точка ─────────────────────────────────────────────────────────
   const paintInputs = () => {
     updateValidity();
-    el.apply.disabled = OPTIONS.preview || !state.hasPoint || state.invalid || [el.inX, el.inY].some(input =>
+    // Рассинхронизированный черновик не отправляем: сервер отверг бы его
+    // (409) уже после бэкапа карты, а часть правок могла бы потеряться.
+    const drift = workbench?.isConsistent?.() === false;
+    el.apply.disabled = OPTIONS.preview || !state.hasPoint || state.invalid || drift || [el.inX, el.inY].some(input =>
       document.activeElement === input && (!input.value.trim() || !Number.isFinite(Number(input.value))));
+    if (drift) {
+      const count = workbench?.problems?.()?.length || 0;
+      const message = (DOCK.editDrift || '{0}')
+        .replace('{0}', String(count));
+      el.apply.title = message;
+      workbench?.setStatus?.('editDrift', count);
+    }
     el.center.disabled = el.align.disabled = el.copy.disabled = !state.hasPoint;
     el.undo.disabled = !history.canUndo;
     el.redo.disabled = !history.canRedo;
@@ -733,6 +743,12 @@
       el.dockBadge.hidden = !staged;
       if (staged) el.dockBadge.textContent = DOCK.dockBadgeTiles.replace('{0}', String(staged));
     },
+    // Черновик изменился: обновляем доступность «Применить» и, если правок
+    // больше нет, снимаем подсказку прошлой ошибки сохранения.
+    onDraftChange: () => {
+      paintInputs();
+      if (!workbenchApi?.pendingCount) el.hint.classList.remove('is-error');
+    },
     onPointer: (event) => {
       // Двигать выбранную точку можно и мышью, и тачем.
       if (event.type === 'touch') {
@@ -962,10 +978,70 @@
    * карты. `X-Map-Allowed-Tiles` — объединение ID обоих слоёв: игровой слой
    * и switch-слой проверяются одним списком.
    */
+  /**
+   * Значения плана проверяются до отправки: сервер те же правила применит
+   * после того, как сделает бэкап карты, — лучше отказать сразу и словами.
+   */
+  const assertStagedValue = (layer, change) => {
+    const fail = (ru, en) => { throw new Error(LANG === 'en' ? en : ru); };
+    if (layer === 'game') {
+      // 0 — очистка клетки, иначе только сущности игрового слоя (>191).
+      for (const [id, what] of [[change.tile, 'after'], [change.from, 'from']]) {
+        if (!Number.isInteger(id) || id < 0 || id > 255) {
+          fail(`Некорректный ID тайла в правке (${what}).`, `Invalid tile ID in a staged edit (${what}).`);
+        }
+        if (id > 0 && id <= 3) {
+          fail('Тайлы столкновений (1–3) не редактируются.', 'Collision tiles (1–3) cannot be edited.');
+        }
+      }
+      return;
+    }
+    if (!Number.isInteger(change.type) || change.type < 0 || change.type > 255) {
+      fail('Некорректный тип switch-тайла.', 'Invalid switch tile type.');
+    }
+    if (!Number.isInteger(change.number) || change.number < 0 || change.number > 255) {
+      fail('Номер switch должен быть от 1 до 255.', 'The switch number must be between 1 and 255.');
+    }
+    if (change.type !== 0 && change.number < 1) {
+      fail('Номер switch должен быть от 1 до 255.', 'The switch number must be between 1 and 255.');
+    }
+    const from = change.from || { number: 0, type: 0 };
+    if (!Number.isInteger(from.type) || from.type < 0 || from.type > 255
+      || !Number.isInteger(from.number) || from.number < 0 || from.number > 255) {
+      fail('Некорректное исходное значение switch-тайла.', 'Invalid original switch tile value.');
+    }
+  };
+
   const saveMapTileChanges = async (plan) => {
     const changes = plan || { game: [], switch: [] };
     const total = (changes.game?.length || 0) + (changes.switch?.length || 0);
     if (!total) return { tiles: 0, switchTiles: 0 };
+    // Перед отправкой проверяем сам план: дубликаты клеток, значения вне
+    // диапазона и «не те» слои отсекаются здесь, а не на сервере после
+    // записи бэкапа.
+    const layerSizes = {
+      game: tw.map?.gameplay ? { width: tw.map.gameplay.width, height: tw.map.gameplay.height } : null,
+      switch: tw.map?.switchLayer ? { width: tw.map.switchLayer.width, height: tw.map.switchLayer.height } : null,
+    };
+    for (const [name, list] of Object.entries({ game: changes.game || [], switch: changes.switch || [] })) {
+      const size = layerSizes[name];
+      if (list.length && !size) throw new Error(LANG === 'en'
+        ? `This map has no ${name} layer to edit.` : `В этой карте нет слоя «${name}» для правки.`);
+      const seen = new Set();
+      for (const change of list) {
+        const x = Number(change.x), y = Number(change.y);
+        if (!Number.isInteger(x) || !Number.isInteger(y) || !size
+          || x < 0 || y < 0 || x >= size.width || y >= size.height) {
+          throw new Error(LANG === 'en'
+            ? 'A staged edit points outside the map.' : 'Черновик содержит правку вне карты.');
+        }
+        const key = y * size.width + x;
+        if (seen.has(key)) throw new Error(LANG === 'en'
+          ? 'The same cell is staged twice.' : 'Одна и та же клетка правится дважды.');
+        seen.add(key);
+        assertStagedValue(name, change);
+      }
+    }
     const worldId = Number(qs.get('worldId'));
     if (!Number.isSafeInteger(worldId) || worldId < 0) throw new Error(LANG === 'en'
       ? 'Cannot save map tiles: no world ID was provided.' : 'Не удалось сохранить тайлы: не передан ID мира.');
@@ -1013,7 +1089,22 @@
     return { tiles: changes.game.length, switchTiles: changes.switch.length, sha256: payload.sha256 || '' };
   };
   el.apply.addEventListener('click', async () => {
-    if (OPTIONS.preview || !state.hasPoint || el.apply.disabled) return;
+    if (OPTIONS.preview || !state.hasPoint) return;
+    // Последняя проверка перед записью: если карта изменилась под черновиком,
+    // сохранение перезаписало бы чужие правки. Лучше отказать и объяснить.
+    // Проверяем раньше `disabled`, иначе кнопка просто «не нажимается» молча.
+    const drift = workbench?.isConsistent?.() === false;
+    if (drift) {
+      const count = workbench?.problems?.()?.length || 0;
+      const message = (DOCK.editDrift || '{0}').replace('{0}', String(count));
+      workbench?.setStatus?.('editDrift', count);
+      paintInputs(); // кнопка должна стать недоступной, а не «молча не нажиматься»
+      el.hint.hidden = false;
+      el.hint.textContent = message;
+      el.hint.classList.add('is-error');
+      return;
+    }
+    if (el.apply.disabled) return;
     commitGesture();
     const plan = workbench?.getPendingChanges?.() || { game: [], switch: [] };
     if (!plan.game.length && !plan.switch.length) {
@@ -1031,15 +1122,41 @@
         tilesSaved: saved.tiles, switchTilesSaved: saved.switchTiles,
       });
     } catch (error) {
+      // Правки остаются в черновике: пользователь может исправить причину и
+      // повторить, ничего не потеряв.
       el.apply.disabled = false;
       el.apply.textContent = applyLabel;
+      const message = error?.message || (LANG === 'en' ? 'Map save failed.' : 'Не удалось сохранить карту.');
       workbench?.setStatus?.('editError');
       workbench?.paintStatus?.();
       el.hint.hidden = false;
-      el.hint.textContent = error?.message || (LANG === 'en' ? 'Map save failed.' : 'Не удалось сохранить карту.');
+      el.hint.textContent = message;
+      el.hint.classList.add('is-error');
+      el.hint.title = message;
+      window.setTimeout(() => el.hint.classList.remove('is-error'), 4000);
+      // Сводка причины — в статус секции: подсказка внизу может быть скрыта
+      // на узком экране, а статус остаётся рядом с самим редактором.
+      workbench?.setStatusText?.(message);
     }
   });
-  el.cancel.addEventListener('click', () => post('editor-map:close'));
+  /**
+   * Отмена с несохранёнными правками: спрашиваем один раз и коротко.
+   * Иначе «Применить» и «Отмена» стояли рядом, и промах по кнопке молча
+   * выбрасывал весь черновик карты.
+   */
+  const cancelMap = () => {
+    const staged = workbench?.pendingCount ?? 0;
+    if (staged > 0 && !OPTIONS.preview) {
+      const message = LANG === 'en'
+        ? `Discard ${staged} staged map edit(s)?`
+        : `Отбросить несохранённые правки карты (${staged})?`;
+      let confirmed = false;
+      try { confirmed = window.confirm(message); } catch { confirmed = true; }
+      if (!confirmed) return;
+    }
+    post('editor-map:close');
+  };
+  el.cancel.addEventListener('click', cancelMap);
   el.retry.addEventListener('click', () => { window.location.reload(); });
 
   // ── клавиатура ────────────────────────────────────────────────────────────
@@ -1048,7 +1165,7 @@
     const tag = (evt.target && evt.target.tagName) || '';
     if (tag === 'INPUT' || tag === 'TEXTAREA') {
       if (evt.key === 'Enter' && (evt.target === el.inX || evt.target === el.inY)) { evt.preventDefault(); el.apply.click(); }
-      if (evt.key === 'Escape') { evt.preventDefault(); el.cancel.click(); }
+      if (evt.key === 'Escape') { evt.preventDefault(); cancelMap(); }
       evt.stopImmediatePropagation();
       return;
     }
@@ -1088,6 +1205,18 @@
       workbenchApi?.deleteSelected?.();
       return;
     }
+    // В режиме правки: 1/2 — слой, R — сбросить черновик. Те же действия
+    // есть кнопками, поэтому клавиши — ускорение, а не обязательный путь.
+    if (clickMode === 'tile' && (key === '1' || key === '2')) {
+      evt.preventDefault(); evt.stopImmediatePropagation();
+      workbenchApi?.selectLayer?.(key === '1' ? 'game' : 'switch');
+      return;
+    }
+    if (clickMode === 'tile' && key === 'r' && !evt.shiftKey) {
+      evt.preventDefault(); evt.stopImmediatePropagation();
+      workbenchApi?.resetEdits?.();
+      return;
+    }
     if (key === 'g' || key === 's') {
       evt.preventDefault(); evt.stopImmediatePropagation();
       el[key === 'g' ? 'grid' : 'snap'].click();
@@ -1100,7 +1229,7 @@
       setClickMode(clickMode === 'measure' ? 'point' : 'measure');
       return;
     }
-    if (key === 'escape') { evt.preventDefault(); el.cancel.click(); }
+    if (key === 'escape') { evt.preventDefault(); cancelMap(); }
     else if (key === 'enter') { evt.preventDefault(); el.apply.click(); }
     else if (key === 'f') { fitMap(); }
     else if (key === 'c') { centerOnPoint(); }

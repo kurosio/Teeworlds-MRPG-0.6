@@ -522,6 +522,10 @@ canvas#ovl {
 #pk-edit-selected { color: var(--pk-text); }
 canvas.is-editing-tiles { cursor: crosshair; }
 
+/* Ошибка сохранения: подсказка режима коротко подсвечивается, но текст не
+   теряется — полный смысл остаётся в статусе секции правки. */
+.pk-hint.is-error { color: var(--pk-danger); border-color: color-mix(in srgb, var(--pk-danger) 55%, transparent); }
+
 .pk-tool-status:empty { display: none; }
 .pk-tool-status.is-warning { color: var(--pk-warning); }
 .pk-btn[aria-pressed="true"] { background: var(--pk-primary); border-color: transparent; color: #fff; }

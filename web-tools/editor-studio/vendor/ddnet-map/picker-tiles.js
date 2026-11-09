@@ -57,7 +57,7 @@
    * `onCell` — `(layer, index, value) => void`, применяет значение к живому
    *            просмотру карты (черновик сам ничего не мутирует).
    */
-  const createDraft = ({ sizes = {}, read = () => null, onCell = () => {}, limit = MAX_EDITS } = {}) => {
+  const createDraft = ({ sizes = {}, read = () => null, onCell = () => {}, limit = MAX_EDITS, onChange = () => {} } = {}) => {
     const cells = { game: new Map(), switch: new Map() }; // index → { before, after }
     const capacity = Number.isInteger(limit) && limit > 0 ? limit : MAX_EDITS;
 
@@ -92,12 +92,13 @@
       const original = cell ? cell.before : normalize(layer, read(layer, index));
       if (same(original, value)) {
         // Клетка вернулась к исходному значению — правки больше нет.
-        if (cell) { cells[layer].delete(index); onCell(layer, index, original); }
+        if (cell) { cells[layer].delete(index); onCell(layer, index, original); onChange(); }
         return true;
       }
       if (!cell && draft.size >= capacity) return false;
       cells[layer].set(index, { before: original, after: value });
       onCell(layer, index, value);
+      onChange();
       return true;
     };
 
@@ -146,7 +147,38 @@
           for (const [index, cell] of cells[layer]) onCell(layer, index, cell.before);
           cells[layer].clear();
         }
+        onChange();
       },
+      /**
+       * Проверка согласованности черновика с картой: каждая клетка плана
+       * относится к своему слою, значения байтовые, а исходное значение из
+       * `read()` не изменилось с момента первой правки. Возвращает список
+       * проблем для пользователя (пустой — всё в порядке).
+       */
+      problems() {
+        const list = [];
+        for (const layer of LAYERS) {
+          const size = zone(layer);
+          for (const [index, cell] of cells[layer]) {
+            if (!size) { list.push({ layer, index, reason: 'layer' }); continue; }
+            if (index < 0 || index >= size.width * size.height) { list.push({ layer, index, reason: 'bounds' }); continue; }
+            const now = normalize(layer, read(layer, index));
+            if (!same(now, cell.before)) list.push({ layer, index, reason: 'drift' });
+            const value = cell.after;
+            if (layer === 'game' && !(Number.isInteger(value) && value >= 0 && value <= 255)) {
+              list.push({ layer, index, reason: 'value' });
+            }
+            if (layer === 'switch' && value
+              && !(Number.isInteger(value.type) && value.type >= 1 && value.type <= 255
+                && Number.isInteger(value.number) && value.number >= 0 && value.number <= 255)) {
+              list.push({ layer, index, reason: 'value' });
+            }
+          }
+        }
+        return list;
+      },
+      /** Есть ли расхождения с картой (см. problems()). */
+      isConsistent() { return draft.problems().length === 0; },
       /** Список изменённых клеток: готовый план для MapPickerMapEdit.patch. */
       changes() {
         const result = { game: [], switch: [] };

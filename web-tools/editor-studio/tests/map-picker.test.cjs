@@ -50,7 +50,7 @@ function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = 
     getElementById(id) {
       if (!nodes.has(id)) nodes.set(id, {
         value: '', checked: false, disabled: false, open: false, style: {setProperty() {}},
-        classList: {toggle() {}}, attributes: {},
+        classList: {toggle() {}, add() {}, remove() {}, contains: () => false}, attributes: {},
         setAttribute(name, value) { this.attributes[name] = String(value); },
         getAttribute(name) { return this.attributes[name]; },
         removeAttribute(name) { delete this.attributes[name]; },
@@ -394,11 +394,16 @@ test('edit mode places a point on an empty cell and selects an occupied one', ()
   assert.equal(map.gameplay.indices[1], 209);
   assert.equal(p.node('out-x').textContent, '48');
   assert.equal(p.node('out-y').textContent, '16');
-  assert.match(p.node('edit-status').textContent, /Черновик: добавлено 1/);
-  // Клик по занятой клетке ничего не перезаписывает: она выделяется.
+  assert.match(p.node('edit-status').textContent, /Черновик: \+1/);
+  // Клик по занятой клетке ничего не перезаписывает. ID 18 — часть карты,
+  // а не точка, поэтому выделения нет и Delete её не тронет.
   clickWorld(p, 112, 16);
   assert.equal(map.gameplay.indices[3], 18);
-  assert.match(p.node('edit-selected').textContent, /X 3, Y 0 · ID 18/);
+  assert.equal(p.node('edit-selected').textContent, '');
+  assert.match(p.node('edit-status').textContent, /не точка, а часть карты/);
+  assert.equal(p.node('edit-delete').disabled, true);
+  p.emit('keydown', { key: 'Delete' });
+  assert.equal(map.gameplay.indices[3], 18);
   // «Сбросить правки» возвращает карту к исходному состоянию.
   p.node('edit-reset').click();
   assert.equal(map.gameplay.indices[1], 0);
@@ -439,6 +444,54 @@ test('edit mode can be toggled off to resume ordinary position picking', () => {
   assert.equal(p.node('out-x').textContent, '112');
   assert.equal(map.gameplay.indices[3], 0, 'ordinary point mode must not stage a map tile');
 });
+test('staged edits that drifted from the map block Apply and keep the draft', () => {
+  const map = {groups:[], gameplay:{width:4,height:1,indices:Uint8Array.from([209,0,0,0])},
+    switchLayer:{width:4,height:1,tiles:[]}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209', map);
+  p.node('mode-tile').click();
+  clickWorld(p, 48, 16); // черновик: клетка 1 → 209
+  assert.match(p.node('edit-status').textContent, /Черновик: \+1/);
+  // Пока черновик совпадает с картой, сохранять можно.
+  assert.equal(p.node('apply').disabled, false);
+  // Кто-то другой поменял ту же клетку в живой карте — это рассинхронизация.
+  map.gameplay.indices[1] = 198;
+  // Клик по «Применить» не должен ничего отправить: план неконсистентен.
+  p.node('apply').click();
+  assert.equal(p.messages.some((message) => message.type === 'editor-map:apply'), false);
+  assert.equal(p.node('apply').disabled, true);
+  assert.match(p.node('edit-status').textContent, /разошёлся с картой/);
+  // Черновик не потерян: правка на месте, её видно в бейдже панели.
+  assert.equal(p.node('dock-badge').hidden, false);
+  assert.match(p.node('dock-badge').textContent, /1/);
+});
+test('editor shortcuts switch layers, discard edits and guard closing with staged edits', () => {
+  const map = {groups:[], gameplay:{width:4,height:1,indices:Uint8Array.from([209,0,0,0])},
+    switchLayer:{width:4,height:1,tiles:[{x:16,y:16,type:200,number:3}]}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209', map);
+  p.node('mode-tile').click();
+  clickWorld(p, 48, 16);
+  assert.match(p.node('edit-status').textContent, /Черновик: \+1/);
+  // 1/2 переключают слой, R отбрасывает черновик.
+  p.emit('keydown', { key: '2' });
+  assert.equal(p.node('edit-layer-switch').getAttribute('aria-checked'), 'true');
+  p.emit('keydown', { key: '1' });
+  assert.equal(p.node('edit-layer-game').getAttribute('aria-checked'), 'true');
+  assert.equal(map.gameplay.indices[1], 209);
+  p.emit('keydown', { key: 'r' });
+  assert.equal(map.gameplay.indices[1], 0);
+  assert.equal(p.node('edit-status').textContent, 'Правок нет.');
+  // Отмена с несохранёнными правками спрашивает подтверждение.
+  clickWorld(p, 48, 16);
+  const answers = [];
+  p.window.confirm = (message) => { answers.push(message); return false; };
+  p.node('cancel').click();
+  assert.equal(answers.length, 1);
+  assert.match(answers[0], /Отбросить несохранённые правки карты \(1\)/);
+  assert.equal(p.messages.some((message) => message.type === 'editor-map:close'), false);
+  p.window.confirm = () => true;
+  p.node('cancel').click();
+  assert.equal(p.messages.at(-1).type, 'editor-map:close');
+});
 test('switch layer template edits ore tiles with a switch number', () => {
   const map = {groups:[], gameplay:{width:2,height:1,indices:Uint8Array.from([0,0])},
     switchLayer:{width:2,height:1,tiles:[{x:16,y:16,type:200,number:5},{x:48,y:16,type:199,number:1}]}};
@@ -477,6 +530,13 @@ test('map save endpoint keeps admin, optimistic and allowlist checks for both la
   assert.match(endpoint, /map-backups/);
   // Тайлы столкновений удалять/перемещать нельзя.
   assert.match(endpoint, /Тайлы столкновений/);
+  // Ошибки правки — это ошибки пользователя: 400 и текст, а не 500 и «ошибка БД».
+  // Класс объявлен в db-core.php, здесь проверяем, что он действительно
+  // используется как тип ошибки «для человека».
+  assert.equal(/throw new RuntimeException/.test(endpoint), false, 'правка карты не должна бросать RuntimeException');
+  assert.match(fs.readFileSync(path.join(__dirname, '../api/db-core.php'), 'utf8'), /class EditorUserError/);
+  assert.match(endpoint, /\$e instanceof EditorUserError \? \$e->getMessage\(\)/);
+  assert.match(endpoint, /, 400\);\n\}/);
 });
 test('collecting preview is read-only and labels switch locations without a gameplay layer', () => {
   const p = picker('?map=/map&point=0&preview=1&highlightLayer=switch&highlightTiles=200&switchShowID=255', {
