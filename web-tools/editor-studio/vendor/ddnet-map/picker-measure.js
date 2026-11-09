@@ -11,8 +11,9 @@
  *   worldPoint() — координаты события с учётом привязки к центрам тайлов;
  *   draw()/callbacks — перерисовка кадра и синхронизация переключателя.
  *
- * Клики в режиме замера перехватываются в capture-фазе и не доходят до
- * picker.js, поэтому позиция записи и история отмены не меняются.
+ * Клики в режиме замера не двигают позицию записи: picker.js ставит точку
+ * только в режиме «точка». Перетаскивание не перехватывается — камера
+ * панорамируется тем же жестом, как в остальных режимах.
  * Тексты — из picker-text.js (единый словарь панели).
  */
 (() => {
@@ -70,12 +71,12 @@
         redraw();
       };
 
+      // Тап/клик ставит концы замера; перетаскивание отдаём рендереру —
+      // камера панорамируется той же ЛКМ/пальцем, как в режиме точки.
       // Тот же экранный порог, что и у клика по карте: панорамирование и
       // перетаскивание не должны ставить концы замера.
       window.addEventListener('mousedown', (event) => {
         if (!measuring || !state.ready || event.target !== canvas || event.button !== 0) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
         canvas.focus({ preventScroll: true });
         press = { x: event.clientX, y: event.clientY };
       }, true);
@@ -84,8 +85,6 @@
         if (!press) return;
         const start = press;
         press = null;
-        event.preventDefault();
-        event.stopImmediatePropagation();
         if (Math.hypot(start.x - event.clientX, start.y - event.clientY) < 6
           && event.target === canvas) select(event);
       }, true);
@@ -97,13 +96,12 @@
         redraw();
       }, true);
 
-      // Короткий тап ставит конец замера, движение оставляем рендереру (панорама).
+      // Короткий тап ставит конец замера, движение — панорама рендерера.
       window.addEventListener('touchstart', (event) => {
         if (!measuring || event.target !== canvas) return;
         if (event.touches.length !== 1) { touch = null; return; }
         const point = event.touches[0];
         touch = { x: point.clientX, y: point.clientY, moved: false };
-        event.stopImmediatePropagation();
       }, { capture: true, passive: true });
 
       window.addEventListener('touchmove', (event) => {
@@ -111,17 +109,19 @@
         if (event.touches.length !== 1) { touch = null; return; }
         const point = event.touches[0];
         if (Math.hypot(point.clientX - touch.x, point.clientY - touch.y) > 10) touch.moved = true;
-        event.stopImmediatePropagation();
       }, { capture: true, passive: true });
 
       window.addEventListener('touchend', (event) => {
         if (!touch) return;
         const start = touch;
         touch = null;
+        // preventDefault глушит совместимые mouse-события (iOS Safari): иначе
+        // синтетический mousedown/mouseup поставил бы вторую точку. Панораму
+        // это не мешает — рендерер слушает сами touch-события, не default.
         event.preventDefault();
-        event.stopImmediatePropagation();
+        if (start.moved) return;
         const point = event.changedTouches[0];
-        if (!start.moved && point) select(point);
+        if (point) select(point);
       }, { capture: true, passive: false });
 
       window.addEventListener('blur', () => { press = touch = null; });

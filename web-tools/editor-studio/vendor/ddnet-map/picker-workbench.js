@@ -38,7 +38,7 @@
       const NODE_IDS = [
         'collision', 'collision-label', 'spawn', 'collision-status',
         'layer-list', 'layers-reset', 'sec-layers',
-        'sec-edit', 'sec-points',
+        'sec-edit', 'sec-points', 'layer-group',
         'edit-layer-game', 'edit-layer-switch', 'edit-pane-game', 'edit-pane-switch',
         'edit-tile-wrap', 'edit-tile-label', 'edit-tile', 'edit-type-hint',
         'switch-type-wrap', 'switch-type-label', 'switch-type',
@@ -91,6 +91,7 @@
       el['switch-number-label'].textContent = text.switchNumberLabel;
       el['edit-layer-game'].textContent = text.editLayerGame;
       el['edit-layer-switch'].textContent = text.editLayerSwitch;
+      el['layer-group'].setAttribute('aria-label', text.editLayerLabel);
       el['edit-type-hint'].textContent = text.editTypeHint;
       el['switch-hint'].textContent = text.switchHint;
       el['linked-tiles-label'].textContent = text.linkedLabel;
@@ -624,6 +625,10 @@
       // ── мышь и тач ────────────────────────────────────────────────────────
       // Клики в режиме правки перехватываются в capture-фазе: иначе точка
       // записи сдвигалась бы дважды — от клетки и от обычного клика.
+      // Перетаскивание редактируемой (занятой и объявленной) точки переносит
+      // её, а нажатие на пустую клетку или чужую сущность отдаёт событие
+      // рендереру — зажатой ЛКМ/пальцем камера панорамируется самой картой,
+      // как и в обычном режиме. Короткий клик всё равно ставит/выбирает клетку.
       const pixelAt = (event) => pointer(event) || { x: 0, y: 0 };
       const cellUnder = (event) => {
         const world = pixelAt(event);
@@ -633,21 +638,35 @@
         if (x < 0 || y < 0 || x >= size.width || y >= size.height) return null;
         return { x, y, index: y * size.width + x, world };
       };
+      // Тащить можно только занятую объявленную клетку: всё остальное
+      // (пустое поле, стены, чужие сущности) — панорама камеры.
+      const dragValueAt = (event) => {
+        const spot = cellUnder(event);
+        if (!spot) return null;
+        const value = draft ? draft.get(layer, spot.index) : readCell(layer, spot.index);
+        return editableValue(layer, value) ? value : null;
+      };
 
       window.addEventListener('mousedown', (event) => {
         if (!editMode || !state.ready || event.target !== canvas || event.button !== 0) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
         canvas.focus({ preventScroll: true });
-        press = { x: event.clientX, y: event.clientY, moved: false };
         // Клетку под курсором выделяем сразу: так перетаскивание занятой
         // точки работает без отдельного «сначала клик, потом тащить».
         const spot = cellUnder(event);
         if (spot) selectCell(layer, spot.index);
+        if (dragValueAt(event)) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          press = { x: event.clientX, y: event.clientY, moved: false, lock: 'tile' };
+          return;
+        }
+        // Нечего тащить — пусть карту двигает рендерер; жест трактуем как панораму.
+        press = { x: event.clientX, y: event.clientY, moved: false, lock: 'pan' };
       }, true);
 
       window.addEventListener('mousemove', (event) => {
         if (!press || !editMode) return;
+        if (press.lock === 'pan') return; // камеру двигает рендерер
         if (Math.hypot(press.x - event.clientX, press.y - event.clientY) > 6) {
           if (!press.moved) {
             press.moved = true;
@@ -667,10 +686,18 @@
         if (!press) return;
         const start = press;
         press = null;
-        event.preventDefault();
-        event.stopImmediatePropagation();
+        if (start.lock === 'tile') {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          if (event.target !== canvas) return;
+          if (start.moved) { paintLayers(); return; }
+          if (Math.hypot(start.x - event.clientX, start.y - event.clientY) > 6) return;
+          const spot = cellUnder(event);
+          if (spot) clickCell(layer, spot.x, spot.y);
+          return;
+        }
+        // Панорама: клик (без заметного сдвига) — это обычный выбор/установка.
         if (event.target !== canvas) return;
-        if (start.moved) { paintLayers(); return; }
         if (Math.hypot(start.x - event.clientX, start.y - event.clientY) > 6) return;
         const spot = cellUnder(event);
         if (spot) clickCell(layer, spot.x, spot.y);
@@ -680,9 +707,15 @@
         if (!editMode || !state.ready || event.target !== canvas) return;
         if (event.touches.length !== 1) { touch = null; return; }
         const point = event.touches[0];
-        touch = { x: point.clientX, y: point.clientY, moved: false, at: Date.now() };
-        event.preventDefault();
-        event.stopImmediatePropagation();
+        // Короткий тап ставит/выбирает точку, перенос редактируемой точки —
+        // тащит её; всё остальное — жест рендереру (панорама и пинч-зум).
+        const draggable = !!dragValueAt({ clientX: point.clientX, clientY: point.clientY });
+        touch = { x: point.clientX, y: point.clientY, moved: false, at: Date.now(), lock: draggable ? 'tile' : 'pan' };
+        if (draggable) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          selectCell(layer, cellUnder({ clientX: point.clientX, clientY: point.clientY }).index);
+        }
       }, { capture: true, passive: false });
 
       window.addEventListener('touchmove', (event) => {
@@ -690,6 +723,7 @@
         if (event.touches.length !== 1) { touch = null; return; }
         const point = event.touches[0];
         if (Math.hypot(point.clientX - touch.x, point.clientY - touch.y) > 10) touch.moved = true;
+        if (touch.lock === 'pan') return; // панораму делает рендерер
         if (touch.moved) {
           const world = screenToWorld(point.clientX, point.clientY);
           moveSelected(world.x, world.y);
@@ -702,10 +736,23 @@
         if (!touch) return;
         const start = touch;
         touch = null;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        if (start.moved) { paintLayers(); return; }
-        const point = event.changedTouches[0];
+        // Глушим совместимые mouse-события (iOS Safari): иначе тап в
+        // pan-ветке был бы обработан дважды — здесь и в мышином mouseup.
+        // Рендереру не мешает: он слушает touch-события напрямую.
+        if (event.cancelable) event.preventDefault();
+        if (start.lock === 'tile') {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          if (start.moved) { paintLayers(); return; }
+          const point = event.changedTouches[0];
+          if (!point) return;
+          const spot = cellUnder({ clientX: point.clientX, clientY: point.clientY });
+          if (spot) clickCell(layer, spot.x, spot.y);
+          return;
+        }
+        // Панорама: короткий тап — это обычный выбор/установка клетки.
+        if (start.moved || Date.now() - start.at > 700) return;
+        const point = event.changedTouches && event.changedTouches[0];
         if (!point) return;
         const spot = cellUnder({ clientX: point.clientX, clientY: point.clientY });
         if (spot) clickCell(layer, spot.x, spot.y);

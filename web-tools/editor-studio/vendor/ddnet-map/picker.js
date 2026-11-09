@@ -28,12 +28,14 @@
  * Панель карты устроена из трёх уровней:
  *   1. шапка        — точка и камера (X/Y, зум, «Вся карта», «К точке»);
  *   2. панель карты — переключатель «Клик по карте» (точка / тайл / замер) и
- *                     секции: настройки точки, существующие точки, новая точка,
- *                     видимость, замер, радиус, слои оформления;
+ *                     секции: настройки точки, точки на карте, правка, видимость,
+ *                     замер, радиус, слои оформления;
  *   3. подвал       — X/Y записи, предупреждение о запрещённом тайле и
  *                     «Применить / Отмена».
- * Режимы клика взаимоисключающие: замер — picker-measure.js, тайл —
- * picker-workbench.js, обычная точка — этот файл.
+ * Подписи секций берутся из picker-text.js (RU/EN) и подставляются при
+ * запуске; в picker.html разметка содержит только русские значения до первой
+ * отрисовки. Режимы клика взаимоисключающие: замер — picker-measure.js,
+ * тайл — picker-workbench.js, обычная точка — этот файл.
  *
  * Родительскому окну отправляются сообщения:
  *   editor-map:ready            — карта отрисована
@@ -143,10 +145,19 @@
     modes: { point: '', tile: '', measure: '', ...(DOCK_RAW.modes || {}) },
     modeHints: { point: '', tile: '', measure: '', ...(DOCK_RAW.modeHints || {}) },
   };
-  STR.tools = DOCK.dockTitle || STR.tools;
 
   const el = {
     grid: document.getElementById('pk-grid'),
+    clickGroup: document.getElementById('pk-click-group'),
+    secClickTitle: document.getElementById('pk-sec-click-title'),
+    secViewTitle: document.getElementById('pk-sec-view-title'),
+    viewHint: document.getElementById('pk-view-hint'),
+    secMeasureTitle: document.getElementById('pk-sec-measure-title'),
+    measureHint: document.getElementById('pk-measure-hint'),
+    secRadiusTitle: document.getElementById('pk-sec-radius-title'),
+    radiusHint: document.getElementById('pk-radius-hint'),
+    secLayersTitle: document.getElementById('pk-sec-layers-title'),
+    layersHint: document.getElementById('pk-layers-hint'),
     snap: document.getElementById('pk-snap'),
     align: document.getElementById('pk-align'),
     undo: document.getElementById('pk-undo'),
@@ -341,6 +352,16 @@
   el.cnvs.setAttribute('aria-label', STR.mapOf);
   el.dock.setAttribute('aria-label', DOCK.dockTitle);
   el.dockTitle.textContent = DOCK.dockTitle;
+  el.clickGroup.setAttribute('aria-label', DOCK.modeLabel);
+  el.secClickTitle.textContent = DOCK.modeLabel;
+  el.secViewTitle.textContent = DOCK.viewTitle;
+  el.viewHint.textContent = DOCK.viewHint;
+  el.secMeasureTitle.textContent = DOCK.measureTitle;
+  el.measureHint.textContent = DOCK.measureHint;
+  el.secRadiusTitle.textContent = DOCK.radiusTitle;
+  el.radiusHint.textContent = DOCK.radiusHint;
+  el.secLayersTitle.textContent = DOCK.layersTitle;
+  el.layersHint.textContent = DOCK.layersHint;
   el.modePoint.textContent = DOCK.modes.point;
   el.modeTile.textContent = DOCK.modes.tile;
   el.modeMeasure.textContent = DOCK.modes.measure;
@@ -366,7 +387,6 @@
   const DOCK_STORAGE_KEY = 'editor-map-picker-dock-v3';
   let layoutTools = () => {}; // объявляем до setDockOpen — он её вызывает
   let clickMode = 'point';
-  let workbenchApi = null;
   let measureApi = null;
 
   const setClickHint = () => {
@@ -402,7 +422,7 @@
       if (mode !== 'point') { setClickMode('point'); return; }
     }
     clickMode = mode;
-    if (mode !== 'tile') workbenchApi?.cancelPlacement?.();
+    if (mode !== 'tile') workbench?.cancelPlacement?.();
     if (mode !== 'measure' && measureApi?.active) measureApi.setMeasuring(false);
     if (mode === 'measure') {
       setDockOpen(true);
@@ -509,20 +529,24 @@
     }
   };
 
+  // Рассинхронизация черновика с живой картой — повод заблокировать «Применить».
+  const driftCount = () => (workbench?.isConsistent?.() === false
+    ? workbench?.problems?.()?.length || 0
+    : null);
+  const driftMessage = (count) => (DOCK.editDrift || '{0}').replace('{0}', String(count));
+
   // ── готовая точка ─────────────────────────────────────────────────────────
   const paintInputs = () => {
     updateValidity();
     // Рассинхронизированный черновик не отправляем: сервер отверг бы его
     // (409) уже после бэкапа карты, а часть правок могла бы потеряться.
-    const drift = workbench?.isConsistent?.() === false;
-    el.apply.disabled = OPTIONS.preview || !state.hasPoint || state.invalid || drift || [el.inX, el.inY].some(input =>
+    const drift = driftCount();
+    el.apply.disabled = OPTIONS.preview || !state.hasPoint || state.invalid || drift !== null || [el.inX, el.inY].some(input =>
       document.activeElement === input && (!input.value.trim() || !Number.isFinite(Number(input.value))));
-    if (drift) {
-      const count = workbench?.problems?.()?.length || 0;
-      const message = (DOCK.editDrift || '{0}')
-        .replace('{0}', String(count));
+    if (drift !== null) {
+      const message = driftMessage(drift);
       el.apply.title = message;
-      workbench?.setStatus?.('editDrift', count);
+      workbench?.setStatus?.('editDrift', drift);
     }
     el.center.disabled = el.align.disabled = el.copy.disabled = !state.hasPoint;
     el.undo.disabled = !history.canUndo;
@@ -783,7 +807,7 @@
     // больше нет, снимаем подсказку прошлой ошибки сохранения.
     onDraftChange: () => {
       paintInputs();
-      if (!workbenchApi?.pendingCount) el.hint.classList.remove('is-error');
+      if (!workbench?.pendingCount) el.hint.classList.remove('is-error');
     },
     onPointer: (event) => {
       // Двигать выбранную точку можно и мышью, и тачем.
@@ -794,7 +818,6 @@
       return screenToWorld(event.clientX, event.clientY);
     },
   });
-  workbenchApi = workbench;
   measureApi = window.MapPickerMeasure.create({
     canvas: el.cnvs, state, text: DOCK, setPoint, redraw: () => tw.requestRender?.(2),
     point: () => state.point,
@@ -826,11 +849,11 @@
     // Режим включает сам workbench: он показывает игровой слой и сетку, знает
     // про слои карты и сообщает о смене режима через onModeChange. Повторно
     // переключать его здесь нельзя — тумблер «нажался» бы дважды.
-    if (!workbenchApi?.startPlacement?.()) {
+    if (!workbench?.startPlacement?.()) {
       // Причина отказа у каждого случая своя: нет объявлений, нет слоя,
       // нет прав. Общий текст «нужен игровой слой» здесь только путал.
       el.hint.hidden = false;
-      el.hint.textContent = workbenchApi?.editUnavailableReason?.()
+      el.hint.textContent = workbench?.editUnavailableReason?.()
         || DOCK.editNoLayer || DOCK.editUnsupported;
       setDockOpen(true);
       return;
@@ -1014,13 +1037,11 @@
   /**
    * Сохраняет черновик правок одним запросом. Тело — целый датафайл, поэтому
    * сервер сверяет структуру, разрешённые ID и контрольную сумму исходной
-   * карты. `X-Map-Allowed-Tiles` — объединение ID обоих слоёв: игровой слой
-   * и switch-слой проверяются одним списком.
-   */
-  /**
-   * Разрешённые ID — только объявленные редактором `highlightTiles`:
-   * правка вне этого списка серверу не отправляется. 1–3 (коллизии) и 0
-   * (пустая клетка) в списке не нужны — их обрабатывают отдельные правила.
+   * карты. `X-Map-Allowed-Tiles` — объединение ID обоих слоёв (игровой и
+   * switch): правка вне объявленного редактором списка highlightTiles серверу
+   * не отправляется; 1–3 (коллизии) и 0 не нужны — их обрабатывают отдельные
+   * правила. Значения плана проверяются до отправки теми же правилами,
+   * которые сервер применит после бэкапа карты: лучше отказать сразу и словами.
    */
   const allowedTiles = () => [...new Set(OPTIONS.highlightTiles)]
     .filter((id) => Number.isInteger(id) && id >= 4 && id <= 255);
@@ -1153,11 +1174,10 @@
     // Последняя проверка перед записью: если карта изменилась под черновиком,
     // сохранение перезаписало бы чужие правки. Лучше отказать и объяснить.
     // Проверяем раньше `disabled`, иначе кнопка просто «не нажимается» молча.
-    const drift = workbench?.isConsistent?.() === false;
-    if (drift) {
-      const count = workbench?.problems?.()?.length || 0;
-      const message = (DOCK.editDrift || '{0}').replace('{0}', String(count));
-      workbench?.setStatus?.('editDrift', count);
+    const drift = driftCount();
+    if (drift !== null) {
+      const message = driftMessage(drift);
+      workbench?.setStatus?.('editDrift', drift);
       paintInputs(); // кнопка должна стать недоступной, а не «молча не нажиматься»
       el.hint.hidden = false;
       el.hint.textContent = message;
@@ -1176,7 +1196,8 @@
     el.apply.textContent = LANG === 'en' ? 'Saving map…' : 'Сохранение карты…';
     try {
       const saved = await saveMapTileChanges(plan);
-      workbench?.markSaved?.();
+      workbench?.markSaved?.(); // он же вызывает paintInputs → enabled
+      el.apply.textContent = applyLabel; // иначе кнопка навсегда остаётся «Сохранение карты…»
       post('editor-map:apply', {
         x: Math.round(state.point.x), y: Math.round(state.point.y),
         tilesSaved: saved.tiles, switchTilesSaved: saved.switchTiles,
@@ -1262,19 +1283,19 @@
     // операция, и мышь с клавиатурой должны делать одно и то же.
     if ((key === 'delete' || key === 'backspace') && clickMode === 'tile') {
       evt.preventDefault(); evt.stopImmediatePropagation();
-      workbenchApi?.deleteSelected?.();
+      workbench?.deleteSelected?.();
       return;
     }
     // В режиме правки: 1/2 — слой, R — сбросить черновик. Те же действия
     // есть кнопками, поэтому клавиши — ускорение, а не обязательный путь.
     if (clickMode === 'tile' && (key === '1' || key === '2')) {
       evt.preventDefault(); evt.stopImmediatePropagation();
-      workbenchApi?.selectLayer?.(key === '1' ? 'game' : 'switch');
+      workbench?.selectLayer?.(key === '1' ? 'game' : 'switch');
       return;
     }
     if (clickMode === 'tile' && key === 'r' && !evt.shiftKey) {
       evt.preventDefault(); evt.stopImmediatePropagation();
-      workbenchApi?.resetEdits?.();
+      workbench?.resetEdits?.();
       return;
     }
     if (key === 'g' || key === 's') {

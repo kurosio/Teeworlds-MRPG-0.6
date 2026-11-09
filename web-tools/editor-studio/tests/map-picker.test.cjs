@@ -34,7 +34,7 @@ test('history restores no-point state, truncates redo, and bounds memory', () =>
   assert.equal(history.canUndo,false);
 });
 
-function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = {}) {
+function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = {}, extras = {}) {
   const nodes = new Map();
   const listeners = {};
   const messages = [];
@@ -96,14 +96,18 @@ function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = 
       locateGameLayer:(tw)=>({}),
       patch:()=>new Uint8Array(), reload:()=>null,
     },
-    location:{search,origin:'https://editor.test'},
+    // Как в реальности: picker.html лежит по vendor/ddnet-map/picker.html, поэтому
+    // сохранение считает базу как «../../api/» от адреса окна карты.
+    location:{search,origin:'https://editor.test',href:`https://editor.test/vendor/ddnet-map/picker.html${search}`},
     parent:{postMessage: message => messages.push(message)},
     innerWidth:800,innerHeight:600,devicePixelRatio:1,setTimeout:()=>0,
     addEventListener(type, fn) { (listeners[type] ||= []).push(fn); },
   };
-  const context = vm.createContext({ window,document,tw,URLSearchParams, console,
+  if (extras.window) Object.assign(window, extras.window);
+  const context = vm.createContext({ window,document,tw,URLSearchParams, URL, console,
     localStorage:{ getItem:()=>JSON.stringify(savedOptions),setItem() {} },
     getComputedStyle:()=>({getPropertyValue:()=> '#6f8cff'}),
+    ...(extras.globals || {}),
   });
   // Порядок как в picker.html: словарь панели → замер → workbench → picker.
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../vendor/ddnet-map/picker-text.js'),'utf8'),context);
@@ -117,6 +121,9 @@ function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = 
       fn({preventDefault(){},stopPropagation(){},stopImmediatePropagation(){ stopped = true; },...event});
       if (stopped) break;
     }
+    // true — жест перехвачен панелью/замером и не дошёл до рендерера (панорама невозможна),
+    // false — рендереру жест достался (камера может панорамироваться ЛКМ/пальцем).
+    return stopped;
   };
   return { node:id=>document.getElementById(`pk-${id}`), document, messages, tw, emit, drawing, window };
 }
@@ -713,4 +720,113 @@ test('editors declare their map layer so resource markers are not stolen by swit
     assert.ok(code.includes(needle), `${file}: нет объявления (${why})`);
     assert.match(code, /highlightLayer: ?'game'/, `${file}: не указан игровой слой (${why})`);
   }
+});
+
+test('edit mode: LMB drag on empty/foreign cells pans the map, editable points are dragged', () => {
+  // 209 объявлен (точка), 18 — часть карты, третья клетка пуста.
+  const map = {groups:[], gameplay:{width:4,height:1,indices:Uint8Array.from([209,0,0,18])}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209', map);
+  p.node('mode-tile').click();
+  const canvas = p.document.getElementById('cnvs');
+  // Пустая клетка: жест ЛКМ отдаётся рендереру — камера панорамируется.
+  const empty = screenPoint(p, 48, 16);
+  assert.equal(p.emit('mousedown', { target: canvas, button: 0, ...empty }), false, 'empty cell must not block camera pan');
+  p.emit('mousemove', { target: canvas, clientX: empty.clientX + 120, clientY: empty.clientY });
+  assert.equal(map.gameplay.indices[1], 0, 'dragging empty space must not write to the map');
+  p.emit('mouseup', { target: canvas, button: 0, clientX: empty.clientX + 120, clientY: empty.clientY });
+  assert.equal(map.gameplay.indices[1], 0, 'a pan gesture must not place a tile');
+  // Чужая сущность (18): тоже панорама, не перенос.
+  const foreign = screenPoint(p, 112, 16);
+  assert.equal(p.emit('mousedown', { target: canvas, button: 0, ...foreign }), false, 'foreign cell must not block camera pan');
+  p.emit('mouseup', { target: canvas, button: 0, ...foreign });
+  assert.equal(map.gameplay.indices[3], 18);
+  // Объявленная точка: жест заблокирован — его съедает перенос точки.
+  const point = screenPoint(p, 16, 16);
+  assert.equal(p.emit('mousedown', { target: canvas, button: 0, ...point }), true, 'editable point drags, not the camera');
+  const target = screenPoint(p, 80, 16);
+  p.emit('mousemove', { target: canvas, ...target });
+  p.emit('mouseup', { target: canvas, button: 0, ...target });
+  assert.equal(map.gameplay.indices[0], 0);
+  assert.equal(map.gameplay.indices[2], 209);
+});
+
+test('edit mode: short click on empty cell still places a tile after a pan-enabled mousedown', () => {
+  const map = {groups:[], gameplay:{width:4,height:1,indices:Uint8Array.from([0,0,0,0])}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209', map);
+  p.node('mode-tile').click();
+  const canvas = p.document.getElementById('cnvs');
+  const spot = screenPoint(p, 48, 16);
+  assert.equal(p.emit('mousedown', { target: canvas, button: 0, ...spot }), false);
+  p.emit('mouseup', { target: canvas, button: 0, ...spot });
+  assert.equal(map.gameplay.indices[1], 209, 'click without drag still places the declared tile');
+});
+
+test('measure mode: LMB drag pans the map, click still sets measurement points', () => {
+  const p = picker('?map=/map&x=16&y=16&point=0');
+  const canvas = p.document.getElementById('cnvs');
+  p.node('mode-measure').click();
+  const a = screenPoint(p, 100, 100);
+  assert.equal(p.emit('mousedown', { target: canvas, button: 0, ...a }), false, 'measure must not block camera pan');
+  p.emit('mouseup', { target: canvas, button: 0, ...a });
+  assert.match(p.node('measure-result').textContent, /A \(/, 'click still sets point A');
+});
+
+test('successful map save: Apply button is restored, CSRF and hash headers are sent', async () => {
+  const map = {groups:[], dataFile:{ fileData:new ArrayBuffer(16) },
+    gameplay:{width:2,height:1,indices:Uint8Array.from([0,0])}};
+  const calls = [];
+  const fetchStub = async (url, opts = {}) => {
+    const href = String(url);
+    calls.push({ href, opts });
+    if (href.includes('auth.php')) return { ok:true, json: async () => ({ role:'admin', csrf:'a'.repeat(64) }) };
+    return { ok:true, json: async () => ({ ok:true, tiles:1, switch_tiles:0, sha256:'b'.repeat(64) }) };
+  };
+  const cryptoStub = { subtle: { digest: async () => new Uint8Array(32).buffer } };
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209&worldId=3', map, {},
+    { window: { crypto: cryptoStub }, globals: { fetch: fetchStub, crypto: cryptoStub } });
+  p.node('mode-tile').click();
+  clickWorld(p, 48, 16); // черновик: клетка 1 → 209
+  assert.equal(map.gameplay.indices[1], 209);
+  p.node('apply').click();
+  for (let i = 0; i < 30 && !p.messages.some(m => m.type === 'editor-map:apply'); i++) {
+    await new Promise(resolve => setImmediate(resolve));
+  }
+  const applied = p.messages.find(m => m.type === 'editor-map:apply');
+  assert.ok(applied, 'editor-map:apply must be posted after a successful save');
+  assert.equal(applied.tilesSaved, 1);
+  assert.equal(p.node('apply').textContent, 'Применить', 'the "Saving map…" label must not stick');
+  assert.equal(p.node('apply').disabled, false, 'Apply is usable again after saving');
+  // Заголовки запроса: CSRF из auth.php, sha256-заглушка (нули), allowlist из объявления.
+  const save = calls.find(c => c.href.includes('map-edit.php'));
+  assert.ok(save, 'map-edit.php was called');
+  assert.match(save.href, /map-edit\.php\?world=3$/);
+  assert.equal(save.opts.headers['X-Editor-CSRF'], 'a'.repeat(64));
+  assert.equal(save.opts.headers['X-Map-Original-Sha256'], '00'.repeat(32));
+  assert.equal(save.opts.headers['X-Map-Allowed-Tiles'], '209');
+  assert.equal(calls.filter(c => c.href.includes('auth.php')).length, 1);
+});
+
+test('map save failure: draft is kept, Apply is re-enabled, server error is shown', async () => {
+  const map = {groups:[], dataFile:{ fileData:new ArrayBuffer(16) },
+    gameplay:{width:2,height:1,indices:Uint8Array.from([0,0])}};
+  const serverError = 'Карта изменилась после открытия. Обновите окно карты и повторите.';
+  const fetchStub = async (url) => {
+    const href = String(url);
+    if (href.includes('auth.php')) return { ok:true, json: async () => ({ role:'admin', csrf:'a'.repeat(64) }) };
+    return { ok:false, status:409, json: async () => ({ ok:false, error: serverError }) };
+  };
+  const cryptoStub = { subtle: { digest: async () => new Uint8Array(32).buffer } };
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209&worldId=3', map, {},
+    { window: { crypto: cryptoStub }, globals: { fetch: fetchStub, crypto: cryptoStub } });
+  p.node('mode-tile').click();
+  clickWorld(p, 48, 16);
+  p.node('apply').click();
+  for (let i = 0; i < 30 && !p.node('edit-status').textContent.includes('Карта изменилась'); i++) {
+    await new Promise(resolve => setImmediate(resolve));
+  }
+  assert.equal(p.messages.some(m => m.type === 'editor-map:apply'), false, 'failed save must not post apply');
+  assert.equal(map.gameplay.indices[1], 209, 'the staged tile must stay in the map view');
+  assert.equal(p.node('apply').disabled, false, 'Apply is re-usable after a failure');
+  assert.equal(p.node('apply').textContent, 'Применить');
+  assert.match(p.node('edit-status').textContent, /Карта изменилась/);
 });
