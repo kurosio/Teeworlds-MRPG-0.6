@@ -54,7 +54,14 @@
       // linkedTiles: остальным окнам (замер, чистый выбор позиции) он не нужен.
       const highlightIds = [...new Set((Array.isArray(options.highlightTiles) ? options.highlightTiles : [])
         .filter((id) => catalog.isEditable(id)))];
-      const editEnabled = options.linkedTiles === true || highlightIds.length > 0;
+      // Правка — строго по объявленным highlightTiles, и у каждого слоя свой
+      // набор: игровые сущности (192–211) и типы switch-слоя (199/200/201,
+      // зоны 22–25) не пересекаются, поэтому ID 200 в игровом слое не должен
+      // неожиданно открывать правку switch-типа 200.
+      const editableGameIds = highlightIds.filter((id) => !catalog.isSwitchTile(id));
+      const editableSwitchIds = highlightIds.filter((id) => catalog.isSwitchTile(id));
+      // Есть что править, только если объявлен хотя бы один ID слоя.
+      const editEnabled = editableGameIds.length > 0 || editableSwitchIds.length > 0;
       // Список «Существующие точки» — прежняя функция: выбрать координаты
       // подсвеченного тайла как позицию записи (без правки карты).
       const linkedEnabled = options.linkedTiles === true && options.highlightLayer !== 'switch'
@@ -121,9 +128,21 @@
       // ── чтение слоёв карты ────────────────────────────────────────────────
       // Слой правится, если он есть в разобранной карте: размеры приходят из
       // `ready()` (gameplay/switchLayer), а запись в файл делает picker.js.
-      const gameLayer = () => sizes.game;
-      const switchLayer = () => sizes.switch;
-      const sizeOf = (target) => (target === 'switch' ? sizes.switch : sizes.game) || null;
+      // Слой правится, только если у него есть объявленные highlightTiles:
+      // без них остаётся обычный выбор позиции.
+      const gameLayer = () => (editableGameIds.length ? sizes.game : null);
+      const switchLayer = () => (editableSwitchIds.length ? sizes.switch : null);
+      /** Все ID, правка которых разрешена этим объявлением. */
+      const isDeclared = (target, id) => (target === 'switch'
+        ? editableSwitchIds.includes(Number(id))
+        : editableGameIds.includes(Number(id)));
+      // Размер слоя нужен и оверлею (показать все точки), но править его можно
+      // только при объявленных highlightTiles: `sizeOf` — про правку,
+      // `rawSize` — про отрисовку.
+      const rawSize = (target) => (target === 'switch' ? sizes.switch : sizes.game) || null;
+      const sizeOf = (target) => (target === 'switch'
+        ? (editableSwitchIds.length ? sizes.switch : null)
+        : (editableGameIds.length ? sizes.game : null));
       /**
        * Значение клетки в живой карте. Внимание: черновик пишет сюда же,
        * поэтому исходное состояние для сравнения берётся из `baseline`
@@ -149,11 +168,10 @@
         const game = tw.map?.gameplay;
         if (game && index >= 0 && index < game.indices.length) game.indices[index] = value || 0;
       };
-      const cell = (target, index) => ({
-        target, index,
-        x: index % sizeOf(target).width,
-        y: Math.floor(index / sizeOf(target).width),
-      });
+      const cell = (target, index) => {
+        const size = rawSize(target);
+        return { target, index, x: index % size.width, y: Math.floor(index / size.width) };
+      };
 
       /**
        * Исходное значение клетки — всегда из первоначальной карты, а не из
@@ -213,13 +231,12 @@
       };
 
       // ── списки тайлов ─────────────────────────────────────────────────────
-      const optionsGame = () => {
-        const known = catalog.GAME_TILES.map((item) => item.id);
-        // Редактор может подсветить и свой ID (например 209 у мобов): такие
-        // значения тоже должны быть в списке, иначе выбрать их нечем.
-        const extra = highlightIds.filter((id) => !known.includes(id) && id > catalog.ENTITY_OFFSET);
-        return [...known, ...extra].sort((a, b) => a - b);
-      };
+      /**
+       * В списке ровно объявленные ID: правка не должна позволять выбрать
+       * тайл, который редактор не подсветил. ID вне каталога (свой тип у
+       * редактора) тоже допустим, если он пришёл в highlightTiles.
+       */
+      const optionsGame = () => editableGameIds.slice().sort((a, b) => a - b);
       const fillGameTiles = () => {
         el['edit-tile'].replaceChildren();
         for (const id of optionsGame()) {
@@ -228,35 +245,53 @@
           option.textContent = `${id} · ${tileName('game', id)}`;
           el['edit-tile'].appendChild(option);
         }
-        const preferred = highlightIds.find((id) => id > catalog.ENTITY_OFFSET) || 209;
-        if (optionsGame().includes(preferred)) el['edit-tile'].value = String(preferred);
+        const preferred = editableGameIds[0];
+        if (preferred !== undefined) el['edit-tile'].value = String(preferred);
         el['edit-tile'].disabled = !gameLayer();
       };
       const fillSwitchTypes = () => {
         el['switch-type'].replaceChildren();
-        for (const entry of catalog.SWITCH_TILES) {
+        for (const id of editableSwitchIds.slice().sort((a, b) => a - b)) {
           const option = document.createElement('option');
-          option.value = String(entry.id);
-          option.textContent = `${entry.id} · ${tileName('switch', entry.id)}`;
+          option.value = String(id);
+          option.textContent = `${id} · ${tileName('switch', id)}`;
           el['switch-type'].appendChild(option);
         }
-        el['switch-type'].value = String(highlightIds.find((id) => [199, 200, 201].includes(id)) || 200);
+        if (editableSwitchIds.length) el['switch-type'].value = String(editableSwitchIds[0]);
         el['switch-type'].disabled = !switchLayer();
         el['switch-number'].disabled = !switchLayer();
       };
+      /** Допустимый номер switch или null: невалидное значение не подменяем. */
       const switchNumberValue = () => {
-        const number = Math.round(Number(el['switch-number'].value));
-        el['switch-number'].classList.toggle('is-warning', !(number >= 1 && number <= 255));
-        return Number.isInteger(number) && number >= 1 && number <= 255 ? number : 1;
+        const raw = String(el['switch-number'].value ?? '').trim();
+        const number = Number(raw);
+        const valid = raw !== '' && Number.isInteger(number) && number >= 1 && number <= 255;
+        el['switch-number'].classList.toggle('is-warning', !valid);
+        return valid ? number : null;
       };
+      /** Номер для уже существующей клетки: при невалидном вводе — её прежний. */
+      const switchNumberOr = (fallback) => switchNumberValue() ?? fallback;
+      /**
+       * Тип switch берётся из списка, но значение DOM может быть подменено:
+       * принимаем только объявленный тип, иначе null (как и с номером).
+       */
       const switchTypeValue = () => {
         const type = Math.round(Number(el['switch-type'].value));
-        return Number.isInteger(type) && type >= 1 && type <= 255 ? type : 200;
+        return editableSwitchIds.includes(type) ? type : null;
       };
-      /** Значение для новой/перекрашенной клетки выбранного слоя. */
-      const valueFor = () => (layer === 'switch'
-        ? { number: switchNumberValue(), type: switchTypeValue() }
-        : Math.round(Number(el['edit-tile'].value)) || 0);
+      /**
+       * Значение для новой клетки выбранного слоя. `null` — ввод неполный
+       * (например, номер switch вне 1–255): ставить такое нельзя.
+       */
+      const valueFor = () => {
+        if (layer !== 'switch') {
+          const value = Math.round(Number(el['edit-tile'].value));
+          return isDeclared('game', value) ? value : null;
+        }
+        const number = switchNumberValue();
+        const type = switchTypeValue();
+        return number === null || type === null ? null : { number, type };
+      };
 
       const paintLayers = () => {
         for (const [target, button] of [['game', el['edit-layer-game']], ['switch', el['edit-layer-switch']]]) {
@@ -324,14 +359,27 @@
       const canEditLayer = () => (layer === 'switch' ? !!switchLayer() : !!gameLayer());
 
       /**
-       * Можно ли двигать/удалять это значение. В игровом слое правим только
-       * сущности (индекс > 191): вода, зоны и стены — часть геометрии карты,
-       * их сервер всё равно отклонит. У switch-слоя правится любой занятый
-       * тайл, потому что там всё и есть switch-тайлы.
+       * Причина, по которой клетку нельзя править, или '' если можно.
+       * Разделяем «это вообще не точка» и «эта точка не объявлена»:
+       * пользователю важно знать, что он кликнул по чужому ID.
+       */
+      const blockedReason = (target, value) => {
+        const occupied = target === 'switch' ? !!(value && value.type) : Number(value) > 0;
+        if (!occupied) return '';
+        if (editableValue(target, value)) return '';
+        if (target === 'game' && !catalog.isEntity(Number(value))) return 'editNotEntity';
+        if (target === 'switch' && !catalog.isSwitchTile(value.type)) return 'editNotEntity';
+        return 'editNotDeclared';
+      };
+      /**
+       * Можно ли трогать это значение. Правится ровно то, что редактор объявил
+       * в `highlightTiles`: чужие сущности, вода, зоны и стены — часть карты,
+       * их нельзя ни красить, ни двигать, ни удалять. У switch-слоя номер
+       * switch можно менять любой (1–255), но только у объявленных типов.
        */
       const editableValue = (target, value) => (target === 'switch'
-        ? !!(value && value.type)
-        : catalog.isEntity(Number(value) || 0));
+        ? !!(value && value.type) && isDeclared('switch', value.type)
+        : isDeclared('game', Number(value) || 0));
 
       const selectCell = (target, index, { reveal = false } = {}) => {
         if (!model.LAYERS.includes(target)) return false;
@@ -340,8 +388,9 @@
         const value = draft ? draft.get(target, index) : readCell(target, index);
         // Занятую клетку, которую нельзя править (вода, зона, стена),
         // не выделяем: иначе Delete молча пытался бы её удалить.
-        if (value && !editableValue(target, value)) {
-          setStatus(target === 'switch' ? 'editNoLayer' : 'editNotEntity');
+        const blocked = blockedReason(target, value);
+        if (blocked) {
+          setStatus(blocked, target === 'switch' ? value?.type : value);
           return false;
         }
         layer = target;
@@ -358,7 +407,15 @@
       /** Клик по клетке: выбрать занятую, поставить новую в пустую. */
       const clickCell = (target, x, y) => {
         const size = sizeOf(target);
-        if (!size) { setStatus(target === 'switch' ? 'editNoLayer' : 'editNoGame'); return false; }
+        if (!size) {
+          const declared = target === 'switch' ? editableSwitchIds.length : editableGameIds.length;
+          if (!declared) {
+            setStatus(target === 'switch' ? 'editNoSwitchDeclared' : 'editNoGameDeclared');
+            return false;
+          }
+          setStatus(target === 'switch' ? 'editNoLayer' : 'editNoGame');
+          return false;
+        }
         if (x < 0 || y < 0 || x >= size.width || y >= size.height) return false;
         const edit = ensureDraft();
         const current = edit.get(target, y * size.width + x);
@@ -367,6 +424,14 @@
         const occupied = target === 'switch' ? !!(current && current.type) : (current > 0);
         if (!occupied) {
           const value = valueFor();
+          // valueFor() возвращает null и для невалидного номера switch, и для
+          // ID, которого нет в объявлении: сообщение выбираем по причине.
+          if (!value) {
+            paintLayers();
+            setStatus(target === 'switch' ? 'editBadSwitchNumber' : 'editNotDeclared',
+              target === 'switch' ? undefined : el['edit-tile'].value);
+            return false;
+          }
           remember(target, selection.index);
           if (target === 'game' && catalog.isCollision(value)) { setStatus('editCollision'); paintLayers(); return false; }
           if (!edit.set(target, x, y, value)) { setStatus('editCapReached'); paintLayers(); return false; }
@@ -375,18 +440,19 @@
           paintLayers();
           return true;
         }
-        if (!editableValue(target, current)) {
-          // Вода/зона/стена — не точка: подсказываем, что тут править нечего,
-          // и не превращаем клетку в «выбранную» с активным Delete.
+        const blocked = blockedReason(target, current);
+        if (blocked) {
+          // Чужая геометрия или необъявленный ID: подсказываем, что тут
+          // править нечего, и не превращаем клетку в «выбранную» с Delete.
           selection = null;
           paintLayers();
-          setStatus('editNotEntity');
+          setStatus(blocked, target === 'switch' ? current?.type : current);
           return false;
         }
         // Занятая клетка того же значения просто выбирается: так руда с
         // нужным номером не перезаписывается случайным кликом.
         const same = target === 'switch'
-          ? current.number === switchNumberValue() && current.type === switchTypeValue()
+          ? current.number === switchNumberOr(current.number) && current.type === (switchTypeValue() ?? current.type)
           : current === Math.round(Number(el['edit-tile'].value));
         setStatus(same ? '' : 'editOccupied');
         paintLayers();
@@ -487,8 +553,10 @@
           const spot = cell('game', selection.index);
           const current = ensureDraft().get('game', selection.index);
           if (current > 0) {
+            const value = valueFor();
+            if (!value) { paintLayers(); setStatus('editNotDeclared', current); return; }
             remember('game', selection.index);
-            ensureDraft().set('game', spot.x, spot.y, Math.round(Number(el['edit-tile'].value)));
+            ensureDraft().set('game', spot.x, spot.y, value);
           }
         }
         paintLayers();
@@ -499,6 +567,18 @@
             const spot = cell('switch', selection.index);
             const current = ensureDraft().get('switch', selection.index);
             if (current && current.type) {
+              // Невалидный номер не подменяем единицей: клетка остаётся с
+              // прежним номером, а поле подсвечивается.
+              if (switchNumberValue() === null) {
+                paintLayers();           // перерисовать поле/выделение
+                setStatus('editBadSwitchNumber'); // и уже потом объяснить
+                return;
+              }
+              if (switchTypeValue() === null) {
+                paintLayers();
+                setStatus('editNotDeclared', current.type);
+                return;
+              }
               remember('switch', selection.index);
               ensureDraft().set('switch', spot.x, spot.y, { number: switchNumberValue(), type: switchTypeValue() });
             }
@@ -654,6 +734,8 @@
 
       return {
         get mode() { return editMode ? 'tile' : 'point'; },
+        /** Есть ли вообще что править по объявлению highlightTiles. */
+        get editEnabled() { return editEnabled; },
         get editMode() { return editMode; },
         get layer() { return layer; },
         get selection() { return selection ? { ...selection, ...cell(selection.target, selection.index) } : null; },
@@ -675,6 +757,23 @@
           paintLayers();
         },
         setEditMode,
+        /**
+         * Почему режим правки недоступен, или '' если доступен. Нужно панели,
+         * чтобы не показывать общий текст «нужен игровой слой» там, где
+         * редактор просто ничего не объявил.
+         */
+        editUnavailableReason() {
+          if (!editableGameIds.length && !editableSwitchIds.length) return text.editNothingDeclared;
+          // До загрузки карты размеров ещё нет: это не «недоступно», а «ещё
+          // не готово», иначе кнопка осталась бы выключенной навсегда.
+          if (!sizes.game && !sizes.switch) return '';
+          if (!canEditLayer()) {
+            return layer === 'switch'
+              ? (editableSwitchIds.length ? text.editNoLayer : text.editNoSwitchDeclared)
+              : (editableGameIds.length ? text.editNoGame : text.editNoGameDeclared);
+          }
+          return '';
+        },
         startPlacement() {
           if (!editEnabled || !canEditLayer()) return false;
           if (!editMode) setEditMode(true);
@@ -684,8 +783,14 @@
         selectCell: (target, index) => selectCell(target, index, { reveal: true }),
         /** Слой правки по кнопке/клавише: недоступный слой не включается. */
         selectLayer(target) {
-          if (target === 'switch' && !switchLayer()) { setStatus('editNoLayer'); return false; }
-          if (target === 'game' && !gameLayer()) { setStatus('editNoGame'); return false; }
+          if (target === 'switch' && !switchLayer()) {
+            setStatus(editableSwitchIds.length ? 'editNoLayer' : 'editNoSwitchDeclared');
+            return false;
+          }
+          if (target === 'game' && !gameLayer()) {
+            setStatus(editableGameIds.length ? 'editNoGame' : 'editNoGameDeclared');
+            return false;
+          }
           layer = target;
           if (selection && selection.target !== layer) selection = null;
           paintLayers();
@@ -726,15 +831,16 @@
           draft = null;
           baseline.clear();
           selection = null;
-          if (layer === 'switch' && !sizes.switch) layer = 'game';
+          // Если объявлены ID только одного слоя, начинаем с него.
+          if (!canEditLayer()) layer = gameLayer() ? 'game' : 'switch';
           fillGameTiles();
           fillSwitchTypes();
           for (const id of ['sec-edit', 'sec-points']) el[id].hidden = !editEnabled && !linkedEnabled;
           el['sec-edit'].hidden = !editEnabled;
           el['sec-points'].hidden = !linkedEnabled;
           el['linked-tiles-wrap'].hidden = !linkedEnabled;
-          el['edit-layer-switch'].disabled = !sizes.switch;
-          el['edit-layer-game'].disabled = !sizes.game;
+          el['edit-layer-switch'].disabled = !switchLayer();
+          el['edit-layer-game'].disabled = !gameLayer();
           paintLayers();
 
           el.spawn.disabled = !tw.map?.spawnPoint;
@@ -780,13 +886,17 @@
             draw.drawHighlightedTiles(ctx, game, bounds, worldToScreen, options.highlightTiles);
           }
 
-          // В режиме правки поверх карты видны все точки слоя, черновик и
-          // выделенная клетка: пользователь видит, что он меняет.
+          // В режиме правки поверх карты видны только объявленные точки слоя,
+          // черновик и выделенная клетка: пользователь видит ровно то, что
+          // может менять, и не путает чужие сущности с доступными.
           if (editMode) {
             if (layer === 'game' && game) {
-              draw.drawGamePoints(ctx, game, bounds, worldToScreen, catalog.isEntity, { color: '#52df9a' });
+              draw.drawGamePoints(ctx, game, bounds, worldToScreen,
+                (id) => isDeclared('game', id), { color: '#52df9a' });
             } else if (layer === 'switch' && tw.map?.switchCells) {
-              draw.drawSwitchPoints(ctx, tw.map.switchCells, sizes.switch, worldToScreen, { color: '#52df9a', labels: true });
+              const declaredCells = new Map([...tw.map.switchCells]
+                .filter(([, value]) => value && isDeclared('switch', value.type)));
+              draw.drawSwitchPoints(ctx, declaredCells, rawSize('switch'), worldToScreen, { color: '#52df9a', labels: true });
             }
             if (draft) {
               const marks = model.LAYERS.flatMap((target) => draft.list(target).map((entry) => ({

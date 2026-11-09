@@ -289,13 +289,13 @@ function map_edit_assert_tile_only_change(array $before, array $after, array $al
             throw new EditorUserError('У тайла игрового слоя нельзя менять флаги.');
         }
         if ($newIndex !== 0 && !isset($allowed[$newIndex])) {
-            throw new EditorUserError('Тайл не входит в список разрешённых сущностей.');
+            throw new EditorUserError('Тайл не входит в список объявленных в highlightTiles сущностей; сохранение отклонено.');
         }
         if ($oldIndex !== 0 && $oldIndex <= 3) {
             throw new EditorUserError('Тайлы столкновений (1–3) нельзя удалять или перемещать.');
         }
         if ($oldIndex !== 0 && !isset($allowed[$oldIndex])) {
-            throw new EditorUserError('На карте нашлись тайлы вне списка разрешённых сущностей; сохранение отклонено.');
+            throw new EditorUserError('На карте нашлись тайлы вне списка объявленных в highlightTiles сущностей; сохранение отклонено.');
         }
         $gameChanges++;
     }
@@ -321,11 +321,13 @@ function map_edit_assert_tile_only_change(array $before, array $after, array $al
                 throw new EditorUserError('У switch-тайла нельзя менять флаги и задержку.');
             }
             if ($newType !== 0 && !isset($allowed[$newType])) {
-                throw new EditorUserError('Switch-тайл не входит в список разрешённых сущностей.');
+                throw new EditorUserError('Тип switch-тайла не объявлен в highlightTiles; сохранение отклонено.');
             }
             if ($oldType !== 0 && !isset($allowed[$oldType])) {
-                throw new EditorUserError('На карте нашлись switch-тайлы вне списка разрешённых сущностей; сохранение отклонено.');
+                throw new EditorUserError('На карте нашлись switch-тайлы вне списка объявленных в highlightTiles типов; сохранение отклонено.');
             }
+            // Номер switch меняется свободно (1–255): он связывает тайл с
+            // узлом сбора в базе. Ограничение — только на объявленные типы.
             if ($newType !== 0 && ($newNumber < 1)) {
                 throw new EditorUserError('Номер switch должен быть от 1 до 255.');
             }

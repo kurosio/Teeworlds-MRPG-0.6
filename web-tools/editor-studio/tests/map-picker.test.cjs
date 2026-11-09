@@ -471,9 +471,12 @@ test('editor shortcuts switch layers, discard edits and guard closing with stage
   p.node('mode-tile').click();
   clickWorld(p, 48, 16);
   assert.match(p.node('edit-status').textContent, /Черновик: \+1/);
-  // 1/2 переключают слой, R отбрасывает черновик.
+  // Switch-слой не объявлен (в highlightTiles только 209) — он недоступен,
+  // и клавиша 2 не переключает правку в чужой слой.
+  assert.equal(p.node('edit-layer-switch').disabled, true);
   p.emit('keydown', { key: '2' });
-  assert.equal(p.node('edit-layer-switch').getAttribute('aria-checked'), 'true');
+  assert.equal(p.node('edit-layer-game').getAttribute('aria-checked'), 'true');
+  assert.match(p.node('edit-status').textContent, /нет типов switch-слоя/);
   p.emit('keydown', { key: '1' });
   assert.equal(p.node('edit-layer-game').getAttribute('aria-checked'), 'true');
   assert.equal(map.gameplay.indices[1], 209);
@@ -491,6 +494,117 @@ test('editor shortcuts switch layers, discard edits and guard closing with stage
   p.window.confirm = () => true;
   p.node('cancel').click();
   assert.equal(p.messages.at(-1).type, 'editor-map:close');
+});
+test('without highlightTiles the edit section stays hidden and clicks only pick a position', () => {
+  const map = {groups:[], gameplay:{width:4,height:1,indices:Uint8Array.from([0,0,0,0])},
+    switchLayer:{width:4,height:1,tiles:[{x:16,y:16,type:200,number:1}]}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1', map);
+  // Ни одного объявленного ID — режима правки нет вообще.
+  assert.equal(p.node('sec-edit').hidden, true);
+  assert.equal(p.node('mode-tile').disabled, true);
+  clickWorld(p, 48, 16);
+  assert.equal(p.node('out-x').textContent, '48', 'plain click still picks the position');
+  assert.equal(map.gameplay.indices[1], 0, 'nothing is written to the map');
+  assert.equal(map.switchCells.get(0).number, 1, 'switch tiles are untouched');
+  assert.equal(p.node('mode-tile').getAttribute('aria-checked'), 'false');
+  // Кнопка режима выключена и объясняет причину: объявлений нет вовсе.
+  assert.equal(p.node('mode-tile').disabled, true);
+  assert.match(p.node('mode-tile').title, /highlightTiles/);
+  p.node('mode-tile').click();
+  assert.equal(p.node('mode-tile').getAttribute('aria-checked'), 'false');
+  assert.equal(p.node('sec-edit').hidden, true);
+});
+test('only declared highlightTiles are editable, other entities are position-only', () => {
+  // В карте есть 209 (объявлен), 193 (не объявлен) и вода (номер 5, не точка).
+  const map = {groups:[], gameplay:{width:4,height:1,indices:Uint8Array.from([209,193,5,0])}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209', map);
+  p.node('mode-tile').click();
+  // Список тайлов — только объявленный ID, каталог больше не подставляется.
+  const options = p.node('edit-tile').children.map((option) => option.value);
+  assert.deepEqual(options, ['209']);
+  // Клик по чужой сущности не выделяет её: двигать/удалять нельзя.
+  clickWorld(p, 48, 16);
+  assert.equal(p.node('edit-selected').textContent, '');
+  assert.match(p.node('edit-status').textContent, /не объявлен в highlightTiles/);
+  assert.equal(p.node('edit-delete').disabled, true);
+  p.emit('keydown', { key: 'Delete' });
+  assert.equal(map.gameplay.indices[1], 193, 'undeclared entity must stay untouched');
+  // Вода — вообще не точка, отдельный текст.
+  clickWorld(p, 80, 16);
+  assert.match(p.node('edit-status').textContent, /не точка, а часть карты/);
+  // Перекраска необъявленной клетки не работает: список закрыт одним ID.
+  clickWorld(p, 16, 16);
+  assert.match(p.node('edit-selected').textContent, /ID 209/);
+});
+test('dragging cannot move an undeclared entity and the save plan stays declared', () => {
+  // 209 объявлен, 193 — нет. Тянем именно чужую сущность.
+  const map = {groups:[], gameplay:{width:4,height:1,indices:Uint8Array.from([209,193,0,0])}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209', map);
+  p.node('mode-tile').click();
+  const canvas = p.document.getElementById('cnvs');
+  const from = screenPoint(p, 48, 16), to = screenPoint(p, 112, 16);
+  p.emit('mousedown', { target: canvas, button: 0, ...from });
+  p.emit('mousemove', { target: canvas, ...to });
+  p.emit('mouseup', { target: canvas, button: 0, ...to });
+  assert.equal(map.gameplay.indices[1], 193, 'undeclared entity must not move');
+  assert.equal(map.gameplay.indices[3], 0, 'nothing may be written to the target cell');
+  // Черновик не должен содержать правок по чужим ID.
+  assert.equal(p.messages.some((message) => message.type === 'editor-map:apply'), false);
+  // Объявленную сущность по-прежнему можно перенести.
+  clickWorld(p, 16, 16);
+  const a = screenPoint(p, 16, 16), b = screenPoint(p, 80, 16);
+  p.emit('mousedown', { target: canvas, button: 0, ...a });
+  p.emit('mousemove', { target: canvas, ...b });
+  p.emit('mouseup', { target: canvas, button: 0, ...b });
+  assert.equal(map.gameplay.indices[0], 0);
+  assert.equal(map.gameplay.indices[2], 209);
+});
+test('declared switch type edits any switch number but leaves other types alone', () => {
+  const map = {groups:[], gameplay:{width:3,height:1,indices:Uint8Array.from([0,0,0])},
+    switchLayer:{width:3,height:1,tiles:[
+      {x:16,y:16,type:200,number:1},
+      {x:48,y:16,type:200,number:255},
+      {x:80,y:16,type:199,number:7},
+    ]}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=200', map);
+  p.node('mode-tile').click();
+  // Игрового слоя в объявлении нет — сразу switch-слой.
+  assert.equal(p.node('edit-layer-game').disabled, true);
+  assert.equal(p.node('edit-layer-switch').disabled, false);
+  assert.equal(p.node('edit-layer-switch').getAttribute('aria-checked'), 'true');
+  // В списке типов только объявленный 200.
+  const types = p.node('switch-type').children.map((option) => option.value);
+  assert.deepEqual(types, ['200']);
+  // Любой номер switch разрешён: 1 → 255 и обратно.
+  clickWorld(p, 16, 16);
+  assert.match(p.node('edit-selected').textContent, /switch #1/);
+  p.node('switch-number').value = '255';
+  p.node('switch-number').emit('change');
+  assert.match(p.node('edit-selected').textContent, /switch #255/);
+  p.node('switch-number').value = '63';
+  p.node('switch-number').emit('change');
+  assert.match(p.node('edit-selected').textContent, /switch #63/);
+  // Чужой тип 199 не выделяется и не меняется (switchCells — живое состояние).
+  assert.equal(map.switchCells.get(2).number, 7);
+  clickWorld(p, 80, 16);
+  assert.equal(p.node('edit-selected').textContent, '');
+  assert.match(p.node('edit-status').textContent, /не объявлен в highlightTiles/);
+  assert.equal(map.switchCells.get(2).number, 7);
+  // Номер вне 1–255 не превращается в 1 молча — значение клетки не портится.
+  clickWorld(p, 16, 16);
+  p.node('switch-number').value = '0';
+  p.node('switch-number').emit('change');
+  assert.equal(map.switchCells.get(0).number, 63, 'invalid number must not be written');
+  assert.match(p.node('edit-status').textContent, /от 1 до 255/);
+  // Пустой номер тоже не ставит новую клетку и не перетирает номер.
+  p.node('switch-number').value = '';
+  p.node('switch-number').emit('change');
+  assert.equal(map.switchCells.get(0).number, 63);
+  assert.match(p.node('edit-status').textContent, /от 1 до 255/);
+  // Валидный номер снова снимает ошибку и показывает сводку черновика.
+  p.node('switch-number').value = '63';
+  p.node('switch-number').emit('change');
+  assert.match(p.node('edit-status').textContent, /Черновик: /);
 });
 test('switch layer template edits ore tiles with a switch number', () => {
   const map = {groups:[], gameplay:{width:2,height:1,indices:Uint8Array.from([0,0])},

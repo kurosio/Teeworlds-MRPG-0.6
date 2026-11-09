@@ -408,6 +408,20 @@ if (fs.existsSync(pickerDir)) {
   for (const token of ['getPendingChanges', 'deleteSelected', 'move(', 'switch']) {
     if (!workbenchCode.includes(token)) problems.push(`vendor/ddnet-map/picker-workbench.js: нет правки точек (${token})`);
   }
+  // Правка строго по объявленным highlightTiles: иначе панель снова начнёт
+  // менять чужие сущности, которые редактор не подсветил.
+  for (const token of ['editableGameIds', 'editableSwitchIds', 'isDeclared', 'blockedReason']) {
+    if (!workbenchCode.includes(token)) {
+      problems.push(`vendor/ddnet-map/picker-workbench.js: правка должна ограничиваться highlightTiles (${token})`);
+    }
+  }
+  const pickerCode = read(path.join(pickerDir, 'picker.js'));
+  if (!/const allowedTiles = \(\) =>/.test(pickerCode) || !pickerCode.includes('assertStagedValue(name, change, allowedTiles())')) {
+    problems.push('vendor/ddnet-map/picker.js: план сохранения должен проверяться по объявленным highlightTiles');
+  }
+  if (/OPTIONS\.highlightTiles,/.test(pickerCode)) {
+    problems.push('vendor/ddnet-map/picker.js: allowlist не должен расширяться значениями из черновика');
+  }
   const tilesCode = fs.existsSync(path.join(pickerDir, 'picker-tiles.js'))
     ? read(path.join(pickerDir, 'picker-tiles.js'))
     : '';

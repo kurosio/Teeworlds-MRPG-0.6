@@ -261,6 +261,9 @@
     STR.hint = LANG === 'en' ? 'Drag to pan · wheel to zoom · green rings show resource nodes with switch numbers'
       : 'Перетаскивание — карта · колесо — масштаб · зелёные кольца — узлы ресурсов с номерами switch';
   }
+  // Правка возможна только по объявленным highlightTiles (4..255): без них
+  // окно остаётся обычным выбором позиции.
+  const declaredEditIds = OPTIONS.highlightTiles.filter((id) => Number.isInteger(id) && id >= 4 && id <= 255);
   const safeMode = OPTIONS.safe.length > 0;
   const Overlays = window.MapPickerOverlays;
   const gameplay = () => (typeof tw === 'undefined' ? null : tw.map?.gameplay || null);
@@ -364,6 +367,13 @@
 
   const setClickHint = () => {
     el.clickHint.textContent = DOCK.modeHints[clickMode] || DOCK.modeHints.point;
+    // Без объявленных highlightTiles править нечего: кнопка должна быть
+    // выключена и объяснять причину, а не «нажиматься и ничего не делать».
+    // Условие статическое (из OPTIONS), поэтому не зависит от загрузки карты.
+    el.modeTile.disabled = !declaredEditIds.length;
+    el.modeTile.title = declaredEditIds.length
+      ? (LANG === 'en' ? 'Edit points and switch tiles' : 'Правка точек и switch-тайлов')
+      : (DOCK.editNothingDeclared || '');
     for (const [mode, button] of [['point', el.modePoint], ['tile', el.modeTile], ['measure', el.modeMeasure]]) {
       const active = clickMode === mode;
       button.setAttribute('aria-checked', String(active));
@@ -791,8 +801,11 @@
     // про слои карты и сообщает о смене режима через onModeChange. Повторно
     // переключать его здесь нельзя — тумблер «нажался» бы дважды.
     if (!workbenchApi?.startPlacement?.()) {
+      // Причина отказа у каждого случая своя: нет объявлений, нет слоя,
+      // нет прав. Общий текст «нужен игровой слой» здесь только путал.
       el.hint.hidden = false;
-      el.hint.textContent = DOCK.editNoLayer || DOCK.editUnsupported;
+      el.hint.textContent = workbenchApi?.editUnavailableReason?.()
+        || DOCK.editNoLayer || DOCK.editUnsupported;
       setDockOpen(true);
       return;
     }
@@ -979,11 +992,20 @@
    * и switch-слой проверяются одним списком.
    */
   /**
+   * Разрешённые ID — только объявленные редактором `highlightTiles`:
+   * правка вне этого списка серверу не отправляется. 1–3 (коллизии) и 0
+   * (пустая клетка) в списке не нужны — их обрабатывают отдельные правила.
+   */
+  const allowedTiles = () => [...new Set(OPTIONS.highlightTiles)]
+    .filter((id) => Number.isInteger(id) && id >= 4 && id <= 255);
+
+  /**
    * Значения плана проверяются до отправки: сервер те же правила применит
    * после того, как сделает бэкап карты, — лучше отказать сразу и словами.
    */
-  const assertStagedValue = (layer, change) => {
+  const assertStagedValue = (layer, change, declaredIds) => {
     const fail = (ru, en) => { throw new Error(LANG === 'en' ? en : ru); };
+    const declared = (id) => id === 0 || declaredIds.includes(id);
     if (layer === 'game') {
       // 0 — очистка клетки, иначе только сущности игрового слоя (>191).
       for (const [id, what] of [[change.tile, 'after'], [change.from, 'from']]) {
@@ -992,6 +1014,12 @@
         }
         if (id > 0 && id <= 3) {
           fail('Тайлы столкновений (1–3) не редактируются.', 'Collision tiles (1–3) cannot be edited.');
+        }
+        // И новое значение, и исходное должны быть объявлены: иначе правка
+        // удаляла бы или перекрашивала чужой тайл.
+        if (!declared(id)) {
+          fail(`ID ${id} не объявлен в highlightTiles — правка отклонена.`,
+            `ID ${id} is not declared in highlightTiles — the edit was refused.`);
         }
       }
       return;
@@ -1005,10 +1033,21 @@
     if (change.type !== 0 && change.number < 1) {
       fail('Номер switch должен быть от 1 до 255.', 'The switch number must be between 1 and 255.');
     }
+    // Номер switch — любой в 1–255; тип — только объявленный.
+    for (const [type, what] of [[change.type, 'after']]) {
+      if (type !== 0 && !declared(type)) {
+        fail(`Тип switch ${type} (${what}) не объявлен в highlightTiles — правка отклонена.`,
+          `Switch type ${type} (${what}) is not declared in highlightTiles — the edit was refused.`);
+      }
+    }
     const from = change.from || { number: 0, type: 0 };
     if (!Number.isInteger(from.type) || from.type < 0 || from.type > 255
       || !Number.isInteger(from.number) || from.number < 0 || from.number > 255) {
       fail('Некорректное исходное значение switch-тайла.', 'Invalid original switch tile value.');
+    }
+    if (from.type !== 0 && !declared(from.type)) {
+      fail(`Исходный тип switch ${from.type} не объявлен в highlightTiles — правка отклонена.`,
+        `Original switch type ${from.type} is not declared in highlightTiles — the edit was refused.`);
     }
   };
 
@@ -1039,7 +1078,7 @@
         if (seen.has(key)) throw new Error(LANG === 'en'
           ? 'The same cell is staged twice.' : 'Одна и та же клетка правится дважды.');
         seen.add(key);
-        assertStagedValue(name, change);
+        assertStagedValue(name, change, allowedTiles());
       }
     }
     const worldId = Number(qs.get('worldId'));
@@ -1061,22 +1100,17 @@
         ? 'Map tile editing requires an administrator session.' : 'Добавлять тайлы может только администратор.'));
     }
     const endpoint = new URL(`map-edit.php?world=${worldId}`, base);
-    // Разрешённые ID: подсвеченные редактором сущности + всё, что реально
-    // правит черновик. Сервер отвергнет посторонние изменения карты.
-    const allowedTiles = [...new Set([
-      ...OPTIONS.highlightTiles,
-      // Новое значение и то, что стояло в клетке: сервер не даёт удалять
-      // сущности, которых редактор не объявлял.
-      ...changes.game.flatMap((change) => [change.tile, change.from]),
-      ...changes.switch.flatMap((change) => [change.type, change.from?.type]),
-    ].filter((id) => Number.isInteger(id) && id >= 4 && id <= 255))];
-    if (!allowedTiles.length) throw new Error(LANG === 'en'
+    // Черновик к этому моменту уже проверен (см. assertStagedValue): он не
+    // может содержать значений вне объявления, поэтому сервер получает ровно
+    // то, что редактор объявил в highlightTiles.
+    const allowed = allowedTiles();
+    if (!allowed.length) throw new Error(LANG === 'en'
       ? 'No allowed map tiles were listed.' : 'Список разрешённых тайлов пуст.');
     const response = await fetch(endpoint, {
       method: 'POST', credentials: 'same-origin', cache: 'no-store',
       headers: {
         'Content-Type': 'application/octet-stream', 'X-Editor-CSRF': csrfPayload.csrf,
-        'X-Map-Original-Sha256': originalHash, 'X-Map-Allowed-Tiles': allowedTiles.join(','),
+        'X-Map-Original-Sha256': originalHash, 'X-Map-Allowed-Tiles': allowed.join(','),
       },
       body: updated,
     });

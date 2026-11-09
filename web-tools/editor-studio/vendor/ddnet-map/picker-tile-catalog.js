@@ -75,9 +75,16 @@
     return Number.isInteger(value) && value >= 4 && value <= 255;
   };
 
+  /**
+   * Может ли ID быть типом switch-тайла. Проверяем именно каталог switch-слоя:
+   * игровые 192–198 в switch-слое смысла не имеют, а 199/200/201 там как раз
+   * растения/руда/рыба.
+   */
+  const isSwitchTile = (id) => !!SWITCH_BY_ID.get(Number(id));
+
   const api = {
     COLLISION_IDS, ENTITY_OFFSET, GAME_TILES, SWITCH_TILES, GROUPS,
-    label, ids, entry, isCollision, isEntity, isEditable,
+    label, ids, entry, isCollision, isEntity, isEditable, isSwitchTile,
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.MapPickerTilesCatalog = api;
