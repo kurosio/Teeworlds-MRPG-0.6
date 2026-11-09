@@ -30,11 +30,25 @@
     + '});'
     + '</script>';
 
+  /**
+   * Порядок подключения — это и есть карта ядра: слои идут сверху вниз, каждый
+   * следующий может пользоваться предыдущими. Добавляя модуль, ставьте его в
+   * свой слой, а не в конец списка.
+   *
+   *   1. Основа       — тема, сеть, утилиты
+   *   2. Справочники  — манифест, словари значений, гостевые правки, диплинки
+   *   3. Каркас       — реестр, поля, формы, диалоги
+   *   4. Данные       — селекты из БД, CRUD, общий UI, значения по умолчанию
+   *   5. Страница     — язык, помощники страниц, справка, бутстрап, синхронизация
+   */
   const scriptTags = [
+    // ── 1. Основа ────────────────────────────────────────────────────────────
     '<script src="editor-core/tailwind-theme.js"></script>',
     // Сетевой слой подключается первым: им пользуются все остальные модули.
     '<script src="editor-core/http.js"></script>',
     '<script src="editor-core/utils.js"></script>',
+
+    // ── 2. Справочники и гостевые правки ─────────────────────────────────────
     '<script src="studio.manifest.js"></script>',
     '<script src="editor-core/reference-data.js"></script>',
     '<script src="editor-core/guest-mode.js"></script>',
@@ -42,12 +56,16 @@
     '<script src="editor-core/request-context.js"></script>',
     // Ссылки «открыть запись» из вкладки «Запросы» (?record=&field=).
     '<script src="editor-core/deep-link.js"></script>',
+
+    // ── 3. Каркас: реестр, поля, формы, диалоги ──────────────────────────────
     '<script src="editor-core/registry.js"></script>',
     '<script src="editor-core/core.js"></script>',
     '<script src="editor-core/field-renderer.js"></script>',
     '<script src="editor-core/dependent-select.js"></script>',
     '<script src="editor-core/form-runtime.js"></script>',
     '<script src="editor-core/dialog-editor.js"></script>',
+
+    // ── 4. Данные: селекты из БД, CRUD и общий UI ────────────────────────────
     '<script src="editor-core/db-map.js"></script>',
     '<script src="editor-core/related-records.js"></script>',
     '<script src="editor-core/db.js"></script>',
@@ -56,7 +74,8 @@
     '<script src="editor-core/validation.js"></script>',
     '<script src="editor-core/ui-manager.js"></script>',
     '<script src="editor-core/defaults.js"></script>',
-    // Языки интерфейса: манифест папки `localization/` (какие файлы грузить,
+    // ── 5. Из чего собирается страница ──────────────────────────────────────
+    // Языки интерфейса: манифест папки `localization/` (какие файлы грузить и
     // какой язык по умолчанию), затем сами языковые файлы из манифеста, затем
     // движок перевода. Новый язык = файл `lang_xx.js` + строка в манифесте.
     '<script src="localization/index.js"></script>',
@@ -74,11 +93,9 @@
     // История изменений БД: модель вкладки «История» (подписи, различия, отмена).
     '<script src="editor-core/db-history.js"></script>',
     '<script src="editor-core/request-workbench.js"></script>',
-    `<script>
-      if (window.EditorCore?.bootstrapEditor) {
-        window.EditorCoreBootstrap = window.EditorCore.bootstrapEditor();
-      }
-    </script>`
+    // Единая точка входа — EditorCore.bootstrapEditor(): она идемпотентна,
+    // поэтому страницы зовут её напрямую и не держат глобальную копию.
+    '<script>window.EditorCore?.bootstrapEditor?.();</script>'
   ];
 
   // Check the compiled stylesheet rather than a CDN runtime global.

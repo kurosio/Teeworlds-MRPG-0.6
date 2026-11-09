@@ -38,11 +38,13 @@ test('collecting editor boots on shared UI, filters world zero and previews unsa
   };
   let cfg, model;
   const previews = [];
-  const core = { CollectingProperties:codec, Page:{guardUnsaved(){}}, UI:{toast(){}},
+  const core = { CollectingProperties:codec, UI:{toast(){}},
+    bootstrapEditor: () => ({fieldRenderOptions:{}}),
+    Dirty:{create: () => { let flag = false; return {markDirty(){ flag = true; }, setClean(){ flag = false; }, isDirty:() => flag}; }},
     PointMap:{preview: options => previews.push(options)},
     DbEditor:{ mount: (_, options) => { cfg = options; return {getModel:()=>model,refresh(){}}; } } };
-  const window = {EditorCoreBootstrap:{fieldRenderOptions:{}}};
-  const document = {body:{},getElementById:node};
+  const window = {addEventListener(){}, removeEventListener(){}};
+  const document = {body:{},getElementById:node,querySelector:() => null};
   const html = read('nodes-collecting-editor.html');
   const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1];
   vm.runInNewContext(script, {window, document, EditorCore:core});

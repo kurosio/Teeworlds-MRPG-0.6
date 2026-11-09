@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mobs • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="scenario"></script>
+  <script src="editor-core/page-loader.js"></script>
 </head>
 
 <body class="editor-theme" data-editor="mobs">
@@ -146,17 +146,15 @@
       tabDrop: document.getElementById('tab_drop'),
     };
 
-    // Shared "unsaved changes" indicator (like in crafts)
-    const DIRTY = window.EditorCore?.Dirty?.create
-      ? window.EditorCore.Dirty.create({
-          root: document.querySelector('main') || document,
-          pill: document.getElementById('dirty-pill'),
-          beforeUnload: true,
-        })
-      : null;
+    // Индикатор несохранённых правок — общий трекер студии (как в остальных редакторах).
+    const DIRTY = EditorCore.Dirty.create({
+      root: document.querySelector('main') || document,
+      pill: document.getElementById('dirty-pill'),
+      beforeUnload: true,
+    });
 
     const RESOURCE = 'bots_mobs';
-    const fieldOptions = window.EditorCore.defaults.getFieldRenderOptions('scenario');
+    const fieldOptions = window.EditorCore.defaults.getFieldRenderOptions();
 
     const DEBUFFS = ['Slowdown', 'Poison', 'Fire'];
     const BEHAVIORS = ['sleepy', 'slower', 'poisonous', 'neutral', 'skills_base', 'skills_tank', 'skills_dps', 'skills_healer', 'ambient_chat'];
@@ -183,7 +181,7 @@
     const splitSet = (value, allowed = null) =>
       EditorCore.utils.parseStringList(value, { allowed });
 
-    const joinSet = (value) => EditorCore.utils.stringifyStringList(value);
+    const joinSet = EditorCore.utils.stringifyStringList;
 
     const parsePipeNums = (s, asFloat = false) => {
       const raw = String(s || '');
@@ -820,8 +818,6 @@
     };
 
     const init = async () => {
-      window.EditorCoreBootstrap = window.EditorCoreBootstrap || window.EditorCore.bootstrapEditor({ mode: 'scenario' });
-
       // Initialize sidebar db selects
       window.EditorCore.UIManager.init(DOM.sidebar);
 

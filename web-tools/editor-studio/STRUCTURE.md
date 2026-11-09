@@ -315,8 +315,13 @@ API: `get_config` отдаёт только булевый признак `passw
 2) Подключите ядро (минимум):
 
 ```html
-<script src="editor-core/page-loader.js" data-mode="scenario"></script>
+<script src="editor-core/page-loader.js"></script>
 ```
+
+Лоадер подключает стили и модули `editor-core` слоями и последним шагом зовёт
+`EditorCore.bootstrapEditor()`. Страница берёт общий набор классов полей той же
+функцией: `const { fieldRenderOptions } = EditorCore.bootstrapEditor();` —
+глобального `window.EditorCoreBootstrap` больше нет, как и параметров режима.
 
 3) Добавьте редактор в `studio.manifest.js` (в нужную группу):
 

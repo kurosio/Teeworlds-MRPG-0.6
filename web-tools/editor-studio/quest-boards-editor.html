@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quest boards • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
   <style>
     body[data-editor="quest_boards"] { --editor-page-max: 1720px; }
     .qb-layout { display:grid; grid-template-columns:minmax(260px,320px) minmax(0,1fr); gap:18px; align-items:start; }
@@ -105,12 +105,12 @@
   </dialog>
 
   <script>
-    const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
-    const $ = (id) => document.getElementById(id);
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor();
+    const $ = EditorCore.Page.byId;
     const DOM = { boards:$('boards'), empty:$('empty'), pool:$('pool'), poolList:$('pool-list'), poolCount:$('pool-count'), search:$('search'), save:$('save'), refresh:$('refresh'), dirty:$('dirty-pill'), stats:$('stats'), picker:$('picker'), pickerTitle:$('picker-title'), pickerSearch:$('picker-search'), pickerList:$('picker-list'), viewport:$('board-viewport'), boardDialog:$('board-dialog'), boardForm:$('board-form'), boardDialogTitle:$('board-dialog-title'), boardSubmit:$('board-submit'), boardDelete:$('board-delete'), boardNav:$('board-nav') };
     const state = { boards:[], quests:[], links:new Map(), allLinkRows:[], original:new Map(), pickerBoard:null, dragging:null, loading:false, editingBoard:null, boardFormRuntime:null, boardDirty:false };
-    const num = (v) => { const n=Number(v); return Number.isFinite(n)&&n>0?n:null; };
-    const esc = (v) => String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const num = EditorCore.utils.toPositiveNumber;
+    const esc = EditorCore.Page.esc;
     const Guest = window.EditorCore.Guest || null;
     const isGuest = () => !!Guest?.isGuest?.();
     const RES_LINK = 'quest_board_links';

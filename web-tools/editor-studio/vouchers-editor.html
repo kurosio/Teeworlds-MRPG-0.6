@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vouchers • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="scenario"></script>
+  <script src="editor-core/page-loader.js"></script>
   <style>
     /* Wide screens name the columns via the grid header; on phones the
        header is hidden and stacked rows need per-field captions instead. */
@@ -164,14 +164,12 @@
       sidebar: document.getElementById('sidebar'),
     };
 
-    // Shared "unsaved changes" indicator + unload warning (like in crafts)
-    const DIRTY = window.EditorCore?.Dirty?.create
-      ? window.EditorCore.Dirty.create({
-          root: document.querySelector('main .max-w-4xl') || document.querySelector('main') || document,
-          pill: document.getElementById('dirty-pill'),
-          beforeUnload: true,
-        })
-      : null;
+    // Индикатор несохранённых правок и предупреждение при уходе — общий трекер студии.
+    const DIRTY = EditorCore.Dirty.create({
+      root: document.querySelector('main .max-w-4xl') || document.querySelector('main') || document,
+      pill: document.getElementById('dirty-pill'),
+      beforeUnload: true,
+    });
 
     const RESOURCE = 'vouchers';
 
@@ -225,7 +223,7 @@
     };
 
     // Use shared render defaults (same look across editors)
-    const fieldOptions = window.EditorCore.defaults.getFieldRenderOptions('scenario');
+    const fieldOptions = window.EditorCore.defaults.getFieldRenderOptions();
 
     let STATE = {
       list: [],
@@ -601,7 +599,6 @@
 
     (async () => {
       // Shared bootstrap (modals, db select init, validation hints, toasts)
-      window.EditorCoreBootstrap = window.EditorCoreBootstrap || window.EditorCore.bootstrapEditor({ mode: 'scenario' });
       // Ensure toast container exists
       window.EditorCore.UI.mountToastContainer({ id: 'toast-container' });
       // Сбой загрузки не должен оставлять страницу «мёртвой» и необработанным

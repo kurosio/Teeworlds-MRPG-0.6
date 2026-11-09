@@ -10,18 +10,27 @@
 Рекомендуемый вариант (единый набор модулей + порядок в одном месте):
 
 ```html
-<script src="editor-core/page-loader.js" data-mode="scenario"></script>
+<script src="editor-core/page-loader.js"></script>
 ```
 
-`data-mode` поддерживается для совместимости; базовый UI инициализируется в сценарном режиме. Лоадер подключает локальные стили и все модули `editor-core` в правильном порядке, а также сохраняет результат `bootstrapEditor` в `window.EditorCoreBootstrap`. Повторный вызов `bootstrapEditor()` возвращает тот же объект; `await EditorCoreBootstrap.ready` дожидается монтирования общего UI. Ошибка инициализации попадает в консоль и уведомление, а не в необработанное исключение.
+Лоадер подключает локальные стили и все модули `editor-core` слоями (основа →
+справочники → каркас → данные → страница) и последним шагом вызывает
+`EditorCore.bootstrapEditor()`. Это единственная точка входа общей обвязки:
+функция идемпотентна, аргументов не принимает и при повторном вызове отдаёт
+тот же объект, поэтому страница может звать её без опаски. Отдельного
+глобального алиаса (`window.EditorCoreBootstrap`) нет: глобус-дубль только
+путал, какой из двух вызовов «настоящий». Ошибка инициализации попадает в
+консоль и уведомление, а не в необработанное исключение.
 
 ### 2) Быстрый старт страницы
 
 ```js
-const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor();
+const { fieldRenderOptions } = EditorCore.bootstrapEditor();
 ```
 
-- `data-mode="scenario"` — основной режим сценарных страниц с модальным редактором.
+Одна строка даёт общий набор классов для полей. Своих копий классов и
+«режимов» (`event`, `scenario`) нет: профиль отрисовки в ядре один, поэтому и
+аргумента у `EditorCore.defaults.getFieldRenderOptions()` нет.
 
 ### 3) Формы из схемы (рекомендуется)
 Если редактор — это "форма по схеме", используйте `EditorCore.FormRuntime`:
@@ -97,20 +106,26 @@ const editor = EditorCore.DbEditor.mount(document.body, {
 Три вещи нужны каждому редактору, поэтому они живут в ядре, а не в странице:
 
 ```js
-// 1. Плашка «Data not saved» + второй шанс при закрытии вкладки.
-const dirty = EditorCore.Dirty.create({ pill: document.getElementById('dirty-pill') });
+// 1. Плашка «Data not saved» + предупреждение браузера при закрытии вкладки.
+//    Автопрослушка ввода/кликов внутри root помечает правки сама.
+const dirty = EditorCore.Dirty.create({
+  root: document.querySelector('.editor-main') || document.body,
+  pill: document.getElementById('dirty-pill'),
+  beforeUnload: true,
+});
 dirty.markDirty();
 dirty.setClean();
 
-// 2. Страховка браузера, когда правки не сохранены (свой счётчик — свой вызов).
-EditorCore.Page.guardUnsaved(() => dirty.isDirty());
-
-// 3. Ответ оболочке студии: она спрашивает, можно ли закрыть вкладку.
+// 2. Ответ оболочке студии: она спрашивает, можно ли закрыть вкладку.
 EditorCore.Dirty.bindShellStatus(() => dirty.isDirty());
 
-// 4. Подтверждение перед переключением на другую запись.
+// 3. Подтверждение перед переключением на другую запись.
 if (!await EditorCore.Page.confirmDiscard(() => dirty.isDirty())) return;
 ```
+
+`beforeUnload: true` заменяет `Page.guardUnsaved`: страховка браузера живёт в том
+же трекере. `Page.guardUnsaved` остаётся для редакторов со своим счётчиком
+правок, где общего трекера нет; заводить оба на одну страницу не нужно.
 
 `bindShellStatus` сам проверяет источник сообщения и формат ответа: странице не
 нужно знать про `postMessage`. Если редактор считается «грязным» ещё и во время
@@ -326,6 +341,43 @@ EditorCore.PositionPicker.getMapOptions(picker); // флаги, с которы�
 ищет поля мира и не грузит БД. Общий кэш списка миров, парсинг ID (включая мир
 0) и «последний выбранный мир» живут в `editor-core/map-worlds.js`. Кнопку
 карты обрабатывает сам элемент — второго глобального слушателя кликов нет.
+
+## Карта модулей ядра
+
+Модуль — одна обязанность. Если что-то хочется скопировать из страницы в
+страницу, место нового помощника — в этом списке, а не в третьей копии.
+
+| Слой | Модули | За что отвечают |
+| --- | --- | --- |
+| Основа | `http.js`, `utils.js`, `tailwind-theme.js` | запросы и CSRF, общие утилиты (экранирование, числа, пути, грязные правки), тёмная тема |
+| Справочники | `reference-data.js`, `guest-mode.js`, `change-markers.js`, `request-context.js`, `deep-link.js` | значения из БД, гостевые правки, пометки изменённых полей, контекст запроса, переходы по ссылке `?record=` |
+| Каркас | `registry.js`, `core.js`, `field-renderer.js`, `dependent-select.js`, `form-runtime.js`, `dialog-editor.js` | реестры, фабрика приложения, поля из схемы, связанные селекты, формы, диалоги |
+| Данные | `db.js`, `db-crud.js`, `db-map.js`, `related-records.js`, `ui.js`, `validation.js`, `ui-manager.js`, `defaults.js` | селекты из БД, CRUD, карта таблиц, связанные записи, модалки и тосты, проверки, значения по умолчанию |
+| Страница | `page-loader.js`, `page-kit.js`, `i18n.js`, `help.js`, `bootstrap.js` | подключение модулей, помощники страниц (`esc`, `byId`, `fmtDate`, `confirmDiscard`), язык, справка, общая обвязка |
+| Редактор | `db-editor-runtime.js`, `db-sync.js`, `db-history.js`, `request-workbench.js` | список + форма записи, синхронизация, история изменений, вкладка «Запросы» |
+| Карта | `map-worlds.js`, `point-map.js`, `position-picker.js`, `blueprint-view.js` | миры, отрисовка карты, выбор позиции, схема сценария |
+| Прочее | `collecting-properties.js`, `scenario-events.js`, `studio-palette.js` | формат свойств ресурсов, события сценария, палитра команд оболочки |
+
+## Правила страницы (их проверяет `tools/check.mjs`)
+
+Страница не заводит своё там, где есть общий инструмент:
+
+```js
+const $ = EditorCore.Page.byId;              // вместо (id) => document.getElementById(id)
+const esc = EditorCore.Page.esc;             // вместо своей функции экранирования
+const { fieldRenderOptions } = EditorCore.bootstrapEditor();
+const dirty = EditorCore.Dirty.create({ pill, beforeUnload: true }); // без ?.create и заглушек
+const id = EditorCore.utils.toPositiveInt(value);   // «ID или null»
+const number = EditorCore.utils.toPositiveNumber(value);
+```
+
+Линтер падает, если в странице снова появятся:
+
+- `window.EditorCoreBootstrap` или `bootstrapEditor({ mode })` — режимов нет;
+- `EditorCore.Dirty?.create` с самодельной заглушкой;
+- своя функция экранирования HTML;
+- `data-mode` на теге `page-loader.js` (атрибут никто не читал);
+- свой обработчик `editor-shell:dirty-status` или своё подтверждение потери правок.
 
 ## Как добавить новый редактор в Studio
 1) Создайте файл `my-editor.html`.

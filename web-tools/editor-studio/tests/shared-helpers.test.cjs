@@ -122,3 +122,51 @@ test('confirmDiscard спрашивает только при наличии п�
   dialog.querySelector('.ec-ok').click();
   assert.equal(await pending, true);
 });
+
+test('toPositiveNumber / toPositiveInt: «не выбрано» вместо нуля и мусора', t => {
+  const { w } = utilsHarness(t);
+  const { toPositiveNumber, toPositiveInt } = w.EditorCore.utils;
+  // Раньше эти правила были скопированы в квесты, ботов и предметы.
+  for (const value of [0, '', null, undefined, -3, 'abc', NaN]) {
+    assert.equal(toPositiveNumber(value), null, `toPositiveNumber(${String(value)})`);
+    assert.equal(toPositiveInt(value), null, `toPositiveInt(${String(value)})`);
+  }
+  assert.equal(toPositiveNumber('2.5'), 2.5);
+  assert.equal(toPositiveInt('2.9'), 2);
+  assert.equal(toPositiveInt(7), 7);
+});
+
+test('Page.byId заменяет локальный $-алиас страниц', t => {
+  const d = dom('<input id="field" value="x">');
+  t.after(() => d.window.close());
+  const w = d.window;
+  w.eval(source('utils.js'));
+  w.eval(source('page-kit.js'));
+  assert.equal(w.EditorCore.Page.byId('field').value, 'x');
+  assert.equal(w.EditorCore.Page.byId('missing'), null);
+});
+
+test('bootstrapEditor идемпотентна: общая обвязка поднимается один раз', async t => {
+  const d = dom('<div class="editor-main"><div class="editor-page-actions"></div></div>');
+  t.after(() => d.window.close());
+  const w = d.window;
+  let uiMounts = 0;
+  let syncMounts = 0;
+  w.EditorCore = {
+    UI: { mountScenarioEditorUI: () => { uiMounts += 1; } },
+    defaults: { getFieldRenderOptions: () => ({ classes: { input: 'editor-input' } }) },
+    UIManager: { init: async () => {} },
+    Sync: { mountSyncButton: () => { syncMounts += 1; } },
+  };
+  w.document.body.dataset.editor = 'items';
+  w.eval(source('bootstrap.js'));
+
+  const first = w.EditorCore.bootstrapEditor();
+  const second = w.EditorCore.bootstrapEditor();
+  assert.equal(first, second, 'второй вызов отдаёт тот же объект');
+  assert.equal(plain(first.fieldRenderOptions.classes).input, 'editor-input');
+
+  await first.ready;
+  assert.equal(uiMounts, 1, 'общий UI поднят один раз');
+  assert.equal(syncMounts, 1, 'кнопка синхронизации добавлена однажды');
+});

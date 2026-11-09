@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Warehouses and shops • Editor Studio</title>
 
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
 
   <style>
     .warehouse-group-btn{border-bottom:1px solid var(--editor-soft-border)}
@@ -205,7 +205,7 @@
   </div>
 
   <script>
-    const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor();
     const RESOURCE = 'warehouses';
 
     const els = {

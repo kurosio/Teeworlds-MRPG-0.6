@@ -18,6 +18,12 @@
   /** Экранирование HTML. Данные из БД и от гостя проходят только через него. */
   const escapeHtml = (value) => namespace.utils.escapeHtml(value ?? '');
 
+  /**
+   * Короткий доступ к элементу по id — вместо копии `(id) => document.getElementById(id)`
+   * в каждой странице: `const $ = EditorCore.Page.byId;`.
+   */
+  const byId = (id) => document.getElementById(id);
+
   const i18n = () => namespace.I18n || null;
 
   /** Перевод строки (если модуль языка уже загружен). */
@@ -300,6 +306,7 @@
   };
 
   namespace.Page = {
+    byId,
     esc: escapeHtml,
     escapeHtml,
     t,

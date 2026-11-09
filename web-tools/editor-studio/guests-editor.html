@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Guest users • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
   <style>
     .guests-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(330px, 100%), 1fr)); gap: 14px; }
     .guest-card { border: 1px solid var(--editor-line); background: var(--editor-surface); border-radius: var(--editor-radius-md); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
@@ -160,11 +160,9 @@
 
   <script>
   (() => {
-    if (!window.EditorCoreBootstrap) window.EditorCoreBootstrap = EditorCore.bootstrapEditor?.();
-
     const API = 'api/guests.php';
     const REQUESTS_API = 'api/change-requests.php';
-    const $ = (id) => document.getElementById(id);
+    const $ = EditorCore.Page.byId;
     // Общие помощники страниц: экранирование, тосты, даты (editor-core/page-kit.js).
     const Page = EditorCore.Page;
     const esc = Page.esc;

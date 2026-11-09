@@ -132,6 +132,24 @@
     return Number.isFinite(number) ? number : fallback;
   };
 
+  /**
+   * Ссылка на запись: «положительное число или null».
+   *
+   * Раньше каждый редактор писал свой вариант (`num` в квестах, `normalizeSlot`
+   * у ботов, `toNullableId` у предметов) — с одинаковыми правилами, но разными
+   * именами. Ноль, пустая строка, отрицательные и NaN означают «не выбрано».
+   */
+  const toPositiveNumber = (value) => {
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0 ? number : null;
+  };
+
+  /** То же, но с отбрасыванием дробной части — для целочисленных ID. */
+  const toPositiveInt = (value) => {
+    const number = toPositiveNumber(value);
+    return number === null ? null : Math.trunc(number);
+  };
+
   const toNullableInt = (value, fallback = null) => {
     if (value === null || value === undefined || value === '') return fallback;
     const number = Number(value);
@@ -875,6 +893,8 @@
     setAtPath,
     createRequestCache,
     toFiniteNumber,
+    toPositiveNumber,
+    toPositiveInt,
     toNullableInt,
     isEmptyValue,
     canonicalValue,

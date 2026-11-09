@@ -30,7 +30,7 @@
         count: queryRole(root, 'count'),
       };
 
-      const fieldOptions = cfg.fieldOptions || window.EditorCore?.defaults?.getFieldRenderOptions?.('event');
+      const fieldOptions = cfg.fieldOptions || window.EditorCore?.defaults?.getFieldRenderOptions?.();
       const debounce = window.EditorCore.utils.debounce;
       const toast = window.EditorCore?.UI?.toast || (() => {});
       const Guest = window.EditorCore?.Guest || null;

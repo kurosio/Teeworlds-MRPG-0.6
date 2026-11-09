@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Change requests • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
   <style>
     .cr-hidden { display: none !important; }
     .cr-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--editor-soft-bg); border: 1px solid var(--editor-soft-border); flex-wrap: wrap; }
@@ -408,9 +408,7 @@
 
   <script>
   (() => {
-    if (!window.EditorCoreBootstrap) window.EditorCoreBootstrap = EditorCore.bootstrapEditor?.();
-
-    const $ = (id) => document.getElementById(id);
+    const $ = EditorCore.Page.byId;
     // Общие помощники страниц: экранирование, тосты, перевод (editor-core/page-kit.js).
     const Page = EditorCore.Page;
     const esc = Page.esc;
@@ -438,7 +436,7 @@
       EditorCore.Http.json(`${API}?action=${encodeURIComponent(action)}`, { method, body, query })
     );
 
-    const fmtDate = (iso) => Page.fmtDate(iso);
+    const fmtDate = Page.fmtDate;
     const plural = Page.plural;
     const statusChip = (s) => `<span class="cr-chip cr-chip--${esc(s)}"><i class="fa-solid ${STATUS[s]?.icon || 'fa-circle'}"></i>${esc(STATUS[s]?.label || s)}</span>`;
     const revisionChip = (r) => Number(r?.version) > 1

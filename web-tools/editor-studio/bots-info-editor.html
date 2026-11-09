@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bots • Editor Studio</title>
-  <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <script src="editor-core/page-loader.js"></script>
 
   <style>
     .skin-preview-frame{
@@ -120,7 +120,7 @@
   </div>
 
   <script>
-    const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor();
 
     const DOM = {
       list: document.querySelector('[data-editor-role="list"]'),
@@ -144,13 +144,11 @@
       skinPreviewMeta: document.getElementById('skinPreviewMeta')
     };
 
-    const dirty = EditorCore.Dirty?.create
-      ? EditorCore.Dirty.create({
-          root: document.querySelector('.editor-main') || document.body,
-          pill: document.getElementById('dirty-pill'),
-          beforeUnload: true,
-        })
-      : { markDirty: () => {}, setClean: () => {} };
+    const dirty = EditorCore.Dirty.create({
+      root: document.querySelector('.editor-main') || document.body,
+      pill: document.getElementById('dirty-pill'),
+      beforeUnload: true,
+    });
 
     const STATE = {
       rows: [],
@@ -315,11 +313,8 @@
       }
     };
 
-    const normalizeSlot = (value) => {
-      const num = Number(value || 0);
-      if (!Number.isFinite(num) || num <= 0) return null;
-      return num;
-    };
+    // «Положительное число или null» — общий помощник студии (как в квестах и предметах).
+    const normalizeSlot = EditorCore.utils.toPositiveNumber;
 
     const toModel = (row) => ({
       ID: Number(row?.ID || 0),

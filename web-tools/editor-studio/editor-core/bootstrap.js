@@ -65,7 +65,7 @@
 
     initialization = {
       ready,
-      fieldRenderOptions: window.EditorCore.defaults.getFieldRenderOptions('scenario'),
+      fieldRenderOptions: window.EditorCore.defaults.getFieldRenderOptions(),
     };
     return initialization;
   };
