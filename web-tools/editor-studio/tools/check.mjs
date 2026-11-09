@@ -340,6 +340,98 @@ if (fs.existsSync(pickerDir)) {
   if (!pickerHtmlCode.includes('pk-validity')) {
     problems.push('vendor/ddnet-map/picker.html: нет индикатора невалидной точки');
   }
+
+  // ── Панель карты: инструменты разделены по смыслу ───────────────────────
+  // Инструменты делятся на три уровня: шапка (точка и камера), панель
+  // «Инструменты карты» (режим клика + секции) и подвал (X/Y и Применить).
+  // Режим клика выбирается один раз в переключателе, а не «кнопка за кнопкой».
+  // Секция правки заменила «Новую точку»: теперь в одном месте видны и
+  // существующие точки карты, и добавление, и switch-тайлы.
+  for (const id of ['pk-dock', 'pk-mode-point', 'pk-mode-tile', 'pk-mode-measure',
+    'pk-sec-pick', 'pk-sec-edit', 'pk-sec-points', 'pk-sec-measure', 'pk-sec-layers',
+    'pk-edit-layer-game', 'pk-edit-layer-switch', 'pk-switch-number', 'pk-switch-type']) {
+    if (!pickerHtmlCode.includes(`id="${id}"`)) {
+      problems.push(`vendor/ddnet-map/picker.html: панель потеряла ${id} (инструменты должны быть разделены по секциям)`);
+    }
+  }
+  // Слои правки живут в отдельных модулях: байтовый писатель карты, модель
+  // черновика и каталог ID. Без них панель молча теряет switch-тайлы.
+  for (const name of ['picker-map-edit.js', 'picker-tiles.js', 'picker-tile-catalog.js', 'picker-map.js']) {
+    if (!pickerHtmlCode.includes(name)) {
+      problems.push(`vendor/ddnet-map/picker.html: не подключён ${name}`);
+    }
+  }
+  if (/<details class="pk-workbench"/.test(pickerHtmlCode)) {
+    problems.push('vendor/ddnet-map/picker.html: вернулась общая свалка «Инструменты размещения» — используйте секции панели');
+  }
+  // Словарь панели один: подписи не должны снова разъехаться по двум файлам.
+  if (!pickerHtmlCode.includes('picker-text.js')) {
+    problems.push('vendor/ddnet-map/picker.html: не подключён picker-text.js (единый словарь панели)');
+  }
+  if (!pickerHtmlCode.includes('picker-measure.js')) {
+    problems.push('vendor/ddnet-map/picker.html: замер должен жить в отдельном модуле picker-measure.js');
+  }
+  const textCode = fs.existsSync(path.join(pickerDir, 'picker-text.js'))
+    ? read(path.join(pickerDir, 'picker-text.js'))
+    : '';
+  if (!textCode) {
+    problems.push('vendor/ddnet-map/picker-text.js: нет словаря панели карты');
+  } else {
+    for (const key of ['dockTitle', 'modes', 'modeHints', 'pointsTitle', 'addTitle', 'viewTitle', 'measureTitle']) {
+      if (!textCode.includes(key)) problems.push(`vendor/ddnet-map/picker-text.js: нет раздела ${key}`);
+    }
+    // RU и EN должны описывать одни и те же ключи.
+    const enKeys = [...textCode.matchAll(/^\s{6}(\w+):/gm)].map((m) => m[1]);
+    for (const key of new Set(enKeys)) {
+      const count = enKeys.filter((value) => value === key).length;
+      if (count !== 2) problems.push(`vendor/ddnet-map/picker-text.js: ключ ${key} есть не в обеих локалях`);
+    }
+  }
+  // Режимы клика взаимоисключающие: активный инструмент один.
+  if (!pickerJsCode.includes("clickMode !== 'point'")) {
+    problems.push('vendor/ddnet-map/picker.js: обычный клик должен ставиться точку только в режиме «точка»');
+  }
+  if (!pickerJsCode.includes('setClickMode')) {
+    problems.push('vendor/ddnet-map/picker.js: нет переключателя инструмента «Клик по карте»');
+  }
+  const workbenchCode = fs.existsSync(path.join(pickerDir, 'picker-workbench.js'))
+    ? read(path.join(pickerDir, 'picker-workbench.js'))
+    : '';
+  if (workbenchCode && /draw(Measure|Radius)/.test(workbenchCode)) {
+    problems.push('vendor/ddnet-map/picker-workbench.js: замер и радиусы — не дело панели тайлов (см. picker-measure.js и picker.js)');
+  }
+  if (!workbenchCode.includes('startPlacement') || !workbenchCode.includes('cancelPlacement')) {
+    problems.push('vendor/ddnet-map/picker-workbench.js: режим тайла должен включаться/выключаться через startPlacement/cancelPlacement');
+  }
+  // Правка карты — это не только добавление: удаление, перенос и switch-слой
+  // должны остаться в модели черновика, иначе панель снова станет «ставилкой».
+  for (const token of ['getPendingChanges', 'deleteSelected', 'move(', 'switch']) {
+    if (!workbenchCode.includes(token)) problems.push(`vendor/ddnet-map/picker-workbench.js: нет правки точек (${token})`);
+  }
+  // Правка строго по объявленным highlightTiles: иначе панель снова начнёт
+  // менять чужие сущности, которые редактор не подсветил.
+  for (const token of ['editableGameIds', 'editableSwitchIds', 'isDeclared', 'blockedReason']) {
+    if (!workbenchCode.includes(token)) {
+      problems.push(`vendor/ddnet-map/picker-workbench.js: правка должна ограничиваться highlightTiles (${token})`);
+    }
+  }
+  const pickerCode = read(path.join(pickerDir, 'picker.js'));
+  if (!/const allowedTiles = \(\) =>/.test(pickerCode) || !pickerCode.includes('assertStagedValue(name, change, allowedTiles())')) {
+    problems.push('vendor/ddnet-map/picker.js: план сохранения должен проверяться по объявленным highlightTiles');
+  }
+  if (/OPTIONS\.highlightTiles,/.test(pickerCode)) {
+    problems.push('vendor/ddnet-map/picker.js: allowlist не должен расширяться значениями из черновика');
+  }
+  const tilesCode = fs.existsSync(path.join(pickerDir, 'picker-tiles.js'))
+    ? read(path.join(pickerDir, 'picker-tiles.js'))
+    : '';
+  if (!tilesCode) {
+    problems.push('vendor/ddnet-map/picker-tiles.js: нет модели черновика правок');
+  } else {
+    for (const token of ['createDraft', 'move', 'restore', 'changes']) {
+      if (!tilesCode.includes(token)) problems.push(`vendor/ddnet-map/picker-tiles.js: черновик потерял ${token}`);
+    }
+  }
 }
 
 // World 0 (Tutorilishe) is a real tw_worlds row. Never confuse it with the

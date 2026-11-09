@@ -1,78 +1,716 @@
-/* Placement tools: previews are staged in memory and persisted only on explicit Apply. */
+/* Панель точек: редактирование игрового и switch-слоя карты.
+ *
+ * Раньше это была «установка тайла»: поставить можно было только в пустую
+ * клетку, а удалять, двигать и править switch-слой (руду/растения/рыбу) —
+ * нельзя. Теперь режим «Ставит тайл» — это редактор точек:
+ *
+ *   • видны все точки карты: игровой слой (индекс >= 192) и switch-слой
+ *     (занятые клетки с номером и типом);
+ *   • клик по занятой клетке её выбирает, по пустой — ставит новый тайл;
+ *   • перетаскивание выбранной точки переносит её, Delete — удаляет;
+ *   • switch-тайл ставится с номером 1–255 и типом 199/200/201 — так же, как
+ *     узлы сбора в редакторе руды;
+ *   • все правки живут в черновике (MapPickerTiles) и уходят на сервер одним
+ *     пакетом по «Применить»: карта пишется атомарно, а повторная правка после
+ *     успешного сохранения считается уже от записанного файла.
+ *
+ * Модуль знает про DOM панели, мышь/тач и карту, но не про HTTP: сохранение
+ * делает picker.js, а он спрашивает у черновика `getPendingChanges()`.
+ */
 (() => {
   'use strict';
+
+  const TILE = 32;
+
   window.MapPickerWorkbench = {
     create(api) {
       const { tw, state, screenToWorld, worldToScreen, screenSize, redraw, options = {} } = api;
+      const pointer = (event) => (api.onPointer ? api.onPointer(event) : screenToWorld(event.clientX, event.clientY));
       const draw = window.MapPickerOverlays;
-      const en = api.lang === 'en';
-      const text = en ? {
-        title:'Placement tools', collision:'Gameplay layer', linkedLabel:'Matching highlighted tiles', linkedUse:'Use this point', linkedEmpty:'No matching highlighted tiles on this map.', editNoSources:'No matching highlighted tiles exist on this map. Tile placement is disabled; you can still click to choose a position.', linkedCount:'{0} linked points · choose one and use it as this record’s position.', linkedLimit:'Showing the first {0} matches.', linkedPoint:'Point', editMode:'Place highlighted tile (off: click to choose position)', editType:'Tile to add', editClear:'Discard staged tiles', editEmpty:'No tiles staged. Enable add mode and click an empty tile. Saving requires admin access and a writable local map folder.', editActive:'Add mode is on: click an empty game tile. Apply saves the map; Cancel discards staged edits.', editSaved:'{0} tile(s) staged. Apply saves them with the position; Cancel discards them.', editBlocked:'That map tile is occupied. Choose an empty tile.', editUnsupported:'Tile placement needs an editable game layer and an administrator with a writable local map folder.', spawn:'To spawn', measure:'Measure (M)', clear:'Clear measurement',
-        from:'From selected point', use:'B → position', radius:'Radius preview, px', layers:'Show all layers', noGame:'No gameplay layer in this map.', zoom:'Zoom in to see gameplay tiles.',
-        previewLabel:'Preview',
-        legend:'1 solid · 2 death · 3 no-hook · green rings: selected tile IDs · blue: other tile IDs',
-        blocked:'Red tiles are forbidden here',
-        solid:'Solid', death:'Death', nohook:'No-hook', empty:'Empty', outside:'Outside gameplay layer', point:'Selected point',
-        start:'Click two points on the map. The selected content position will not move.',
-        tiles:'tiles', tileLayer:'Tiles', quadLayer:'Quads', group:'Group',
-      } : {
-        title:'Инструменты размещения', collision:'Игровой слой', linkedLabel:'Точки с подсвеченными тайлами', linkedUse:'Использовать точку', linkedEmpty:'На карте не найдены подходящие подсвеченные тайлы.', editNoSources:'Нет существующих тайлов из highlightTiles — установка отключена. Позицию по-прежнему можно выбрать обычным кликом по карте.', linkedCount:'Связанных точек: {0} · выберите точку и задайте её позицией этой записи.', linkedLimit:'Показаны первые {0} точек.', linkedPoint:'Точка', editMode:'Устанавливать подсвеченный тайл (выкл. — выбор позиции по клику)', editType:'Тайл для установки', editClear:'Отменить добавленные тайлы', editEmpty:'Тайлы не добавлены. Включите режим и нажмите на пустую клетку. Сохранение требует прав администратора и локальную папку карт с правом записи.', editActive:'Режим установки включён: кликните по пустой клетке игрового слоя. «Применить» сохранит карту и позицию; отмена отбросит изменения.', editSaved:'Добавлено тайлов: {0}. «Применить» сохранит карту вместе с позицией; отмена отбросит изменения.', editBlocked:'Клетка занята другим тайлом. Выберите пустую клетку.', editUnsupported:'Установка требует игрового слоя, входа администратора и локальной папки карт с правом записи.', spawn:'К спавну', measure:'Измерить (M)', clear:'Очистить замер',
-        from:'От выбранной точки', use:'B → позиция', radius:'Предпросмотр радиуса, px', layers:'Показать все слои', noGame:'В карте нет игрового слоя.', zoom:'Приблизьте карту для просмотра игровых тайлов.',
-        previewLabel:'Предпросмотр',
-        legend:'1 стена · 2 смерть · 3 без крюка · зелёный: спавны · синий: прочие ID',
-        blocked:'Красные тайлы здесь запрещены',
-        solid:'Стена', death:'Смерть', nohook:'Без крюка', empty:'Пусто', outside:'Вне игрового слоя', point:'Выбранная точка',
-        start:'Кликните две точки на карте. Позиция редактируемого контента не изменится.',
-        tiles:'тайлов', tileLayer:'Тайлы', quadLayer:'Квады', group:'Группа',
-      };
+      const model = window.MapPickerTiles;
+      const catalog = window.MapPickerTilesCatalog;
+      const text = api.text;
+      const get = (id) => document.getElementById(`pk-${id}`);
+      // Тот же узел, с которым работают picker.js и picker-measure.js: события
+      // карты сравниваются по идентичности элемента.
       const canvas = document.getElementById('cnvs');
-      const get = id => document.getElementById(`pk-${id}`);
-      const el = Object.fromEntries(['collision','spawn','measure','measure-clear','measure-from-point','measure-use','radius','measure-result','collision-status','layer-list','layers-reset','linked-tiles-wrap','linked-tiles','linked-tiles-label','linked-tiles-use','linked-tiles-status','tile-edit-mode-wrap','tile-edit-mode','tile-edit-mode-label','tile-edit-type-wrap','tile-edit-type-label','tile-edit-type','tile-edit-clear','tile-edit-status'].map(id => [id, get(id)]));
-      get('workbench-title').textContent = text.title;
-      const linkedTilesEnabled = options.linkedTiles === true && options.highlightLayer !== 'switch'
-        && Array.isArray(options.highlightTiles) && options.highlightTiles.length > 0;
-      for (const id of ['linked-tiles-wrap','linked-tiles','linked-tiles-use','linked-tiles-status',
-        'tile-edit-mode-wrap','tile-edit-type-wrap','tile-edit-clear','tile-edit-status']) get(id).hidden = !linkedTilesEnabled;
+
+      const NODE_IDS = [
+        'collision', 'collision-label', 'spawn', 'collision-status',
+        'layer-list', 'layers-reset', 'sec-layers',
+        'sec-edit', 'sec-points',
+        'edit-layer-game', 'edit-layer-switch', 'edit-pane-game', 'edit-pane-switch',
+        'edit-tile-wrap', 'edit-tile-label', 'edit-tile', 'edit-type-hint',
+        'switch-type-wrap', 'switch-type-label', 'switch-type',
+        'switch-number-wrap', 'switch-number-label', 'switch-number', 'switch-hint',
+        'edit-delete', 'edit-restore', 'edit-reset',
+        'edit-selected', 'edit-status', 'sec-edit-title', 'sec-points-title',
+        'linked-tiles-wrap', 'linked-tiles', 'linked-tiles-label',
+        'linked-tiles-use', 'linked-tiles-status', 'points-hint',
+      ];
+      const el = Object.fromEntries(NODE_IDS.map((id) => [id, get(id)]));
+
+      // Режим правки доступен там, где редактор передал highlightTiles или
+      // linkedTiles: остальным окнам (замер, чистый выбор позиции) он не нужен.
+      const highlightIds = [...new Set((Array.isArray(options.highlightTiles) ? options.highlightTiles : [])
+        .filter((id) => catalog.isEditable(id)))];
+      // Правка — строго по объявленным highlightTiles, и у каждого слоя свой
+      // набор: игровые сущности (192–211) и типы switch-слоя (199/200/201,
+      // зоны 22–25) не пересекаются, поэтому ID 200 в игровом слое не должен
+      // неожиданно открывать правку switch-типа 200.
+      const editableGameIds = highlightIds.filter((id) => !catalog.isSwitchTile(id));
+      const editableSwitchIds = highlightIds.filter((id) => catalog.isSwitchTile(id));
+      // Есть что править, только если объявлен хотя бы один ID слоя.
+      const editEnabled = editableGameIds.length > 0 || editableSwitchIds.length > 0;
+      // Список «Существующие точки» — прежняя функция: выбрать координаты
+      // подсвеченного тайла как позицию записи (без правки карты).
+      const linkedEnabled = options.linkedTiles === true && options.highlightLayer !== 'switch'
+        && highlightIds.length > 0;
+
+      for (const id of ['sec-edit', 'sec-points']) el[id].hidden = true;
+
+      // ── подписи ───────────────────────────────────────────────────────────
+      const tileName = (layer, id) => {
+        const key = catalog.label(layer, id);
+        return text.tileNames?.[key] || key;
+      };
+      const fill = (template, ...values) => String(template || '')
+        .replace(/\{(\d+)\}/g, (match, index) => (values[Number(index)] ?? match));
+
+      el['edit-tile-label'].textContent = text.editTileLabel;
+      el['switch-type-label'].textContent = text.switchTypeLabel;
+      el['switch-number-label'].textContent = text.switchNumberLabel;
+      el['edit-layer-game'].textContent = text.editLayerGame;
+      el['edit-layer-switch'].textContent = text.editLayerSwitch;
+      el['edit-type-hint'].textContent = text.editTypeHint;
+      el['switch-hint'].textContent = text.switchHint;
       el['linked-tiles-label'].textContent = text.linkedLabel;
       el['linked-tiles-use'].textContent = text.linkedUse;
-      el['tile-edit-mode-label'].textContent = text.editMode;
-      el['tile-edit-type-label'].textContent = text.editType;
-      el['tile-edit-clear'].textContent = text.editClear;
-      get('collision-label').textContent = text.collision;
-      get('radius-label').textContent = text.radius;
-      for (const [id, key] of [['spawn','spawn'],['measure','measure'],['measure-clear','clear'],['measure-from-point','from'],['measure-use','use'],['layers-reset','layers']]) el[id].textContent = text[key];
-      let measuring = false, a = null, b = null, preview = null, waiting = false;
-      let press = null;
-      const originalHint = get('hint').textContent;
-      let layers = [];
-      let linkedPoints = [];
-      const pendingTileEdits = new Map();
-      let tilePlacementPress = null;
-      let tilePlacementTouch = null;
-      let tilePlacementMode = false;
-      let tilePlacementView = null;
-      el['measure-use'].disabled = true;
-      el['measure-from-point'].disabled = !state.hasPoint;
-      // Панель всегда открывается свёрнутой. Игровой слой включается только
-      // явным showTiles в объявлении vec2; safe/highlightTiles/radius работают сами
-      // по себе и не меняют начальное состояние панели или этого переключателя.
-      get('workbench').open = false;
+      el['points-hint'].textContent = text.pointsHint;
+      el['collision-label'].textContent = text.collision;
+      el.spawn.textContent = text.spawn;
+      el['layers-reset'].textContent = text.layers;
+      // Подписи кнопок — из общего словаря, как и остальные секции панели.
+      el['edit-delete'].textContent = text.editDelete;
+      el['edit-restore'].textContent = text.editRestore;
+      el['edit-reset'].textContent = text.editReset;
+      get('sec-edit-title').textContent = text.editTitle;
+      get('sec-points-title').textContent = text.editTileListTitle;
+
       el.collision.checked = options.tiles === true;
-      // Предпросмотр стартует со значения первого объявленного радиуса.
-      const firstRadius = (Array.isArray(options.radii) ? options.radii : [])
-        .find((radius) => Number.isFinite(radius?.value) && radius.value > 0);
-      if (firstRadius) el.radius.value = String(firstRadius.value);
-      const show = (element, value) => { if (element.textContent !== value) element.textContent = value; };
-      const updateResult = () => {
-        el['measure-use'].disabled = !b;
-        const end = b || preview;
-        if (!a || !end) { show(el['measure-result'], measuring ? text.start : ''); return; }
-        const d = draw.distance(a, end);
-        show(el['measure-result'], `A (${a.x}, ${a.y}) → B (${end.x}, ${end.y}) · ${d.length.toFixed(1)} px / ${(d.length / 32).toFixed(2)} ${text.tiles} · ΔX ${d.dx}, ΔY ${d.dy}`);
+
+      // ── состояние ─────────────────────────────────────────────────────────
+      const sizes = {};
+      let draft = null;
+      let layer = 'game';
+      let editMode = false;
+      let selection = null;
+      let linkedPoints = [];
+      let layers = [];
+      let press = null;
+      let touch = null;
+      let view = null;
+      let statusKey = '';
+      const statusArgs = [];
+      const setStatus = (key, ...args) => {
+        statusKey = key;
+        statusArgs.length = 0;
+        statusArgs.push(...args);
+        paintStatus();
       };
+      const paintStatus = () => {
+        const message = statusKey ? fill(text[statusKey], ...statusArgs) : '';
+        if (el['edit-status'].textContent !== message) el['edit-status'].textContent = message;
+        el['edit-status'].classList.toggle('is-warning',
+          statusKey === 'editCapReached' || statusKey === 'editCollision' || statusKey === 'editDrift');
+      };
+
+      // ── чтение слоёв карты ────────────────────────────────────────────────
+      // Слой правится, если он есть в разобранной карте: размеры приходят из
+      // `ready()` (gameplay/switchLayer), а запись в файл делает picker.js.
+      // Слой правится, только если у него есть объявленные highlightTiles:
+      // без них остаётся обычный выбор позиции.
+      const gameLayer = () => (editableGameIds.length ? sizes.game : null);
+      const switchLayer = () => (editableSwitchIds.length ? sizes.switch : null);
+      /** Все ID, правка которых разрешена этим объявлением. */
+      const isDeclared = (target, id) => (target === 'switch'
+        ? editableSwitchIds.includes(Number(id))
+        : editableGameIds.includes(Number(id)));
+      // Размер слоя нужен и оверлею (показать все точки), но править его можно
+      // только при объявленных highlightTiles: `sizeOf` — про правку,
+      // `rawSize` — про отрисовку.
+      const rawSize = (target) => (target === 'switch' ? sizes.switch : sizes.game) || null;
+      const sizeOf = (target) => (target === 'switch'
+        ? (editableSwitchIds.length ? sizes.switch : null)
+        : (editableGameIds.length ? sizes.game : null));
+      /**
+       * Значение клетки в живой карте. Внимание: черновик пишет сюда же,
+       * поэтому исходное состояние для сравнения берётся из `baseline`
+       * (см. `readOriginal`).
+       */
+      const readCell = (target, index) => {
+        if (target === 'switch') {
+          const cells = tw.map?.switchCells;
+          return cells ? cells.get(index) || null : null;
+        }
+        const game = tw.map?.gameplay;
+        return game ? game.indices[index] || 0 : 0;
+      };
+      /** Применяет значение черновика к живому просмотру карты. */
+      const applyCell = (target, index, value) => {
+        if (target === 'switch') {
+          const cells = tw.map?.switchCells;
+          if (!cells) return;
+          if (value && value.type) cells.set(index, { number: value.number, type: value.type });
+          else cells.delete(index);
+          return;
+        }
+        const game = tw.map?.gameplay;
+        if (game && index >= 0 && index < game.indices.length) game.indices[index] = value || 0;
+      };
+      const cell = (target, index) => {
+        const size = rawSize(target);
+        return { target, index, x: index % size.width, y: Math.floor(index / size.width) };
+      };
+
+      /**
+       * Исходное значение клетки — всегда из первоначальной карты, а не из
+       * живого просмотра: черновик сам меняет `tw.map`, и читать оттуда
+       * значило бы сравнивать правку саму с собой. `baseline` запоминает
+       * исходные значения при первом касании клетки.
+       */
+      const baseline = new Map(); // `${layer}:${index}` → исходное значение
+      const readOriginal = (target, index) => {
+        const key = `${target}:${index}`;
+        if (baseline.has(key)) return baseline.get(key);
+        return readCell(target, index);
+      };
+      const ensureDraft = () => {
+        if (draft) return draft;
+        draft = model.createDraft({
+          sizes,
+          // read() должен быть неизменным: карта в `tw.map` живёт своей
+          // жизнью, поэтому читаем из снимка исходного состояния.
+          read: readOriginal,
+          onCell: applyCell,
+          limit: model.MAX_EDITS,
+          onChange: () => { paintSelection(); paintDraftStatus(); redraw(); },
+        });
+        return draft;
+      };
+      /** Запомнить исходное значение клетки до первой правки. */
+      const remember = (target, index) => {
+        const key = `${target}:${index}`;
+        if (!baseline.has(key)) baseline.set(key, readCell(target, index));
+      };
+      /**
+       * Проблемы черновика. Модель сверяет правки со своим неизменным
+       * снимком, но живая карта — отдельная копия: черновик пишет в неё сам,
+       * а другие окна/повторная загрузка могут её поменять. Поэтому
+       * дополнительно сверяем каждую правку с живым значением: оно должно
+       * совпадать с тем, что черновик туда записал.
+       */
+      const consistencyProblems = () => {
+        if (!draft) return [];
+        const problems = draft.problems().slice();
+        const known = new Set(problems.map((item) => `${item.layer}:${item.index}`));
+        const normalize = (target, value) => (target === 'switch'
+          ? model.normalizeSwitch(value) : model.normalizeGame(value));
+        for (const target of model.LAYERS) {
+          for (const entry of draft.list(target)) {
+            const key = `${target}:${entry.index}`;
+            if (known.has(key)) continue;
+            const live = normalize(target, readCell(target, entry.index));
+            if (!model.same(live, draft.get(target, entry.index))) {
+              problems.push({ layer: target, index: entry.index, reason: 'drift' });
+              known.add(key);
+            }
+          }
+        }
+        return problems;
+      };
+
+      // ── списки тайлов ─────────────────────────────────────────────────────
+      /**
+       * В списке ровно объявленные ID: правка не должна позволять выбрать
+       * тайл, который редактор не подсветил. ID вне каталога (свой тип у
+       * редактора) тоже допустим, если он пришёл в highlightTiles.
+       */
+      const optionsGame = () => editableGameIds.slice().sort((a, b) => a - b);
+      const fillGameTiles = () => {
+        el['edit-tile'].replaceChildren();
+        for (const id of optionsGame()) {
+          const option = document.createElement('option');
+          option.value = String(id);
+          option.textContent = `${id} · ${tileName('game', id)}`;
+          el['edit-tile'].appendChild(option);
+        }
+        const preferred = editableGameIds[0];
+        if (preferred !== undefined) el['edit-tile'].value = String(preferred);
+        el['edit-tile'].disabled = !gameLayer();
+      };
+      const fillSwitchTypes = () => {
+        el['switch-type'].replaceChildren();
+        for (const id of editableSwitchIds.slice().sort((a, b) => a - b)) {
+          const option = document.createElement('option');
+          option.value = String(id);
+          option.textContent = `${id} · ${tileName('switch', id)}`;
+          el['switch-type'].appendChild(option);
+        }
+        if (editableSwitchIds.length) el['switch-type'].value = String(editableSwitchIds[0]);
+        el['switch-type'].disabled = !switchLayer();
+        el['switch-number'].disabled = !switchLayer();
+      };
+      /** Допустимый номер switch или null: невалидное значение не подменяем. */
+      const switchNumberValue = () => {
+        const raw = String(el['switch-number'].value ?? '').trim();
+        const number = Number(raw);
+        const valid = raw !== '' && Number.isInteger(number) && number >= 1 && number <= 255;
+        el['switch-number'].classList.toggle('is-warning', !valid);
+        return valid ? number : null;
+      };
+      /** Номер для уже существующей клетки: при невалидном вводе — её прежний. */
+      const switchNumberOr = (fallback) => switchNumberValue() ?? fallback;
+      /**
+       * Тип switch берётся из списка, но значение DOM может быть подменено:
+       * принимаем только объявленный тип, иначе null (как и с номером).
+       */
+      const switchTypeValue = () => {
+        const type = Math.round(Number(el['switch-type'].value));
+        return editableSwitchIds.includes(type) ? type : null;
+      };
+      /**
+       * Значение для новой клетки выбранного слоя. `null` — ввод неполный
+       * (например, номер switch вне 1–255): ставить такое нельзя.
+       */
+      const valueFor = () => {
+        if (layer !== 'switch') {
+          const value = Math.round(Number(el['edit-tile'].value));
+          return isDeclared('game', value) ? value : null;
+        }
+        const number = switchNumberValue();
+        const type = switchTypeValue();
+        return number === null || type === null ? null : { number, type };
+      };
+
+      const paintLayers = () => {
+        for (const [target, button] of [['game', el['edit-layer-game']], ['switch', el['edit-layer-switch']]]) {
+          const active = layer === target;
+          button.setAttribute('aria-checked', String(active));
+          button.classList.toggle('is-active', active);
+        }
+        el['edit-pane-game'].hidden = layer !== 'game';
+        el['edit-pane-switch'].hidden = layer !== 'switch';
+        el['edit-layer-switch'].disabled = !switchLayer();
+        paintSelection();
+        paintDraftStatus();
+        redraw();
+      };
+
+      // ── выделение и статусы ───────────────────────────────────────────────
+      const paintSelection = () => {
+        const empty = !selection || selection.target !== layer;
+        el['edit-delete'].disabled = empty;
+        // «Вернуть» доступно только для клетки, у которой есть правка.
+        el['edit-restore'].disabled = empty || !draft?.list(layer).some((entry) => entry.index === selection.index);
+        if (empty) {
+          // Пустое выделение не дублирует подсказку режима: строка скрывается,
+          // а состояние объясняет статус секции.
+          el['edit-selected'].textContent = '';
+          return;
+        }
+        const spot = cell(layer, selection.index);
+        const value = draft ? draft.get(layer, selection.index) : readCell(layer, selection.index);
+        // Пустая клетка тоже «выбрана»: клик по ней поставит точку, поэтому
+        // подпись показывает координаты и честно пишет «пусто».
+        if (layer === 'switch') {
+          el['edit-selected'].textContent = value?.type
+            ? fill(text.editSelectedSwitch, spot.x, spot.y, value.type, value.number)
+            : fill(text.editSelectedSwitch, spot.x, spot.y, text.empty, '—');
+        } else {
+          el['edit-selected'].textContent = fill(text.editSelected, spot.x, spot.y, value || text.empty);
+        }
+      };
+
+      const paintDraftStatus = () => {
+        const counts = { added: 0, moved: 0, deleted: 0 };
+        const list = model.LAYERS.flatMap((target) => draft ? draft.list(target) : []);
+        for (const entry of list) {
+          const empty = !entry.after || entry.after.type === 0 || entry.after === 0;
+          const wasEmpty = !entry.before || entry.before.type === 0 || entry.before === 0;
+          if (empty && !wasEmpty) counts.deleted++;
+          else if (!empty && wasEmpty) counts.added++;
+          else counts.moved++;
+        }
+        api.onBadge?.(list.length, counts);
+        // Рассинхронизация важнее сводки: иначе пользователь видел бы
+        // «всё готово» рядом с заблокированным «Применить».
+        const problems = consistencyProblems();
+        if (problems.length) setStatus('editDrift', problems.length);
+        else if (list.length) setStatus('editPending', counts.added, counts.moved, counts.deleted);
+        else if (editMode) setStatus('editPendingEmpty');
+        else setStatus('');
+        // Кнопка «Применить» зависит от состояния черновика (в том числе от
+        // рассинхронизации с картой) — сообщаем об этом окну.
+        api.onDraftChange?.(list.length);
+      };
+
+      // ── выбор клетки и правки ─────────────────────────────────────────────
+      const canEditLayer = () => (layer === 'switch' ? !!switchLayer() : !!gameLayer());
+
+      /**
+       * Причина, по которой клетку нельзя править, или '' если можно.
+       * Разделяем «это вообще не точка» и «эта точка не объявлена»:
+       * пользователю важно знать, что он кликнул по чужому ID.
+       */
+      const blockedReason = (target, value) => {
+        const occupied = target === 'switch' ? !!(value && value.type) : Number(value) > 0;
+        if (!occupied) return '';
+        if (editableValue(target, value)) return '';
+        if (target === 'game' && !catalog.isEntity(Number(value))) return 'editNotEntity';
+        if (target === 'switch' && !catalog.isSwitchTile(value.type)) return 'editNotEntity';
+        return 'editNotDeclared';
+      };
+      /**
+       * Можно ли трогать это значение. Правится ровно то, что редактор объявил
+       * в `highlightTiles`: чужие сущности, вода, зоны и стены — часть карты,
+       * их нельзя ни красить, ни двигать, ни удалять. У switch-слоя номер
+       * switch можно менять любой (1–255), но только у объявленных типов.
+       */
+      const editableValue = (target, value) => (target === 'switch'
+        ? !!(value && value.type) && isDeclared('switch', value.type)
+        : isDeclared('game', Number(value) || 0));
+
+      const selectCell = (target, index, { reveal = false } = {}) => {
+        if (!model.LAYERS.includes(target)) return false;
+        const size = sizeOf(target);
+        if (!size || index === null || index < 0 || index >= size.width * size.height) return false;
+        const value = draft ? draft.get(target, index) : readCell(target, index);
+        // Занятую клетку, которую нельзя править (вода, зона, стена),
+        // не выделяем: иначе Delete молча пытался бы её удалить.
+        const blocked = blockedReason(target, value);
+        if (blocked) {
+          setStatus(blocked, target === 'switch' ? value?.type : value);
+          return false;
+        }
+        layer = target;
+        selection = { target, index };
+        if (reveal) {
+          const world = { x: (index % size.width) * TILE + TILE / 2, y: Math.floor(index / size.width) * TILE + TILE / 2 };
+          api.setPoint(world.x, world.y, { snap: false });
+          api.setCamera(world.x, world.y, Math.max(api.fitZoom(), .8));
+        }
+        paintLayers();
+        return true;
+      };
+
+      /** Клик по клетке: выбрать занятую, поставить новую в пустую. */
+      const clickCell = (target, x, y) => {
+        const size = sizeOf(target);
+        if (!size) {
+          const declared = target === 'switch' ? editableSwitchIds.length : editableGameIds.length;
+          if (!declared) {
+            setStatus(target === 'switch' ? 'editNoSwitchDeclared' : 'editNoGameDeclared');
+            return false;
+          }
+          setStatus(target === 'switch' ? 'editNoLayer' : 'editNoGame');
+          return false;
+        }
+        if (x < 0 || y < 0 || x >= size.width || y >= size.height) return false;
+        const edit = ensureDraft();
+        const current = edit.get(target, y * size.width + x);
+        layer = target;
+        selection = { target, index: y * size.width + x };
+        const occupied = target === 'switch' ? !!(current && current.type) : (current > 0);
+        if (!occupied) {
+          const value = valueFor();
+          // valueFor() возвращает null и для невалидного номера switch, и для
+          // ID, которого нет в объявлении: сообщение выбираем по причине.
+          if (!value) {
+            paintLayers();
+            setStatus(target === 'switch' ? 'editBadSwitchNumber' : 'editNotDeclared',
+              target === 'switch' ? undefined : el['edit-tile'].value);
+            return false;
+          }
+          remember(target, selection.index);
+          if (target === 'game' && catalog.isCollision(value)) { setStatus('editCollision'); paintLayers(); return false; }
+          if (!edit.set(target, x, y, value)) { setStatus('editCapReached'); paintLayers(); return false; }
+          const world = { x: x * TILE + TILE / 2, y: y * TILE + TILE / 2 };
+          api.setPoint(world.x, world.y, { snap: false });
+          paintLayers();
+          return true;
+        }
+        const blocked = blockedReason(target, current);
+        if (blocked) {
+          // Чужая геометрия или необъявленный ID: подсказываем, что тут
+          // править нечего, и не превращаем клетку в «выбранную» с Delete.
+          selection = null;
+          paintLayers();
+          setStatus(blocked, target === 'switch' ? current?.type : current);
+          return false;
+        }
+        // Занятая клетка того же значения просто выбирается: так руда с
+        // нужным номером не перезаписывается случайным кликом.
+        const same = target === 'switch'
+          ? current.number === switchNumberOr(current.number) && current.type === (switchTypeValue() ?? current.type)
+          : current === Math.round(Number(el['edit-tile'].value));
+        setStatus(same ? '' : 'editOccupied');
+        paintLayers();
+        return false;
+      };
+
+      const deleteSelected = () => {
+        if (!selection || selection.target !== layer || !canEditLayer()) return false;
+        const edit = ensureDraft();
+        const current = edit.get(layer, selection.index);
+        if (!editableValue(layer, current)) {
+          // Пустая клетка или геометрия карты: удалять нечего.
+          paintDraftStatus();
+          return false;
+        }
+        const spot = cell(layer, selection.index);
+        remember(layer, selection.index);
+        if (!edit.set(layer, spot.x, spot.y, layer === 'switch' ? { number: 0, type: 0 } : 0)) {
+          setStatus('editCapReached');
+          return false;
+        }
+        paintLayers();
+        return true;
+      };
+
+      /** Отбросить весь черновик (кнопка «Сбросить правки» и клавиша R). */
+      const resetEdits = () => {
+        ensureDraft().reset();
+        baseline.clear();
+        selection = null;
+        paintLayers();
+      };
+
+      const restoreSelected = () => {
+        if (!selection || selection.target !== layer) return false;
+        const spot = cell(layer, selection.index);
+        const restored = ensureDraft().restore(layer, spot.x, spot.y);
+        paintLayers();
+        return restored;
+      };
+
+      const moveSelected = (worldX, worldY) => {
+        if (!selection || selection.target !== layer) return false;
+        const size = sizeOf(layer);
+        if (!size) return false;
+        const tx = Math.floor(worldX / TILE), ty = Math.floor(worldY / TILE);
+        const target = ty * size.width + tx;
+        if (target === selection.index) return false;
+        const edit = ensureDraft();
+        const current = edit.get(layer, selection.index);
+        if (!editableValue(layer, current)) {
+          // Пустая «выбранная» клетка просто переезжает вместе с кликом.
+          selection = { target: layer, index: target };
+          paintSelection();
+          return false;
+        }
+        remember(layer, selection.index);
+        remember(layer, target);
+        const moved = edit.move(layer, cell(layer, selection.index), { x: tx, y: ty });
+        if (!moved) { setStatus('editOccupied'); return false; }
+        selection = { target: layer, index: target };
+        paintLayers();
+        return true;
+      };
+
+      // ── режим ─────────────────────────────────────────────────────────────
+      const setEditMode = (enabled) => {
+        press = touch = null;
+        const next = !!enabled && editEnabled && canEditLayer();
+        if (next && !editMode) {
+          // Режим сам показывает игровой слой и сетку, а при выходе
+          // возвращает прежние переключатели пользователя.
+          view = { collision: el.collision.checked, grid: get('grid').checked };
+          el.collision.checked = true;
+          get('grid').checked = true;
+        } else if (!next && editMode && view) {
+          el.collision.checked = view.collision;
+          get('grid').checked = view.grid;
+          view = null;
+        }
+        editMode = next;
+        canvas.classList.toggle('is-editing-tiles', editMode);
+        if (!editMode) selection = null;
+        api.onModeChange?.(editMode ? 'tile' : 'point');
+        setStatus(editMode ? 'editPendingEmpty' : '');
+        if (editMode) paintDraftStatus();
+        paintSelection();
+        redraw();
+      };
+
+      // ── обработчики панели ────────────────────────────────────────────────
+      el.collision.addEventListener('change', redraw);
+      el['edit-layer-game'].addEventListener('click', () => { layer = 'game'; paintLayers(); });
+      el['edit-layer-switch'].addEventListener('click', () => { layer = 'switch'; paintLayers(); });
+      el['edit-tile'].addEventListener('change', () => {
+        // Смена тайла при выбранной занятой клетке — это её перекраска.
+        if (selection && selection.target === 'game' && canEditLayer()) {
+          const spot = cell('game', selection.index);
+          const current = ensureDraft().get('game', selection.index);
+          if (current > 0) {
+            const value = valueFor();
+            if (!value) { paintLayers(); setStatus('editNotDeclared', current); return; }
+            remember('game', selection.index);
+            ensureDraft().set('game', spot.x, spot.y, value);
+          }
+        }
+        paintLayers();
+      });
+      for (const input of [el['switch-type'], el['switch-number']]) {
+        input.addEventListener('change', () => {
+          if (selection && selection.target === 'switch' && switchLayer()) {
+            const spot = cell('switch', selection.index);
+            const current = ensureDraft().get('switch', selection.index);
+            if (current && current.type) {
+              // Невалидный номер не подменяем единицей: клетка остаётся с
+              // прежним номером, а поле подсвечивается.
+              if (switchNumberValue() === null) {
+                paintLayers();           // перерисовать поле/выделение
+                setStatus('editBadSwitchNumber'); // и уже потом объяснить
+                return;
+              }
+              if (switchTypeValue() === null) {
+                paintLayers();
+                setStatus('editNotDeclared', current.type);
+                return;
+              }
+              remember('switch', selection.index);
+              ensureDraft().set('switch', spot.x, spot.y, { number: switchNumberValue(), type: switchTypeValue() });
+            }
+          }
+          paintLayers();
+        });
+      }
+      el['edit-delete'].addEventListener('click', deleteSelected);
+      el['edit-restore'].addEventListener('click', restoreSelected);
+      el['edit-reset'].addEventListener('click', resetEdits);
+      el['linked-tiles-use'].addEventListener('click', () => {
+        const index = Number(el['linked-tiles'].value);
+        const point = Number.isInteger(index) ? linkedPoints[index] : null;
+        if (!point) return;
+        api.setPoint(point.x, point.y, { snap: false });
+        api.setCamera(point.x, point.y, Math.max(api.fitZoom(), .8));
+        // Точку списка тоже выделяем: следующая правка почти наверняка о ней.
+        if (Number.isInteger(point.index)) selectCell('game', point.index);
+      });
+      el['linked-tiles'].addEventListener('change', () => {
+        const index = Number(el['linked-tiles'].value);
+        const point = Number.isInteger(index) ? linkedPoints[index] : null;
+        if (point && Number.isInteger(point.index)) selectCell('game', point.index);
+      });
+      el['layers-reset'].addEventListener('click', () => {
+        for (const { layer: decoration, input } of layers) { decoration.editorHidden = false; input.checked = true; }
+        redraw();
+      });
+      el.spawn.addEventListener('click', () => {
+        const spawn = tw.map?.spawnPoint;
+        if (spawn) api.setCamera(spawn.x, spawn.y, Math.max(api.fitZoom(), .8));
+      });
+
+      // ── мышь и тач ────────────────────────────────────────────────────────
+      // Клики в режиме правки перехватываются в capture-фазе: иначе точка
+      // записи сдвигалась бы дважды — от клетки и от обычного клика.
+      const pixelAt = (event) => pointer(event) || { x: 0, y: 0 };
+      const cellUnder = (event) => {
+        const world = pixelAt(event);
+        const size = sizeOf(layer);
+        if (!size) return null;
+        const x = Math.floor(world.x / TILE), y = Math.floor(world.y / TILE);
+        if (x < 0 || y < 0 || x >= size.width || y >= size.height) return null;
+        return { x, y, index: y * size.width + x, world };
+      };
+
+      window.addEventListener('mousedown', (event) => {
+        if (!editMode || !state.ready || event.target !== canvas || event.button !== 0) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        canvas.focus({ preventScroll: true });
+        press = { x: event.clientX, y: event.clientY, moved: false };
+        // Клетку под курсором выделяем сразу: так перетаскивание занятой
+        // точки работает без отдельного «сначала клик, потом тащить».
+        const spot = cellUnder(event);
+        if (spot) selectCell(layer, spot.index);
+      }, true);
+
+      window.addEventListener('mousemove', (event) => {
+        if (!press || !editMode) return;
+        if (Math.hypot(press.x - event.clientX, press.y - event.clientY) > 6) {
+          if (!press.moved) {
+            press.moved = true;
+            // Двигать можно только занятую клетку; пустая просто снимает выбор.
+            if (!selection) press.moved = false;
+          }
+          if (press.moved) {
+            const world = pixelAt(event);
+            moveSelected(world.x, world.y);
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }
+      }, true);
+
+      window.addEventListener('mouseup', (event) => {
+        if (!press) return;
+        const start = press;
+        press = null;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (event.target !== canvas) return;
+        if (start.moved) { paintLayers(); return; }
+        if (Math.hypot(start.x - event.clientX, start.y - event.clientY) > 6) return;
+        const spot = cellUnder(event);
+        if (spot) clickCell(layer, spot.x, spot.y);
+      }, true);
+
+      window.addEventListener('touchstart', (event) => {
+        if (!editMode || !state.ready || event.target !== canvas) return;
+        if (event.touches.length !== 1) { touch = null; return; }
+        const point = event.touches[0];
+        touch = { x: point.clientX, y: point.clientY, moved: false, at: Date.now() };
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, { capture: true, passive: false });
+
+      window.addEventListener('touchmove', (event) => {
+        if (!touch) return;
+        if (event.touches.length !== 1) { touch = null; return; }
+        const point = event.touches[0];
+        if (Math.hypot(point.clientX - touch.x, point.clientY - touch.y) > 10) touch.moved = true;
+        if (touch.moved) {
+          const world = screenToWorld(point.clientX, point.clientY);
+          moveSelected(world.x, world.y);
+        }
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, { capture: true, passive: false });
+
+      window.addEventListener('touchend', (event) => {
+        if (!touch) return;
+        const start = touch;
+        touch = null;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (start.moved) { paintLayers(); return; }
+        const point = event.changedTouches[0];
+        if (!point) return;
+        const spot = cellUnder({ clientX: point.clientX, clientY: point.clientY });
+        if (spot) clickCell(layer, spot.x, spot.y);
+      }, { capture: true, passive: false });
+
+      window.addEventListener('blur', () => { press = touch = null; });
+      window.addEventListener('touchcancel', () => { press = touch = null; });
+
+      // ── список связанных точек ────────────────────────────────────────────
       const refreshLinkedPoints = () => {
-        if (!linkedTilesEnabled) return;
-        linkedPoints = draw.findHighlightedTiles(tw.map?.gameplay, options.highlightTiles, 10000);
+        if (!linkedEnabled) return;
+        // Тот же поиск точек, что рисует подсветку (picker-overlays.js):
+        // у каждой строки есть index, поэтому выбор строки выделяет её клетку.
+        linkedPoints = draw.findHighlightedTiles(tw.map?.gameplay, highlightIds, 10000);
         el['linked-tiles'].replaceChildren();
         for (const [index, point] of linkedPoints.entries()) {
           const option = document.createElement('option');
@@ -90,312 +728,210 @@
         } else if (linkedPoints.length) el['linked-tiles'].value = '0';
         el['linked-tiles-use'].disabled = linkedPoints.length === 0;
         el['linked-tiles-status'].textContent = linkedPoints.length === 0 ? text.linkedEmpty
-          : (linkedPoints.length === 10000 ? text.linkedLimit.replace('{0}', '10000')
-            : text.linkedCount.replace('{0}', String(linkedPoints.length)));
+          : (linkedPoints.length === 10000 ? fill(text.linkedLimit, '10000')
+            : fill(text.linkedCount, String(linkedPoints.length)));
       };
-      const setEditStatus = (message) => {
-        el['tile-edit-status'].textContent = message;
-        el['tile-edit-status'].hidden = !linkedTilesEnabled;
-      };
-      const setTilePlacementMode = (enabled) => {
-        tilePlacementPress = tilePlacementTouch = null;
-        if (enabled && measuring) setMeasuring(false);
-        const nextMode = !!enabled && !el['tile-edit-mode'].disabled;
-        if (nextMode && !tilePlacementMode) {
-          tilePlacementView = { collision: el.collision.checked, grid: get('grid').checked };
-        } else if (!nextMode && tilePlacementMode && tilePlacementView) {
-          el.collision.checked = tilePlacementView.collision;
-          get('grid').checked = tilePlacementView.grid;
-          tilePlacementView = null;
-        }
-        tilePlacementMode = nextMode;
-        el['tile-edit-mode'].checked = tilePlacementMode;
-        if (tilePlacementMode) {
-          el.collision.checked = true;
-          get('grid').checked = true;
-        }
-        el['tile-edit-mode'].setAttribute('aria-pressed', String(tilePlacementMode));
-        canvas.classList.toggle('is-placing-tile', tilePlacementMode);
-        if (tilePlacementMode) get('workbench').open = true;
-        if (!measuring) get('hint').textContent = tilePlacementMode ? text.editActive : originalHint;
-        setEditStatus(tilePlacementMode ? text.editActive
-          : (pendingTileEdits.size ? text.editSaved.replace('{0}', String(pendingTileEdits.size)) : text.editEmpty));
-        redraw();
-      };
-      const stageTileAt = (worldX, worldY) => {
-        const game = tw.map?.gameplay;
-        const tile = Number(el['tile-edit-type'].value);
-        if (!game || !Number.isInteger(tile) || tile < 4 || tile > 255) {
-          setEditStatus(text.editUnsupported); return false;
-        }
-        const tx = Math.floor(worldX / 32), ty = Math.floor(worldY / 32);
-        if (tx < 0 || ty < 0 || tx >= game.width || ty >= game.height) {
-          setEditStatus(text.editBlocked); return false;
-        }
-        const index = ty * game.width + tx;
-        const current = game.indices[index];
-        const staged = pendingTileEdits.get(index);
-        if (staged) {
-          staged.tile = tile;
-          game.indices[index] = tile;
-        } else if (current === 0) {
-          if (pendingTileEdits.size >= 1000) { setEditStatus(text.editUnsupported); return false; }
-          pendingTileEdits.set(index, { x: tx, y: ty, tile, oldTile: 0 });
-          game.indices[index] = tile;
-        } else if (current !== tile) {
-          setEditStatus(text.editBlocked); return false;
-        }
-        const x = tx * 32 + 16, y = ty * 32 + 16;
-        api.setPoint(x, y, { snap: false });
-        el['tile-edit-clear'].disabled = pendingTileEdits.size === 0;
-        // Keep the original-point list stable; rescanning a multi-million-cell
-        // layer after each staged click would multiply work across up to 1000 edits.
-        setEditStatus(pendingTileEdits.size
-          ? text.editSaved.replace('{0}', String(pendingTileEdits.size))
-          : text.editEmpty);
-        redraw();
-        return true;
-      };
-      const setMeasuring = value => {
-        press = null;
-        touch = null;
-        measuring = value;
-        el.measure.setAttribute('aria-pressed', String(value));
-        canvas.classList.toggle('is-measuring', value);
-        if (value && tilePlacementMode) setTilePlacementMode(false);
-        if (value) get('workbench').open = true;
-        get('hint').textContent = value ? text.start : (tilePlacementMode ? text.editActive : originalHint);
-        get('hint').hidden = false;
-        tw.mousePressed = false;
-        tw.keyState = {};
-        updateResult(); redraw();
-      };
-      el.measure.addEventListener('click', () => setMeasuring(!measuring));
-      el['measure-clear'].addEventListener('click', () => { a = b = preview = null; waiting = false; updateResult(); redraw(); });
-      el['measure-from-point'].addEventListener('click', () => {
-        if (!state.hasPoint) return;
-        a = { ...state.point }; b = null; preview = null; waiting = true;
-        setMeasuring(true);
-      });
-      el['measure-use'].addEventListener('click', () => {
-        if (!b) return;
-        api.setPoint(b.x, b.y);
-        setMeasuring(false);
-      });
-      el.collision.addEventListener('change', redraw);
-      el['tile-edit-mode'].addEventListener('change', () => setTilePlacementMode(el['tile-edit-mode'].checked));
-      el['tile-edit-clear'].addEventListener('click', () => {
-        const game = tw.map?.gameplay;
-        if (game) for (const [index, change] of pendingTileEdits) game.indices[index] = change.oldTile;
-        pendingTileEdits.clear();
-        el['tile-edit-clear'].disabled = true;
-        setTilePlacementMode(false);
-        redraw();
-      });
-      el.radius.addEventListener('input', redraw);
-      el.spawn.addEventListener('click', () => {
-        const spawn = tw.map?.spawnPoint;
-        if (spawn) api.setCamera(spawn.x, spawn.y, Math.max(api.fitZoom(), .8));
-      });
-      el['linked-tiles-use'].addEventListener('click', () => {
-        const index = Number(el['linked-tiles'].value);
-        const point = Number.isInteger(index) ? linkedPoints[index] : null;
-        if (!point) return;
-        api.setPoint(point.x, point.y, { snap: false });
-        api.setCamera(point.x, point.y, Math.max(api.fitZoom(), .8));
-      });
-      el['layers-reset'].addEventListener('click', () => {
-        for (const { layer, input } of layers) { layer.editorHidden = false; input.checked = true; }
-        redraw();
-      });
-      const worldPoint = event => {
-        const p = screenToWorld(event.clientX, event.clientY);
-        const snapped = get('snap').checked && !event.altKey;
-        return window.MapPickerModel.point(p.x, p.y, snapped);
-      };
-      const select = event => {
-        const point = worldPoint(event);
-        if (!point) return;
-        if (waiting) { b = point; waiting = false; }
-        else { a = point; b = null; preview = point; waiting = true; }
-        updateResult(); redraw();
-      };
-      // Registered before the picker's own handlers: measuring never changes its point/history.
-      window.addEventListener('mousedown', event => {
-        if (!measuring || !state.ready || event.target !== canvas || event.button !== 0) return;
-        event.preventDefault(); event.stopImmediatePropagation();
-        canvas.focus({ preventScroll: true });
-        press = { x:event.clientX, y:event.clientY };
-      }, true);
-      window.addEventListener('mouseup', event => {
-        if (!press) return;
-        const start = press; press = null;
-        event.preventDefault(); event.stopImmediatePropagation();
-        if (Math.hypot(start.x - event.clientX, start.y - event.clientY) < 6 && event.target === canvas) select(event);
-      }, true);
-      window.addEventListener('mousemove', event => {
-        if (!measuring || !waiting || !state.ready || event.target !== canvas) return;
-        preview = worldPoint(event); updateResult(); redraw();
-      }, true);
-      // Tap measurement on touch screens; multi-touch is left to the renderer.
-      let touch = null;
-      window.addEventListener('touchstart', event => {
-        if (!measuring || event.target !== canvas) return;
-        if (event.touches.length !== 1) { touch = null; return; }
-        const p = event.touches[0]; touch = { x:p.clientX, y:p.clientY, moved:false };
-        event.stopImmediatePropagation();
-      }, { capture:true, passive:true });
-      window.addEventListener('touchmove', event => {
-        if (!touch) return;
-        if (event.touches.length !== 1) { touch = null; return; }
-        const p = event.touches[0];
-        if (Math.hypot(p.clientX - touch.x, p.clientY - touch.y) > 10) touch.moved = true;
-        event.stopImmediatePropagation();
-      }, { capture:true, passive:true });
-      window.addEventListener('touchend', event => {
-        if (!touch) return;
-        const start = touch; touch = null;
-        event.preventDefault(); event.stopImmediatePropagation();
-        const p = event.changedTouches[0];
-        if (!start.moved && p) select(p);
-      }, { capture:true, passive:false });
-      const cancelPress = () => { press = touch = tilePlacementPress = tilePlacementTouch = null; };
-      window.addEventListener('blur', cancelPress);
-      window.addEventListener('touchcancel', cancelPress);
-      const placeAtScreen = (x, y) => {
-        const world = screenToWorld(x, y);
-        stageTileAt(world.x, world.y);
-      };
-      // Tile placement captures map clicks before the renderer and point picker.
-      window.addEventListener('mousedown', event => {
-        if (!tilePlacementMode || measuring || !state.ready || event.target !== canvas || event.button !== 0) return;
-        event.preventDefault(); event.stopImmediatePropagation();
-        canvas.focus({ preventScroll: true });
-        tilePlacementPress = { x:event.clientX, y:event.clientY };
-      }, true);
-      window.addEventListener('mouseup', event => {
-        if (!tilePlacementPress) return;
-        const start = tilePlacementPress; tilePlacementPress = null;
-        event.preventDefault(); event.stopImmediatePropagation();
-        if (Math.hypot(start.x - event.clientX, start.y - event.clientY) < 6 && event.target === canvas) placeAtScreen(event.clientX, event.clientY);
-      }, true);
-      window.addEventListener('touchstart', event => {
-        if (!tilePlacementMode || measuring || event.target !== canvas) return;
-        if (event.touches.length !== 1) { tilePlacementTouch = null; return; }
-        const point = event.touches[0];
-        tilePlacementTouch = { x:point.clientX, y:point.clientY, moved:false };
-        event.preventDefault(); event.stopImmediatePropagation();
-      }, { capture:true, passive:false });
-      window.addEventListener('touchmove', event => {
-        if (!tilePlacementTouch) return;
-        if (event.touches.length !== 1) { tilePlacementTouch = null; return; }
-        const point = event.touches[0];
-        if (Math.hypot(point.clientX - tilePlacementTouch.x, point.clientY - tilePlacementTouch.y) > 10) tilePlacementTouch.moved = true;
-        event.preventDefault(); event.stopImmediatePropagation();
-      }, { capture:true, passive:false });
-      window.addEventListener('touchend', event => {
-        if (!tilePlacementTouch) return;
-        const start = tilePlacementTouch; tilePlacementTouch = null;
-        event.preventDefault(); event.stopImmediatePropagation();
-        const point = event.changedTouches[0];
-        if (!start.moved && point) placeAtScreen(point.clientX, point.clientY);
-      }, { capture:true, passive:false });
-      window.addEventListener('keydown', event => {
-        if (['INPUT','TEXTAREA','SELECT'].includes(event.target?.tagName) || event.target?.isContentEditable || event.ctrlKey || event.metaKey || event.altKey) return;
-        if (event.key?.toLowerCase() === 'm') { event.preventDefault(); event.stopImmediatePropagation(); setMeasuring(!measuring); }
-      }, true);
+
       return {
-        getPendingTileChanges() {
-          return [...pendingTileEdits.values()].map(({ x, y, tile }) => ({ x, y, tile }));
+        get mode() { return editMode ? 'tile' : 'point'; },
+        /** Есть ли вообще что править по объявлению highlightTiles. */
+        get editEnabled() { return editEnabled; },
+        get editMode() { return editMode; },
+        get layer() { return layer; },
+        get selection() { return selection ? { ...selection, ...cell(selection.target, selection.index) } : null; },
+        getPendingChanges() {
+          return draft ? draft.changes() : { game: [], switch: [] };
         },
-        setEditStatus,
+        get pendingCount() { return draft ? draft.size : 0; },
+        /** Рассинхронизация черновика с картой — повод не сохранять. */
+        problems: consistencyProblems,
+        isConsistent: () => consistencyProblems().length === 0,
+        /**
+         * После успешного сохранения карта уже записана: черновик очищается,
+         * а `tw.map` пересобран в picker.js (MapPickerMapEdit.reload).
+         */
+        markSaved() {
+          draft = null;
+          baseline.clear();
+          selection = null;
+          paintLayers();
+        },
+        setEditMode,
+        /**
+         * Почему режим правки недоступен, или '' если доступен. Нужно панели,
+         * чтобы не показывать общий текст «нужен игровой слой» там, где
+         * редактор просто ничего не объявил.
+         */
+        editUnavailableReason() {
+          if (!editableGameIds.length && !editableSwitchIds.length) return text.editNothingDeclared;
+          // До загрузки карты размеров ещё нет: это не «недоступно», а «ещё
+          // не готово», иначе кнопка осталась бы выключенной навсегда.
+          if (!sizes.game && !sizes.switch) return '';
+          if (!canEditLayer()) {
+            return layer === 'switch'
+              ? (editableSwitchIds.length ? text.editNoLayer : text.editNoSwitchDeclared)
+              : (editableGameIds.length ? text.editNoGame : text.editNoGameDeclared);
+          }
+          return '';
+        },
+        startPlacement() {
+          if (!editEnabled || !canEditLayer()) return false;
+          if (!editMode) setEditMode(true);
+          return true;
+        },
+        cancelPlacement() { if (editMode) setEditMode(false); },
+        selectCell: (target, index) => selectCell(target, index, { reveal: true }),
+        /** Слой правки по кнопке/клавише: недоступный слой не включается. */
+        selectLayer(target) {
+          if (target === 'switch' && !switchLayer()) {
+            setStatus(editableSwitchIds.length ? 'editNoLayer' : 'editNoSwitchDeclared');
+            return false;
+          }
+          if (target === 'game' && !gameLayer()) {
+            setStatus(editableGameIds.length ? 'editNoGame' : 'editNoGameDeclared');
+            return false;
+          }
+          layer = target;
+          if (selection && selection.target !== layer) selection = null;
+          paintLayers();
+          return true;
+        },
+        /** «Сбросить правки» кнопкой и клавишей R — одно и то же действие. */
+        resetEdits,
+        deleteSelected,
+        setStatus,
+        paintStatus,
+        /** Готовый текст (например ошибка сохранения) без ключа словаря. */
+        setStatusText(message) {
+          statusKey = '';
+          statusArgs.length = 0;
+          const value = String(message || '');
+          if (el['edit-status'].textContent !== value) el['edit-status'].textContent = value;
+          el['edit-status'].classList.toggle('is-warning', !!value);
+        },
+        /** Вызывается после (пере)загрузки карты и после сохранения. */
         ready() {
+          // Размеры слоёв берём из уже разобранной карты (gameplay/switchLayer):
+          // так панель работает и там, где датафайл недоступен (предпросмотр,
+          // тесты), а правка просто останется черновиком без сохранения.
+          const gameplay = tw.map?.gameplay;
+          const switchTiles = tw.map?.switchLayer;
+          sizes.game = gameplay ? { width: gameplay.width, height: gameplay.height } : null;
+          sizes.switch = switchTiles ? { width: switchTiles.width, height: switchTiles.height } : null;
+          // Удобный для оверлея вид switch-клеток с координатами: он же
+          // источник правды для черновика.
+          if (switchTiles && tw.map) {
+            const cells = new Map();
+            for (const tile of switchTiles.tiles || []) {
+              const x = Math.floor(tile.x / TILE), y = Math.floor(tile.y / TILE);
+              cells.set(y * switchTiles.width + x, { number: tile.number, type: tile.type });
+            }
+            tw.map.switchCells = cells;
+          }
+          draft = null;
+          baseline.clear();
+          selection = null;
+          // Если объявлены ID только одного слоя, начинаем с него.
+          if (!canEditLayer()) layer = gameLayer() ? 'game' : 'switch';
+          fillGameTiles();
+          fillSwitchTypes();
+          for (const id of ['sec-edit', 'sec-points']) el[id].hidden = !editEnabled && !linkedEnabled;
+          el['sec-edit'].hidden = !editEnabled;
+          el['sec-points'].hidden = !linkedEnabled;
+          el['linked-tiles-wrap'].hidden = !linkedEnabled;
+          el['edit-layer-switch'].disabled = !switchLayer();
+          el['edit-layer-game'].disabled = !gameLayer();
+          paintLayers();
+
           el.spawn.disabled = !tw.map?.spawnPoint;
           el.collision.disabled = !tw.map?.gameplay;
-          if (linkedTilesEnabled) {
-            refreshLinkedPoints();
-            const editableIds = [...new Set(options.highlightTiles.filter((id) => Number.isInteger(id) && id >= 4 && id <= 255))];
-            el['tile-edit-type'].replaceChildren();
-            for (const id of editableIds) {
-              const option = document.createElement('option');
-              option.value = String(id);
-              option.textContent = id === 209 ? 'ID 209 · ENTITY_SPAWN_MOBS' : `ID ${id}`;
-              el['tile-edit-type'].appendChild(option);
+          refreshLinkedPoints();
+
+          el['layer-list'].replaceChildren();
+          layers = [];
+          for (const [g, group] of (tw.map?.groups || []).entries()) {
+            for (const [l, decoration] of (group.layers || []).entries()) {
+              const label = document.createElement('label');
+              const input = document.createElement('input');
+              input.type = 'checkbox';
+              input.checked = decoration.editorHidden !== true;
+              const caption = document.createElement('span');
+              caption.textContent = `${text.group} ${g + 1} / ${l + 1}: `
+                + `${decoration.type === tw.LAYERTYPE_TILES ? text.tileLayer : text.quadLayer}`
+                + `${decoration.width ? ` (${decoration.width}×${decoration.height})` : ''}`;
+              input.addEventListener('change', () => { decoration.editorHidden = !input.checked; redraw(); });
+              label.append(input, caption);
+              el['layer-list'].appendChild(label);
+              layers.push({ layer: decoration, input });
             }
-            if (editableIds.length) el['tile-edit-type'].value = String(editableIds[0]);
-            el['tile-edit-mode'].disabled = editableIds.length === 0 || !tw.map?.gameplay || linkedPoints.length === 0;
-            el['tile-edit-type'].disabled = editableIds.length === 0 || linkedPoints.length === 0 || !tw.map?.gameplay;
-            el['tile-edit-clear'].disabled = true;
-            try { window.MapPickerMapEdit.locateGameLayer(tw, tw.map?.dataFile); }
-            catch { el['tile-edit-mode'].disabled = true; }
-            setEditStatus(linkedPoints.length === 0 && editableIds.length > 0 && tw.map?.gameplay
-              ? text.editNoSources
-              : (el['tile-edit-mode'].disabled ? text.editUnsupported : text.editEmpty));
-          }
-          el['layer-list'].replaceChildren(); layers = [];
-          for (const [g, group] of (tw.map?.groups || []).entries()) for (const [l, layer] of (group.layers || []).entries()) {
-            const label = document.createElement('label');
-            const input = document.createElement('input'); input.type = 'checkbox'; input.checked = layer.editorHidden !== true;
-            const caption = document.createElement('span');
-            caption.textContent = `${text.group} ${g + 1} / ${l + 1}: ${layer.type === tw.LAYERTYPE_TILES ? text.tileLayer : text.quadLayer}${layer.width ? ` (${layer.width}×${layer.height})` : ''}`;
-            input.addEventListener('change', () => { layer.editorHidden = !input.checked; redraw(); });
-            label.append(input, caption); el['layer-list'].appendChild(label); layers.push({ layer, input });
           }
         },
         draw(ctx) {
-          el['measure-from-point'].disabled = !state.hasPoint;
           const game = tw.map?.gameplay;
           const screen = screenSize();
-          const bounds = draw.visibleTiles(game, screenToWorld(0,0), screenToWorld(screen.w,screen.h));
+          const bounds = draw.visibleTiles(game, screenToWorld(0, 0), screenToWorld(screen.w, screen.h));
           let status = '';
           if (el.collision.checked) {
             status = !game ? text.noGame : !bounds ? text.zoom : text.legend;
-            if (Array.isArray(options.safe) && options.safe.length) {
-              status += `${status ? ' · ' : ''}${text.blocked}`;
-            }
+            if (Array.isArray(options.safe) && options.safe.length) status += `${status ? ' · ' : ''}${text.blocked}`;
             draw.drawCollision(ctx, game, bounds, worldToScreen, options.safe);
           }
           if (options.highlightLayer === 'switch') {
-            const count = draw.drawSwitchTiles(ctx, tw.map?.switchLayer, worldToScreen, options.highlightTiles, options.switchShowID);
-            const nodeStatus = `${en ? 'Linked nodes' : 'Связанные узлы'}: ${count}${tw.map?.switchLayer ? '' : (en ? ' (no switch layer)' : ' (нет switch-слоя)')}`;
+            const count = draw.drawSwitchTiles(ctx, tw.map?.switchLayer, worldToScreen,
+              options.highlightTiles, options.switchShowID);
+            const nodeStatus = `${text.linkedNodes}: ${count}${tw.map?.switchLayer ? '' : ` (${text.noSwitchLayer})`}`;
             status += `${status ? ' · ' : ''}${nodeStatus}`;
             if (options.preview) get('note').textContent = nodeStatus;
-          } else if (options.highlightTiles?.length) draw.drawHighlightedTiles(ctx, game, bounds, worldToScreen, options.highlightTiles);
+          } else if (options.highlightTiles?.length) {
+            draw.drawHighlightedTiles(ctx, game, bounds, worldToScreen, options.highlightTiles);
+          }
+
+          // В режиме правки поверх карты видны только объявленные точки слоя,
+          // черновик и выделенная клетка: пользователь видит ровно то, что
+          // может менять, и не путает чужие сущности с доступными.
+          if (editMode) {
+            if (layer === 'game' && game) {
+              draw.drawGamePoints(ctx, game, bounds, worldToScreen,
+                (id) => isDeclared('game', id), { color: '#52df9a' });
+            } else if (layer === 'switch' && tw.map?.switchCells) {
+              const declaredCells = new Map([...tw.map.switchCells]
+                .filter(([, value]) => value && isDeclared('switch', value.type)));
+              draw.drawSwitchPoints(ctx, declaredCells, rawSize('switch'), worldToScreen, { color: '#52df9a', labels: true });
+            }
+            if (draft) {
+              const marks = model.LAYERS.flatMap((target) => draft.list(target).map((entry) => ({
+                x: entry.x, y: entry.y,
+                kind: !entry.after || entry.after.type === 0 || entry.after === 0 ? 'delete'
+                  : (!entry.before || entry.before.type === 0 || entry.before === 0 ? 'add' : 'move'),
+              })));
+              draw.drawEditMarks(ctx, marks, worldToScreen);
+            }
+            if (selection && selection.target === layer) {
+              const spot = cell(layer, selection.index);
+              const value = draft ? draft.get(layer, selection.index) : readCell(layer, selection.index);
+              const caption = layer === 'switch'
+                ? `#${value?.number ?? '—'} · ${value?.type ?? '—'}`
+                : `ID ${value ?? 0}`;
+              draw.drawSelection(ctx, spot, worldToScreen, caption);
+            }
+          }
+
           if (state.hasPoint && game) {
             const index = draw.tileAt(game, state.point);
-            const kind = index === null ? text.outside : index === 0 ? text.empty : `${({1:text.solid,2:text.death,3:text.nohook})[index] || (en ? 'Tile' : 'Тайл')} (ID ${index})`;
+            const kind = index === null ? text.outside
+              : index === 0 ? text.empty
+                : `${({ 1: text.solid, 2: text.death, 3: text.nohook })[index] || text.tileLabel} (ID ${index})`;
             status += `${status ? ' · ' : ''}${text.point}: ${kind}`;
           }
           const cursor = api.getCursor();
           if (el.collision.checked && cursor && game) {
             const index = draw.tileAt(game, screenToWorld(cursor.x, cursor.y));
-            status += ` · ${en ? 'Cursor' : 'Курсор'}: ${index === null ? text.outside : `ID ${index}`}`;
+            status += ` · ${text.cursor}: ${index === null ? text.outside : `ID ${index}`}`;
           }
           const selectedTile = state.hasPoint ? draw.tileAt(game, state.point) : null;
           const blocked = draw.blockedTile(game, state.hasPoint ? state.point : null, options.safe);
-          el['collision-status'].classList.toggle('is-warning', blocked !== null || [1,2,3].includes(selectedTile));
-          show(el['collision-status'], status);
-          // Radii declared by the editor: every entry carries its own color,
-          // dash pattern and caption, so one point can show any number of
-          // circles (spawn/active/wander/action radius, etc.).
-          const editorRadii = Array.isArray(options.radii) ? options.radii : [];
-          if (state.hasPoint) {
-            for (const radius of editorRadii) {
-              if (!radius || !Number.isFinite(radius.value) || radius.value <= 0 || radius.value > 100000) continue;
-              draw.drawRadius(ctx, state.point, radius.value, worldToScreen, radius);
-            }
-          }
-          // Ad-hoc preview from the workbench input (hidden when it repeats a
-          // declared radius, so the circles do not overlap).
-          const manual = Number(el.radius.value);
-          const declared = editorRadii.map((radius) => Number(radius?.value));
-          if (state.hasPoint && Number.isFinite(manual) && manual > 0 && manual <= 100000
-            && !declared.includes(manual)) {
-            draw.drawRadius(ctx, state.point, manual, worldToScreen, {
-              color: '#ffda70', dash: [4, 3], lineWidth: 1.5, fill: 'rgba(255,218,112,.06)', label: text.previewLabel
-            });
-          }
-          draw.drawMeasure(ctx, a, b || (waiting ? preview : null), worldToScreen);
+          el['collision-status'].classList.toggle('is-warning', blocked !== null || [1, 2, 3].includes(selectedTile));
+          if (el['collision-status'].textContent !== status) el['collision-status'].textContent = status;
         },
       };
     },

@@ -311,49 +311,237 @@ canvas#ovl {
   .pk-foot-actions .pk-btn { flex: 1 1 auto; height: 36px; }
 }
 
-/* Independent toolbar stays clear of the variable-height title bar. */
-.pk-options {
+/* ── панель карты ─────────────────────────────────────────────────
+   Одна панель на три уровня: шапка (режим клика и счётчики), прокручиваемое
+   тело с секциями и подвал окна (X/Y и Применить — вне панели).
+   Секции делят инструменты по смыслу: настройки точки, существующие точки,
+   новая точка, видимость, замер, радиус, слои оформления. */
+
+.pk-dock {
   position: fixed;
-  top: var(--pk-toolbar-top, 100px);
+  top: var(--pk-dock-top, 100px);
   left: 12px;
-  right: 12px;
   z-index: 9;
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px 10px;
+  flex-direction: column;
+  width: min(378px, calc(100vw - 24px));
+  max-height: var(--pk-dock-max, calc(100vh - 200px));
   border: 1px solid var(--pk-line);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--pk-surface) 94%, transparent);
+  background: color-mix(in srgb, var(--pk-surface) 95%, transparent);
+  box-shadow: var(--pk-shadow);
   backdrop-filter: blur(8px);
+  min-width: 0;
+  transition: max-height .16s ease;
 }
-.pk-options label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
-.pk-options input { accent-color: var(--pk-primary); }
-.pk-tile { margin-left: auto; font-size: 11px; color: var(--pk-muted); font-variant-numeric: tabular-nums; }
-.pk-btn:disabled { opacity: .4; cursor: default; }
-.pk-btn:focus-visible, .pk-options input:focus-visible { outline: 2px solid var(--pk-primary); outline-offset: 2px; }
-.pk-hint { top: var(--pk-hint-top, 160px); bottom: auto; }
-@media (max-width: 640px) {
-  .pk-options { left: 8px; right: 8px; gap: 6px; padding: 6px 8px; }
-  .pk-options .pk-btn { min-height: 32px; }
-  .pk-tile { width: 100%; margin-left: 0; }
-}
-@media (prefers-reduced-motion: reduce) { .pk-state-icon { animation: none; } }
 
-.pk-workbench { flex: 1 0 100%; min-width: 0; }
-.pk-workbench summary { cursor: pointer; color: var(--pk-primary); padding: 4px 0; }
-.pk-workbench-body { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-height: 32vh; overflow-y: auto; padding: 8px 2px; }
-.pk-workbench .pk-field > span { text-transform: none; }
-.pk-linked-tiles[hidden] { display: none !important; }
-.pk-linked-tiles select {
-  max-width: min(42vw, 360px); height: 32px; padding: 0 9px;
-  border: 1px solid var(--pk-line-strong); border-radius: 8px;
-  background: var(--pk-surface-2); color: var(--pk-text); font: inherit;
+.pk-dock.is-collapsed { max-height: 46px; }
+.pk-dock.is-collapsed .pk-dock-body { display: none; }
+
+.pk-dock-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px 7px 10px;
+  border-bottom: 1px solid var(--pk-line);
+  min-height: 44px;
 }
-.pk-tool-status { flex: 1 0 100%; font-size: 12px; color: var(--pk-muted); overflow-wrap: anywhere; }
-.pk-layer-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; flex: 1 0 100%; }
-.pk-layer-list label { font-size: 12px; min-width: 0; overflow-wrap: anywhere; }
-.pk-btn[aria-pressed="true"] { background: var(--pk-primary); color: #fff; }
+.pk-dock.is-collapsed .pk-dock-head { border-bottom-color: transparent; }
+
+.pk-dock-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+.pk-dock-icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--pk-primary) 16%, transparent);
+  color: var(--pk-primary);
+  font-size: 11px;
+}
+.pk-dock-title > span:not(.pk-dock-icon) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pk-badge {
+  flex: 0 0 auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--pk-primary) 45%, transparent);
+  background: color-mix(in srgb, var(--pk-primary) 14%, transparent);
+  color: var(--pk-primary);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pk-badge[hidden] { display: none; }
+.pk-tile { flex: 0 0 auto; font-size: 11px; color: var(--pk-muted); font-variant-numeric: tabular-nums; }
+.pk-btn-icon { width: 28px; height: 28px; padding: 0; font-size: 12px; line-height: 1; }
+.pk-dock.is-collapsed .pk-btn-icon { transform: rotate(-90deg); }
+
+.pk-dock-body { min-height: 0; display: flex; flex-direction: column; }
+.pk-dock-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 2px 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+/* Секция: заголовок + содержимое. Разделитель — только линия, без рамок. */
+.pk-sec { padding: 2px 8px; border-bottom: 1px solid var(--pk-line); }
+.pk-sec:last-child { border-bottom: none; }
+.pk-sec[hidden] { display: none; }
+.pk-sec-title {
+  margin: 0;
+  padding: 6px 0 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--pk-muted);
+}
+.pk-sec-body { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-bottom: 8px; }
+.pk-sec-hint {
+  flex: 1 0 100%;
+  margin: 0 0 2px;
+  color: var(--pk-muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+/* Переключатель «Клик по карте» — единственное место выбора инструмента. */
+.pk-segmented {
+  display: flex;
+  flex: 1 0 100%;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--pk-line-strong);
+  border-radius: 9px;
+  background: var(--pk-surface-2);
+}
+.pk-seg {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 27px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--pk-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color .12s ease, color .12s ease;
+}
+.pk-seg:hover { color: var(--pk-text); background: color-mix(in srgb, var(--pk-text) 7%, transparent); }
+.pk-seg.is-active { background: var(--pk-primary); color: #fff; }
+.pk-seg:focus-visible { outline: 2px solid var(--pk-primary); outline-offset: 2px; }
+
+.pk-check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12.5px; }
+.pk-check[hidden] { display: none !important; }
+.pk-dock input[type="checkbox"] { accent-color: var(--pk-primary); }
+
+.pk-field { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.pk-field[hidden] { display: none !important; }
+.pk-dock .pk-field > span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--pk-muted);
+}
+.pk-dock .pk-field select,
+.pk-dock .pk-field input {
+  max-width: min(46vw, 190px);
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--pk-line-strong);
+  border-radius: 8px;
+  background: var(--pk-surface-2);
+  color: var(--pk-text);
+  font: inherit;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
+.pk-dock .pk-field input { width: 92px; }
+.pk-dock .pk-field input:focus,
+.pk-dock .pk-field select:focus {
+  outline: none;
+  border-color: var(--pk-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pk-primary) 30%, transparent);
+}
+.pk-field select { max-width: min(46vw, 260px); }
+
+/* «Настройки точки» — свёрнуты по умолчанию: это редкие переключатели,
+   а не основной путь. */
+.pk-sub { flex: 1 0 100%; border-top: 1px dashed var(--pk-line); padding-top: 4px; }
+.pk-sub > summary {
+  cursor: pointer;
+  padding: 4px 0;
+  color: var(--pk-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.pk-sub > summary:hover { color: var(--pk-text); }
+.pk-sub-body { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 0 2px; }
+
+.pk-layer-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3px;
+  flex: 1 0 100%;
+  max-height: 132px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.pk-layer-list:empty { display: none; }
+.pk-layer-list label { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; min-width: 0; overflow-wrap: anywhere; }
+.pk-tool-status { flex: 1 0 100%; font-size: 11.5px; color: var(--pk-muted); overflow-wrap: anywhere; }
+/* ── правка точек: компактные сегменты слоя и панели слоёв ─────────────── */
+.pk-segmented-sm .pk-seg { height: 26px; font-size: 11.5px; padding: 0 8px; }
+.pk-edit-pane { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pk-edit-pane[hidden] { display: none !important; }
+.pk-edit-pane .pk-sec-hint { flex: 1 0 100%; margin: 0; }
+.pk-edit-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.pk-edit-actions .pk-btn { height: 26px; padding: 0 10px; font-size: 11.5px; }
+.pk-dock .pk-field input#pk-switch-number { width: 76px; }
+#pk-edit-selected:empty, #pk-edit-status:empty { display: none; }
+#pk-edit-selected { color: var(--pk-text); }
+canvas.is-editing-tiles { cursor: crosshair; }
+
+/* Ошибка сохранения: подсказка режима коротко подсвечивается, но текст не
+   теряется — полный смысл остаётся в статусе секции правки. */
+.pk-hint.is-error { color: var(--pk-danger); border-color: color-mix(in srgb, var(--pk-danger) 55%, transparent); }
+
+.pk-tool-status:empty { display: none; }
 .pk-tool-status.is-warning { color: var(--pk-warning); }
+.pk-btn[aria-pressed="true"] { background: var(--pk-primary); border-color: transparent; color: #fff; }
 canvas#cnvs.is-measuring, canvas#cnvs.is-placing-tile { cursor: crosshair; }
+.pk-hint {
+  top: var(--pk-hint-top, 160px);
+  left: var(--pk-hint-left, 50%);
+  bottom: auto;
+  transform: none;
+  max-width: min(560px, calc(100vw - var(--pk-hint-left, 0px) - 28px));
+}
+
+@media (max-width: 640px) {
+  .pk-dock { left: 8px; right: 8px; width: auto; top: auto; bottom: 64px; max-height: min(46vh, 380px); }
+  .pk-dock-scroll { max-height: calc(min(46vh, 380px) - 46px); }
+  .pk-dock .pk-field select, .pk-dock .pk-field input { max-width: none; flex: 1 1 auto; }
+  .pk-hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .pk-state-icon { animation: none; } .pk-dock { transition: none; } }

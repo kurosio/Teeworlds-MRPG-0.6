@@ -2176,6 +2176,7 @@ window.EditorCoreLocalization.register({
     "Tile highlights": "Подсветка тайлов",
     "Linked tile positions": "Точки по тайлам",
     "Choose a matching highlighted tile as this record’s position": "Выбрать подсвеченный тайл как позицию записи",
+    "Saved {0} map tile(s) and {1} switch tile(s). The game server uses the new map after it reloads this world.": "Сохранено тайлов: {0}, switch-тайлов: {1}. Игровой сервер загрузит изменения при следующей загрузке этого мира.",
     "Saved {0} map tile(s). The game server uses the new map after it reloads this world.": "Сохранено тайлов: {0}. Игровой сервер загрузит изменения при следующей загрузке этого мира.",
     "Time limit (sec.)": "Лимит времени (сек.)",
     "Time limit in seconds (for example, 600 = 10 minutes).": "Время прохождения в секундах (например, 600 = 10 минут).",
