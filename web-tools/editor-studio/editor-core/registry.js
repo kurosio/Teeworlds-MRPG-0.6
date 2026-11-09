@@ -478,7 +478,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         // активности, у каждой окружности свой цвет и подпись.
         position: createField('vec2', 'Position', { x: 0, y: 0 }, {
           ui: {
-            min: -99999, max: 99999, step: 0.1, safeTiles: false, highlightTiles: [209],
+            min: -99999, max: 99999, step: 0.1, safeTiles: false, highlightTiles: [209], linkedTiles: true,
             radii: [
               { path: 'radius', label: 'Spawn radius', color: '#52df9a', dash: [6, 4] },
               { path: 'activeradius', label: 'Active radius', color: '#6f8cff', dash: [3, 3], lineWidth: 1.5 },

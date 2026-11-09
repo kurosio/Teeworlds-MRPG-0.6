@@ -7,6 +7,20 @@
     if (x < 0 || y < 0 || x >= game.width || y >= game.height) return null;
     return game.indices[y * game.width + x];
   };
+  /** Позиции в мировых пикселях для связанных игровых тайлов (например mob spawns). */
+  const findHighlightedTiles = (game, tileIds, limit = 5000) => {
+    if (!game || !Array.isArray(tileIds) || !tileIds.length || !Number.isInteger(game.width)
+      || !Number.isInteger(game.height) || !game.indices) return [];
+    const ids = new Set(tileIds);
+    const points = [];
+    const size = Math.min(game.width * game.height, game.indices.length);
+    for (let i = 0; i < size && points.length < limit; i++) {
+      if (!ids.has(game.indices[i])) continue;
+      const x = i % game.width, y = Math.floor(i / game.width);
+      points.push({ x: x * 32 + 16, y: y * 32 + 16, tile: game.indices[i] });
+    }
+    return points;
+  };
   /**
    * Индекс запрещённого тайла под точкой или null. Вне игрового слоя и пустой
    * тайл (0) никогда не блокируют размещение: карта без игрового слоя не
@@ -153,7 +167,7 @@
     for (const p of [start, end]) { ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
   };
-  const api = { drawSwitchTiles, tileAt, blockedTile, distance, visibleTiles, drawCollision, drawHighlightedTiles, drawTileBox, drawRadius, drawMeasure };
+  const api = { drawSwitchTiles, tileAt, findHighlightedTiles, blockedTile, distance, visibleTiles, drawCollision, drawHighlightedTiles, drawTileBox, drawRadius, drawMeasure };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.MapPickerOverlays = api;
 })(typeof window !== 'undefined' ? window : globalThis);

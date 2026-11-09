@@ -593,6 +593,7 @@
         blockTiles: ui.blockTiles,
         showTiles: ui.showTiles,
         highlightTiles: ui.highlightTiles ?? [],
+        linkedTiles: ui.linkedTiles === true,
         highlightLayer: ui.highlightLayer,
         switchShowID: ui.switchShowID,
         // Радиусы карты — только массивом `ui.radii`: цвет, пунктир и подпись

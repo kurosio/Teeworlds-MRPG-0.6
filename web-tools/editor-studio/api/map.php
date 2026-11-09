@@ -170,13 +170,18 @@ function map_send_file(string $path, string $mime): never
         map_error('map_missing', 'Файл карты недоступен');
     }
 
-    $etag = '"' . dechex((int)$size) . '-' . dechex((int)$mtime) . '"';
+    // Size+mtime can collide when Apply rewrites a map twice in one second;
+    // hash map bytes so no-cache revalidation always observes saved tile edits.
+    $etagValue = $mime === 'application/octet-stream' ? hash_file('sha256', $path) : dechex((int)$size) . '-' . dechex((int)$mtime);
+    $etag = '"' . (is_string($etagValue) ? $etagValue : (dechex((int)$size) . '-' . dechex((int)$mtime))) . '"';
     $ifNoneMatch = (string)($_SERVER['HTTP_IF_NONE_MATCH'] ?? '');
 
     header_remove('Pragma');
     header('Content-Type: ' . $mime);
     header('Content-Length: ' . (string)$size);
-    header('Cache-Control: private, max-age=600');
+    // Карта может быть сохранена map-picker; не держим устаревший бинарник
+    // в браузерном кеше между повторными открытиями окна.
+    header('Cache-Control: ' . ($mime === 'application/octet-stream' ? 'private, no-cache, must-revalidate' : 'private, max-age=600'));
     header('ETag: ' . $etag);
     header('Last-Modified: ' . gmdate('D, d M Y H:i:s', (int)$mtime) . ' GMT');
     header('Content-Disposition: inline');
@@ -214,7 +219,7 @@ function map_send_remote(array $response, string $mime, int $maxBytes): never
     header_remove('Pragma');
     header('Content-Type: ' . $mime);
     header('Content-Length: ' . (string)strlen($body));
-    header('Cache-Control: private, max-age=600');
+    header('Cache-Control: ' . ($mime === 'application/octet-stream' ? 'private, no-cache, must-revalidate' : 'private, max-age=600'));
     if ($etag !== '') {
         header('ETag: ' . $etag);
     }

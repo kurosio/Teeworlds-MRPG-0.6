@@ -14,6 +14,17 @@ test('collision culling clips to the viewport and limits distant zoom work', () 
   assert.deepEqual(O.visibleTiles(game,{x:31,y:31},{x:33,y:33}),{x0:0,y0:0,x1:2,y1:2});
   assert.equal(O.visibleTiles({width:10000,height:10000},{x:0,y:0},{x:320000,y:320000}),null);
 });
+test('linked highlighted tiles resolve to tile-center world coordinates and honor their cap', () => {
+  const source = {width:4,height:2,indices:Uint8Array.from([209,0,18,209,18,209,0,0])};
+  assert.deepEqual(O.findHighlightedTiles(source,[209]), [
+    {x:16,y:16,tile:209}, {x:112,y:16,tile:209}, {x:48,y:48,tile:209},
+  ]);
+  assert.deepEqual(O.findHighlightedTiles(source,[209],2), [
+    {x:16,y:16,tile:209}, {x:112,y:16,tile:209},
+  ]);
+  assert.deepEqual(O.findHighlightedTiles(source,[1]), []);
+  assert.deepEqual(O.findHighlightedTiles(null,[209]), []);
+});
 test('measurement is in world pixels and independent of camera zoom', () => {
   assert.deepEqual(O.distance({x:0,y:0},{x:96,y:128}),{dx:96,dy:128,length:160});
 });
