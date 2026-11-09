@@ -117,18 +117,19 @@
     const raw = o.safeTiles === undefined
       ? (o.blockTiles === undefined ? o.safe : o.blockTiles)
       : o.safeTiles;
-    const safe = (raw === true ? DEFAULT_BLOCKED_TILES.slice()
-      : Array.isArray(raw) ? raw.slice() : [])
+    const safe = [...new Set((raw === true ? DEFAULT_BLOCKED_TILES.slice()
+      : Array.isArray(raw) ? raw.slice(0, 256) : [])
       .map(Number)
-      .filter((n) => Number.isInteger(n) && n >= 0);
+      .filter((n) => Number.isInteger(n) && n >= 0 && n <= 255))];
     const showTiles = !!o.showTiles;
-    const highlightTiles = [...new Set((Array.isArray(o.highlightTiles) ? o.highlightTiles : [])
+    const highlightTiles = [...new Set((Array.isArray(o.highlightTiles) ? o.highlightTiles.slice(0, 256) : [])
       .filter((id) => Number.isInteger(id) && id >= 0 && id <= 255))];
     // Радиусы — только массив `radii`. Одиночные `radiusPath` / `radius` /
     // `activeRadiusPath` / `radiusActive` удалены из конфига: их больше нет ни
     // в объявлении, ни в `data-map-options`, поэтому старые ключи игнорируются.
     const radii = (Array.isArray(o.radii) ? o.radii.slice(0, RADIUS_LIMIT) : [])
       .map((entry, index) => normalizeRadiusEntry(entry, index));
+    const highlightLayer = o.highlightLayer === 'switch' ? 'switch' : 'game';
     return {
       safe,
       showTiles,
@@ -137,7 +138,10 @@
       // и не включают полный игровой слой за пользователя.
       tiles: showTiles,
       highlightTiles,
-      highlightLayer: o.highlightLayer === 'switch' ? 'switch' : 'game',
+      // Позволяет выбирать реальные позиции с подсвеченных game-layer tiles
+      // (например ENTITY_SPAWN_MOBS) как координаты текущей записи.
+      linkedTiles: o.linkedTiles === true && highlightLayer === 'game' && highlightTiles.length > 0,
+      highlightLayer,
       switchShowID: Number.isInteger(o.switchShowID) && o.switchShowID >= 1 && o.switchShowID <= 255 ? o.switchShowID : null,
       radii,
       snap: typeof o.snap === 'boolean' ? o.snap : null,
@@ -148,6 +152,7 @@
   const FLAG_LABELS = {
     safe: () => t('No collision tiles'),
     highlightTiles: () => t('Tile highlights'),
+    linkedTiles: () => t('Linked tile positions'),
     tiles: () => t('Gameplay layer'),
     snap: () => t('Tile centers'),
     grid: () => t('Grid'),
@@ -155,6 +160,7 @@
   const FLAG_TITLES = {
     safe: () => t('A point cannot be placed on a solid, death or no-hook tile'),
     highlightTiles: () => t('Highlight selected tile IDs on the map'),
+    linkedTiles: () => t('Choose a matching highlighted tile as this record’s position'),
     tiles: () => t('Show the map gameplay layer'),
     snap: () => t('Snap the point to tile centers'),
     grid: () => t('Show the tile grid'),
@@ -162,6 +168,7 @@
   const flagOn = (o, key) => ({
     safe: o.safe.length > 0,
     highlightTiles: o.highlightTiles.length > 0,
+    linkedTiles: o.linkedTiles,
     tiles: o.showTiles,
     snap: o.snap === true,
     grid: o.grid === true,
@@ -183,7 +190,7 @@
 
   const flagsHtml = (o) => {
     const chips = [];
-    for (const key of ['safe', 'highlightTiles', 'tiles']) if (flagOn(o, key)) chips.push(flagHtml(key));
+    for (const key of ['safe', 'highlightTiles', 'linkedTiles', 'tiles']) if (flagOn(o, key)) chips.push(flagHtml(key));
     o.radii.forEach((entry, index) => chips.push(radiusFlagHtml(entry, index)));
     for (const key of ['snap', 'grid']) if (flagOn(o, key)) chips.push(flagHtml(key));
     return chips.join('');
@@ -258,11 +265,17 @@
       safe: o.safe,
       tiles: !!o.tiles,
       highlightTiles: o.highlightTiles,
+      linkedTiles: o.linkedTiles,
       highlightLayer: o.highlightLayer,
       switchShowID: o.switchShowID,
       radii,
       snap: o.snap,
       grid: o.grid,
+      preferenceKey: [
+        root?.getAttribute?.('data-map-picker') || 'position',
+        root?.getAttribute?.('data-map-x-path') || '',
+        root?.getAttribute?.('data-map-y-path') || '',
+      ].join('|').slice(0, 180),
       ...(override.mapOptions || {}),
     };
   };

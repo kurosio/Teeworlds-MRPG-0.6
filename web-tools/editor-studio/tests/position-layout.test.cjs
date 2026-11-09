@@ -25,6 +25,29 @@ test('position fields occupy a full row by default, including nested positions',
   assert.equal(html.includes('editor-field--span-all'), false);
 });
 
+test('vec2 UI forwards every map-picker option, including linked tile editing', () => {
+  let captured;
+  const context = { window: { EditorCore: {
+    utils: { getAtPath: () => undefined, escapeAttr: String, escapeHtml: String },
+    PositionPicker: { render: (options) => { captured = options; return '<div>Position</div>'; } },
+  } } };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../editor-core/field-renderer.js'), 'utf8'), context);
+  context.window.EditorCore.FieldRenderer.renderField({
+    path: 'position', field: { type: 'vec2', label: 'Position', ui: {
+      safeTiles: [2], showTiles: true, highlightTiles: [209], linkedTiles: true,
+      highlightLayer: 'game', grid: true, snap: false,
+      radii: [{ value: 96, label: 'Spawn radius' }],
+    } }, data: {},
+  });
+  assert.equal(captured.safeTiles[0], 2);
+  assert.equal(captured.showTiles, true);
+  assert.deepEqual(Array.from(captured.highlightTiles), [209]);
+  assert.equal(captured.linkedTiles, true);
+  assert.equal(captured.highlightLayer, 'game');
+  assert.equal(captured.grid, true);
+  assert.equal(captured.snap, false);
+  assert.equal(captured.radii[0].value, 96);
+});
 test('scenario modal outer cells give position cards the full row', () => {
   const source = fs.readFileSync(path.join(__dirname, '../scenario-editor.html'), 'utf8');
   // Exercise the actual sizing methods without starting the scenario editor UI.

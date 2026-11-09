@@ -12,6 +12,7 @@ const repoRoot = path.resolve(root, '../..');
 const code = fs.readFileSync(path.join(root, 'vendor/ddnet-map/twwebgl.js'), 'utf8');
 const dataFileCode = fs.readFileSync(path.join(root, 'vendor/ddnet-map/twdatafile.js'), 'utf8');
 const dataViewExtensions = fs.readFileSync(path.join(root, 'vendor/ddnet-map/dataviewext.js'), 'utf8');
+const mapEditCode = fs.readFileSync(path.join(root, 'vendor/ddnet-map/picker-map-edit.js'), 'utf8');
 const calls = [];
 const gl = {
   SCISSOR_TEST: 0x0c11,
@@ -30,6 +31,7 @@ const Zlib = {
   Inflate: function (compressed) {
     this.decompress = () => new Uint8Array(zlib.inflateSync(Buffer.from(compressed)));
   },
+  Deflate: { compress: (plain) => new Uint8Array(zlib.deflateSync(Buffer.from(plain))) },
 };
 const context = vm.createContext({
   window,
@@ -44,7 +46,10 @@ const context = vm.createContext({
 vm.runInContext(dataViewExtensions, context, { filename: 'dataviewext.js' });
 vm.runInContext(dataFileCode, context, { filename: 'twdatafile.js' });
 vm.runInContext(code, context, { filename: 'twwebgl.js' });
+vm.runInContext(mapEditCode, context, { filename: 'picker-map-edit.js' });
 const { tw, TwDataFile } = context;
+const MapPickerMapEdit = window.MapPickerMapEdit;
+assert.equal(MapPickerMapEdit.sha256(new TextEncoder().encode('abc')), 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
 
 // DDNet's CQuad wire format is exactly 152 bytes; malformed/legacy 104-byte
 // blocks must fail explicitly rather than shift every parsed field.
@@ -279,6 +284,41 @@ if (fs.existsSync(mainMapPath)) {
     };
     tw.requestRender = () => {};
     const parsedMap = new tw.Map(mapAb.buffer);
+    if (isGl2) {
+      tw.map = parsedMap;
+      const sourceLayer = MapPickerMapEdit.locateGameLayer(tw, parsedMap.dataFile).tileLayer;
+      const sourceTileBytes = new Uint8Array(parsedMap.dataFile.getData(sourceLayer.data));
+      const sourceRecords = MapPickerMapEdit.readTileRecords(sourceTileBytes, sourceLayer.width * sourceLayer.height, sourceLayer.version);
+      const sourceTiles = tw.parseGameplayIndices(parsedMap.dataFile.getData(sourceLayer.data), sourceLayer.width * sourceLayer.height, sourceLayer.version);
+      const emptyCell = sourceTiles.findIndex((tile) => tile === 0);
+      assert.ok(emptyCell >= 0, 'main.map should contain an empty game tile for the writer round-trip');
+      const x = emptyCell % sourceLayer.width, y = Math.floor(emptyCell / sourceLayer.width);
+      const patchedBytes = MapPickerMapEdit.patch(tw, [{ x, y, tile: 209 }]);
+      const patchedDataFile = new TwDataFile('patched-main', patchedBytes.buffer);
+      assert.equal(patchedDataFile.parse(), true, 'serialized datafile must parse');
+      const patchedLayer = MapPickerMapEdit.locateGameLayer(tw, patchedDataFile).tileLayer;
+      const patchedTiles = tw.parseGameplayIndices(patchedDataFile.getData(patchedLayer.data), patchedLayer.width * patchedLayer.height, patchedLayer.version);
+      assert.equal(patchedTiles[emptyCell], 209, 'game tile writer must preserve the changed entity ID');
+      assert.equal(patchedTiles.length, sourceTiles.length, 'game tile count must survive serialization');
+      const patchedRecords = MapPickerMapEdit.readTileRecords(
+        new Uint8Array(patchedDataFile.getData(patchedLayer.data)), patchedLayer.width * patchedLayer.height, patchedLayer.version,
+      );
+      assert.equal(patchedRecords.length, sourceRecords.length, 'tile attributes must retain their full record count');
+      for (let i = 0; i < sourceRecords.length; i++) {
+        assert.equal(patchedRecords[i * 3 + 1], sourceRecords[i * 3 + 1], `tile flags must remain unchanged at ${i}`);
+        assert.equal(patchedRecords[i * 3 + 2], sourceRecords[i * 3 + 2], `reserved tile byte must remain unchanged at ${i}`);
+        if (i !== emptyCell) assert.equal(patchedRecords[i * 3], sourceRecords[i * 3], `unselected tile ID must remain unchanged at ${i}`);
+      }
+      assert.equal(patchedDataFile.numRawData, parsedMap.dataFile.numRawData, 'writer must not add or drop map resources');
+      for (let i = 0; i < parsedMap.dataFile.numRawData; i++) {
+        if (i !== sourceLayer.data) {
+          assert.deepEqual(
+            new Uint8Array(patchedDataFile.getData(i)), new Uint8Array(parsedMap.dataFile.getData(i)),
+            `non-game map resource ${i} must be byte-for-byte preserved after decompression`,
+          );
+        }
+      }
+    }
     for (const tex of parsedMap.textures) {
       if (tex.image && tex.image.onload) {
         tex.image.naturalWidth = tex.width;

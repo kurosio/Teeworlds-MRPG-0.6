@@ -23,9 +23,9 @@
     const n = Number(value);
     return Number.isSafeInteger(n) && n >= 0 ? n : null;
   };
-  const t = (text) => {
+  const t = (text, vars) => {
     const i18n = window.EditorCore?.I18n;
-    return i18n?.t ? i18n.t(text) : text;
+    return i18n?.t ? i18n.t(text, vars) : String(text ?? '').replace(/\{(\d+)\}/g, (m, i) => (Array.isArray(vars) ? vars[Number(i)] : vars) ?? m);
   };
   const esc = (value) => (window.EditorCore?.utils?.escapeHtml
     ? window.EditorCore.utils.escapeHtml(value ?? '')
@@ -134,6 +134,7 @@
     params.set('x', String(Math.round(x)));
     params.set('y', String(Math.round(y)));
     params.set('point', hasPoint ? '1' : '0');
+    if (parseWorldId(worldId) !== null) params.set('worldId', String(parseWorldId(worldId)));
     if (worldName) params.set('world', worldName);
     const lang = window.EditorCore?.I18n?.lang === 'en' ? 'en' : 'ru';
     const theme = window.EditorCore?.theme?.get?.() === 'light' ? 'light' : 'dark';
@@ -146,6 +147,7 @@
     if (Number.isInteger(mapOptions.switchShowID) && mapOptions.switchShowID >= 1 && mapOptions.switchShowID <= 255) params.set('switchShowID', String(mapOptions.switchShowID));
     if (mapOptions.tiles) params.set('tiles', '1');
     if (Array.isArray(mapOptions.highlightTiles) && mapOptions.highlightTiles.length) params.set('highlightTiles', mapOptions.highlightTiles.join(','));
+    if (mapOptions.linkedTiles === true) params.set('linkedTiles', '1');
     // Радиусы — только массивом `radii`: у каждой окружности свой цвет,
     // пунктир и подпись. Одиночных параметров radius/radiusActive нет.
     if (Array.isArray(mapOptions.radii) && mapOptions.radii.length) {
@@ -153,6 +155,7 @@
     }
     if (mapOptions.snap === true || mapOptions.snap === false) params.set('snap', mapOptions.snap ? '1' : '0');
     if (mapOptions.grid === true || mapOptions.grid === false) params.set('grid', mapOptions.grid ? '1' : '0');
+    if (typeof mapOptions.preferenceKey === 'string' && mapOptions.preferenceKey) params.set('prefs', mapOptions.preferenceKey.slice(0, 180));
     return new URL(`vendor/ddnet-map/picker.html?${params.toString()}`, document.baseURI).href;
   };
 
@@ -179,9 +182,13 @@
     if (data.type === 'editor-map:apply') {
       if (session.mapOptions?.preview) return;
       if (applyPoint(data.x, data.y)) {
+        const tilesSaved = Number.isInteger(Number(data.tilesSaved)) ? Math.max(0, Number(data.tilesSaved)) : 0;
         dispatch('editor-map:applied', {
-          x: Number(data.x), y: Number(data.y), worldId: session.worldId,
+          x: Number(data.x), y: Number(data.y), worldId: session.worldId, tilesSaved,
         });
+        if (tilesSaved > 0) {
+          window.EditorCore?.UI?.toast?.(t('Saved {0} map tile(s). The game server uses the new map after it reloads this world.', [tilesSaved]), 'success');
+        }
         close('apply');
       }
     } else if (data.type === 'editor-map:close') {
@@ -307,7 +314,9 @@
     if (!session) return false;
     const nx = Number(x);
     const ny = Number(y);
-    if (!Number.isFinite(nx) || !Number.isFinite(ny)) return false;
+    if (!Number.isFinite(nx) || !Number.isFinite(ny)
+      || !Number.isSafeInteger(Math.round(nx)) || !Number.isSafeInteger(Math.round(ny))
+      || Math.abs(nx) > 1000000000 || Math.abs(ny) > 1000000000) return false;
     const { xPath, yPath } = session;
     writeValue('x', xPath, nx);
     writeValue('y', yPath, ny);

@@ -1529,9 +1529,16 @@
     };
 
     // Позиция задачи — тот же общий PositionPicker, что и в остальных
-    // редакторах. Значения живут в скрытых инпутах с data-task-field, поэтому
-    // map-picker и ручной ввод обновляют задание через обычный onField.
-    const vec2Task = (section, index, xKey, yKey, xVal, yVal, worldPath, caption = 'Coordinates (X, Y)', worldId = '', pinned = false, kind = 'target') => {
+    // редакторах. Флаги карты заданы по варианту позиции и могут быть
+    // переопределены при рендере конкретной задачи через mapUi.
+    const taskPositionMapUi = Object.freeze({
+      target: Object.freeze({ safeTiles: true, highlightTiles: [], linkedTiles: false, grid: true, snap: true }),
+      interactive: Object.freeze({ safeTiles: true, highlightTiles: [], linkedTiles: false, grid: true, snap: true }),
+    });
+    // Значения живут в скрытых инпутах с data-task-field, поэтому map-picker и
+    // ручной ввод обновляют задание через обычный onField.
+    const vec2Task = (section, index, xKey, yKey, xVal, yVal, worldPath, caption = 'Coordinates (X, Y)', worldId = '', pinned = false, kind = 'target', mapUi = {}) => {
+      const pickerUi = { ...(taskPositionMapUi[kind] || taskPositionMapUi.target), ...mapUi };
       const xPath = `tasks.${section}.${index}.${xKey}`;
       const yPath = `tasks.${section}.${index}.${yKey}`;
       const axis = (name, key, path, value) => `<input class="editor-input form-input position-picker__axis-input"
@@ -1549,12 +1556,20 @@
         worldId,
         step: 1,
         pinned: Boolean(pinned) || hasCoords(xVal, yVal),
-        compact: true,
+        compact: pickerUi.compact ?? true,
         tag: kind === 'interactive' ? 'quest-task-interactive-position' : 'quest-task-position',
-        // Цели заданий — тоже «живые» точки: запрещаем игровые тайлы.
-        safeTiles: true,
-        grid: true,
-        snap: true,
+        map: pickerUi.map !== false,
+        world: pickerUi.world !== false,
+        safeTiles: pickerUi.safeTiles,
+        blockTiles: pickerUi.blockTiles,
+        showTiles: pickerUi.showTiles,
+        highlightTiles: pickerUi.highlightTiles,
+        linkedTiles: pickerUi.linkedTiles,
+        highlightLayer: pickerUi.highlightLayer,
+        switchShowID: pickerUi.switchShowID,
+        radii: pickerUi.radii,
+        grid: pickerUi.grid,
+        snap: pickerUi.snap,
       }) : `<div class="editor-muted-text text-sm">${esc(t('The world map is unavailable — reload the page'))}</div>`;
       return `<div class="editor-item-span">${pickerHtml}</div>`;
     };

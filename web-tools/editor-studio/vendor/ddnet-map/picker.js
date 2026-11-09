@@ -157,11 +157,17 @@
   };
 
   // Флаги приходят из объявления UI-элемента позиции (PositionPicker).
-  const safeIds = (qs.get('safe') || '').split(',')
-    .map((value) => value.trim())
-    .filter((value) => value !== '') // Number('') is 0, not an explicitly blocked tile.
-    .map(Number)
-    .filter((value, index, all) => Number.isInteger(value) && value >= 0 && all.indexOf(value) === index);
+  const readTileIds = (value) => {
+    if (typeof value !== 'string' || value.length > 2048) return [];
+    const ids = new Set();
+    for (const token of value.split(',').slice(0, 256)) {
+      if (!token.trim()) continue; // Number('') is 0, not an explicitly blocked tile.
+      const id = Number(token.trim());
+      if (Number.isInteger(id) && id >= 0 && id <= 255) ids.add(id);
+    }
+    return [...ids];
+  };
+  const safeIds = readTileIds(qs.get('safe') || '');
   // Цвет и штрихи приходят из объявления UI-элемента позиции: принимаем только
   // простые css-цвета, чтобы параметр адреса не превратился в произвольную строку.
   const RADIUS_MAX = 100000;
@@ -203,9 +209,8 @@
     switchShowID: /^([1-9]\d{0,2})$/.test(qs.get('switchShowID') || '') && Number(qs.get('switchShowID')) <= 255 ? Number(qs.get('switchShowID')) : null,
     safe: safeIds,
     tiles: qs.get('tiles') === '1',
-    highlightTiles: [...new Set((qs.get('highlightTiles') || '').split(',')
-      .map((value) => value.trim()).filter(Boolean).map(Number)
-      .filter((id) => Number.isInteger(id) && id >= 0 && id <= 255))],
+    highlightTiles: readTileIds(qs.get('highlightTiles') || ''),
+    linkedTiles: qs.get('linkedTiles') === '1',
     radii: readRadii(),
     snap: qs.has('snap') ? qs.get('snap') === '1' : null,
     grid: qs.has('grid') ? qs.get('grid') === '1' : null,
@@ -219,9 +224,14 @@
   const Overlays = window.MapPickerOverlays;
   const gameplay = () => (typeof tw === 'undefined' ? null : tw.map?.gameplay || null);
 
-  const hasPointParam = qs.get('point') !== '0';
+  const parsedCoordinate = (key) => {
+    const value = Math.round(toNum(qs.get(key), 0));
+    return Number.isSafeInteger(value) && Math.abs(value) <= 1000000000 ? value : null;
+  };
+  const initialX = parsedCoordinate('x'), initialY = parsedCoordinate('y');
+  const hasPointParam = qs.get('point') !== '0' && initialX !== null && initialY !== null;
   const state = {
-    point: { x: Math.round(toNum(qs.get('x'), 0)), y: Math.round(toNum(qs.get('y'), 0)) },
+    point: { x: initialX ?? 0, y: initialY ?? 0 },
     hasPoint: hasPointParam,
     ready: false,
     extent: { w: 0, h: 0 },
@@ -235,7 +245,11 @@
   let workbench = null;
   let cursor = null;
   let gesture = false;
-  const preferenceKey = 'editor-map-picker-options-v1';
+  // Keep manual snap preference scoped to the position field, not global across
+  // unrelated editors/coordinate variants. Only low-risk UI preference is stored.
+  const preferenceScope = (qs.get('prefs') || 'direct')
+    .replace(/[^a-z0-9_.:-]/gi, '_').slice(0, 180) || 'direct';
+  const preferenceKey = `editor-map-picker-options-v2:${preferenceScope}`;
   // Сетка не восстанавливается из прошлого окна: без ui.grid в объявлении
   // vec2 она всегда выключена. Для привязки прежнее поведение сохраняем.
   el.grid.checked = OPTIONS.grid === true;
@@ -369,7 +383,8 @@
     if (OPTIONS.preview) return;
     const next = Model.point(Number(x), Number(y), snap);
     if (!next) return;
-    if (!Number.isSafeInteger(next.x) || !Number.isSafeInteger(next.y)) return;
+    if (!Number.isSafeInteger(next.x) || !Number.isSafeInteger(next.y)
+      || Math.abs(next.x) > 1000000000 || Math.abs(next.y) > 1000000000) return;
     state.point = next;
     state.hasPoint = true;
     if (record && !gesture) history.push(snapshot());
@@ -803,10 +818,59 @@
   el.zoomOut.addEventListener('click', () => zoomBy(1 / 1.35));
   el.fit.addEventListener('click', fitMap);
   el.center.addEventListener('click', centerOnPoint);
-  el.apply.addEventListener('click', () => {
+  const saveMapTileChanges = async (changes) => {
+    if (!changes.length) return 0;
+    const worldId = Number(qs.get('worldId'));
+    if (!Number.isSafeInteger(worldId) || worldId < 0) throw new Error(LANG === 'en'
+      ? 'Cannot save map tiles: no world ID was provided.' : 'Не удалось сохранить тайлы: не передан ID мира.');
+    if (!window.MapPickerMapEdit || !tw.map?.dataFile?.fileData) throw new Error(LANG === 'en'
+      ? 'This map format cannot be edited in the picker.' : 'Этот формат карты нельзя редактировать в map-picker.');
+    const original = new Uint8Array(tw.map.dataFile.fileData);
+    const originalHash = window.crypto?.subtle
+      ? [...new Uint8Array(await crypto.subtle.digest('SHA-256', original))].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+      : window.MapPickerMapEdit.sha256(original);
+    const updated = window.MapPickerMapEdit.patch(tw, changes);
+    const base = new URL('../../api/', window.location.href);
+    const csrfResponse = await fetch(new URL('auth.php?action=csrf', base), { credentials: 'same-origin', cache: 'no-store' });
+    const csrfPayload = await csrfResponse.json().catch(() => ({}));
+    if (!csrfResponse.ok || csrfPayload.role !== 'admin' || !/^[a-f0-9]{64}$/.test(csrfPayload.csrf || '')) {
+      throw new Error(csrfPayload.error || (LANG === 'en'
+        ? 'Map tile editing requires an administrator session.' : 'Добавлять тайлы может только администратор.'));
+    }
+    const endpoint = new URL(`map-edit.php?world=${worldId}`, base);
+    const allowedTiles = [...new Set(OPTIONS.highlightTiles.filter((id) => Number.isInteger(id) && id >= 4 && id <= 255))];
+    const response = await fetch(endpoint, {
+      method: 'POST', credentials: 'same-origin', cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/octet-stream', 'X-Editor-CSRF': csrfPayload.csrf,
+        'X-Map-Original-Sha256': originalHash, 'X-Map-Allowed-Tiles': allowedTiles.join(','),
+      },
+      body: updated,
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.ok !== true) throw new Error(payload.error || (LANG === 'en'
+      ? `Map save failed (HTTP ${response.status}).` : `Не удалось сохранить карту (HTTP ${response.status}).`));
+    return changes.length;
+  };
+  el.apply.addEventListener('click', async () => {
     if (OPTIONS.preview || !state.hasPoint || el.apply.disabled) return;
     commitGesture();
-    post('editor-map:apply', { x: Math.round(state.point.x), y: Math.round(state.point.y) });
+    const changes = workbench?.getPendingTileChanges?.() || [];
+    if (!changes.length) {
+      post('editor-map:apply', { x: Math.round(state.point.x), y: Math.round(state.point.y), tilesSaved: 0 });
+      return;
+    }
+    const applyLabel = el.apply.textContent;
+    el.apply.disabled = true;
+    el.apply.textContent = LANG === 'en' ? 'Saving map…' : 'Сохранение карты…';
+    try {
+      const tilesSaved = await saveMapTileChanges(changes);
+      post('editor-map:apply', { x: Math.round(state.point.x), y: Math.round(state.point.y), tilesSaved });
+    } catch (error) {
+      el.apply.disabled = false;
+      el.apply.textContent = applyLabel;
+      workbench?.setEditStatus?.(error?.message || (LANG === 'en' ? 'Map save failed.' : 'Не удалось сохранить карту.'));
+    }
   });
   el.cancel.addEventListener('click', () => post('editor-map:close'));
   el.retry.addEventListener('click', () => { window.location.reload(); });

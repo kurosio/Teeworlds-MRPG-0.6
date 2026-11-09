@@ -73,7 +73,8 @@ function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = 
     map, LAYERTYPE_TILES:2, keyState:{},requestRender() {},init() {},
   };
   const window = {
-    MapPickerModel:Model, MapPickerOverlays:require('../vendor/ddnet-map/picker-overlays.js'), location:{search,origin:'https://editor.test'},
+    MapPickerModel:Model, MapPickerOverlays:require('../vendor/ddnet-map/picker-overlays.js'),
+    MapPickerMapEdit:{locateGameLayer:()=>({}),patch:()=>new Uint8Array()}, location:{search,origin:'https://editor.test'},
     parent:{postMessage: message => messages.push(message)},
     innerWidth:800,innerHeight:600,devicePixelRatio:1,setTimeout:()=>0,
     addEventListener(type, fn) { (listeners[type] ||= []).push(fn); },
@@ -92,7 +93,7 @@ function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = 
       if (stopped) break;
     }
   };
-  return { node:id=>document.getElementById(`pk-${id}`), document, messages, tw, emit, drawing };
+  return { node:id=>document.getElementById(`pk-${id}`), document, messages, tw, emit, drawing, window };
 }
 test('picker controls: align, undo/redo, reset, grid, tile keyboard step and pixel step', () => {
   const p = picker();
@@ -140,6 +141,12 @@ test('dragging the marker is one undo step', () => {
   p.node('undo').click();
   assert.equal(p.node('out-x').textContent,'0');
   assert.equal(p.node('undo').disabled,true);
+});
+test('unsafe query coordinates are discarded instead of enabling an invalid Apply', () => {
+  const p = picker('?map=/map&x=1e100&y=9007199254740992');
+  assert.equal(p.node('apply').disabled, true);
+  assert.equal(p.node('out-x').textContent, '—');
+  assert.equal(p.node('out-y').textContent, '—');
 });
 test('empty coordinates do not silently become zero or allow Apply', () => {
   const p = picker('?map=/map&x=123&y=42');
@@ -312,6 +319,95 @@ test('explicit map flags enable gameplay and grid without expanding tools', () =
   assert.match(p.node('collision-status').textContent,/Красные тайлы здесь запрещены/);
 });
 
+test('linked highlighted mob spawn tiles can be assigned as the current record position', () => {
+  const map = {groups:[], gameplay:{width:4,height:1,indices:Uint8Array.from([209,0,209,18])}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209', map);
+  p.node('workbench').open = true;
+  assert.equal(p.node('linked-tiles-wrap').hidden, false);
+  assert.match(p.node('linked-tiles-status').textContent, /Связанных точек: 2/);
+  assert.equal(p.node('linked-tiles').children.length, 2);
+  p.node('linked-tiles').value = '1';
+  p.node('linked-tiles-use').click();
+  assert.equal(p.node('out-x').textContent, '80'); // second marker center
+  assert.equal(p.node('out-y').textContent, '16');
+  assert.equal(p.messages.at(-1).type, 'editor-map:change');
+  assert.equal(p.tw.cameraPosTarget[0], 80);
+});
+test('tile-placement mode stages a linked map tile and lets the user discard before Apply', () => {
+  const map = {groups:[], gameplay:{width:4,height:1,indices:Uint8Array.from([209,0,0,18])}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209', map);
+  p.node('tile-edit-mode').click();
+  assert.equal(p.node('tile-edit-mode').checked, true);
+  assert.equal(p.node('collision').checked, true);
+  const x = 48, y = 16;
+  const screenW = 800, screenH = 600;
+  const viewH = p.tw.worldView[1] / p.tw.cameraZoom;
+  const viewW = p.tw.worldView[0] * (screenW / screenH) / p.tw.cameraZoom;
+  const clientX = (x - (p.tw.cameraPos[0] - viewW / 2)) * screenW / viewW;
+  const clientY = (y - (p.tw.cameraPos[1] - viewH / 2)) * screenH / viewH;
+  const canvas = p.document.getElementById('cnvs');
+  p.emit('mousedown',{target:canvas,button:0,clientX,clientY});
+  p.emit('mouseup',{target:canvas,button:0,clientX,clientY});
+  assert.equal(map.gameplay.indices[1], 209);
+  assert.equal(p.node('out-x').textContent, '48');
+  assert.equal(p.node('out-y').textContent, '16');
+  assert.match(p.node('tile-edit-status').textContent, /Добавлено тайлов: 1/);
+  p.node('tile-edit-clear').click();
+  assert.equal(map.gameplay.indices[1], 0);
+  assert.equal(p.node('tile-edit-mode').checked, false);
+});
+test('tile placement can be toggled off to resume ordinary position picking', () => {
+  const map = {groups:[], gameplay:{width:8,height:1,indices:Uint8Array.from([209,0,0,0,0,0,0,0])}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209', map);
+  const clickWorld = (x, y) => {
+    const screenW = 800, screenH = 600;
+    const viewH = p.tw.worldView[1] / p.tw.cameraZoom;
+    const viewW = p.tw.worldView[0] * (screenW / screenH) / p.tw.cameraZoom;
+    const clientX = (x - (p.tw.cameraPos[0] - viewW / 2)) * screenW / viewW;
+    const clientY = (y - (p.tw.cameraPos[1] - viewH / 2)) * screenH / viewH;
+    const canvas = p.document.getElementById('cnvs');
+    p.emit('mousedown',{target:canvas,button:0,clientX,clientY});
+    p.emit('mouseup',{target:canvas,button:0,clientX,clientY});
+  };
+  p.node('tile-edit-mode').click();
+  assert.equal(p.node('tile-edit-mode').checked, true);
+  clickWorld(48, 16);
+  assert.equal(map.gameplay.indices[1], 209);
+  p.node('tile-edit-mode').click();
+  assert.equal(p.node('tile-edit-mode').checked, false);
+  assert.equal(p.node('collision').checked, false, 'leaving placement mode restores the prior gameplay-layer toggle');
+  assert.equal(p.node('grid').checked, false, 'leaving placement mode restores the prior grid toggle');
+  clickWorld(112, 16);
+  assert.equal(p.node('out-x').textContent, '112');
+  assert.equal(map.gameplay.indices[3], 0, 'ordinary point mode must not stage a map tile');
+  assert.equal(p.node('tile-edit-status').textContent, 'Добавлено тайлов: 1. «Применить» сохранит карту вместе с позицией; отмена отбросит изменения.');
+});
+test('without existing highlighted source tiles placement is disabled but position picking still works', () => {
+  const map = {groups:[], gameplay:{width:3,height:1,indices:Uint8Array.from([0,0,0])}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=209', map);
+  assert.equal(p.node('tile-edit-mode').disabled, true);
+  assert.match(p.node('tile-edit-status').textContent, /Нет существующих тайлов из highlightTiles/);
+  p.node('tile-edit-mode').click();
+  assert.equal(p.node('tile-edit-mode').checked, false);
+  const canvas = p.document.getElementById('cnvs');
+  p.emit('mousedown',{target:canvas,button:0,clientX:420,clientY:300});
+  p.emit('mouseup',{target:canvas,button:0,clientX:420,clientY:300});
+  assert.equal(p.node('apply').disabled, false);
+  assert.equal(map.gameplay.indices.some((tile) => tile !== 0), false);
+  assert.deepEqual(p.node('tile-edit-mode').checked, false);
+});
+test('map save endpoint remains admin-only, optimistic, tile-only and allowlist-bound', () => {
+  const endpoint = fs.readFileSync(path.join(__dirname, '../api/map-edit.php'), 'utf8');
+  assert.match(endpoint, /bootstrap_editor_api_roles\(\[EDITOR_ROLE_ADMIN\]\)/);
+  assert.match(endpoint, /editor_csrf_verify\(\)/);
+  assert.match(endpoint, /HTTP_X_MAP_ORIGINAL_SHA256/);
+  assert.match(endpoint, /HTTP_X_MAP_ALLOWED_TILES/);
+  assert.match(endpoint, /in_array\(\$newIndex, \$allowedTileIds, true\)/);
+  assert.match(endpoint, /map_edit_assert_tile_only_change\(\$oldMapInfo, \$newMapInfo, \$allowedTileIds\)/);
+  assert.match(endpoint, /hash_equals\(\$expectedHash, \$latestHash\)/);
+  assert.match(endpoint, /@rename\(\$temp, \$file\)/);
+  assert.match(endpoint, /map-backups/);
+});
 test('collecting preview is read-only and labels switch locations without a gameplay layer', () => {
   const p = picker('?map=/map&point=0&preview=1&highlightLayer=switch&highlightTiles=200&switchShowID=255', {
     groups:[], switchLayer:{width:2,height:1,tiles:[{x:16,y:16,type:200,number:255},{x:48,y:16,type:200,number:1}]},

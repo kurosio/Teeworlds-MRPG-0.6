@@ -80,6 +80,7 @@ test('PositionPicker is wired into the editor core and every quest position', ()
   assert.match(loader, /editor-core\/map-worlds\.js/);
   assert.match(field, /PositionPicker\.render/);
   assert.match(field, /safeTiles: ui\.safeTiles/);
+  assert.match(field, /linkedTiles: ui\.linkedTiles === true/);
   assert.match(field, /showTiles: ui\.showTiles/);
   assert.match(field, /grid: ui\.grid/);
   assert.match(read('editor-core/form-runtime.js'), /PositionPicker\?\.scan/);
@@ -100,6 +101,10 @@ test('PositionPicker is wired into the editor core and every quest position', ()
   assert.match(read('vendor/ddnet-map/picker.js'), /editor-map:validity/);
   assert.match(read('vendor/ddnet-map/picker-overlays.js'), /blockedTile/);
   assert.match(read('vendor/ddnet-map/picker.html'), /pk-validity/);
+  assert.match(read('editor-core/point-map.js'), /params\.set\('linkedTiles', '1'\)/);
+  assert.match(pointMap, /params\.set\('prefs', mapOptions\.preferenceKey/);
+  assert.match(positionPicker, /preferenceKey: \[/);
+  assert.match(read('vendor/ddnet-map/picker-workbench.js'), /findHighlightedTiles/);
   assert.match(quests, /PositionPicker\.render/);
   assert.match(quests, /PositionPicker\.openMap/);
   assert.match(quests, /data-step-action="pin"/);
@@ -117,6 +122,7 @@ test('all position editors declare the map flags they need', () => {
   for (const [page, token] of [
     ['mobs-editor.html', 'safeTiles: false'],
     ['mobs-editor.html', 'highlightTiles: [209]'],
+    ['mobs-editor.html', 'linkedTiles: true'],
     // Мобы показывают радиус спавна (Radius), а не радиус блуждания; число,
     // цвет и подпись объявляются в массиве radii.
     ['mobs-editor.html', "path: 'Radius'"],
@@ -124,8 +130,20 @@ test('all position editors declare the map flags they need', () => {
     ['bots-npc-editor.html', 'safeTiles: true'],
     ['quests-editor.html', 'safeTiles: true'],
     ['aethers-editor.html', 'showTiles: true'],
+    ['aethers-editor.html', 'highlightTiles: [28]'],
+    ['aethers-editor.html', 'linkedTiles: true'],
     ['dungeons-editor.html', 'showTiles: true'],
+    ['dungeons-editor.html', 'safeTiles: true'],
     ['warehouse-editor.html', 'showTiles: true'],
+    ['warehouse-editor.html', 'highlightTiles: [29]'],
+    ['warehouse-editor.html', 'linkedTiles: true'],
+    ['quest-boards-editor.html', 'highlightTiles:[21]'],
+    ['quest-boards-editor.html', 'linkedTiles:true'],
+    ['editor-core/registry.js', 'linkedTiles: true'],
+    ['quests-editor.html', 'taskPositionMapUi'],
+    ['quests-editor.html', 'mapUi = {}'],
+    ['quests-editor.html', 'linkedTiles: pickerUi.linkedTiles'],
+
   ]) {
     assert.ok(read(page).includes(token), `${page} should declare ${token}`);
   }
@@ -152,6 +170,7 @@ test('PositionPicker renders one card with map flags and manual entry', () => {
     step: 1,
     safeTiles: true,
     highlightTiles: [209],
+    linkedTiles: true,
     radii: [{ path: 'Radius', label: 'Spawn radius', color: '#52df9a', dash: [6, 4] }],
     grid: true,
     snap: true,
@@ -171,12 +190,14 @@ test('PositionPicker renders one card with map flags and manual entry', () => {
   // Флаги карты сериализуются в объявление элемента.
   assert.match(html, /data-map-options="[^"]*&quot;safe&quot;:\[1,2,3\]/);
   assert.match(html, /&quot;highlightTiles&quot;:\[209\]/);
+  assert.match(html, /&quot;linkedTiles&quot;:true/);
+  assert.match(html, /data-position-flag="linkedTiles"/);
   // Старых одиночных ключей в объявлении нет — только массив radii.
   for (const legacy of ['radiusPath', 'activeRadiusPath', 'radiusActive']) {
     assert.doesNotMatch(html, new RegExp(`&quot;${legacy}&quot;`), legacy);
   }
   assert.match(html, /&quot;radii&quot;:\[/);
-  for (const flag of ['safe', 'highlightTiles', 'radius', 'grid', 'snap']) {
+  for (const flag of ['safe', 'highlightTiles', 'linkedTiles', 'radius', 'grid', 'snap']) {
     assert.match(html, new RegExp(`data-position-flag="${flag}"`));
   }
   // Эти оверлеи больше не включают полный игровой слой неявно.
@@ -244,6 +265,29 @@ test('radii resolve to drawable circles, removed legacy keys are ignored', () =>
   assert.deepEqual(Array.from(empty.radii), []);
 });
 
+test('linked tile editor flags are normalized safely and snap preferences are field-scoped', () => {
+  const api = loadModule();
+  const root = (options) => ({
+    getAttribute: (key) => ({
+      'data-map-options': JSON.stringify(options),
+      'data-map-picker': 'quest-task-position',
+      'data-map-x-path': 'tasks.move_to.0.x',
+      'data-map-y-path': 'tasks.move_to.0.y',
+    })[key] ?? null,
+    closest: () => null,
+    contains: () => false,
+  });
+  const linked = api.resolveMapOptions(root({ highlightTiles: [209], linkedTiles: true }));
+  assert.equal(linked.linkedTiles, true);
+  assert.equal(linked.preferenceKey, 'quest-task-position|tasks.move_to.0.x|tasks.move_to.0.y');
+  const noTileIds = api.resolveMapOptions(root({ linkedTiles: true, highlightTiles: [] }));
+  assert.equal(noTileIds.linkedTiles, false);
+  const switchLayer = api.resolveMapOptions(root({ linkedTiles: true, highlightTiles: [200], highlightLayer: 'switch' }));
+  assert.equal(switchLayer.linkedTiles, false);
+  const bounded = api.resolveMapOptions(root({ safeTiles: Array.from({ length: 400 }, (_, i) => i), highlightTiles: [209, 209, 300] }));
+  assert.equal(bounded.safe.length, 256);
+  assert.deepEqual(Array.from(bounded.highlightTiles), [209]);
+});
 test('vec2 gameplay and grid defaults are explicit and independent of other overlays', () => {
   const api = loadModule();
   const rootWith = (options) => ({
@@ -306,6 +350,7 @@ test('PositionPicker saves manual coordinates, world and map result', { skip: do
     step: 1,
     safeTiles: true,
     highlightTiles: [209],
+    linkedTiles: true,
     radii: [{ path: 'Radius', label: 'Spawn radius', color: '#52df9a', dash: [6, 4] }],
     grid: true,
     snap: true,
@@ -344,6 +389,7 @@ test('PositionPicker saves manual coordinates, world and map result', { skip: do
   assert.equal(openedOptions.allowWorldChange, false);
   assert.deepEqual(Array.from(openedOptions.mapOptions.safe), [1, 2, 3]);
   assert.deepEqual(Array.from(openedOptions.mapOptions.highlightTiles), [209]);
+  assert.equal(openedOptions.mapOptions.linkedTiles, true);
   assert.equal(openedOptions.mapOptions.tiles, false);
   // Радиус берётся из поля формы: 256 из #radius → одна окружность.
   assert.deepEqual(Array.from(openedOptions.mapOptions.radii, (r) => r.value), [256]);

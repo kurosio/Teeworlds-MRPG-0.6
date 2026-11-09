@@ -436,6 +436,9 @@
           mapWorldPath: 'WorldID',
           safeTiles: false,
           highlightTiles: [209],
+          // Выбрать один из подсвеченных ENTITY_SPAWN_MOBS как точку записи;
+          // радиус спавна/активности сразу показывается вокруг выбранной точки.
+          linkedTiles: true,
           radii: [
             { path: 'Radius', label: 'Spawn radius', color: '#52df9a', dash: [6, 4] },
             { path: 'ActiveRadius', label: 'Active radius', color: '#6f8cff', dash: [3, 3], lineWidth: 1.5 },

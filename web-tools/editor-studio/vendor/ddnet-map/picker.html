@@ -44,6 +44,22 @@
     <summary id="pk-workbench-title">Инструменты размещения</summary>
     <div class="pk-workbench-body">
       <label><input type="checkbox" id="pk-collision" /> <span id="pk-collision-label">Игровой слой</span></label>
+      <label class="pk-field pk-linked-tiles" id="pk-linked-tiles-wrap" hidden>
+        <span id="pk-linked-tiles-label">Связанные точки</span>
+        <select id="pk-linked-tiles" aria-label="Связанные точки"></select>
+      </label>
+      <button type="button" class="pk-btn pk-linked-tiles" id="pk-linked-tiles-use" hidden>Использовать точку</button>
+      <output id="pk-linked-tiles-status" class="pk-tool-status pk-linked-tiles" hidden aria-live="polite"></output>
+      <label class="pk-linked-tiles" id="pk-tile-edit-mode-wrap" hidden>
+        <input type="checkbox" id="pk-tile-edit-mode" />
+        <span id="pk-tile-edit-mode-label">Добавлять выбранный тайл кликом по карте</span>
+      </label>
+      <label class="pk-field pk-linked-tiles" id="pk-tile-edit-type-wrap" hidden>
+        <span id="pk-tile-edit-type-label">Тип тайла</span>
+        <select id="pk-tile-edit-type" aria-label="Тип тайла"></select>
+      </label>
+      <button type="button" class="pk-btn pk-linked-tiles" id="pk-tile-edit-clear" hidden>Отменить добавленные тайлы</button>
+      <output id="pk-tile-edit-status" class="pk-tool-status pk-linked-tiles" hidden aria-live="polite"></output>
       <button type="button" class="pk-btn" id="pk-spawn">К спавну</button>
       <button type="button" class="pk-btn" id="pk-measure" aria-pressed="false">Измерить</button>
       <button type="button" class="pk-btn" id="pk-measure-from-point">От выбранной точки</button>
@@ -123,6 +139,7 @@
 </script>
 <script src="twwebgl.js"></script>
 <script src="picker-model.js"></script>
+<script src="picker-map-edit.js"></script>
 <script src="picker-overlays.js"></script>
 <script src="picker-workbench.js"></script>
 <script src="picker.js"></script>
