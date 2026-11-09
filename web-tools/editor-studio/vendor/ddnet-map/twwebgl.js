@@ -13,8 +13,14 @@ var tw = {
 
   // TILESLAYERFLAG_* из mapitems.h: игровой слой и слои сущностей.
   TILESLAYERFLAG_GAME: 1,
-  // Индекс тайла «спавн игрока» в игровом слое.
-  TILE_SPAWN: 192,
+  // Индекс тайла «спавн игрока» в игровом слое: ENTITY_OFFSET + ENTITY_SPAWN
+  // = 191 + 17 = 208 (см. src/game/mapitems.h и picker-tile-catalog.js).
+  // Раньше здесь стояло 192 — это броня, поэтому «К спавну» уводила камеру
+  // к первой броне на карте.
+  TILE_SPAWN: 208,
+  // Порядок поиска точки «К спавну»: игрок → мобы → тюрьма (ENTITY_SPAWN_MOBS
+  // 209, ENTITY_SPAWN_PRISON 211). 210 не существует и в список не попадает.
+  SPAWN_TILE_IDS: [208, 209, 211],
 
   MAPITEMTYPE_VERSION: 0,
   MAPITEMTYPE_INFO: 1,
@@ -1145,10 +1151,16 @@ tw.Map = function (mapData) {
               this.gameplay = { width: tileLayerInfo.width, height: tileLayerInfo.height,
                 indices: gameTiles };
             }
-            for (var sy = 0; sy < tileLayerInfo.height && !this.spawnPoint; sy++) {
-              for (var sx = 0; sx < tileLayerInfo.width; sx++) {
-                if (gameTiles[sy * tileLayerInfo.width + sx] >= tw.TILE_SPAWN && gameTiles[sy * tileLayerInfo.width + sx] <= tw.TILE_SPAWN + 2) {
-                  this.spawnPoint = { x: sx * 32 + 16, y: sy * 32 + 16 };
+            // Точка спавна: сначала именно спавн игрока (208), и только если в
+            // карте его нет — спавн мобов (209) или тюрьмы (211). Диапазон
+            // «208..210» здесь был ошибкой: 210 не существует, а 211 (тюрьма)
+            // терялась, зато камера «К спавну» могла уехать на спавн мобов.
+            for (var spawnIndex = 0; spawnIndex < tw.SPAWN_TILE_IDS.length && !this.spawnPoint; spawnIndex++) {
+              for (var sy = 0; sy < tileLayerInfo.height && !this.spawnPoint; sy++) {
+                for (var sx = 0; sx < tileLayerInfo.width; sx++) {
+                  if (gameTiles[sy * tileLayerInfo.width + sx] !== tw.SPAWN_TILE_IDS[spawnIndex])
+                    continue;
+                  this.spawnPoint = { x: sx * 32 + 16, y: sy * 32 + 16, tile: tw.SPAWN_TILE_IDS[spawnIndex] };
                   break;
                 }
               }

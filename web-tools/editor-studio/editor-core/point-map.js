@@ -143,7 +143,11 @@
     // Флаги элемента позиции: запрещённые тайлы, слои, радиус, инструменты.
     if (Array.isArray(mapOptions.safe) && mapOptions.safe.length) params.set('safe', mapOptions.safe.join(','));
     if (mapOptions.preview) params.set('preview', '1');
+    // Слой подсветки едет в окно карты всегда, когда он известен: 199/200/201
+    // есть и в игровом слое, и в switch, поэтому «угадать» слой нельзя —
+    // иначе правка ресурсных меток молча уходила бы в switch.
     if (mapOptions.highlightLayer === 'switch') params.set('highlightLayer', 'switch');
+    else if (mapOptions.highlightLayer === 'game') params.set('highlightLayer', 'game');
     if (Number.isInteger(mapOptions.switchShowID) && mapOptions.switchShowID >= 1 && mapOptions.switchShowID <= 255) params.set('switchShowID', String(mapOptions.switchShowID));
     if (mapOptions.tiles) params.set('tiles', '1');
     if (Array.isArray(mapOptions.highlightTiles) && mapOptions.highlightTiles.length) params.set('highlightTiles', mapOptions.highlightTiles.join(','));

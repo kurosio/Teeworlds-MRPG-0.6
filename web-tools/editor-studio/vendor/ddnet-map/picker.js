@@ -246,7 +246,11 @@
   };
   const OPTIONS = {
     preview: qs.get('preview') === '1',
-    highlightLayer: qs.get('highlightLayer') === 'switch' ? 'switch' : 'game',
+    // Слой правки: пусто — значит редактор не сказал (панель делит ID по
+    // каталогу), 'game'/'switch' — доверяем безоговорочно. Трёхзначность
+    // важна: 199/200/201 есть и в игровом слое, и как типы switch-слоя.
+    highlightLayer: qs.get('highlightLayer') === 'switch' ? 'switch'
+      : qs.get('highlightLayer') === 'game' ? 'game' : null,
     switchShowID: /^([1-9]\d{0,2})$/.test(qs.get('switchShowID') || '') && Number(qs.get('switchShowID')) <= 255 ? Number(qs.get('switchShowID')) : null,
     safe: safeIds,
     tiles: qs.get('tiles') === '1',
@@ -415,26 +419,48 @@
 
   // Панель стоит под шапкой и не заходит на подвал. Подсказка режима — справа
   // от панели, а на узком экране панель уходит вниз и подсказка скрыта CSS.
+  //
+  // Геометрию считаем от реальных размеров шапки и подвала, а не от констант:
+  // на телефоне шапка занимает три строки (название, зум, координаты), подвал —
+  // две (X/Y и кнопки), поэтому фиксированные отступы 64/96 px накрывали
+  // кнопки «Применить». Ширина панели берётся из CSS (не из getBoundingClientRect):
+  // на мобильном она растянута на всю ширину и не должна влиять на отступ
+  // подсказки.
   layoutTools = () => {
     const bar = document.querySelector('.pk-bar');
     const foot = document.querySelector('.pk-foot');
     if (!bar) return;
-    const top = bar.getBoundingClientRect().bottom + 8;
-    const bottom = foot ? foot.getBoundingClientRect().top : window.innerHeight - 12;
-    const dockWidth = el.dock ? el.dock.getBoundingClientRect().width : 0;
-    document.documentElement.style.setProperty('--pk-dock-top', `${top}px`);
-    document.documentElement.style.setProperty('--pk-hint-top', `${top}px`);
-    document.documentElement.style.setProperty('--pk-hint-left', `${dockWidth + 24}px`);
-    document.documentElement.style.setProperty('--pk-dock-max', `${Math.max(180, bottom - top - 12)}px`);
+    const viewport = Math.max(320, window.innerHeight || 0);
+    const barBottom = bar.getBoundingClientRect().bottom + 8;
+    const footTop = foot ? foot.getBoundingClientRect().top : viewport - 12;
+    // Подвал важнее панели: «Применить» нельзя накрывать ни при какой высоте.
+    // Если места до подвала совсем мало (низкое окно, ландшафт телефона),
+    // панель поднимается под шапку и получает минимальную высоту со скроллом,
+    // но её нижняя граница остаётся выше подвала.
+    const bottom = footTop > 24 ? footTop : viewport - 12;
+    const top = Math.max(8, Math.min(barBottom, bottom - 116));
+    const narrow = window.innerWidth <= 640;
+    // На телефоне панель занимает всю ширину — подсказке не остаётся места.
+    const dockWidth = narrow ? 0 : (el.dock ? el.dock.getBoundingClientRect().width : 0);
+    document.documentElement.style.setProperty('--pk-dock-top', `${Math.round(top)}px`);
+    document.documentElement.style.setProperty('--pk-hint-top', `${Math.round(top)}px`);
+    document.documentElement.style.setProperty('--pk-hint-left', `${Math.round(dockWidth + 24)}px`);
+    document.documentElement.style.setProperty('--pk-dock-max', `${Math.max(96, Math.round(bottom - top - 12))}px`);
   };
   if (typeof ResizeObserver === 'function') {
-    // Панель меняет высоту при раскрытии секций и в узком окне становится
-    // нижней: подсказка должна стоять под шапкой, а не под её краем.
+    // Панель меняет высоту при раскрытии секций, а шапка и подвал — при
+    // переносе строк на узком экране: отступы нужно пересчитать у всех трёх.
     const observer = new ResizeObserver(() => layoutTools());
     observer.observe(el.dock);
-    observer.observe(document.querySelector('.pk-bar'));
+    for (const node of [document.querySelector('.pk-bar'), document.querySelector('.pk-foot')]) {
+      if (node) observer.observe(node);
+    }
   }
   window.addEventListener('resize', () => layoutTools());
+  // Ориентация телефона меняет высоту окна без resize в части WebView.
+  window.addEventListener('orientationchange', () => layoutTools());
+  window.visualViewport?.addEventListener?.('resize', () => layoutTools());
+  layoutTools();
 
   const showState = (kind, title, text, withRetry) => {
     el.state.hidden = false;

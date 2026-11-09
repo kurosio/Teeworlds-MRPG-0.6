@@ -36,12 +36,18 @@ html, body {
   margin: 0;
   width: 100%;
   height: 100%;
+  /* dvh: на телефоне адресная строка браузера меняет высоту, и 100vh оставлял
+     белую полосу под картой (или обрезал подвал). 100% — резерв для старых
+     браузеров, 100dvh перекрывает его там, где единица поддерживается. */
+  height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
   background: var(--pk-bg);
   color: var(--pk-text);
   font: 13px/1.45 'Inter', 'Segoe UI', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 canvas#cnvs {
@@ -51,6 +57,9 @@ canvas#cnvs {
   touch-action: none;
   cursor: crosshair;
   background: #000;
+  /* Карта — фон: панели лежат поверх, но скроллинг/зум жестов не должны
+     «уезжать» на страницу под канвой. */
+  overscroll-behavior: none;
 }
 
 canvas#ovl {
@@ -300,16 +309,46 @@ canvas#ovl {
 }
 
 @media (max-width: 640px) {
-  .pk-bar { left: 8px; right: 8px; top: 8px; gap: 8px; padding: 8px 10px; }
-  .pk-foot { left: 8px; right: 8px; bottom: 8px; gap: 8px; padding: 8px 10px; }
+  /* Вырез/скругления/жест-бар iOS: панели не должны заезжать под них —
+     viewport-fit=cover отдаёт карте весь экран, а отступы задаём здесь. */
+  .pk-bar {
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    top: max(8px, env(safe-area-inset-top));
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .pk-bar-main { flex: 1 1 auto; gap: 8px; }
+  .pk-map-icon { width: 28px; height: 28px; flex-basis: 28px; border-radius: 8px; }
+  .pk-title { font-size: 13px; }
+  .pk-sub { font-size: 11px; white-space: normal; }
+  /* Координаты — вторая строка: две «пилюли» X/Y не должны выдавливать
+     зум и кнопки за край экрана. */
+  .pk-coords { order: 3; flex: 1 1 100%; gap: 8px; }
+  .pk-coord { flex: 1 1 0; justify-content: center; min-width: 0; padding: 3px 8px; }
+  .pk-tools { order: 2; margin-left: auto; gap: 4px; }
+  .pk-tools .pk-btn { min-width: 34px; padding: 0 8px; }
+
+  .pk-foot {
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    gap: 8px;
+    padding: 8px 10px;
+  }
   .pk-hint { display: none; }
-  .pk-coords { order: 3; }
-  .pk-tools { margin-left: auto; }
-  .pk-field input { width: 88px; }
+  /* Подвал на телефоне строится тремя строками: X/Y, предупреждение и
+     действия. Явный order у каждого блока — иначе `flex-basis: 100%` у
+     предупреждения ставило его после кнопок, и объяснение «почему нельзя
+     применить» оказывалось под «Применить». */
+  .pk-foot > .pk-field { order: 1; flex: 1 1 calc(50% - 4px); }
+  .pk-field input { width: 100%; min-width: 0; height: 36px; }
   .pk-foot-note { display: none; }
-  .pk-foot-actions { width: 100%; }
-  .pk-foot-actions .pk-btn { flex: 1 1 auto; height: 36px; }
+  .pk-validity { order: 2; flex: 1 1 100%; }
+  .pk-foot-actions { order: 3; width: 100%; margin-left: 0; }
+  .pk-foot-actions .pk-btn { flex: 1 1 auto; height: 40px; }
 }
+
 
 /* ── панель карты ─────────────────────────────────────────────────
    Одна панель на три уровня: шапка (режим клика и счётчики), прокручиваемое
@@ -386,15 +425,21 @@ canvas#ovl {
 .pk-btn-icon { width: 28px; height: 28px; padding: 0; font-size: 12px; line-height: 1; }
 .pk-dock.is-collapsed .pk-btn-icon { transform: rotate(-90deg); }
 
-.pk-dock-body { min-height: 0; display: flex; flex-direction: column; }
+/* Тело панели — единственный прокручиваемый слой. `flex: 1 1 auto` обязателен:
+   иначе высокое содержимое (секция правки с длинным списком тайлов) вылезало
+   за пределы панели и подвал окна оказывался под ним. */
+.pk-dock-body { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .pk-dock-scroll {
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 4px 2px 8px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Секция: заголовок + содержимое. Разделитель — только линия, без рамок. */
@@ -538,10 +583,64 @@ canvas#cnvs.is-measuring, canvas#cnvs.is-placing-tile { cursor: crosshair; }
   max-width: min(560px, calc(100vw - var(--pk-hint-left, 0px) - 28px));
 }
 
+/* ── панель на телефоне ────────────────────────────────────────────
+   Панель становится нижним листом (bottom sheet) между шапкой и подвалом.
+   Раньше у неё были фиксированные `bottom: 64px` и `max-height: 46vh`:
+   подвал с кнопками на телефоне выше 64px, поэтому панель наезжала на
+   «Применить», а 46vh не хватало на секцию правки — список тайлов и
+   действия обрезались без прокрутки. Теперь высоту считает layoutTools()
+   через --pk-dock-max (из реальных размеров шапки и подвала), а тело
+   прокручивается внутри. */
 @media (max-width: 640px) {
-  .pk-dock { left: 8px; right: 8px; width: auto; top: auto; bottom: 64px; max-height: min(46vh, 380px); }
-  .pk-dock-scroll { max-height: calc(min(46vh, 380px) - 46px); }
-  .pk-dock .pk-field select, .pk-dock .pk-field input { max-width: none; flex: 1 1 auto; }
+  .pk-dock {
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    width: auto;
+    top: var(--pk-dock-top, 96px);
+    bottom: auto;
+    /* Никогда не выше свободного места между шапкой и подвалом, но и не
+       ниже 40% экрана: иначе от панели остаётся одна шапка. */
+    max-height: var(--pk-dock-max, calc(100dvh - 200px));
+  }
+  .pk-dock-head { padding: 7px 8px 7px 10px; min-height: 42px; }
+  .pk-dock-title { font-size: 12px; }
+  /* На телефоне панель — flex-колонка: шапка фиксирована, тело с секциями
+     скроллится (flex: 1 1 auto в базовом правиле .pk-dock-scroll), поэтому
+     max-height не дублируем — иначе секция правки считалась бы дважды. */
+  .pk-dock-scroll { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .pk-sec { padding: 2px 8px; }
+  .pk-sec-body { gap: 8px; }
+  .pk-dock .pk-field { flex: 1 1 100%; }
+  .pk-dock .pk-field select,
+  .pk-dock .pk-field input { max-width: none; flex: 1 1 auto; height: 38px; }
+  .pk-dock .pk-field input { width: auto; }
+  .pk-segmented-sm .pk-seg { height: 32px; }
+  .pk-edit-actions .pk-btn { flex: 1 1 auto; height: 36px; }
+  .pk-layer-list { max-height: 108px; }
   .pk-hint { display: none; }
 }
+
+/* Очень узкие экраны (360px и меньше): шапка без иконки, кнопки зума
+   компактнее, чтобы «Вся карта» и «К точке» остались в строке. */
+@media (max-width: 380px) {
+  .pk-map-icon { display: none; }
+  .pk-tools .pk-btn { padding: 0 6px; font-size: 12px; }
+  .pk-coord b { font-size: 10.5px; }
+  .pk-dock { left: 6px; right: 6px; }
+  .pk-bar, .pk-foot { left: 6px; right: 6px; }
+}
 @media (prefers-reduced-motion: reduce) { .pk-state-icon { animation: none; } .pk-dock { transition: none; } }
+
+/* Тач-экраны: стандартные поля ввода мельче 16px браузер iOS/Android
+   искусственно «зумит» при фокусе — после этого окно карты уезжает и его
+   нельзя вернуть жестами. Поэтому на сенсоре поля не меньше 16px, а кнопки
+   получают палец-размер даже на широком планшете. */
+@media (pointer: coarse) {
+  .pk-field input,
+  .pk-dock .pk-field input,
+  .pk-dock .pk-field select { font-size: 16px; }
+  .pk-btn { min-height: 40px; }
+  .pk-seg { min-height: 34px; }
+  .pk-dock .pk-field select,
+  .pk-dock .pk-field input { height: 38px; }
+}

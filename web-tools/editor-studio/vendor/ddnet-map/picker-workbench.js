@@ -55,17 +55,26 @@
       const highlightIds = [...new Set((Array.isArray(options.highlightTiles) ? options.highlightTiles : [])
         .filter((id) => catalog.isEditable(id)))];
       // Правка — строго по объявленным highlightTiles, и у каждого слоя свой
-      // набор: игровые сущности (192–211) и типы switch-слоя (199/200/201,
-      // зоны 22–25) не пересекаются, поэтому ID 200 в игровом слое не должен
-      // неожиданно открывать правку switch-типа 200.
-      const editableGameIds = highlightIds.filter((id) => !catalog.isSwitchTile(id));
-      const editableSwitchIds = highlightIds.filter((id) => catalog.isSwitchTile(id));
+      // набор. Слой приходит из редактора (`highlightLayer`), и ему верим
+      // безоговорочно: 199/200/201 существуют и в игровом слое (метки узлов
+      // сбора), и как типы switch-слоя, поэтому догадка «это switch» съедала
+      // правку игрового слоя. Без явного слоя делим по каталогу switch.
+      const explicitLayer = options.highlightLayer === 'switch' ? 'switch'
+        : options.highlightLayer === 'game' ? 'game' : null;
+      const editableGameIds = explicitLayer === 'switch' ? []
+        : explicitLayer === 'game' ? highlightIds
+        : highlightIds.filter((id) => !catalog.isSwitchTile(id));
+      const editableSwitchIds = explicitLayer === 'switch' ? highlightIds
+        : explicitLayer === 'game' ? []
+        : highlightIds.filter((id) => catalog.isSwitchTile(id));
       // Есть что править, только если объявлен хотя бы один ID слоя.
       const editEnabled = editableGameIds.length > 0 || editableSwitchIds.length > 0;
       // Список «Существующие точки» — прежняя функция: выбрать координаты
       // подсвеченного тайла как позицию записи (без правки карты).
-      const linkedEnabled = options.linkedTiles === true && options.highlightLayer !== 'switch'
-        && highlightIds.length > 0;
+      // Список координат — только для игрового слоя: switch-тайлы показываются
+      // предпросмотром. Условие по игровым ID, а не по отсутствию 'switch':
+      // так список не появится и тогда, когда объявлены только switch-типы.
+      const linkedEnabled = options.linkedTiles === true && editableGameIds.length > 0;
 
       for (const id of ['sec-edit', 'sec-points']) el[id].hidden = true;
 
@@ -874,7 +883,9 @@
           if (el.collision.checked) {
             status = !game ? text.noGame : !bounds ? text.zoom : text.legend;
             if (Array.isArray(options.safe) && options.safe.length) status += `${status ? ' · ' : ''}${text.blocked}`;
-            draw.drawCollision(ctx, game, bounds, worldToScreen, options.safe);
+            // Третий аргумент — объявленные highlightTiles: спавны и прочие
+            // сущности редактора рисуются зелёными, как обещает легенда.
+            draw.drawCollision(ctx, game, bounds, worldToScreen, options.safe, options.highlightTiles);
           }
           if (options.highlightLayer === 'switch') {
             const count = draw.drawSwitchTiles(ctx, tw.map?.switchLayer, worldToScreen,

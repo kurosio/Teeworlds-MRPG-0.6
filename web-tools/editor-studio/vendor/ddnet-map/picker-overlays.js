@@ -42,20 +42,31 @@
     return { x0, y0, x1, y1 };
   };
   const colors = { 1: '#ffb454', 2: '#ff536b', 3: '#b78bfa' };
-  const drawCollision = (ctx, game, bounds, project, blocked) => {
+  /**
+   * Игровой слой поверх карты.
+   *   blocked   — ID, на которые нельзя ставить точку (красные);
+   *   highlight — ID, которые подсветил редактор (зелёные: спавны мобов и
+   *               прочие объявленные сущности) — это то, что обещает легенда
+   *               «зелёный: спавны · синий: прочие ID».
+   * Раньше `highlight` не передавался вовсе, и спавн мобов 209 выглядел
+   * обычным синим «прочим ID» — рядом с подписью «Кости казино».
+   */
+  const drawCollision = (ctx, game, bounds, project, blocked, highlight) => {
     if (!bounds || !game) return;
     ctx.save();
     ctx.globalAlpha = .65;
     const origin = project(0, 0), end = project(32, 32);
     const size = { x: end.x - origin.x, y: end.y - origin.y };
-    const highlight = Array.isArray(blocked) ? blocked : [];
+    const forbidden = Array.isArray(blocked) ? blocked : [];
+    const selected = Array.isArray(highlight) ? highlight : [];
     for (let y = bounds.y0; y < bounds.y1; y++) for (let x = bounds.x0; x < bounds.x1; x++) {
       const index = game.indices[y * game.width + x];
       if (!index) continue;
       const p = project(x * 32, y * 32);
-      const isBlocked = highlight.includes(index);
+      const isBlocked = forbidden.includes(index);
       // Запрещённые тайлы выделены отдельно: их видно даже без подписей ID.
-      ctx.fillStyle = isBlocked ? '#f2727f' : (colors[index] || '#5ac8fa');
+      ctx.fillStyle = isBlocked ? '#f2727f'
+        : selected.includes(index) ? '#52df9a' : (colors[index] || '#5ac8fa');
       ctx.fillRect(p.x, p.y, Math.max(1, size.x), Math.max(1, size.y));
       if (isBlocked && size.x >= 8 && ctx.strokeRect) {
         ctx.strokeStyle = '#ff536b'; ctx.lineWidth = 2;

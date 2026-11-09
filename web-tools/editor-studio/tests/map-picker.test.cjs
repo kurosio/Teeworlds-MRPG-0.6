@@ -559,6 +559,32 @@ test('dragging cannot move an undeclared entity and the save plan stays declared
   assert.equal(map.gameplay.indices[0], 0);
   assert.equal(map.gameplay.indices[2], 209);
 });
+test('an explicit game layer keeps resource-marker IDs in the game editor', () => {
+  // 199/200/201 живут и в игровом слое (метки узлов сбора), и в switch-слое.
+  // Раньше слой угадывался по каталогу, и игровая правка 200 уезжала в switch.
+  const map = {groups:[], gameplay:{width:2,height:1,indices:Uint8Array.from([200,0])},
+    switchLayer:{width:2,height:1,tiles:[{x:16,y:16,type:200,number:1}]}};
+  const p = picker('?map=/map&x=16&y=16&linkedTiles=1&highlightTiles=200&highlightLayer=game', map);
+  p.node('mode-tile').click();
+  assert.equal(p.node('edit-layer-game').disabled, false, 'game layer must be editable');
+  assert.equal(p.node('edit-layer-switch').disabled, true, 'switch layer must stay locked');
+  assert.equal(p.node('edit-layer-game').getAttribute('aria-checked'), 'true');
+  assert.deepEqual(p.node('edit-tile').children.map((option) => option.value), ['200']);
+  // Единственный игровой тайл в списке — руда, а не switch-тип.
+  assert.match(p.node('edit-tile').children[0].textContent, /200 · Руда/);
+  assert.deepEqual(p.node('switch-type').children.map((option) => option.value), []);
+});
+
+test('without an explicit layer the catalog still splits game and switch ids', () => {
+  const map = {groups:[], gameplay:{width:1,height:1,indices:Uint8Array.from([0])},
+    switchLayer:{width:1,height:1,tiles:[]}};
+  const p = picker('?map=/map&x=0&y=0&linkedTiles=1&highlightTiles=200', map);
+  p.node('mode-tile').click();
+  // Без highlightLayer правит switch-слой, как и раньше: 200 — тип switch.
+  assert.equal(p.node('edit-layer-game').disabled, true);
+  assert.equal(p.node('edit-layer-switch').disabled, false);
+});
+
 test('declared switch type edits any switch number but leaves other types alone', () => {
   const map = {groups:[], gameplay:{width:3,height:1,indices:Uint8Array.from([0,0,0])},
     switchLayer:{width:3,height:1,tiles:[
@@ -667,4 +693,24 @@ test('collecting preview is read-only and labels switch locations without a game
   assert.equal(p.messages.some(m=>m.type==='editor-map:apply'),false);
   assert.equal(p.messages.some(m=>m.type==='editor-map:change'),false);
   assert.match(p.node('note').textContent, /1/);
+});
+
+test('editors declare their map layer so resource markers are not stolen by switch', () => {
+  // Каждый редактор, который подсвечивает тайлы игрового слоя, обязан сказать
+  // это явно: 199/200/201 иначе уходят в switch-редактор, а «→ К спавну» на
+  // 192 показывало броню вместо спавна.
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const expectations = [
+    ['mobs-editor.html', 'highlightTiles: [209]', 'мобы: 209 = ENTITY_SPAWN_MOBS'],
+    ['aethers-editor.html', 'highlightTiles: [28]', 'аэтры: 28 = TILE_AETHER_TELEPORT'],
+    ['warehouse-editor.html', 'highlightTiles: [29]', 'склады: 29 = TILE_SHOP_ZONE'],
+    ['quest-boards-editor.html', 'highlightTiles:[21]', 'доски квестов: 21 = TILE_QUEST_BOARD'],
+    ['editor-core/registry.js', 'highlightTiles: [209]', 'сценарии: точка спавна мобов'],
+  ];
+  for (const [file, needle, why] of expectations) {
+    const code = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+    assert.ok(code.includes(needle), `${file}: нет объявления (${why})`);
+    assert.match(code, /highlightLayer: ?'game'/, `${file}: не указан игровой слой (${why})`);
+  }
 });

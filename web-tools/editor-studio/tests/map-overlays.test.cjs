@@ -101,3 +101,47 @@ test('tile highlights accept arbitrary IDs and an empty list disables drawing', 
   O.drawHighlightedTiles(ctx, game, bounds, project, [0, 42]);
   assert.deepEqual(arcs, [[16,16], [112,16]]);
 });
+
+test('gameplay overlay colours declared highlights green and keeps blocked red', () => {
+  // Легенда панели обещает: «зелёный: спавны · синий: прочие ID». Спавн мобов
+  // (209) объявлен в highlightTiles, поэтому обязан быть зелёным — раньше он
+  // выглядел обычным синим тайлом рядом с подписью «Кости казино».
+  const layer = { width: 4, height: 1, indices: Uint8Array.from([209, 193, 1, 0]) };
+  const paints = [];
+  const ctx = {
+    save(){}, restore(){}, fillText(){}, strokeRect(){},
+    fillRect(){
+      // Цвет берём в момент заливки: после неё ctx.fillStyle сменит подпись ID.
+      if (!ctx.text) paints.push(ctx.fillStyle);
+    },
+    text: false,
+  };
+  const save = ctx.save;
+  ctx.save = () => { ctx.text = false; save(); };
+  let style = '';
+  Object.defineProperty(ctx, 'fillStyle', {
+    get: () => style,
+    set: (value) => { if (!ctx.text) style = value; },
+  });
+  // Подпись ID использует тот же fillStyle, поэтому её отсекаем по вызову
+  // fillText: заливка клетки всегда идёт раньше подписи в одной итерации.
+  const rect = ctx.fillRect;
+  ctx.fillRect = () => { paints.push(style); };
+  O.drawCollision(ctx, layer, { x0: 0, y0: 0, x1: 4, y1: 1 }, (x, y) => ({ x, y }), [1, 2, 3], [209]);
+  assert.deepEqual(paints, ['#52df9a', '#5ac8fa', '#f2727f']);
+  ctx.fillRect = rect;
+});
+
+test('without declared highlights entity tiles stay blue and blocked ones red', () => {
+  const layer = { width: 3, height: 1, indices: Uint8Array.from([209, 193, 2]) };
+  const paints = [];
+  let style = '';
+  const ctx = {
+    save(){}, restore(){}, fillText(){}, strokeRect(){},
+    set fillStyle(value) { style = value; },
+    get fillStyle() { return style; },
+    fillRect(){ paints.push(style); },
+  };
+  O.drawCollision(ctx, layer, { x0: 0, y0: 0, x1: 3, y1: 1 }, (x, y) => ({ x, y }), [1, 2, 3]);
+  assert.deepEqual(paints, ['#5ac8fa', '#5ac8fa', '#f2727f']);
+});

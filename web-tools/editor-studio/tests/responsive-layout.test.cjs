@@ -166,3 +166,137 @@ test('warehouse trade rows carry per-cell captions for the stacked phone layout'
     assert.ok(html.includes(`<div class="trade-group-label">${label}</div>`));
   }
 });
+
+// ── Окно карты (map-picker) ────────────────────────────────────────────────
+// Раньше на телефоне панель «Инструменты карты» была прибита к `bottom: 64px`
+// при подвале выше 64px: она накрывала «Применить», а `max-height: 46vh` не
+// давал прокрутить секцию правки. Кроме того, подсказка режима стояла под
+// шапкой поверх панели, а поля ввода мельче 16px вызывали зум iOS.
+
+test('map picker dock is a bottom sheet bounded by real header/footer sizes', () => {
+  const css = read('vendor/ddnet-map/picker.css');
+  const mobileStart = css.indexOf('@media (max-width: 640px)');
+  assert.ok(mobileStart > 0, 'нет мобильных блоков окна карты');
+  // Все мобильные правила идут подряд в конце файла; берём всё от первого.
+  const mobile = css.slice(mobileStart);
+  // Панель отсчитывается от шапки и ограничена вычисленной высотой.
+  assert.match(mobile, /\.pk-dock \{[^}]*top: var\(--pk-dock-top/);
+  assert.match(mobile, /\.pk-dock \{[^}]*max-height: var\(--pk-dock-max/);
+  // Явных «магических» отступов, которые накрывали подвал, больше нет.
+  assert.doesNotMatch(mobile, /\.pk-dock \{[^}]*bottom: 64px/);
+  assert.doesNotMatch(mobile, /max-height: min\(46vh/);
+  // Прокрутка живёт в теле панели: flex-колонка «шапка + скролл».
+  const css2 = read('vendor/ddnet-map/picker.css');
+  assert.match(css2, /\.pk-dock-body \{[^}]*overflow: hidden/);
+  assert.match(css2, /\.pk-dock-scroll \{[^}]*flex: 1 1 auto[^}]*overflow-y: auto/);
+  assert.match(css2, /\.pk-dock-scroll \{[^}]*min-height: 0/);
+});
+
+test('map picker header and footer wrap instead of overflowing phones', () => {
+  const css = read('vendor/ddnet-map/picker.css');
+  const mobile = css.slice(css.indexOf('@media (max-width: 640px)'));
+  // Координаты уходят на свою строку, зум остаётся в шапке.
+  assert.match(mobile, /\.pk-coords \{[^}]*flex: 1 1 100%/);
+  assert.match(mobile, /\.pk-tools \{[^}]*margin-left: auto/);
+  // X и Y делят строку, действия — отдельную.
+  assert.match(mobile, /\.pk-foot > \.pk-field \{ order: 1; flex: 1 1 calc\(50% - 4px\); \}/);
+  assert.match(mobile, /\.pk-foot-actions \{[^}]*width: 100%/);
+  assert.match(mobile, /\.pk-foot-actions \.pk-btn \{[^}]*height: 40px/);
+  // Вырез экрана и жест-бар iOS не перекрывают панели.
+  assert.match(mobile, /env\(safe-area-inset-bottom\)/);
+  assert.match(mobile, /env\(safe-area-inset-top\)/);
+  // Предупреждение о запрещённом тайле стоит ДО кнопок, а не после них.
+  assert.ok(mobile.indexOf('.pk-validity { order: 2') > 0, 'валидность — вторая строка');
+  assert.ok(mobile.indexOf('.pk-foot-actions { order: 3') > 0, 'действия — третья строка');
+});
+
+test('map picker keeps iOS from zooming into inputs and shrinks the canvas to dvh', () => {
+  const css = read('vendor/ddnet-map/picker.css');
+  // Ввод >= 16px на сенсоре: иначе Safari зумит страницу и окно «уезжает».
+  assert.match(css, /@media \(pointer: coarse\) \{[\s\S]*?\.pk-field input,[\s\S]*?font-size: 16px/);
+  // 100dvh вместо 100vh: адресная строка телефона не оставляет полосу.
+  assert.match(css, /html, body \{[\s\S]*?height: 100dvh/);
+  // Подсказка не висит над панелью на широком, но низком окне.
+  assert.doesNotMatch(css, /\.pk-hint \{[^}]*top: 160px/);
+});
+
+test('map dialog gives the whole phone screen to the map and wraps the world row', () => {
+  const css = read('editor-core/editor-theme.css');
+  const start = css.indexOf('@media (max-width:640px){\n  .editor-map-dialog{padding:0;}');
+  assert.ok(start > 0, 'нет мобильного блока окна карты');
+  const block = css.slice(start, css.indexOf('\n}\n', start) + 3);
+  assert.match(block, /\.editor-map-dialog-frame\{[\s\S]*?height:100%/);
+  assert.match(block, /\.editor-map-dialog-frame\{[\s\S]*?max-width:none/);
+  assert.match(block, /\.editor-map-dialog-world\{[\s\S]*?flex-wrap:wrap/);
+  assert.match(block, /\.editor-map-dialog-world-select\{[\s\S]*?font-size:16px/);
+});
+
+test('map picker layout is recalculated from header and footer boxes', () => {
+  const js = read('vendor/ddnet-map/picker.js');
+  // Отступы считаются по фактическим размерам, а не по константам 64/96px.
+  assert.match(js, /const footTop = foot \? foot\.getBoundingClientRect\(\)\.top : viewport - 12/);
+  assert.match(js, /const bottom = footTop > 24 \? footTop : viewport - 12/);
+  // Панель никогда не заходит на подвал, даже в низком окне.
+  assert.match(js, /const top = Math\.max\(8, Math\.min\(barBottom, bottom - 116\)\)/);
+  // Ширина панели на телефоне — во всю строку, подсказку она не сдвигает.
+  assert.match(js, /const dockWidth = narrow \? 0 :/);
+  // Смена ориентации и клавиатура iOS тоже пересчитывают раскладку.
+  assert.match(js, /addEventListener\('orientationchange', \(\) => layoutTools\(\)\)/);
+  assert.match(js, /visualViewport\?\.addEventListener\?\.\('resize'/);
+});
+
+// ── геометрия панели карты на реальных размерах устройств ──────────────────
+// layoutTools() — единственное место, где считается раскладка окна карты.
+// Гоняем её на размерах настоящих телефонов и на низком ландшафтном окне:
+// панель обязана оставаться между шапкой и подвалом, а не накрывать кнопки.
+test('map picker dock geometry stays between the header and the footer', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const vm = require('node:vm');
+  const source = fs.readFileSync(path.join(__dirname, '../vendor/ddnet-map/picker.js'), 'utf8');
+  // Вырезаем только layoutTools: остальной файл требует canvas и карту.
+  // Именно присваивание, а не `let layoutTools = () => {};` выше по файлу.
+  const start = source.indexOf('\n  layoutTools = () => {');
+  const end = source.indexOf('\n  };\n', start);
+  assert.ok(start > 0 && end > start, 'layoutTools не найдена');
+  const layout = source.slice(start, end);
+  // Хвост `\n  };` в срез не входит — тело функции идёт до конца среза.
+  const body = layout.slice(layout.indexOf('{') + 1);
+  const run = ({ width, height, barBottom, footTop }) => {
+    const props = {};
+    const context = vm.createContext({
+      window: { innerWidth: width, innerHeight: height },
+      document: {
+        querySelector: (selector) => (selector === '.pk-bar'
+          ? { getBoundingClientRect: () => ({ bottom: barBottom }) }
+          : selector === '.pk-foot' ? { getBoundingClientRect: () => ({ top: footTop }) } : null),
+        documentElement: { style: { setProperty: (name, value) => { props[name] = value; } } },
+      },
+      el: { dock: { getBoundingClientRect: () => ({ width: 378 }) } },
+    });
+    vm.runInContext(`(() => {${body}})()`, context);
+    return props;
+  };
+  const px = (value) => Number(String(value).replace('px', ''));
+
+  const phone = run({ width: 390, height: 844, barBottom: 132, footTop: 690 });
+  assert.equal(px(phone['--pk-dock-top']), 140, 'панель под шапкой (132 + 8)');
+  assert.ok(px(phone['--pk-dock-max']) <= 690 - 140 - 12, 'панель не заходит на подвал');
+  assert.ok(px(phone['--pk-dock-max']) >= 96, 'панель не может быть совсем плоской');
+  assert.equal(px(phone['--pk-hint-top']), 140);
+  assert.equal(phone['--pk-hint-left'], '24px', 'на телефоне подсказки нет — отступ не зависит от ширины панели');
+
+  const small = run({ width: 320, height: 568, barBottom: 146, footTop: 470 });
+  assert.ok(px(small['--pk-dock-top']) >= 8);
+  assert.ok(px(small['--pk-dock-top']) + px(small['--pk-dock-max']) <= 470 + 12, 'низкий экран: подвал свободен');
+
+  // Ландшафт: между шапкой и подвалом меньше 116px — панель поднимается,
+  // но её низ всё равно выше подвала, и высота остаётся разумной.
+  const landscape = run({ width: 844, height: 390, barBottom: 300, footTop: 264 });
+  assert.ok(px(landscape['--pk-dock-max']) >= 96, 'высота не уходит в ноль');
+  assert.ok(px(landscape['--pk-dock-top']) < 264, 'панель начинается выше подвала');
+
+  const desktop = run({ width: 1440, height: 900, barBottom: 76, footTop: 836 });
+  assert.equal(px(desktop['--pk-dock-top']), 84);
+  assert.equal(desktop['--pk-hint-left'], '402px', 'подсказка справа от панели на широком экране');
+});

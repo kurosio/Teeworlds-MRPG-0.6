@@ -343,6 +343,34 @@ if (fs.existsSync(mainMapPath)) {
   }
 }
 
+// «К спавну» открывает карту у спавна игрока (208), а не у первой брони (192).
+// Регрессия: TILE_SPAWN стоял на 192, и камера уезжала к пикапу брони.
+assert.equal(tw.TILE_SPAWN, 208, 'spawn tile must be ENTITY_OFFSET + ENTITY_SPAWN');
+assert.deepEqual([...tw.SPAWN_TILE_IDS], [208, 209, 211]);
+{
+  const index = (id) => tw.SPAWN_TILE_IDS.indexOf(id);
+  assert.equal(index(208), 0, 'player spawn is preferred');
+  assert.equal(index(209), 1, 'mob spawn is the fallback');
+  assert.equal(index(211), 2, 'prison spawn is the last fallback');
+  assert.equal(index(210), -1, '210 does not exist in mapitems.h');
+}
+const spawnMapPath = path.join(repoRoot, 'maps/main.map');
+if (fs.existsSync(spawnMapPath)) {
+  const rawSpawn = fs.readFileSync(spawnMapPath);
+  const spawnAb = vm.runInContext(`new Uint8Array(${rawSpawn.length})`, context);
+  spawnAb.set(rawSpawn);
+  const spawnMap = new tw.Map(spawnAb.buffer);
+  assert.ok(spawnMap.spawnPoint, 'main.map has player spawns, so the camera target must exist');
+  // Точка — центр клетки со спавном игрока, а не с бронёй.
+  const game = spawnMap.gameplay;
+  const sx = Math.floor(spawnMap.spawnPoint.x / 32), sy = Math.floor(spawnMap.spawnPoint.y / 32);
+  assert.equal(spawnMap.spawnPoint.x % 32, 16);
+  assert.equal(spawnMap.spawnPoint.y % 32, 16);
+  assert.equal(game.indices[sy * game.width + sx], 208,
+    'spawn navigation must point at a player spawn tile (208)');
+  assert.equal(spawnMap.spawnPoint.tile, 208);
+}
+
 const emptyQuadMapPath = path.join(repoRoot, 'maps/rhythm/GHOSTEMANE - Mercury.map');
 if (fs.existsSync(emptyQuadMapPath)) {
   const rawRhythm = fs.readFileSync(emptyQuadMapPath);
