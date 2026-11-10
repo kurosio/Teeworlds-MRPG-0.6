@@ -5,7 +5,9 @@ CREATE USER IF NOT EXISTS 'mrpg_replica'@'%' IDENTIFIED BY 'changeme';
 GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'mrpg_replica'@'%';
 
 CREATE USER IF NOT EXISTS 'mrpg_bridge'@'%' IDENTIFIED BY 'changeme';
-GRANT SELECT ON mmotee.* TO 'mrpg_bridge'@'%';
+GRANT SELECT ON mrpg_shared.* TO 'mrpg_bridge'@'%';
+-- one line per local database (every game server has its own, see README.md)
+GRANT SELECT ON mrpg_local_eu.* TO 'mrpg_bridge'@'%';
 
 FLUSH PRIVILEGES;
 

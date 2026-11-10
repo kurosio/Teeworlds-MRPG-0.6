@@ -248,7 +248,7 @@ node web-tools/editor-studio/tools/check.mjs
 
 ```bash
 cd web-tools/editor-studio
-php tools/init-db.php --host=127.0.0.1 --database=teeworlds_mrpg \
+php tools/init-db.php --host=127.0.0.1 --database=mrpg_shared \
     --db-user=root --db-password=СЕКРЕТ --demo-guest
 ```
 

@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `mmotee`
+-- Database: `mrpg_shared`
 --
 
 -- --------------------------------------------------------
@@ -495,21 +495,6 @@ INSERT INTO `tw_attributes` (`ID`, `Name`, `Price`, `Group`) VALUES
 (20, 'Gold Capacity', 1, 6),
 (21, 'Patience', 5, 5),
 (22, 'Product Capacity', 1, 5);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tw_auction_slots`
---
-
-CREATE TABLE `tw_auction_slots` (
-  `ID` int(11) NOT NULL,
-  `ItemID` int(11) NOT NULL,
-  `Value` int(11) NOT NULL,
-  `Enchant` int(11) NOT NULL DEFAULT 0,
-  `Price` int(11) NOT NULL,
-  `OwnerID` int(11) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -1172,75 +1157,11 @@ CREATE TABLE `tw_dungeons_records` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `tw_groups`
---
-
-CREATE TABLE `tw_groups` (
-  `ID` int(11) NOT NULL,
-  `OwnerUID` int(11) NOT NULL,
-  `AccountIDs` varchar(64) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tw_guilds`
---
-
-CREATE TABLE `tw_guilds` (
-  `ID` int(11) NOT NULL,
-  `Name` varchar(32) NOT NULL DEFAULT 'Member name',
-  `Members` varchar(512) DEFAULT NULL,
-  `DefaultRankID` int(11) DEFAULT NULL,
-  `LeaderUID` int(11) DEFAULT NULL,
-  `Level` int(11) NOT NULL DEFAULT 1,
-  `Exp` bigint(11) NOT NULL DEFAULT 0,
-  `Bank` longtext NOT NULL DEFAULT '0',
-  `Score` int(11) NOT NULL DEFAULT 0,
-  `LogFlag` bigint(11) NOT NULL DEFAULT 0,
-  `AvailableSlots` int(11) NOT NULL DEFAULT 2,
-  `ChairLevel` int(11) NOT NULL DEFAULT 1,
-  `DoorHealth` int(11) NOT NULL DEFAULT 1,
-  `DecorationSlots` int(11) NOT NULL DEFAULT 5
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tw_guilds_decorations`
---
-
-CREATE TABLE `tw_guilds_decorations` (
-  `ID` int(11) NOT NULL,
-  `PosX` int(11) NOT NULL,
-  `PosY` int(11) NOT NULL,
-  `HouseID` int(11) NOT NULL,
-  `ItemID` int(11) NOT NULL,
-  `WorldID` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tw_guilds_history`
---
-
-CREATE TABLE `tw_guilds_history` (
-  `ID` int(11) NOT NULL,
-  `GuildID` int(11) NOT NULL,
-  `Text` varchar(64) NOT NULL,
-  `Time` datetime NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `tw_guilds_houses`
 --
 
 CREATE TABLE `tw_guilds_houses` (
   `ID` int(11) NOT NULL,
-  `GuildID` int(11) DEFAULT NULL,
   `InitialFee` int(11) NOT NULL DEFAULT 0,
   `RentDays` int(11) NOT NULL DEFAULT 3,
   `Doors` longtext DEFAULT NULL,
@@ -1254,52 +1175,13 @@ CREATE TABLE `tw_guilds_houses` (
 -- Dumping data for table `tw_guilds_houses`
 --
 
-INSERT INTO `tw_guilds_houses` (`ID`, `GuildID`, `InitialFee`, `RentDays`, `Doors`, `Farmzones`, `Properties`, `WorldID`, `KickPos`) VALUES
-(1, 4, 10000, 3, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 17827, \"y\": 1617}\r\n    },\r\n    {\r\n        \"name\": \"Back Door\",\r\n        \"position\": {\"x\": 19769, \"y\": 2257}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 18326, \"y\": 1905}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 19228, \"y\": 2257}\r\n    }\r\n]', '[\n    {\n        \"items\": \"121,122\",\n        \"name\": \"FarmZone 2\",\n        \"position\": {\n            \"x\": 18127.0,\n            \"y\": 1905.0\n        },\n        \"radius\": 224\n    },\n    {\n        \"items\": \"224,223\",\n        \"name\": \"FarmZone 1\",\n        \"position\": {\n            \"x\": 19027.0,\n            \"y\": 2257.0\n        },\n        \"radius\": 224\n    }\n]', '{\r\n    \"position\": {\"x\": 18720, \"y\": 1568},\r\n    \"text_position\": {\"x\": 19456, \"y\": 1648},\r\n    \"radius\": 1376\r\n}', 1, '{\"x\":19853,\"y\":2257}'),
-(2, NULL, 9000, 2, '[\n    {\n        \"name\": \"Door\",\n        \"position\": {\"x\": 15686, \"y\": 3313}\n    },\n    {\n        \"name\": \"Bedroom\",\n        \"position\": {\"x\": 15246, \"y\": 2961}\n    },\n    {\n        \"name\": \"Farm zone\",\n        \"position\": {\"x\": 14888, \"y\": 3313}\n    }\n]', '[\n    {\n        \"items\": \"224\",\n        \"name\": \"FarmZone 1\",\n        \"position\": {\n            \"x\": 14708.0,\n            \"y\": 3313.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 15200, \"y\": 3008},\r\n    \"text_position\": {\"x\": 15663, \"y\": 2576},\r\n    \"radius\": 864\r\n}', 1, '{\"x\":15805,\"y\":3313}'),
-(3, NULL, 8000, 3, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 12408, \"y\": 849}\r\n    },\r\n    {\r\n        \"name\": \"Back Door\",\r\n        \"position\": {\"x\": 10660, \"y\": 945}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 11200, \"y\": 928}\r\n    }\r\n]', '[\n    {\n        \"items\": \"223\",\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 11744.0,\n            \"y\": 928.0\n        },\n        \"radius\": 256\n    }\n]', '{\r\n    \"position\": {\"x\": 11520, \"y\": 544},\r\n    \"text_position\": {\"x\": 11528, \"y\": 1040},\r\n    \"radius\": 1120\r\n}', 1, '{\"x\":10553,\"y\":945}'),
-(4, 3, 7000, 1, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 16244, \"y\": 5073}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 16832, \"y\": 6208}\r\n    }\r\n]', '[\n    {\n        \"items\": \"\",\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 16928.0,\n            \"y\": 4768.0\n        },\n        \"radius\": 128\n    }\n]', '{\r\n    \"position\": {\"x\": 16352, \"y\": 4704},\r\n    \"text_position\": {\"x\": 16016, \"y\": 5185},\r\n    \"radius\": 736\r\n}', 1, '{\"x\":16333,\"y\":5073}'),
-(5, NULL, 6000, 6, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 26242, \"y\": 2449}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 26432, \"y\": 2208}\r\n    }\r\n]', '[\n    {\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 26368,\n            \"y\": 2208\n        },\n        \"items\": \"70\",\n        \"radius\": 96\n    }\n]', '{\r\n    \"position\": {\"x\": 26592, \"y\": 2304},\r\n    \"text_position\": {\"x\": 26627, \"y\": 2642},\r\n    \"radius\": 512\r\n}', 1, '{\"x\":26147,\"y\":2449}'),
-(6, NULL, 5000, 6, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 27766, \"y\": 1873}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 27872, \"y\": 1536}\r\n    }\r\n]', '[\n    {\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 27968,\n            \"y\": 1536\n        },\n        \"items\": \"70\",\n        \"radius\": 96\n    }\n]', '{\r\n    \"position\": {\"x\": 27712, \"y\": 1536},\r\n    \"text_position\": {\"x\": 28067, \"y\": 1248},\r\n    \"radius\": 840\r\n}', 1, '{\"x\":27843,\"y\":1873}');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tw_guilds_invites`
---
-
-CREATE TABLE `tw_guilds_invites` (
-  `ID` int(11) NOT NULL,
-  `GuildID` int(11) NOT NULL,
-  `UserID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tw_guilds_ranks`
---
-
-CREATE TABLE `tw_guilds_ranks` (
-  `ID` int(11) NOT NULL,
-  `Rights` bigint(20) NOT NULL DEFAULT 0,
-  `Name` varchar(32) NOT NULL DEFAULT 'Rank name',
-  `GuildID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tw_guilds_wars`
---
-
-CREATE TABLE `tw_guilds_wars` (
-  `GuildID1` int(11) NOT NULL,
-  `GuildID2` int(11) NOT NULL,
-  `TimeUntilEnd` bigint(20) NOT NULL,
-  `Score1` int(11) NOT NULL DEFAULT 0,
-  `Score2` int(11) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+INSERT INTO `tw_guilds_houses` (`ID`, `InitialFee`, `RentDays`, `Doors`, `Farmzones`, `Properties`, `WorldID`, `KickPos`) VALUES
+(1, 10000, 3, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 17827, \"y\": 1617}\r\n    },\r\n    {\r\n        \"name\": \"Back Door\",\r\n        \"position\": {\"x\": 19769, \"y\": 2257}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 18326, \"y\": 1905}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 19228, \"y\": 2257}\r\n    }\r\n]', '[\n    {\n        \"items\": \"121,122\",\n        \"name\": \"FarmZone 2\",\n        \"position\": {\n            \"x\": 18127.0,\n            \"y\": 1905.0\n        },\n        \"radius\": 224\n    },\n    {\n        \"items\": \"224,223\",\n        \"name\": \"FarmZone 1\",\n        \"position\": {\n            \"x\": 19027.0,\n            \"y\": 2257.0\n        },\n        \"radius\": 224\n    }\n]', '{\r\n    \"position\": {\"x\": 18720, \"y\": 1568},\r\n    \"text_position\": {\"x\": 19456, \"y\": 1648},\r\n    \"radius\": 1376\r\n}', 1, '{\"x\":19853,\"y\":2257}'),
+(2, 9000, 2, '[\n    {\n        \"name\": \"Door\",\n        \"position\": {\"x\": 15686, \"y\": 3313}\n    },\n    {\n        \"name\": \"Bedroom\",\n        \"position\": {\"x\": 15246, \"y\": 2961}\n    },\n    {\n        \"name\": \"Farm zone\",\n        \"position\": {\"x\": 14888, \"y\": 3313}\n    }\n]', '[\n    {\n        \"items\": \"224\",\n        \"name\": \"FarmZone 1\",\n        \"position\": {\n            \"x\": 14708.0,\n            \"y\": 3313.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 15200, \"y\": 3008},\r\n    \"text_position\": {\"x\": 15663, \"y\": 2576},\r\n    \"radius\": 864\r\n}', 1, '{\"x\":15805,\"y\":3313}'),
+(3, 8000, 3, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 12408, \"y\": 849}\r\n    },\r\n    {\r\n        \"name\": \"Back Door\",\r\n        \"position\": {\"x\": 10660, \"y\": 945}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 11200, \"y\": 928}\r\n    }\r\n]', '[\n    {\n        \"items\": \"223\",\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 11744.0,\n            \"y\": 928.0\n        },\n        \"radius\": 256\n    }\n]', '{\r\n    \"position\": {\"x\": 11520, \"y\": 544},\r\n    \"text_position\": {\"x\": 11528, \"y\": 1040},\r\n    \"radius\": 1120\r\n}', 1, '{\"x\":10553,\"y\":945}'),
+(4, 7000, 1, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 16244, \"y\": 5073}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 16832, \"y\": 6208}\r\n    }\r\n]', '[\n    {\n        \"items\": \"\",\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 16928.0,\n            \"y\": 4768.0\n        },\n        \"radius\": 128\n    }\n]', '{\r\n    \"position\": {\"x\": 16352, \"y\": 4704},\r\n    \"text_position\": {\"x\": 16016, \"y\": 5185},\r\n    \"radius\": 736\r\n}', 1, '{\"x\":16333,\"y\":5073}'),
+(5, 6000, 6, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 26242, \"y\": 2449}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 26432, \"y\": 2208}\r\n    }\r\n]', '[\n    {\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 26368,\n            \"y\": 2208\n        },\n        \"items\": \"70\",\n        \"radius\": 96\n    }\n]', '{\r\n    \"position\": {\"x\": 26592, \"y\": 2304},\r\n    \"text_position\": {\"x\": 26627, \"y\": 2642},\r\n    \"radius\": 512\r\n}', 1, '{\"x\":26147,\"y\":2449}'),
+(6, 5000, 6, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 27766, \"y\": 1873}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 27872, \"y\": 1536}\r\n    }\r\n]', '[\n    {\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 27968,\n            \"y\": 1536\n        },\n        \"items\": \"70\",\n        \"radius\": 96\n    }\n]', '{\r\n    \"position\": {\"x\": 27712, \"y\": 1536},\r\n    \"text_position\": {\"x\": 28067, \"y\": 1248},\r\n    \"radius\": 840\r\n}', 1, '{\"x\":27843,\"y\":1873}');
 
 -- --------------------------------------------------------
 
@@ -1309,7 +1191,6 @@ CREATE TABLE `tw_guilds_wars` (
 
 CREATE TABLE `tw_houses` (
   `ID` int(11) NOT NULL,
-  `UserID` int(11) DEFAULT NULL,
   `InitialFee` int(11) NOT NULL,
   `RentDays` int(11) NOT NULL DEFAULT 3,
   `Class` varchar(32) NOT NULL DEFAULT 'Class name',
@@ -1324,43 +1205,28 @@ CREATE TABLE `tw_houses` (
 -- Dumping data for table `tw_houses`
 --
 
-INSERT INTO `tw_houses` (`ID`, `UserID`, `InitialFee`, `RentDays`, `Class`, `Bank`, `Doors`, `Farmzones`, `Properties`, `WorldID`) VALUES
-(1, NULL, 10000, 3, 'House 1', '0', '[\n    {\n        \"name\": \"Main door\",\n        \"position\": {\"x\": 17736, \"y\": 5329}\n    }\n]', NULL, '{\r\n    \"position\": {\"x\": 17933, \"y\": 5265},\r\n    \"text_position\": {\"x\": 17936, \"y\": 5182}\r\n}', 1),
-(2, NULL, 15000, 0, 'House 2', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 18538, \"y\": 5105}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 18734, \"y\": 5073},\r\n    \"text_position\": {\"x\": 18734, \"y\": 4947}\r\n}', 1),
-(3, NULL, 15000, 0, 'House 3', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 19021, \"y\": 5617}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 19214, \"y\": 5585},\r\n    \"text_position\": {\"x\": 19214, \"y\": 5458}\r\n}', 1),
-(4, NULL, 10000, 3, 'House 4', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 18216, \"y\": 16065}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 18414, \"y\": 6033},\r\n    \"text_position\": {\"x\": 18414, \"y\": 5902}\r\n}', 1),
-(5, 373, 7000, 0, 'House 5', '3000', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 17815, \"y\": 5841}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 17617, \"y\": 5809},\r\n    \"text_position\": {\"x\": 17617, \"y\": 5684}\r\n}', 1),
-(6, NULL, 7000, 0, 'House 6', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 17015, \"y\": 6161}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 16817, \"y\": 6129},\r\n    \"text_position\": {\"x\": 16817, \"y\": 6000}\r\n}', 1),
-(7, NULL, 5000, 0, 'House 7', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 16239, \"y\": 5649}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 16049, \"y\": 5617},\r\n    \"text_position\": {\"x\": 16049, \"y\": 5488}\r\n}', 1),
-(8, 244, 5000, 4, 'House 8', '88900', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 16617, \"y\": 5297}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 16846, \"y\": 5265},\r\n    \"text_position\": {\"x\": 16846, \"y\": 5140}\r\n}', 1),
-(9, NULL, 30000, 0, 'Left apartments 1', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13201, \"y\": 913}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14322, \"y\": 913}\r\n    }\r\n]', '[\n    {\n        \"items\": \"223\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 945.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 945},\r\n    \"text_position\": {\"x\": 13759, \"y\": 881}\r\n}', 1),
-(10, NULL, 25000, 1, 'Left apartments 2', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13202, \"y\": 753}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14322, \"y\": 753}\r\n    }\r\n]', '[\n    {\n        \"items\": \"71\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 785.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 785},\r\n    \"text_position\": {\"x\": 13759, \"y\": 721}\r\n}', 1),
-(11, NULL, 20000, 0, 'Left apartments 3', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13202, \"y\": 593}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14325, \"y\": 593}\r\n    }\r\n]', '[\n    {\n        \"items\": \"224\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 625.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 625},\r\n    \"text_position\": {\"x\": 13759, \"y\": 561}\r\n}', 1),
-(12, NULL, 15000, 0, 'Left apartments 4', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13225, \"y\": 433}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14302, \"y\": 433}\r\n    }\r\n]', '[\n    {\n        \"items\": \"61\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 465.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 465},\r\n    \"text_position\": {\"x\": 13759, \"y\": 401}\r\n}', 1),
-(13, NULL, 10000, 0, 'Left apartments 5', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13236, \"y\": 273}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14292, \"y\": 273}\r\n    }\r\n]', '[\n    {\n        \"items\": \"225\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 305.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13201, \"y\": 305},\r\n    \"text_position\": {\"x\": 13759, \"y\": 229}\r\n}', 1),
-(19, NULL, 15000, 0, '(R/L) Apartments 1', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 23439, \"y\": 1745}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"58\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 23559,\r\n            \"y\": 1553\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 23404, \"y\": 1745},\r\n    \"text_position\": {\"x\": 23729, \"y\": 1486}\r\n}', 1),
-(20, NULL, 15000, 0, '(R/L) Apartments 2', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 23439, \"y\": 1329}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"58\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 23559,\r\n            \"y\": 1137\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 23404, \"y\": 1329},\r\n    \"text_position\": {\"x\": 23729, \"y\": 1070}\r\n}', 1),
-(21, NULL, 15000, 0, '(R/L) Apartments 3', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 23439, \"y\": 913}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"58\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 23559,\r\n            \"y\": 721\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 23404, \"y\": 913},\r\n    \"text_position\": {\"x\": 23729, \"y\": 654}\r\n}', 1),
-(22, NULL, 15000, 0, '(R/L) Apartments 4', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 23439, \"y\": 497}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"58\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 23559,\r\n            \"y\": 305\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 23404, \"y\": 497},\r\n    \"text_position\": {\"x\": 23729, \"y\": 238}\r\n}', 1),
-(23, NULL, 15000, 0, '(R/R) Apartments 1', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 24748, \"y\": 1745}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"225\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 24646,\r\n            \"y\": 1553\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 24795, \"y\": 1745},\r\n    \"text_position\": {\"x\": 24462, \"y\": 1486}\r\n}', 1),
-(24, NULL, 15000, 3, '(R/R) Apartments 2', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 24748, \"y\": 1329}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"225\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 24646,\r\n            \"y\": 1137\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 24795, \"y\": 1329},\r\n    \"text_position\": {\"x\": 24462, \"y\": 1070}\r\n}', 1),
-(25, NULL, 15000, 3, '(R/R) Apartments 3', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 24748, \"y\": 913}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"225\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 24646,\r\n            \"y\": 721\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 24795, \"y\": 913},\r\n    \"text_position\": {\"x\": 24462, \"y\": 654}\r\n}', 1),
-(26, NULL, 15000, 3, '(R/R) Apartments 4', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 24752, \"y\": 497}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"225\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 24646,\r\n            \"y\": 305\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 24795, \"y\": 497},\r\n    \"text_position\": {\"x\": 24462, \"y\": 238}\r\n}', 1);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tw_houses_decorations`
---
-
-CREATE TABLE `tw_houses_decorations` (
-  `ID` int(11) NOT NULL,
-  `PosX` int(11) NOT NULL,
-  `PosY` int(11) NOT NULL,
-  `HouseID` int(11) NOT NULL,
-  `ItemID` int(11) NOT NULL,
-  `WorldID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+INSERT INTO `tw_houses` (`ID`, `InitialFee`, `RentDays`, `Class`, `Bank`, `Doors`, `Farmzones`, `Properties`, `WorldID`) VALUES
+(1, 10000, 3, 'House 1', '0', '[\n    {\n        \"name\": \"Main door\",\n        \"position\": {\"x\": 17736, \"y\": 5329}\n    }\n]', NULL, '{\r\n    \"position\": {\"x\": 17933, \"y\": 5265},\r\n    \"text_position\": {\"x\": 17936, \"y\": 5182}\r\n}', 1),
+(2, 15000, 0, 'House 2', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 18538, \"y\": 5105}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 18734, \"y\": 5073},\r\n    \"text_position\": {\"x\": 18734, \"y\": 4947}\r\n}', 1),
+(3, 15000, 0, 'House 3', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 19021, \"y\": 5617}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 19214, \"y\": 5585},\r\n    \"text_position\": {\"x\": 19214, \"y\": 5458}\r\n}', 1),
+(4, 10000, 3, 'House 4', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 18216, \"y\": 16065}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 18414, \"y\": 6033},\r\n    \"text_position\": {\"x\": 18414, \"y\": 5902}\r\n}', 1),
+(5, 7000, 0, 'House 5', '3000', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 17815, \"y\": 5841}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 17617, \"y\": 5809},\r\n    \"text_position\": {\"x\": 17617, \"y\": 5684}\r\n}', 1),
+(6, 7000, 0, 'House 6', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 17015, \"y\": 6161}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 16817, \"y\": 6129},\r\n    \"text_position\": {\"x\": 16817, \"y\": 6000}\r\n}', 1),
+(7, 5000, 0, 'House 7', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 16239, \"y\": 5649}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 16049, \"y\": 5617},\r\n    \"text_position\": {\"x\": 16049, \"y\": 5488}\r\n}', 1),
+(8, 5000, 4, 'House 8', '88900', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 16617, \"y\": 5297}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 16846, \"y\": 5265},\r\n    \"text_position\": {\"x\": 16846, \"y\": 5140}\r\n}', 1),
+(9, 30000, 0, 'Left apartments 1', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13201, \"y\": 913}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14322, \"y\": 913}\r\n    }\r\n]', '[\n    {\n        \"items\": \"223\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 945.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 945},\r\n    \"text_position\": {\"x\": 13759, \"y\": 881}\r\n}', 1),
+(10, 25000, 1, 'Left apartments 2', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13202, \"y\": 753}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14322, \"y\": 753}\r\n    }\r\n]', '[\n    {\n        \"items\": \"71\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 785.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 785},\r\n    \"text_position\": {\"x\": 13759, \"y\": 721}\r\n}', 1),
+(11, 20000, 0, 'Left apartments 3', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13202, \"y\": 593}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14325, \"y\": 593}\r\n    }\r\n]', '[\n    {\n        \"items\": \"224\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 625.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 625},\r\n    \"text_position\": {\"x\": 13759, \"y\": 561}\r\n}', 1),
+(12, 15000, 0, 'Left apartments 4', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13225, \"y\": 433}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14302, \"y\": 433}\r\n    }\r\n]', '[\n    {\n        \"items\": \"61\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 465.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 465},\r\n    \"text_position\": {\"x\": 13759, \"y\": 401}\r\n}', 1),
+(13, 10000, 0, 'Left apartments 5', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13236, \"y\": 273}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14292, \"y\": 273}\r\n    }\r\n]', '[\n    {\n        \"items\": \"225\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 305.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13201, \"y\": 305},\r\n    \"text_position\": {\"x\": 13759, \"y\": 229}\r\n}', 1),
+(19, 15000, 0, '(R/L) Apartments 1', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 23439, \"y\": 1745}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"58\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 23559,\r\n            \"y\": 1553\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 23404, \"y\": 1745},\r\n    \"text_position\": {\"x\": 23729, \"y\": 1486}\r\n}', 1),
+(20, 15000, 0, '(R/L) Apartments 2', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 23439, \"y\": 1329}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"58\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 23559,\r\n            \"y\": 1137\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 23404, \"y\": 1329},\r\n    \"text_position\": {\"x\": 23729, \"y\": 1070}\r\n}', 1),
+(21, 15000, 0, '(R/L) Apartments 3', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 23439, \"y\": 913}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"58\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 23559,\r\n            \"y\": 721\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 23404, \"y\": 913},\r\n    \"text_position\": {\"x\": 23729, \"y\": 654}\r\n}', 1),
+(22, 15000, 0, '(R/L) Apartments 4', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 23439, \"y\": 497}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"58\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 23559,\r\n            \"y\": 305\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 23404, \"y\": 497},\r\n    \"text_position\": {\"x\": 23729, \"y\": 238}\r\n}', 1),
+(23, 15000, 0, '(R/R) Apartments 1', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 24748, \"y\": 1745}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"225\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 24646,\r\n            \"y\": 1553\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 24795, \"y\": 1745},\r\n    \"text_position\": {\"x\": 24462, \"y\": 1486}\r\n}', 1),
+(24, 15000, 3, '(R/R) Apartments 2', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 24748, \"y\": 1329}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"225\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 24646,\r\n            \"y\": 1137\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 24795, \"y\": 1329},\r\n    \"text_position\": {\"x\": 24462, \"y\": 1070}\r\n}', 1),
+(25, 15000, 3, '(R/R) Apartments 3', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 24748, \"y\": 913}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"225\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 24646,\r\n            \"y\": 721\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 24795, \"y\": 913},\r\n    \"text_position\": {\"x\": 24462, \"y\": 654}\r\n}', 1),
+(26, 15000, 3, '(R/R) Apartments 4', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 24752, \"y\": 497}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"225\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 24646,\r\n            \"y\": 305\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 24795, \"y\": 497},\r\n    \"text_position\": {\"x\": 24462, \"y\": 238}\r\n}', 1);
 
 -- --------------------------------------------------------
 
@@ -2352,16 +2218,6 @@ ALTER TABLE `tw_attributes`
   ADD PRIMARY KEY (`ID`);
 
 --
--- Indexes for table `tw_auction_slots`
---
-ALTER TABLE `tw_auction_slots`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `ItemID` (`ItemID`),
-  ADD KEY `OwnerID` (`OwnerID`),
-  ADD KEY `Price` (`Price`);
-
---
 -- Indexes for table `tw_bots_info`
 --
 ALTER TABLE `tw_bots_info`
@@ -2442,71 +2298,12 @@ ALTER TABLE `tw_dungeons_records`
   ADD KEY `Seconds` (`Time`);
 
 --
--- Indexes for table `tw_groups`
---
-ALTER TABLE `tw_groups`
-  ADD PRIMARY KEY (`ID`),
-  ADD KEY `tw_groups_ibfk_1` (`OwnerUID`);
-
---
--- Indexes for table `tw_guilds`
---
-ALTER TABLE `tw_guilds`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `OwnerID` (`LeaderUID`),
-  ADD KEY `Bank` (`Bank`(768)),
-  ADD KEY `Level` (`Level`),
-  ADD KEY `Experience` (`Exp`);
-
---
--- Indexes for table `tw_guilds_decorations`
---
-ALTER TABLE `tw_guilds_decorations`
-  ADD PRIMARY KEY (`ID`),
-  ADD KEY `tw_guilds_decorations_ibfk_2` (`ItemID`),
-  ADD KEY `tw_guilds_decorations_ibfk_3` (`WorldID`),
-  ADD KEY `HouseID` (`HouseID`);
-
---
--- Indexes for table `tw_guilds_history`
---
-ALTER TABLE `tw_guilds_history`
-  ADD PRIMARY KEY (`ID`),
-  ADD KEY `MemberID` (`GuildID`);
-
---
 -- Indexes for table `tw_guilds_houses`
 --
 ALTER TABLE `tw_guilds_houses`
   ADD PRIMARY KEY (`ID`),
   ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `OwnerMID` (`GuildID`),
   ADD KEY `WorldID` (`WorldID`);
-
---
--- Indexes for table `tw_guilds_invites`
---
-ALTER TABLE `tw_guilds_invites`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `OwnerID` (`UserID`),
-  ADD KEY `MemberID` (`GuildID`);
-
---
--- Indexes for table `tw_guilds_ranks`
---
-ALTER TABLE `tw_guilds_ranks`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `MemberID` (`GuildID`);
-
---
--- Indexes for table `tw_guilds_wars`
---
-ALTER TABLE `tw_guilds_wars`
-  ADD PRIMARY KEY (`GuildID1`,`GuildID2`),
-  ADD KEY `GuildID2` (`GuildID2`);
 
 --
 -- Indexes for table `tw_houses`
@@ -2514,18 +2311,7 @@ ALTER TABLE `tw_guilds_wars`
 ALTER TABLE `tw_houses`
   ADD PRIMARY KEY (`ID`),
   ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `OwnerID` (`UserID`),
   ADD KEY `WorldID` (`WorldID`);
-
---
--- Indexes for table `tw_houses_decorations`
---
-ALTER TABLE `tw_houses_decorations`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `WorldID` (`WorldID`),
-  ADD KEY `HouseID` (`HouseID`),
-  ADD KEY `DecoID` (`ItemID`);
 
 --
 -- Indexes for table `tw_items_list`
@@ -2701,12 +2487,6 @@ ALTER TABLE `tw_aethers`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
--- AUTO_INCREMENT for table `tw_auction_slots`
---
-ALTER TABLE `tw_auction_slots`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `tw_bots_info`
 --
 ALTER TABLE `tw_bots_info`
@@ -2755,58 +2535,16 @@ ALTER TABLE `tw_dungeons_records`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `tw_groups`
---
-ALTER TABLE `tw_groups`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `tw_guilds`
---
-ALTER TABLE `tw_guilds`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `tw_guilds_decorations`
---
-ALTER TABLE `tw_guilds_decorations`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `tw_guilds_history`
---
-ALTER TABLE `tw_guilds_history`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `tw_guilds_houses`
 --
 ALTER TABLE `tw_guilds_houses`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
--- AUTO_INCREMENT for table `tw_guilds_invites`
---
-ALTER TABLE `tw_guilds_invites`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `tw_guilds_ranks`
---
-ALTER TABLE `tw_guilds_ranks`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `tw_houses`
 --
 ALTER TABLE `tw_houses`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
-
---
--- AUTO_INCREMENT for table `tw_houses_decorations`
---
-ALTER TABLE `tw_houses_decorations`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_items_list`
@@ -2945,13 +2683,6 @@ ALTER TABLE `tw_aethers`
   ADD CONSTRAINT `tw_aethers_ibfk_1` FOREIGN KEY (`WorldID`) REFERENCES `tw_worlds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `tw_auction_slots`
---
-ALTER TABLE `tw_auction_slots`
-  ADD CONSTRAINT `tw_auction_slots_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `tw_auction_slots_ibfk_2` FOREIGN KEY (`OwnerID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
 -- Constraints for table `tw_bots_info`
 --
 ALTER TABLE `tw_bots_info`
@@ -3012,38 +2743,10 @@ ALTER TABLE `tw_dungeons_records`
   ADD CONSTRAINT `tw_dungeons_records_ibfk_2` FOREIGN KEY (`DungeonID`) REFERENCES `tw_dungeons` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `tw_groups`
---
-ALTER TABLE `tw_groups`
-  ADD CONSTRAINT `tw_groups_ibfk_1` FOREIGN KEY (`OwnerUID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE NO ACTION ON UPDATE NO ACTION;
-
---
--- Constraints for table `tw_guilds_decorations`
---
-ALTER TABLE `tw_guilds_decorations`
-  ADD CONSTRAINT `tw_guilds_decorations_ibfk_2` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `tw_guilds_decorations_ibfk_4` FOREIGN KEY (`HouseID`) REFERENCES `tw_guilds_houses` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `tw_guilds_decorations_ibfk_5` FOREIGN KEY (`WorldID`) REFERENCES `tw_worlds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
 -- Constraints for table `tw_guilds_houses`
 --
 ALTER TABLE `tw_guilds_houses`
   ADD CONSTRAINT `tw_guilds_houses_ibfk_1` FOREIGN KEY (`WorldID`) REFERENCES `tw_worlds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `tw_guilds_invites`
---
-ALTER TABLE `tw_guilds_invites`
-  ADD CONSTRAINT `tw_guilds_invites_ibfk_1` FOREIGN KEY (`GuildID`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `tw_guilds_invites_ibfk_2` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `tw_guilds_wars`
---
-ALTER TABLE `tw_guilds_wars`
-  ADD CONSTRAINT `tw_guilds_wars_ibfk_1` FOREIGN KEY (`GuildID1`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `tw_guilds_wars_ibfk_2` FOREIGN KEY (`GuildID2`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `tw_houses`

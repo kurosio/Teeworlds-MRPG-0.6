@@ -17,6 +17,7 @@ class CGuildManager : public MmoComponent
 	};
 
 	void OnPreInit() override;
+	void OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID) override;
 	void OnInitWorld(const std::string& SqlQueryWhereWorld) override;
 	void OnTick() override;
 	void OnCharacterTile(CCharacter* pChr) override;

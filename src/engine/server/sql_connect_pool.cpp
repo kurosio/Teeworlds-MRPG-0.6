@@ -1,6 +1,7 @@
 #include <base/system.h>
 #include "sql_connect_pool.h"
 #include "sql_lost_query_logger.h"
+#include "sql_table_routing.h"
 
 // #####################################################
 // THREAD POOL IMPLEMENTATION
@@ -85,14 +86,34 @@ namespace
 		}
 	}
 
-	std::unique_ptr<Connection>& GetSyncConnection()
+	// synchronous queries reuse one connection per calling thread and database.
+	std::unique_ptr<Connection>& GetSyncConnection(bool Local)
 	{
-		thread_local std::unique_ptr<Connection> s_pSyncConnection;
-		if(!s_pSyncConnection || s_pSyncConnection->isClosed())
+		thread_local std::unique_ptr<Connection> s_apSyncConnections[2];
+		std::unique_ptr<Connection>& pSyncConnection = s_apSyncConnections[Local ? 1 : 0];
+		if(!pSyncConnection || pSyncConnection->isClosed())
 		{
-			s_pSyncConnection = CConectionPool::CreateConnection();
+			pSyncConnection = CConectionPool::CreateConnection(Local);
 		}
-		return s_pSyncConnection;
+		return pSyncConnection;
+	}
+
+	// reads the lower case names of all tables of the database the connection is opened to.
+	bool ListTables(Connection* pConnection, std::vector<std::string>& vTables)
+	{
+		try
+		{
+			std::unique_ptr<Statement> pStmt(pConnection->createStatement());
+			std::unique_ptr<ResultSet> pResult(pStmt->executeQuery("SHOW TABLES;"));
+			while(pResult->next())
+				vTables.emplace_back(sqlroute::ToLowerName(pResult->getString(1).c_str()));
+			return true;
+		}
+		catch(SQLException& e)
+		{
+			dbg_msg("SQL Error", "Failed to read the list of tables: %s", e.what());
+			return false;
+		}
 	}
 
 	template<typename TCallback>
@@ -236,7 +257,7 @@ namespace
 	}
 }
 
-CThreadPool::CThreadPool(size_t numThreads) : m_bStop(false)
+CThreadPool::CThreadPool(size_t numThreads, bool Local) : m_bStop(false), m_Local(Local)
 {
 	for(size_t i = 0; i < numThreads; ++i)
 	{
@@ -246,13 +267,18 @@ CThreadPool::CThreadPool(size_t numThreads) : m_bStop(false)
 
 CThreadPool::~CThreadPool()
 {
+	Stop();
+}
+
+void CThreadPool::Stop()
+{
 	// Set the stop flag to signal threads to exit their loops.
 	m_bStop.store(true);
 
 	// Notify all waiting threads to wake them up.
 	m_cvCondition.notify_all();
 
-	// Join all threads to ensure they finish cleanly before the destructor exits.
+	// Join all threads to ensure they finish cleanly. A second call finds nothing to join.
 	for(std::thread& worker : m_vWorkers)
 	{
 		if(worker.joinable())
@@ -331,7 +357,7 @@ void CThreadPool::WorkerThread()
 {
 	// Each worker thread has its own, persistent connection.
 	// It is created once when the thread starts.
-	std::unique_ptr<Connection> pConnection = CConectionPool::CreateConnection();
+	std::unique_ptr<Connection> pConnection = CConectionPool::CreateConnection(m_Local);
 
 	// The main loop for the worker thread.
 	while(true)
@@ -372,7 +398,7 @@ void CThreadPool::WorkerThread()
 				// Check if the connection is dead. If so, try to reconnect.
 				if(!pConnection || pConnection->isClosed())
 				{
-					pConnection = CConectionPool::CreateConnection();
+					pConnection = CConectionPool::CreateConnection(m_Local);
 				}
 
 				if(pConnection)
@@ -440,8 +466,25 @@ CConectionPool::CConectionPool()
 	try
 	{
 		m_pDriver = mariadb::get_driver_instance();
-		const auto thread_count = std::max(2, g_Config.m_SvMySqlPoolSize);
-		m_pThreadPool = std::make_unique<CThreadPool>(thread_count);
+
+		// the same name twice (or no local name) means one database with all tables
+		if(str_comp(g_Config.m_SvMySqlDatabaseLocal, g_Config.m_SvMySqlDatabaseShared) != 0)
+			m_LocalDatabase = g_Config.m_SvMySqlDatabaseLocal;
+
+		const int ThreadCount = std::max(2, g_Config.m_SvMySqlPoolSize);
+		if(m_LocalDatabase.empty())
+		{
+			m_SharedThreads = ThreadCount;
+		}
+		else
+		{
+			// The pool is divided between the two databases. The shared one has most
+			// of the tables and is used more often, so it gets the larger part.
+			m_LocalThreads = std::max(1, ThreadCount / 3);
+			m_SharedThreads = std::max(1, ThreadCount - m_LocalThreads);
+			m_pLocalThreadPool = std::make_unique<CThreadPool>(m_LocalThreads, true);
+		}
+		m_pThreadPool = std::make_unique<CThreadPool>(m_SharedThreads);
 	}
 	catch(const SQLException& e)
 	{
@@ -452,15 +495,24 @@ CConectionPool::CConectionPool()
 
 CConectionPool::~CConectionPool()
 {
-	// The unique_ptr will automatically call the CThreadPool destructor,
-	// which will cleanly stop and join all worker threads.
+	// A callback that runs while one pool finishes its queue may still add a query
+	// for the other pool, so both are stopped before any of them is destroyed.
+	if(m_pThreadPool)
+		m_pThreadPool->Stop();
+	if(m_pLocalThreadPool)
+		m_pLocalThreadPool->Stop();
 }
 
-std::unique_ptr<Connection> CConectionPool::CreateConnection()
+std::unique_ptr<Connection> CConectionPool::CreateConnection(bool Local)
 {
-	static std::atomic<int64_t> s_LastConnectFailure{0};
+	// both databases use the same server and account, only the name differs
+	const char* pDatabaseName = Local ? g_Config.m_SvMySqlDatabaseLocal : g_Config.m_SvMySqlDatabaseShared;
+
+	// one entry per database: a wrong name of one of them does not delay the connections to the other one
+	static std::atomic<int64_t> s_aLastConnectFailure[2];
+	std::atomic<int64_t>& LastConnectFailure = s_aLastConnectFailure[Local ? 1 : 0];
 	const int64_t now = time_get();
-	const int64_t lastFailure = s_LastConnectFailure.load();
+	const int64_t lastFailure = LastConnectFailure.load();
 	if(lastFailure > 0 && DurationMs(lastFailure, now) < g_Config.m_SvSqlConnectRetryDelayMs)
 		return nullptr;
 
@@ -477,7 +529,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 		connection_properties["hostName"] = Hostname;
 		connection_properties["user"] = g_Config.m_SvMySqlLogin;
 		connection_properties["password"] = g_Config.m_SvMySqlPassword;
-		connection_properties["schema"] = g_Config.m_SvMySqlDatabase;
+		connection_properties["schema"] = pDatabaseName;
 
 		// connection_properties["OPT_CHARSET_NAME"] = "utf8mb4"; // didn't find this one https://mariadb.com/docs/connectors/mariadb-connector-cpp/connect-with-mariadb-connectorcpp#optional-connection-parameters
 		connection_properties["autoReconnect"] = "true";
@@ -490,15 +542,117 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 
 		auto pConnection = std::unique_ptr<Connection>(pDriver->connect(connection_properties));
 
-		s_LastConnectFailure.store(0);
+		LastConnectFailure.store(0);
 		return pConnection;
 	}
 	catch(const SQLException& e)
 	{
-		s_LastConnectFailure.store(now);
-		dbg_msg("Sql Exception", "Failed to create new SQL connection: %s", e.what());
+		LastConnectFailure.store(now);
+		dbg_msg("Sql Exception", "Failed to create new SQL connection to the database '%s': %s", pDatabaseName, e.what());
 		return nullptr;
 	}
+}
+
+bool CConectionPool::IsLocalTable(std::string_view Table) const
+{
+	return !m_LocalDatabase.empty() && m_SharedTablesLoaded.load() && !sqlroute::HasName(m_vSharedTables, Table);
+}
+
+bool CConectionPool::IsLocalQuery(const std::string& Query) const
+{
+	// one database, or the structure of the shared one is not read yet (InitDatabases)
+	if(m_LocalDatabase.empty() || !m_SharedTablesLoaded.load())
+		return false;
+
+	// the shared database does not have the table of the query: it is a table of the local database
+	return !sqlroute::UsesTableOf(Query, m_vSharedTables);
+}
+
+CThreadPool* CConectionPool::GetThreadPool(bool Local) const
+{
+	return Local ? m_pLocalThreadPool.get() : m_pThreadPool.get();
+}
+
+bool CConectionPool::InitDatabases()
+{
+	const bool TwoDatabases = !m_LocalDatabase.empty();
+	const char* pShared = g_Config.m_SvMySqlDatabaseShared;
+
+	// structure of the shared database: its tables choose the database of every query
+	std::vector<std::string> vSharedTables;
+	auto& pSharedConnection = GetSyncConnection(false);
+	if(!pSharedConnection || !ListTables(pSharedConnection.get(), vSharedTables))
+	{
+		dbg_msg("SQL Error", "The shared database '%s' is unavailable (%s:%d): check sv_sql_host, sv_sql_port, sv_sql_login, sv_sql_password and sv_sql_database_shared.",
+			pShared, g_Config.m_SvMySqlHost, g_Config.m_SvMySqlPort);
+		return false;
+	}
+
+	if(!m_SharedTablesLoaded.load())
+	{
+		m_vSharedTables = vSharedTables;
+		m_SharedTablesLoaded.store(true);
+	}
+
+	// the local database holds the tables that the shared one does not have
+	std::vector<std::string> vLocalTables;
+	if(TwoDatabases)
+	{
+		auto& pLocalConnection = GetSyncConnection(true);
+		if(!pLocalConnection || !ListTables(pLocalConnection.get(), vLocalTables))
+		{
+			dbg_msg("SQL Error", "The local database '%s' is unavailable: check sv_sql_database_local and the privileges of '%s'.", m_LocalDatabase.c_str(), g_Config.m_SvMySqlLogin);
+			return false;
+		}
+	}
+
+	// A table in both databases: the queries would use the one of the shared
+	// database and the rows of the local one would be ignored.
+	std::string Both;
+	for(const std::string& Name : vLocalTables)
+	{
+		if(sqlroute::HasName(vSharedTables, Name))
+			Both.append(Both.empty() ? "" : ", ").append(Name);
+	}
+
+	if(!Both.empty())
+	{
+		dbg_msg("SQL Error", "Tables found in both databases '%s' and '%s': %s. Keep every table in one database only.", pShared, m_LocalDatabase.c_str(), Both.c_str());
+		return false;
+	}
+
+	// Without these tables the server would start with no guilds and no house
+	// owners, so it must not start at all.
+	std::string Missing;
+	for(const auto& Table : sqlroute::LOCAL_DUMP_TABLES)
+	{
+		if(!sqlroute::HasName(vSharedTables, Table) && !sqlroute::HasName(vLocalTables, Table))
+			Missing.append(Missing.empty() ? "" : ", ").append(Table);
+	}
+
+	if(!Missing.empty())
+	{
+		if(TwoDatabases)
+		{
+			dbg_msg("SQL Error", "Tables found neither in the shared database '%s' nor in the local database '%s': %s. Import mrpg_local.sql into the local database.", pShared, m_LocalDatabase.c_str(), Missing.c_str());
+		}
+		else
+		{
+			dbg_msg("SQL Error", "The database '%s' has no tables: %s. Import mrpg_local.sql into it, or set sv_sql_database_local if they are stored in another database.", pShared, Missing.c_str());
+		}
+		return false;
+	}
+
+	if(!TwoDatabases)
+	{
+		dbg_msg("SQL", "One database '%s' (%s:%d): %d connections.", pShared, g_Config.m_SvMySqlHost, g_Config.m_SvMySqlPort, m_SharedThreads);
+		return true;
+	}
+
+	dbg_msg("SQL", "Shared database '%s', local database '%s' (%s:%d).", pShared, m_LocalDatabase.c_str(), g_Config.m_SvMySqlHost, g_Config.m_SvMySqlPort);
+	dbg_msg("SQL", "The pool is divided: %d connections to the shared database (%d tables), %d to the local one (%d tables).",
+		m_SharedThreads, static_cast<int>(vSharedTables.size()), m_LocalThreads, static_cast<int>(vLocalTables.size()));
+	return true;
 }
 
 // #####################################################
@@ -508,8 +662,10 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 // --- SYNCHRONOUS SELECT ---
 [[nodiscard]] ResultPtr CConectionPool::CResultSelect::Execute() const
 {
-	// Synchronous queries run on the calling thread and reuse a thread-local connection.
-	auto& pConnection = GetSyncConnection();
+	// Synchronous queries run on the calling thread and reuse a thread-local
+	// connection to the database of the query.
+	const bool Local = Database->IsLocalQuery(m_Query);
+	auto& pConnection = GetSyncConnection(Local);
 	if(!pConnection)
 	{
 		dbg_msg("SQL Error", "Sync Execute failed to create a connection.");
@@ -549,7 +705,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 			for(int attempt = 0; attempt < g_Config.m_SvSqlSelectMaxRetries; ++attempt)
 			{
 				std::this_thread::sleep_for(std::chrono::milliseconds(g_Config.m_SvSqlRetryBaseDelayMs * (attempt + 1)));
-				auto& retryConnection = GetSyncConnection();
+				auto& retryConnection = GetSyncConnection(Local);
 				if(!retryConnection)
 					continue;
 
@@ -576,7 +732,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 {
 	auto pContext = std::make_shared<CAsyncSelectContext>(m_Query, DB::SELECT, std::move(pCallbackResult));
-	CThreadPool* pThreadPool = Database->m_pThreadPool.get();
+	CThreadPool* pThreadPool = Database->GetThreadPool(Database->IsLocalQuery(m_Query));
 	if(!pThreadPool)
 	{
 		dbg_msg("SQL Error", "Async SELECT failed to enqueue: thread pool unavailable. Query: %s", pContext->Query().c_str());
@@ -591,7 +747,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, int DelayMilliseconds)
 {
 	auto pContext = std::make_shared<CAsyncDmlContext>(m_Query, m_TypeQuery, std::move(pCallbackResult), DelayMilliseconds);
-	CThreadPool* pThreadPool = Database->m_pThreadPool.get();
+	CThreadPool* pThreadPool = Database->GetThreadPool(Database->IsLocalQuery(m_Query));
 	if(!pThreadPool)
 	{
 		dbg_msg("SQL Error", "Async DML failed to enqueue: thread pool unavailable. Query: %s", pContext->Query().c_str());

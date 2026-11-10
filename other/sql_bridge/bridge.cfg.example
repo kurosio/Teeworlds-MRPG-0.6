@@ -125,7 +125,7 @@ user = mrpg_bridge
 password = changeme
 # Or keep the password out of this file (takes precedence over password):
 #password_file = /etc/mrpg/bridge_replica_password
-database = mmotee
+database = mrpg_shared
 # Same TLS keys as [primary]. Usually unnecessary for a replica on
 # 127.0.0.1; enable it if the replica is on another host.
 use_tls = false

@@ -39,6 +39,23 @@ void CGuildManager::OnPreInit()
 	InitWars();
 }
 
+void CGuildManager::OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID)
+{
+	if (Type == "guild_house")
+	{
+		auto* pGuild = GetGuildByID(OwnerID);
+		auto* pHouse = GetHouseByID(TargetID);
+		if (!pGuild || !pHouse || pGuild->HasHouse() || pHouse->IsPurchased())
+			return;
+
+		pHouse->UpdateGuild(pGuild);
+
+		// the doors were created before the owner was known
+		for (auto& [Number, pDoor] : pHouse->GetDoorManager()->GetContainer())
+			pDoor->Restore();
+	}
+}
+
 void CGuildManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_HOUSES, SqlQueryWhereWorld.c_str());
@@ -46,7 +63,6 @@ void CGuildManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 	{
 		// initialize variables
 		GuildHouseIdentifier ID = pRes->getInt("ID");
-		GuildIdentifier GuildID = pRes->getInt("GuildID");
 		int InitialFee = pRes->getInt("InitialFee");
 		time_t RentDays = pRes->getInt64("RentDays");
 		std::string JsonDoors = pRes->getString("Doors");
@@ -54,14 +70,13 @@ void CGuildManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 		std::string JsonPropersties = pRes->getString("Properties");
 
 		// initialize guild houses
-		CGuild* pGuild = GetGuildByID(GuildID);
 		std::string KickPosStr = pRes->getString("KickPos");
 		vec2 KickPos = {};
 		mystd::json::parse(KickPosStr, [&KickPos](nlohmann::json& pJson)
 		{
 			KickPos = pJson.get<vec2>();
 		});
-		CGuildHouse::CreateElement(ID)->Init(pGuild, RentDays, InitialFee, GS()->GetWorldID(), std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonPropersties), KickPos);
+		CGuildHouse::CreateElement(ID)->Init(RentDays, InitialFee, GS()->GetWorldID(), std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonPropersties), KickPos);
 	}
 }
 
@@ -1196,9 +1211,14 @@ void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SReque
 		auto pGuild = GetGuildByID(Req.Value);
 		if(pGuild)
 		{
+			GS()->Chat(-1, "The '{~}' guild has been disbanded.", pGuild->GetName());
+
+			// release the guild house on this server
+			if(auto* pHouse = pGuild->GetHouse())
+				pHouse->UpdateGuild(nullptr);
+
 			delete pGuild;
 			CGuild::Data().erase(std::find(CGuild::Data().begin(), CGuild::Data().end(), pGuild));
-			GS()->Chat(-1, "The '{~}' guild has been disbanded.", pGuild->GetName());
 		}
 	}
 }

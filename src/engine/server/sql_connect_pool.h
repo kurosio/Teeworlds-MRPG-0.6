@@ -149,7 +149,7 @@ using CallbackUpdatePtr = std::function<void(bool)>;
 class CThreadPool
 {
 public:
-	CThreadPool(size_t numThreads);
+	CThreadPool(size_t numThreads, bool Local = false);
 	~CThreadPool();
 
 	CThreadPool(const CThreadPool&) = delete;
@@ -159,6 +159,9 @@ public:
 	// The task must be a callable that accepts a `Connection*`.
 	void Enqueue(std::function<void(Connection*, int)> task, DB type, std::string query);
 	void EnqueueWithRetry(std::function<void(Connection*, int)> task, DB type, std::string query, int retryCount);
+
+	// Finishes the queued tasks and joins the workers. Tasks enqueued later are dropped.
+	void Stop();
 
 private:
 	struct CTask
@@ -180,6 +183,7 @@ private:
 	std::condition_variable m_cvCondition;
 	std::atomic<bool> m_bStop;
 	std::atomic<size_t> m_QueueSize { 0 };
+	bool m_Local;
 };
 
 
@@ -201,14 +205,38 @@ public:
 
 	CConectionPool(const CConectionPool&) = delete;
 	CConectionPool& operator=(const CConectionPool&) = delete;
-	static std::unique_ptr<Connection> CreateConnection();
+	static std::unique_ptr<Connection> CreateConnection(bool Local = false);
+
+	// Startup, before the first query: reads the structure (list of tables) of the
+	// shared database, which chooses the database of every query, and checks that
+	// the tables of this server exist. The server must not start if it fails.
+	bool InitDatabases();
+
+	// True if the table belongs to the local database of this server: the shared
+	// database does not have it (always false while sv_sql_database_local is not set).
+	bool IsLocalTable(std::string_view Table) const;
 
 private:
 	CConectionPool();
 	~CConectionPool();
 
+	// A query runs in one database. If the shared database has the table of the
+	// query, the query uses a connection to the shared database, otherwise a
+	// connection to the local one (see sql_table_routing.h). Call sites never
+	// name a database.
+	bool IsLocalQuery(const std::string& Query) const;
+	CThreadPool* GetThreadPool(bool Local) const;
+
 	Driver* m_pDriver;
+	std::string m_LocalDatabase;
+	std::vector<std::string> m_vSharedTables;
+	std::atomic<bool> m_SharedTablesLoaded { false };
+	int m_SharedThreads = 0;
+	int m_LocalThreads = 0;
+
+	// sv_sql_pool_size is divided between the two databases, see the constructor
 	std::unique_ptr<CThreadPool> m_pThreadPool;
+	std::unique_ptr<CThreadPool> m_pLocalThreadPool;
 
 public:
 	class CResultBase

@@ -444,7 +444,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(c.listen_host, "127.0.0.1")
         self.assertEqual(c.listen_port, 33060)
         self.assertEqual(c.replica.user, "mrpg_bridge")
-        self.assertEqual(c.replica.database, "mmotee")
+        self.assertEqual(c.replica.database, "mrpg_shared")
         self.assertFalse(c.primary.use_tls)
 
     def test_minimal_old_style_config(self):

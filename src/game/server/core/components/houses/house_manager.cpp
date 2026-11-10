@@ -9,6 +9,17 @@
 
 constexpr int g_UpdateTextLifeTime = SERVER_TICK_SPEED * 2;
 
+void CHouseManager::OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID)
+{
+	if (Type == "player_house")
+	{
+		// OwnerID is the account, TargetID is the house (one owner per house)
+		auto* pHouse = GetHouse(TargetID);
+		if (pHouse && !pHouse->HasOwner())
+			pHouse->SetAccountID(OwnerID);
+	}
+}
+
 void CHouseManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 {
 	// initialize houses
@@ -16,7 +27,6 @@ void CHouseManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 	while(pRes->next())
 	{
 		const auto ID = pRes->getInt("ID");
-		const auto AccountID = pRes->getInt("UserID");
 		const auto ClassName = pRes->getString("Class");
 		const auto InitialFee = pRes->getInt("InitialFee");
 		const time_t RentDays = pRes->getInt64("RentDays");
@@ -26,7 +36,7 @@ void CHouseManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 		std::string FarmzonesData = pRes->getString("Farmzones");
 		std::string PropertiesData = pRes->getString("Properties");
 
-		CHouse::CreateElement(ID)->Init(AccountID, ClassName, RentDays, InitialFee, Bank, WorldID, DoorsData, FarmzonesData, PropertiesData);
+		CHouse::CreateElement(ID)->Init(ClassName, RentDays, InitialFee, Bank, WorldID, DoorsData, FarmzonesData, PropertiesData);
 	}
 }
 

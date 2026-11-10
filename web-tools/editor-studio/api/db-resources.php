@@ -264,7 +264,8 @@ function editor_table_title(string $table): string
 }
 
 /**
- * Who references a table (from mmprpg schema). action:
+ * Who references a table (from the game schema). The tables of mrpg_local are
+ * not stored in mrpg_shared: their entries are skipped there. action:
  *   cascade  — rows are deleted together with the referenced row
  *   set_null — the column becomes NULL
  *   none     — no FK: the reference becomes dangling (server may misbehave)

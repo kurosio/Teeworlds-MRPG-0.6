@@ -104,7 +104,8 @@ void CHouse::Buy(CPlayer* pPlayer)
 		m_pBankManager->Reset();
 		m_RentEndTimestamp = AddRentDaysToTimestamp(0, 3);
 		pPlayer->Account()->ReinitializeHouse();
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '{}', Bank = '0', RentDays = '{}' WHERE ID = '{}'", m_AccountID, m_RentEndTimestamp, m_ID);
+		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '0', RentDays = '{}' WHERE ID = '{}'", m_RentEndTimestamp, m_ID);
+		Links::Add("player_house", m_AccountID, m_ID);
 
 		// send information
 		GS()->Chat(-1, "'{~}' becomes the owner of the house class '{}'.", Server()->ClientName(ClientID), GetClassName());
@@ -139,8 +140,9 @@ void CHouse::Sell()
 	}
 	m_pDoorManager->CloseAll();
 	m_pBankManager->Reset();
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '0' WHERE ID = '{}'", m_ID);
+	Links::Remove("player_house", m_AccountID, m_ID);
 	m_AccountID = -1;
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = NULL, Bank = '0' WHERE ID = '{}'", m_ID);
 
 
 	// send information

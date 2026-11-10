@@ -145,6 +145,13 @@ int main(int argc, const char** argv)
 		pConsole->ExecuteFile(AUTOEXEC_FILE, -1, true);
 	}
 
+	// reads the structure of the shared database: it chooses the database of every query
+	if(!Database->InitDatabases())
+	{
+		dbg_msg("server", "failed to prepare the shared and the local database");
+		return -1;
+	}
+
 	if(!pServer->MultiWorlds()->LoadFromDB(pKernel, pStorage))
 	{
 		dbg_msg("server", "failed to load worlds");

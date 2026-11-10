@@ -958,7 +958,7 @@ function handle_apply_operations(): never
 // Overwrites the data of the CURRENT (editor) database with the data of the
 // TARGET profile. Everything is copied except account data:
 //  - tw_accounts and tw_accounts_* are never touched;
-//  - tables that reference account tables via FK (e.g. tw_groups, tw_guilds_invites)
+//  - tables that reference account tables via FK (e.g. tw_dungeons_records, tw_voucher_redeemed)
 //    are skipped too, otherwise they would point at accounts that stay local.
 // Copy runs in one transaction. FK checks are disabled for the session, so
 // DELETE does not cascade into the untouched account tables.

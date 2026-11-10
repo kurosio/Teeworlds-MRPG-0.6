@@ -222,11 +222,12 @@ MACRO_CONFIG_INT(SvHighlightExperts, sv_highlight_experts, 1, 0, 1, CFGFLAG_SERV
 
 // mysql
 MACRO_CONFIG_STR(SvMySqlHost, sv_sql_host, 32, "localhost", CFGFLAG_SERVER, "MySQL Host")
-MACRO_CONFIG_STR(SvMySqlDatabase, sv_sql_database, 32, "database", CFGFLAG_SERVER, "MySQL Database")
+MACRO_CONFIG_STR(SvMySqlDatabaseShared, sv_sql_database_shared, 32, "database", CFGFLAG_SERVER, "MySQL shared database: content, accounts and records, replicated between the servers")
+MACRO_CONFIG_STR(SvMySqlDatabaseLocal, sv_sql_database_local, 32, "", CFGFLAG_SERVER, "MySQL local database: the tables of this server that the shared database does not have (empty = one database)")
 MACRO_CONFIG_STR(SvMySqlLogin, sv_sql_login, 32, "root", CFGFLAG_SERVER, "MySQL Login")
 MACRO_CONFIG_STR(SvMySqlPassword, sv_sql_password, 32, "", CFGFLAG_SERVER, "MySQL Password")
 MACRO_CONFIG_INT(SvMySqlPort, sv_sql_port, 3306, 0, 65000, CFGFLAG_SERVER, "MySQL Port")
-MACRO_CONFIG_INT(SvMySqlPoolSize, sv_sql_pool_size, 3, 2, 12, CFGFLAG_SERVER, "MySQL Pool size");
+MACRO_CONFIG_INT(SvMySqlPoolSize, sv_sql_pool_size, 3, 2, 12, CFGFLAG_SERVER, "MySQL Pool size (divided between the shared and the local database, the larger part for the shared one)");
 MACRO_CONFIG_INT(SvMySqlUseTls, sv_sql_use_tls, 0, 0, 1, CFGFLAG_SERVER, "Enable TLS/SSL for MySQL connection (0 = off, 1 = on)")
 
 // mysql retry and timeout tuning

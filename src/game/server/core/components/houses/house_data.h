@@ -52,10 +52,9 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(int AccountID, const std::string& ClassName, time_t RentDays, int InitialFee, const BigInt& Bank, int WorldID,
+	void Init(const std::string& ClassName, time_t RentDays, int InitialFee, const BigInt& Bank, int WorldID,
 		const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData)
 	{
-		m_AccountID = AccountID;
 		m_ClassName = ClassName;
 		m_InitialFee = InitialFee;
 		m_RentEndTimestamp = RentDays;
@@ -71,6 +70,7 @@ public:
 	CDoorManager* GetDoorManager() const { return m_pDoorManager; }
 
 	int GetAccountID() const { return m_AccountID; }
+	void SetAccountID(int AccountID) { m_AccountID = AccountID; }
 	const char* GetClassName() const { return m_ClassName.c_str(); }
 	bool HasOwner() const { return m_AccountID > 0; }
 	int GetInitialFee() const { return m_InitialFee; }

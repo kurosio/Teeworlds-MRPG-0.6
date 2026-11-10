@@ -115,7 +115,8 @@ GuildResult CGuild::BuyHouse(int HouseID)
 		m_pHouse = *IterHouse;
 		m_pHouse->UpdateGuild(this);
 		m_pHouse->m_RentEndTimestamp = (int)time(nullptr) + GUILD_RENT_DAYS_DEFAULT * 60 * 60 * 24;
-		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = '{}', RentDays = '{}' WHERE ID = '{}'", m_ID, m_pHouse->m_RentEndTimestamp, HouseID);
+		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '{}' WHERE ID = '{}'", m_pHouse->m_RentEndTimestamp, HouseID);
+		Links::Add("guild_house", m_ID, HouseID);
 
 		// send messages
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Your guild has purchased a house!");
@@ -146,7 +147,7 @@ void CGuild::SellHouse()
 	GS()->ChatGuild(m_ID, "House sold, {}gold returned to leader", ReturnedGold);
 
 	// implement the sell of the house
-	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = NULL WHERE ID = '{}'", m_pHouse->GetID());
+	Links::Remove("guild_house", m_ID, m_pHouse->GetID());
 	m_pHouse->GetDoorManager()->CloseAll();
 	m_pHouse->UpdateGuild(nullptr);
 	m_pHouse = nullptr;

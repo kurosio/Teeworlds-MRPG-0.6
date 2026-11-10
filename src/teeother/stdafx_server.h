@@ -7,6 +7,7 @@
 #include <teeother/tools/binaryheap.h>
 
 #include <engine/server/sql_connect_pool.h>
+#include <engine/server/links.h>
 #include <teeother/tools/dbfield.h>
 
 #include <engine/console.h>

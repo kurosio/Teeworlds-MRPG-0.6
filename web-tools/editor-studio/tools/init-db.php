@@ -5,7 +5,7 @@
  *
  *   php web-tools/editor-studio/tools/init-db.php
  *   php web-tools/editor-studio/tools/init-db.php --password=МойПароль --host=127.0.0.1 \
- *       --database=teeworlds_mrpg --db-user=root --db-password=secret
+ *       --database=mrpg_shared --db-user=root --db-password=secret
  *   php web-tools/editor-studio/tools/init-db.php --demo-guest   # демо-гость artist / artist123
  *
  * Что делает:
@@ -52,7 +52,7 @@ function init_usage(): void
   --user=ЛОГИН             логин администратора (по умолчанию admin)
   --host=АДРЕС             адрес MySQL-сервера игры (по умолчанию 127.0.0.1)
   --port=ПОРТ              порт MySQL (по умолчанию 3306)
-  --database=ИМЯ           база игры (по умолчанию test — как в autoexec_server.cfg)
+  --database=ИМЯ           общая база игры (по умолчанию mrpg_shared — как в autoexec_server.cfg)
   --db-user=ПОЛЬЗОВАТЕЛЬ   пользователь MySQL (по умолчанию root)
   --db-password=ПАРОЛЬ     пароль MySQL (по умолчанию пустой)
   --demo-guest             создать гостевой аккаунт artist / artist123
@@ -149,8 +149,8 @@ $passwordWasGenerated = false;
 $next = $cfg;
 $next['host']     = (string)($options['host']     ?? ($next['host']     ?? '127.0.0.1'));
 $next['port']     = (int)   ($options['port']     ?? ($next['port']     ?? 3306));
-// Умолчание «test» совпадает с autoexec_server.cfg этого сервера.
-$next['database'] = (string)($options['database'] ?? ($next['database'] ?? 'test'));
+// Умолчание «mrpg_shared» совпадает с sv_sql_database_shared в autoexec_server.cfg этого сервера.
+$next['database'] = (string)($options['database'] ?? ($next['database'] ?? 'mrpg_shared'));
 $next['user']     = (string)($options['db-user']  ?? ($next['user']     ?? 'root'));
 $next['password'] = (string)($options['db-password'] ?? ($next['password'] ?? ''));
 

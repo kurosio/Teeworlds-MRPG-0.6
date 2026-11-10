@@ -48,9 +48,8 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(CGuild* pGuild, time_t RentDays, int InitialFee, int WorldID, std::string&& DoorsData, std::string&& FarmzonesData, std::string&& PropertiesData, vec2 KickPos = {})
+	void Init(time_t RentDays, int InitialFee, int WorldID, std::string&& DoorsData, std::string&& FarmzonesData, std::string&& PropertiesData, vec2 KickPos = {})
 	{
-		UpdateGuild(pGuild);
 		m_InitialFee = InitialFee;
 		m_RentEndTimestamp = RentDays;
 		m_WorldID = WorldID;

@@ -92,6 +92,21 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 			pComponent->OnPostInit();
 	}
 
+	// initialize links last, when the data of all components is already loaded
+	if(isLastInitializedWorld)
+	{
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_LINKS_TABLE);
+		while(pRes->next())
+		{
+			const auto Type = pRes->getString("Type");
+			const auto OwnerID = pRes->getInt64("OwnerID");
+			const auto TargetID = pRes->getInt64("TargetID");
+
+			for(auto& pComponent : m_System.m_vComponents)
+				pComponent->OnInitLink(Type, OwnerID, TargetID);
+		}
+	}
+
 	// log about listeners
 	if(isLastInitializedWorld)
 	{
