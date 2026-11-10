@@ -47,7 +47,7 @@ def make_conf(primary_port, replica_port, primary_opts=None, replica_opts=None, 
     p.update(primary_opts or {})
     cfg["primary"] = p
     r = {"host": "127.0.0.1", "port": str(replica_port), "user": "bridge",
-         "password": "bridgepw", "database": "mmotee"}
+         "password": "bridgepw", "database": "mrpg_shared"}
     r.update(replica_opts or {})
     cfg["replica"] = r
     return mb.build_config(cfg)
@@ -95,27 +95,17 @@ class BridgeTestCase(unittest.IsolatedAsyncioTestCase):
 
 # --- unit tests --------------------------------------------------------------------
 class TestClassifier(unittest.TestCase):
-    def kind(self, sql):
-        return mb.classify_query(sql.encode())[0]
-
-    def test_reads(self):
+    def test_plain_selects_go_to_replica(self):
         for q in ["SELECT * FROM tw_accounts WHERE ID = '5';",
                   "  select ID from tw_accounts_data where Nick = 'x;y'",
                   "(SELECT 1) UNION (SELECT 2)",
-                  "/* comment */ SELECT 1",
-                  "-- c\nSELECT 1",
-                  "# c\nSELECT 1",
                   "SELECT 'a''b', \"q\\\"\" FROM `tw_accounts`",
                   "SELECT * FROM t WHERE name = 'for update'",
                   "SELECT * FROM t WHERE x = '@'",
-                  "SHOW TABLES", "SHOW FULL COLUMNS FROM t", "SHOW CREATE TABLE t",
-                  "SHOW TABLE STATUS", "SHOW INDEX FROM t", "DESCRIBE t", "DESC t",
-                  "EXPLAIN SELECT * FROM t",
-                  "WITH x AS (SELECT 1) SELECT * FROM x",
                   "SELECT ID FROM tw_accounts ORDER BY ID DESC LIMIT 1;"]:
-            self.assertEqual(self.kind(q), mb.K_READ, q)
+            self.assertTrue(mb.is_select(q.encode()), q)
 
-    def test_reads_that_must_use_primary(self):
+    def test_unsafe_selects_stay_on_primary(self):
         for q in ["SELECT * FROM t FOR UPDATE",
                   "SELECT * FROM t WHERE x IN (" + "1," * 300 + "1) FOR UPDATE",
                   "SELECT * FROM t LOCK IN SHARE MODE",
@@ -129,87 +119,40 @@ class TestClassifier(unittest.TestCase):
                   "SELECT 1 INTO @x", "SELECT * INTO OUTFILE '/tmp/x' FROM t",
                   "SELECT LOAD_FILE('/etc/passwd')", "SELECT DATABASE()", "SELECT USER()",
                   "SELECT CURRENT_USER", "SELECT * FROM information_schema.PROCESSLIST",
-                  "SELECT * FROM performance_schema.threads",
-                  "SHOW WARNINGS", "SHOW ERRORS", "SHOW COUNT(*) WARNINGS", "SHOW VARIABLES",
-                  "SHOW SESSION STATUS", "SHOW GRANTS", "SHOW PROCESSLIST",
-                  "SHOW FULL PROCESSLIST", "SHOW SLAVE STATUS", "SHOW MASTER STATUS",
-                  "SHOW BINLOG EVENTS", "SHOW DATABASES", "SHOW CREATE USER x",
-                  "SHOW PROFILES", "SHOW ENGINE INNODB STATUS", "SHOW OPEN TABLES",
-                  "EXPLAIN UPDATE t SET a = 1", "EXPLAIN EXTENDED SELECT 1",
-                  "EXPLAIN FOR CONNECTION 5", "VALUES (1)", "TABLE t"]:
-            self.assertEqual(self.kind(q), mb.K_PRIMARY_READ, q)
+                  "SELECT * FROM performance_schema.threads"]:
+            self.assertFalse(mb.is_select(q.encode()), q)
 
-    def test_writes_and_unknown(self):
+    def test_non_selects_stay_on_primary(self):
         for q in ["INSERT INTO t VALUES (1)", "UPDATE t SET a = 1", "DELETE FROM t",
                   "REPLACE INTO t VALUES (1)", "CREATE TABLE x (a int)", "CALL p()",
                   "DO GET_LOCK('a', 1)", "TRUNCATE t", "WITH x AS (SELECT 1) UPDATE t SET a = 1",
-                  "LOAD DATA LOCAL INFILE 'f' INTO TABLE t", "FLUSH TABLES"]:
-            self.assertEqual(self.kind(q), mb.K_WRITE, q)
-        # multi-statements, executable comments and unterminated literals are
-        # never sent to the replica
-        for q in ["SELECT 1; DELETE FROM tw_accounts", "SELECT 1;SELECT 2",
-                  "SELECT 1 /*! ; DELETE FROM t */", "/*!40101 SELECT 1 */",
-                  "/*M!100100 SELECT 1 */", "SELECT 'unterminated", "SELECT `x",
-                  "SELECT 1 /* unterminated", ""]:
-            self.assertEqual(self.kind(q), mb.K_UNKNOWN, q)
+                  "LOAD DATA LOCAL INFILE 'f' INTO TABLE t", "FLUSH TABLES",
+                  "SHOW TABLES", "SHOW VARIABLES", "DESCRIBE t", "EXPLAIN SELECT 1",
+                  "SET NAMES utf8mb4", "USE mrpg_shared", "BEGIN", "COMMIT", ""]:
+            self.assertFalse(mb.is_select(q.encode()), q)
 
-    def test_session_and_tx(self):
-        self.assertEqual(self.kind("SET NAMES utf8mb4"), mb.K_SET)
-        self.assertEqual(self.kind("set autocommit=0"), mb.K_SET)
-        self.assertEqual(self.kind("USE mmotee"), mb.K_USE)
-        for q in ["BEGIN", "START TRANSACTION", "COMMIT", "ROLLBACK", "SAVEPOINT a",
-                  "LOCK TABLES t READ", "UNLOCK TABLES", "XA START 'x'"]:
-            self.assertEqual(self.kind(q), mb.K_TX, q)
+    def test_multi_statements_never_go_to_replica(self):
+        for q in ["SELECT 1; DELETE FROM tw_accounts", "SELECT 1;SELECT 2"]:
+            self.assertFalse(mb.is_select(q.encode()), q)
 
-    def test_trailing_semicolons_and_whitespace(self):
-        self.assertEqual(self.kind("SELECT 1 ;  \n ; "), mb.K_READ)
-        self.assertEqual(self.kind("SELECT ';' FROM t;"), mb.K_READ)
+    def test_writes(self):
+        for q in ["INSERT INTO t VALUES (1)", "  update t set a = 1", "DELETE FROM t",
+                  "REPLACE INTO t VALUES (1)"]:
+            self.assertTrue(mb.is_write(q.encode()), q)
+        for q in ["SELECT 1", "CREATE TABLE x (a int)", "SET NAMES utf8mb4", ""]:
+            self.assertFalse(mb.is_write(q.encode()), q)
 
-    def test_code_is_literal_free(self):
-        _, code, _ = mb.classify_query(
-            b"SELECT * FROM tw_accounts WHERE Password = 'secret-hash' AND PasswordSalt = \"salt\"")
-        self.assertNotIn(b"secret", code)
-        self.assertNotIn(b"salt\"", code)
-        self.assertNotIn("secret", mb.describe_sql(code))
+    def test_session_pinning(self):
+        for q in ["SET NAMES utf8mb4", "set autocommit=0", "USE mrpg_shared", "BEGIN",
+                  "START TRANSACTION", "LOCK TABLES t READ", "CREATE TEMPORARY TABLE tmp (a int)"]:
+            self.assertTrue(mb.pins_session(q.encode()), q)
+        for q in ["SELECT 1", "INSERT INTO t VALUES (1)", "COMMIT", "UNLOCK TABLES",
+                  "CREATE TABLE x (a int)"]:
+            self.assertFalse(mb.pins_session(q.encode()), q)
 
     def test_log_sql_masks_passwords(self):
         self.assertNotIn("hunter2", mb.log_sql("CREATE USER x IDENTIFIED BY 'hunter2'"))
         self.assertNotIn("hunter2", mb.log_sql("SET PASSWORD = PASSWORD('hunter2')"))
-
-    def test_write_tables(self):
-        wt = lambda q: mb.write_tables(mb.classify_query(q.encode())[2])
-        self.assertEqual(wt("INSERT INTO tw_accounts (a) VALUES (1)"), (b"tw_accounts",))
-        self.assertEqual(wt("INSERT IGNORE INTO `mmotee`.`tw_x` VALUES (1)"), (b"tw_x",))
-        self.assertEqual(wt("REPLACE tw_y VALUES (1)"), (b"tw_y",))
-        self.assertEqual(wt("UPDATE tw_accounts_data SET Level = 2 WHERE ID = 1"),
-                         (b"tw_accounts_data",))
-        self.assertEqual(wt("DELETE FROM tw_items WHERE ID = 1"), (b"tw_items",))
-        self.assertIsNone(wt("UPDATE a JOIN b ON a.x = b.x SET a.y = 1"))
-        self.assertIsNone(wt("DELETE a FROM a JOIN b"))
-        self.assertIsNone(wt("DELETE FROM a USING a JOIN b"))
-        self.assertIsNone(wt("CREATE TABLE z (a int)"))
-
-
-class TestWriteTracker(unittest.TestCase):
-    def test_scopes(self):
-        low = lambda q: mb.classify_query(q.encode())[2]
-        t = mb.WriteTracker(2.0, "table")
-        t.note((b"tw_accounts",), 100.0)
-        self.assertTrue(t.blocks(low("SELECT ID FROM tw_accounts WHERE x=1"), 101.0))
-        self.assertTrue(t.blocks(low("SELECT * FROM `mmotee`.`tw_accounts`"), 101.0))
-        self.assertFalse(t.blocks(low("SELECT * FROM tw_accounts_data"), 101.0))
-        self.assertFalse(t.blocks(low("SELECT ID FROM tw_accounts"), 102.5))
-        t.note(None, 200.0)
-        self.assertTrue(t.blocks(low("SELECT 1"), 201.0))
-        g = mb.WriteTracker(2.0, "global")
-        g.note((b"a",), 10.0)
-        self.assertTrue(g.blocks(low("SELECT * FROM b"), 11.0))
-        c = mb.WriteTracker(2.0, "connection")
-        c.note(None, 10.0)
-        self.assertFalse(c.blocks(low("SELECT * FROM b"), 10.5))
-        z = mb.WriteTracker(0.0, "table")
-        z.note(None, 10.0)
-        self.assertFalse(z.blocks(low("SELECT 1"), 10.0))
 
 
 class TestPackets(unittest.IsolatedAsyncioTestCase):
@@ -251,18 +194,7 @@ class TestAuth(unittest.TestCase):
         self.assertEqual(mb.native_password_token("pw", salt), _auth.scramble_native_password(b"pw", salt))
         self.assertEqual(mb.caching_sha2_token("pw", salt), _auth.scramble_caching_sha2(b"pw", salt))
 
-    def test_handshake_response_db(self):
-        caps = (mb.CLIENT_PROTOCOL_41 | mb.CLIENT_SECURE_CONNECTION | mb.CLIENT_CONNECT_WITH_DB
-                | mb.CLIENT_PLUGIN_AUTH)
-        p = struct.pack("<IIB", caps, 1 << 24, 45) + b"\0" * 23 + b"game\0" + bytes([20]) + b"t" * 20 \
-            + b"mmotee\0mysql_native_password\0"
-        self.assertEqual(mb.parse_handshake_db(p), "mmotee")
-        p2 = struct.pack("<IIB", caps | mb.CLIENT_PLUGIN_AUTH_LENENC_DATA, 1 << 24, 45) + b"\0" * 23 \
-            + b"game\0" + bytes([20]) + b"t" * 20 + b"db2\0"
-        self.assertEqual(mb.parse_handshake_db(p2), "db2")
-        p3 = struct.pack("<IIB", caps & ~mb.CLIENT_CONNECT_WITH_DB, 1 << 24, 45) + b"\0" * 23 + b"g\0\0"
-        self.assertIsNone(mb.parse_handshake_db(p3))
-        self.assertIsNone(mb.parse_handshake_db(b"garbage"))
+
 
 
 # --- response scanner ------------------------------------------------------------
@@ -297,9 +229,8 @@ def _resultset(ncols, rows, deof, status=2, info=b""):
 
 class TestScanner(unittest.TestCase):
     def run_stream(self, stream, kinds, deof, chunking, **kw):
-        statuses = []
         done = []
-        sc = mb.ResponseScanner(deprecate_eof=deof, on_status=statuses.append, **kw)
+        sc = mb.ResponseScanner(deprecate_eof=deof, **kw)
         for i, k in enumerate(kinds):
             sc.expect(k, lambda p, i=i: done.append(i))
         pos = 0
@@ -311,7 +242,7 @@ class TestScanner(unittest.TestCase):
         self.assertIsNone(sc.desynced)
         self.assertFalse(sc.busy)
         self.assertEqual(sc.unsolicited, 0)
-        return done, statuses, sc
+        return done, sc
 
     def test_resultsets_any_chunking(self):
         for deof in (False, True):
@@ -321,27 +252,26 @@ class TestScanner(unittest.TestCase):
             stream = _stream(payloads[:len(payloads) - len(_resultset(1, [], deof)) - 1]) \
                 + _stream([_ok()]) + _stream(_resultset(1, [], deof))
             for chunking in (1, 2, 3, 7, 4096, "random"):
-                done, _, _ = self.run_stream(stream, [mb.R_RESULT] * 3, deof, chunking)
+                done, _ = self.run_stream(stream, [mb.R_RESULT] * 3, deof, chunking)
                 self.assertEqual(done, [0, 1, 2], (deof, chunking))
 
     def test_long_deprecate_eof_terminator(self):
         # old bridge missed 0xFE terminators >= 9 bytes (session tracking)
         stream = _stream(_resultset(1, [("v",)], True, info=b"x" * 40))
-        done, _, _ = self.run_stream(stream, [mb.R_RESULT], True, 5)
+        done, _ = self.run_stream(stream, [mb.R_RESULT], True, 5)
         self.assertEqual(done, [0])
 
-    def test_multi_results_and_status(self):
+    def test_multi_results(self):
         for deof in (False, True):
             p = _resultset(1, [("1",)], deof, status=2 | 8) + [_ok(status=3 | 8)] + _resultset(1, [("2",)], deof, status=1)
-            done, statuses, _ = self.run_stream(_stream(p), [mb.R_RESULT], deof, 3)
+            done, _ = self.run_stream(_stream(p), [mb.R_RESULT], deof, 3)
             self.assertEqual(done, [0])
-            self.assertEqual(statuses[-1], 1)
 
     def test_error_mid_rows_and_progress(self):
         progress = b"\xff\xff\xff" + b"\x01\x01" + b"\x00\x00\x00" + b"stage"
         p = [progress, lenenc_int(1), coldef("a"), b"\x011",
              b"\xff" + struct.pack("<H", 1317) + b"#70100interrupted"]
-        done, _, sc = self.run_stream(_stream(p), [mb.R_RESULT], True, 4)
+        done, sc = self.run_stream(_stream(p), [mb.R_RESULT], True, 4)
         self.assertEqual(done, [])                       # ERR terminates, but is not an OK
         self.assertEqual(sc.first_byte, 0x01)
 
@@ -357,21 +287,8 @@ class TestScanner(unittest.TestCase):
         for deof in (False, True):
             big = "x" * (0xFFFFFF + 100)
             stream = _stream(_resultset(1, [(big,), ("small",)], deof))
-            done, _, _ = self.run_stream(stream, [mb.R_RESULT], deof, 1 << 20)
+            done, _ = self.run_stream(stream, [mb.R_RESULT], deof, 1 << 20)
             self.assertEqual(done, [0])
-
-    def test_prepare_and_fieldlist(self):
-        for deof in (False, True):
-            prep = [b"\x00" + struct.pack("<IHHBH", 1, 2, 1, 0, 0), coldef("?")]
-            if not deof:
-                prep.append(_eof())
-            prep += [coldef("a"), coldef("b")]
-            if not deof:
-                prep.append(_eof())
-            fl = [coldef("a"), coldef("b"), _eof() if not deof else _ok(0xFE)]
-            stream = _stream(prep) + _stream(fl) + _stream([b"\x00" + struct.pack("<IHHBH", 2, 0, 0, 0, 0)])
-            done, _, _ = self.run_stream(stream, [mb.R_PREPARE, mb.R_FIELDLIST, mb.R_PREPARE], deof, 3)
-            self.assertEqual(done, [0, 1, 2])
 
     def test_infile(self):
         hits = []
@@ -394,7 +311,7 @@ class TestScanner(unittest.TestCase):
 
     def test_cache_metadata_skip(self):
         p = [lenenc_int(1) + b"\x00", b"\x011", _ok(0xFE)]
-        done, _, _ = self.run_stream(_stream(p), [mb.R_RESULT], True, 2, cache_metadata=True)
+        done, _ = self.run_stream(_stream(p), [mb.R_RESULT], True, 2, cache_metadata=True)
         self.assertEqual(done, [0])
 
 
@@ -449,12 +366,11 @@ class TestConfig(unittest.TestCase):
 
     def test_minimal_old_style_config(self):
         c = self.load("[bridge]\n[primary]\nhost=db\nport=3306\n[replica]\nhost=127.0.0.1\nport=3306\n"
-                      "user=u\npassword=p\ndatabase=mmotee\n")
+                      "user=u\npassword=p\ndatabase=mrpg_shared\n")
         self.assertEqual(c.max_clients, 256)
         self.assertEqual(c.pool_size, 16)
         self.assertEqual(c.acquire_timeout, 0.25)
         self.assertEqual(c.grace, 0.0)
-        self.assertEqual(c.ryw_scope, "table")
 
     def test_env_overrides_and_password_file(self):
         with tempfile.NamedTemporaryFile("w", delete=False) as fh:
@@ -479,7 +395,7 @@ class TestConfig(unittest.TestCase):
 
     def test_invalid(self):
         base = "[bridge]\n%s\n[primary]\nhost=db\n[replica]\nhost=h\nuser=u\n"
-        for bad in ["listen_port=70000", "max_clients=0", "read_your_writes_scope=bogus",
+        for bad in ["listen_port=70000", "max_clients=0",
                     "replica_pool_size=abc", "allowed_clients=10.0.0.0/33", "log_level=LOUD",
                     "read_your_writes_grace_sec=-1"]:
             with self.assertRaises(mb.ConfigError, msg=bad):
@@ -503,18 +419,18 @@ class TestConfig(unittest.TestCase):
 # --- integration: routing ----------------------------------------------------------
 class TestRouting(BridgeTestCase):
     async def test_reads_to_replica_writes_to_primary(self):
-        b = await self.bridge()
         for deof in (True, False):
+            b = await self.bridge()      # one framing per pool: fresh bridge per variant
             c = await self.client(b, deprecate_eof=deof)
             self.assertEqual(await self.served_by(c, "SELECT * FROM tw_accounts WHERE ID = 1"), "replica")
             res = await c.query("INSERT INTO tw_accounts (a) VALUES (1)")
             self.assertEqual(res[0][0], "ok")
             self.assertEqual(res[0][1], 1)
-            self.assertEqual(await self.served_by(c, "SHOW TABLES"), "replica")
+            self.assertEqual(await self.served_by(c, "SHOW TABLES"), "primary")
             self.assertEqual(await self.served_by(c, "SELECT LAST_INSERT_ID()"), "primary")
         self.assertTrue(self.primary.queries_matching("INSERT INTO tw_accounts"))
         self.assertFalse(self.replica.queries_matching("INSERT"))
-        self.assertEqual(mb.STATS["replica"], 4)
+        self.assertEqual(mb.STATS["replica"], 2)
 
     async def test_large_resultsets_identical(self):
         b = await self.bridge(replica_buffer_kb=64)
@@ -548,17 +464,16 @@ class TestRouting(BridgeTestCase):
         for s in self.replica.sessions:
             self.assertFalse(s.caps & 0x10000)
 
-    async def test_transactions_and_autocommit(self):
+    async def test_transactions_pin_to_primary(self):
         b = await self.bridge()
         c = await self.client(b)
         await c.query("BEGIN")
         self.assertEqual(await self.served_by(c, "SELECT 1"), "primary")
         await c.query("COMMIT")
-        self.assertEqual(await self.served_by(c, "SELECT 1"), "replica")
-        await c.query("SET autocommit=0")
-        self.assertEqual(await self.served_by(c, "SELECT 1"), "primary")
-        await c.query("SET autocommit=1")
-        self.assertEqual(await self.served_by(c, "SELECT 1"), "replica")
+        self.assertEqual(await self.served_by(c, "SELECT 1"), "primary")   # stays pinned
+        c2 = await self.client(b)
+        await c2.query("SET autocommit=0")
+        self.assertEqual(await self.served_by(c2, "SELECT 1"), "primary")
 
     async def test_session_state_pins_to_primary(self):
         b = await self.bridge()
@@ -569,93 +484,58 @@ class TestRouting(BridgeTestCase):
         await c2.query("LOCK TABLES t READ")
         self.assertEqual(await self.served_by(c2, "SELECT * FROM t"), "primary")
         await c2.query("UNLOCK TABLES")
-        self.assertEqual(await self.served_by(c2, "SELECT * FROM t"), "replica")
+        self.assertEqual(await self.served_by(c2, "SELECT * FROM t"), "primary")   # stays pinned
 
-    async def test_read_your_writes_table_scope(self):
-        b = await self.bridge(read_your_writes_grace_sec="0.4", read_your_writes_scope="table")
+    async def test_read_your_writes_grace_is_global(self):
+        b = await self.bridge(read_your_writes_grace_sec="0.4")
         a = await self.client(b)
         w = await self.client(b)
         await w.query("INSERT INTO tw_accounts (Username) VALUES ('x')")
-        # another connection (game thread pool) reading the written table -> primary
+        # every read uses the primary for the window, on any connection
         self.assertEqual(await self.served_by(a, "SELECT ID FROM tw_accounts ORDER BY ID DESC LIMIT 1"),
                          "primary")
-        self.assertEqual(await self.served_by(a, "SELECT * FROM tw_guilds"), "replica")
-        # the writing connection itself is pinned for the window
+        self.assertEqual(await self.served_by(a, "SELECT * FROM tw_guilds"), "primary")
         self.assertEqual(await self.served_by(w, "SELECT * FROM tw_guilds"), "primary")
         await asyncio.sleep(0.5)
         self.assertEqual(await self.served_by(a, "SELECT ID FROM tw_accounts"), "replica")
-        await w.query("CREATE TABLE IF NOT EXISTS z (a int)")         # unattributable write
-        self.assertEqual(await self.served_by(a, "SELECT * FROM tw_guilds"), "primary")
 
-    async def test_read_your_writes_connection_scope(self):
-        b = await self.bridge(read_your_writes_grace_sec="5", read_your_writes_scope="connection")
-        a = await self.client(b)
-        w = await self.client(b)
-        await w.query("INSERT INTO tw_accounts (Username) VALUES ('x')")
-        self.assertEqual(await self.served_by(a, "SELECT ID FROM tw_accounts"), "replica")
-        self.assertEqual(await self.served_by(w, "SELECT ID FROM tw_accounts"), "primary")
-
-    async def test_write_inside_transaction_marked_at_commit(self):
-        b = await self.bridge(read_your_writes_grace_sec="0.3", read_your_writes_scope="table")
-        a = await self.client(b)
-        w = await self.client(b)
-        await w.query("BEGIN")
-        await w.query("UPDATE tw_items SET a = 1 WHERE ID = 2")
-        await asyncio.sleep(0.4)
-        await w.query("COMMIT")
-        self.assertEqual(await self.served_by(a, "SELECT * FROM tw_items"), "primary")
-
-    async def test_use_is_per_session(self):
+    async def test_use_pins_to_primary(self):
         b = await self.bridge()
-        c1 = await self.client(b, db="mmotee")
-        c2 = await self.client(b, db="mmotee")
-        await c1.query("USE other")
-        rows1 = await c1.rows("SELECT 1")
-        rows2 = await c2.rows("SELECT 1")
-        self.assertEqual(rows1[0][:2], ["replica", "other"])
-        self.assertEqual(rows2[0][:2], ["replica", "mmotee"])
-        await c2.query("USE `other`")
-        self.assertEqual((await c2.rows("SELECT 2"))[0][1], "other")
+        c1 = await self.client(b, db="mrpg_shared")
+        c2 = await self.client(b, db="mrpg_shared")
+        await c1.query("USE mrpg_local")
+        self.assertEqual((await c1.rows("SELECT 1"))[0][0], "primary")
+        self.assertEqual((await c2.rows("SELECT 1"))[0][0], "replica")
 
-    async def test_unknown_db_on_replica_falls_back(self):
-        self.primary.databases.add("primaryonly")
-        b = await self.bridge()
-        c = await self.client(b)
-        await c.query("USE primaryonly")
-        self.assertEqual(await self.served_by(c, "SELECT 1"), "primary")
-
-    async def test_session_set_replayed_on_replica(self):
+    async def test_session_set_pins_to_primary(self):
         b = await self.bridge()
         c = await self.client(b)
         await c.query("SET NAMES latin1")
-        await c.query("SET @user_var = 5")                            # not replayed
-        self.assertEqual(await self.served_by(c, "SELECT 1"), "replica")
-        replayed = [q for _, q in self.replica.queries if q.startswith("SET")]
-        self.assertEqual(replayed, ["SET NAMES latin1"])
+        self.assertEqual(await self.served_by(c, "SELECT 1"), "primary")
+        self.assertFalse(self.replica.queries_matching("SET"))
         c2 = await self.client(b)
         self.assertEqual(await self.served_by(c2, "SELECT 1"), "replica")
-        profiles = {p[3] for p in b.pool._idle}
-        self.assertIn((b"SET NAMES latin1",), profiles)
-        self.assertIn((), profiles)
 
     async def test_charset_is_mirrored(self):
         b = await self.bridge()
         c = await self.client(b, charset=8)
         self.assertEqual(await self.served_by(c, "SELECT 1"), "replica")
         self.assertEqual(self.replica.sessions[-1].charset, 8)
+        c2 = await self.client(b, charset=45)      # different charset: primary
+        self.assertEqual(await self.served_by(c2, "SELECT 1"), "primary")
 
-    async def test_prepared_statements_and_ping(self):
-        b = await self.bridge(read_your_writes_grace_sec="1")
+    async def test_prepared_statements_switch_to_relay(self):
+        b = await self.bridge()
         c = await self.client(b)
         sid = await c.prepare("SELECT ? FROM t")
         res = await c.execute(sid)
         self.assertEqual(res[0][0], "rows")
         self.assertTrue(await c.ping())
-        self.assertEqual(await self.served_by(c, "SELECT 1"), "replica")
+        self.assertEqual(await self.served_by(c, "SELECT 1"), "primary")   # relayed from now on
         wid = await c.prepare("INSERT INTO t VALUES (?)")
         res = await c.execute(wid)
         self.assertEqual(res[0][0], "ok")
-        self.assertEqual(await self.served_by(c, "SELECT 1"), "primary")     # write via execute
+        self.assertEqual(await self.served_by(c, "SELECT 1"), "primary")
 
     async def test_pipelined_commands_keep_order(self):
         b = await self.bridge()
@@ -797,11 +677,10 @@ class TestFailover(BridgeTestCase):
     async def test_pool_survives_cancellation_storm(self):
         b = await self.bridge(replica_pool_size="3", replica_acquire_timeout_sec="0.2")
         pool = b.pool
-        profile = (mb.CLIENT_DEPRECATE_EOF | mb.CLIENT_MULTI_RESULTS, 0, 45, ())
         rnd = random.Random(7)
 
         async def user():
-            conn = await pool.acquire(profile)
+            conn = await pool.acquire(45, True)
             if conn is not None:
                 try:
                     await asyncio.sleep(rnd.random() * 0.02)
@@ -814,20 +693,19 @@ class TestFailover(BridgeTestCase):
                 if rnd.random() < 0.5:
                     t.cancel()
             await asyncio.gather(*tasks, return_exceptions=True)
-            idle = sum(len(d) for d in pool._idle.values())
             self.assertLessEqual(pool.total, 3)
-            self.assertEqual(pool.total, idle)               # no leaked slots
+            self.assertEqual(pool.total, len(pool._idle))    # no leaked slots
             self.assertFalse(pool._waiters)
         c = await self.client(b)
         self.assertEqual(await self.served_by(c, "SELECT 1"), "replica")
 
-    async def test_pool_profiles_share_slots(self):
+    async def test_pool_charset_shares_slots(self):
         b = await self.bridge(replica_pool_size="1")
         c1 = await self.client(b, charset=8)
         c2 = await self.client(b, charset=45)
         for _ in range(3):
             self.assertEqual(await self.served_by(c1, "SELECT 1"), "replica")
-            self.assertEqual(await self.served_by(c2, "SELECT 1"), "replica")
+            self.assertEqual(await self.served_by(c2, "SELECT 1"), "primary")   # charset differs
         self.assertEqual(b.pool.total, 1)
 
     async def test_concurrent_load_is_consistent(self):
@@ -844,24 +722,6 @@ class TestFailover(BridgeTestCase):
                     assert rows[0][2] == "SELECT %d_%d" % (i, j), rows
         await asyncio.wait_for(asyncio.gather(*(worker(c, i) for i, c in enumerate(clients))), 30)
         self.assertLessEqual(b.pool.total, 3)
-
-    async def test_lag_monitor(self):
-        b = await self.bridge(max_replica_lag_sec="5", replica_lag_check_interval_sec="0.1")
-        c = await self.client(b)
-        await asyncio.sleep(0.3)
-        self.assertEqual(await self.served_by(c, "SELECT 1"), "replica")
-        self.replica.lag = 100
-        await asyncio.sleep(0.3)
-        self.assertEqual(await self.served_by(c, "SELECT 1"), "primary")
-        self.replica.lag = None                                  # replication broken
-        await asyncio.sleep(0.3)
-        self.assertEqual(await self.served_by(c, "SELECT 1"), "primary")
-        self.replica.lag = "none"                                # not a replica: no lag
-        await asyncio.sleep(0.3)
-        self.assertEqual(await self.served_by(c, "SELECT 1"), "replica")
-        self.replica.lag_error = True                            # missing privilege
-        await asyncio.sleep(0.3)
-        self.assertEqual(await self.served_by(c, "SELECT 1"), "primary")
 
     async def test_primary_unreachable_gives_error(self):
         port = self.primary.port
@@ -983,8 +843,8 @@ class TestTLS(BridgeTestCase):
         self.replica.tls_ctx = self.server_ctx()
         self.replica.require_tls = True
         tls = {"use_tls": "true", "tls_ca_file": self.cert}
-        b = await self.bridge(primary_opts=tls, replica_opts=tls)
         for deof in (True, False):
+            b = await self.bridge(primary_opts=tls, replica_opts=tls)
             c = await self.client(b, deprecate_eof=deof)
             self.assertEqual(await self.served_by(c, "SELECT 1"), "replica")
             self.assertEqual((await c.query("INSERT INTO t VALUES (1)"))[0][0], "ok")
@@ -1095,7 +955,7 @@ class TestInterop(BridgeTestCase):
 
         def work():
             conn = pymysql.connect(host="127.0.0.1", port=b.ports[0], user="game", password="gamepw",
-                                   database="mmotee", autocommit=True)
+                                   database="mrpg_shared", autocommit=True)
             with conn.cursor() as cur:
                 cur.execute("SELECT * FROM tw_accounts WHERE ID = %s", (1,))
                 a = cur.fetchall()
@@ -1115,7 +975,7 @@ class TestInterop(BridgeTestCase):
 
         def work():
             conn = mariadb.connect(host="127.0.0.1", port=b.ports[0], user="game", password="gamepw",
-                                   database="mmotee", autocommit=True)
+                                   database="mrpg_shared", autocommit=True)
             cur = conn.cursor()
             cur.execute("SELECT * FROM tw_accounts")
             a = cur.fetchall()
@@ -1135,7 +995,7 @@ class TestInterop(BridgeTestCase):
 
         def work():
             conn = mysql.connector.connect(host="127.0.0.1", port=b.ports[0], user="game",
-                                           password="gamepw", database="mmotee", autocommit=True,
+                                           password="gamepw", database="mrpg_shared", autocommit=True,
                                            use_pure=True, ssl_disabled=True)
             cur = conn.cursor()
             cur.execute("SELECT * FROM tw_accounts")
@@ -1168,7 +1028,7 @@ class TestInterop(BridgeTestCase):
                     return [(name, i) for i in range(500)], ["server", "i"]
 
                 async def schema(self):
-                    return {"mmotee": {"t": {"a": "TEXT"}}}
+                    return {"mrpg_shared": {"t": {"a": "TEXT"}}}
             return S
 
         # mysql-mimic never reports SERVER_STATUS_AUTOCOMMIT; the bridge then
@@ -1198,7 +1058,7 @@ class TestInterop(BridgeTestCase):
 
             def work():
                 conn = pymysql.connect(host="127.0.0.1", port=b.ports[0], user="game",
-                                       password="gamepw", database="mmotee", autocommit=True)
+                                       password="gamepw", database="mrpg_shared", autocommit=True)
                 with conn.cursor() as cur:
                     out = []
                     for q in ("SELECT a FROM t", "SELECT a FROM t FOR UPDATE", "SELECT a FROM t"):

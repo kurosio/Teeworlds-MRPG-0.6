@@ -76,10 +76,12 @@ mysql -u root -p -e "SHOW VARIABLES LIKE 'character_set_server';"
 
 ## 3) Database and user commands for MRPG
 
-The server uses two databases on the same MariaDB server, with the same account. Every connection of the server is opened to one of them:
+The server opens two connections, one per database. Each query uses one of them, chosen by its table:
 
-* `mrpg_shared` — content, accounts and records. When several game servers work together, this is the database that is replicated between them.
-* `mrpg_local` — the state of one game server (guilds, groups, auction, owners of houses). Every game server has its own. It is **never replicated**: replication copies `mrpg_shared` only, and every replica excludes the local databases (`replicate_wild_ignore_table = mrpg_local%.%`, see [`other/sql_bridge/README.md`](../other/sql_bridge/README.md)).
+* `mrpg_shared` — content, accounts and records. When several game servers work together, this database is replicated between them and the server reaches it through [`other/sql_bridge`](../other/sql_bridge/README.md) (`SELECT` from the local replica, writes to the primary over the WAN).
+* `mrpg_local` — the state of one game server (guilds, groups, auction, owners of houses). Every game server has its own. It is **never replicated** and it never goes through the bridge: it is a plain direct connection to the MariaDB next to the server.
+
+Both may live in one MariaDB (single server) or in two (bridge deployments).
 
 ```sql
 CREATE DATABASE IF NOT EXISTS mrpg_shared
@@ -100,6 +102,7 @@ Importing databases:
 
 ```bash
 mysql -u root -p mrpg_shared < mrpg_shared.sql
+# on the game server's own MariaDB, one per server: mrpg_local_eu, mrpg_local_us, ...
 mysql -u root -p mrpg_local < mrpg_local.sql
 ```
 
@@ -112,55 +115,57 @@ mysql -u root -p mrpg_local < mrpg_local.sql
 | `mrpg_local` | `tw_auction_slots`, `tw_groups`, `tw_guilds`, `tw_guilds_decorations`, `tw_guilds_history`, `tw_guilds_invites`, `tw_guilds_ranks`, `tw_guilds_wars`, `tw_houses_decorations`, `tw_links` |
 | `mrpg_shared` | every other table |
 
-The server has no list that assigns the tables to the databases. At startup it reads the structure of the shared database (its list of tables, `SHOW TABLES`). For every query it then looks for the table of the query in this list:
-
-* the shared database has the table — the query uses a connection to the shared database;
-* the shared database does not have it — the query uses a connection to the local database.
-
-The game code never names a database. To move a table to the other database, move the table itself (it must exist in one database only) and restart the server.
+The ten local tables are a fixed list in the server (`LOCAL_TABLES` in `src/engine/server/sql_connect_pool.cpp`). Every query names its table, and the first name decides the connection: a name from that list uses the local connection, every other name the shared one. The game code never names a database, and nothing is parsed from the SQL text.
 
 Notes:
 
-* One statement uses the tables of one database only. A statement with a table of each database (`JOIN`, subquery) is sent to the shared database and MariaDB rejects it, because the local table is not there.
+* One statement uses the tables of one database only. A statement that joins a table of each database is sent to the shared connection and MariaDB rejects it, because the local table is not there.
 * The tables of `mrpg_local` have no foreign keys to the tables of `mrpg_shared`. Their rows are not removed automatically when the item, account or world they point to is deleted.
-* The list of tables is read once, at startup. Restart the game server after a table is added to the shared database or removed from it.
-* A query for a table that exists in neither database is sent to the local database, so the error names the local database.
+* Moving a table to the other database means editing that list and rebuilding the server.
+* A query for a table that exists in neither database goes to the shared database, so the error names it.
 
 ### Server settings
 
 ```
+# shared: through the bridge (or straight to the primary without one)
 sv_sql_host "localhost"
+sv_sql_port "33060"
 sv_sql_login "root"
-sv_sql_port "3306"
 sv_sql_password ""
 sv_sql_database_shared "mrpg_shared"
-sv_sql_database_local "mrpg_local"
 sv_sql_pool_size 3
 sv_sql_use_tls 0
+
+# local: direct, no bridge
+sv_sql_local_host ""          # empty = same as sv_sql_host
+sv_sql_local_port "3306"
+sv_sql_local_login "root"
+sv_sql_local_password ""
+sv_sql_local_database "mrpg_local"
+sv_sql_local_pool_size 1
+sv_sql_local_use_tls 0
 ```
 
-Both databases use the same host, port and account, so they must be on the same MariaDB server and the account needs access to both of them. `sv_sql_database_shared` replaces the older `sv_sql_database`.
+`sv_sql_*` is the shared connection, `sv_sql_local_*` the local one. Each pool opens exactly its own connections: `sv_sql_pool_size` to the shared database, `sv_sql_local_pool_size` to the local one (plus one synchronous connection per database and thread that needs it).
 
-`sv_sql_pool_size` is the number of worker connections for both databases together. It is divided between them, and the shared database gets the larger part, because most of the queries use it: one third of the connections (at least one) is opened to the local database, the rest to the shared one.
+Where the two point:
 
-| `sv_sql_pool_size` | Shared | Local |
+| Setup | `sv_sql_host` | `sv_sql_local_host` |
 |---|---|---|
-| 2 | 1 | 1 |
-| 3 | 2 | 1 |
-| 6 | 4 | 2 |
-| 12 | 8 | 4 |
+| one MariaDB, no bridge | its address | empty (same server) |
+| bridge for the shared database | the bridge (33060) | the MariaDB next to the server (3306) — **not** the bridge |
 
-Synchronous queries use one more connection for each database.
+The local SQL port is always MariaDB's own (`sv_sql_local_port`), never the bridge port: the bridge serves `mrpg_shared` only and would not know a local database. When the local database lives on the primary instead, set `sv_sql_local_host` to the primary — correct, but every local query then pays a WAN round trip.
 
-`sv_sql_database_local ""` (or the name of the shared database) turns the split off: all tables are read from `sv_sql_database_shared` and all connections are opened to it, as in the older versions. This is the default of the server binary; the shipped `autoexec_server.cfg` sets `mrpg_local`. Set both names in the configuration file, not while the server runs.
+`sv_sql_local_database ""` leaves the local connection unused: every query goes to the shared database, as in older versions. Set both names in the configuration file, not while the server runs. The shared login and the local login may differ; each connection is opened with its own account.
 
-Every game server needs a local database of its own. If several game servers use the same MariaDB server (directly or through [`other/sql_bridge`](../other/sql_bridge/README.md)), give each of them another name, for example `sv_sql_database_local "mrpg_local_eu"`. Keep the `mrpg_local` prefix: on the bridge, the rule `replicate_wild_ignore_table = mrpg_local%.%` excludes all of them from the replicas.
+Every game server needs a local database of its own; give each of them another name, for example `sv_sql_local_database "mrpg_local_eu"`.
 
-At startup the server reads the tables of both databases. It does not start if:
+At startup the server opens both databases. It does not start if:
 
-* one of the databases can not be opened;
-* a table exists in both databases (the queries would use the one in the shared database and ignore the rows of the local one);
-* a table of `mrpg_local.sql` exists in neither database.
+* the shared database can not be opened, or the local one is configured and can not be opened;
+* a local table is missing in the local database (import `mrpg_local.sql`);
+* a local table sits in the shared database (a half-finished split would be read from the wrong side).
 
 ### Moving an existing database to two databases
 
@@ -235,7 +240,7 @@ Compare the number of rows of every table, for example:
 SELECT (SELECT COUNT(*) FROM old_db.tw_guilds) AS old_rows, (SELECT COUNT(*) FROM mrpg_local.tw_guilds) AS new_rows;
 ```
 
-Then remove the copied tables from the old database, before the game server starts. The server chooses the database of a query by the tables of the shared database: while the old database still has these tables, the server does not start (the tables with foreign keys to `tw_guilds` go first):
+Then remove the copied tables from the old database, before the game server starts: while the shared database still has a local table, the server refuses to start (the tables with foreign keys to `tw_guilds` go first):
 
 ```sql
 USE old_db;
@@ -248,4 +253,4 @@ ALTER TABLE tw_houses DROP COLUMN UserID;
 ALTER TABLE tw_guilds_houses DROP COLUMN GuildID;
 ```
 
-Give the account of the game server access to the new database (see section 3), set `sv_sql_database_shared` and `sv_sql_database_local` and start the server.
+Give the account of the game server access to the new database (see section 3), then set `sv_sql_database_shared` (the old database) and `sv_sql_local_database` (`mrpg_local`) — plus `sv_sql_local_host` and `sv_sql_local_login` if the local database is on another MariaDB — and start the server.

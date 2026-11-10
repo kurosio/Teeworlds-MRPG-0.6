@@ -1,12 +1,13 @@
-# mysql_bridge.py 2.0 (Python 3.8+). Copy to bridge.cfg (chmod 600):
+# mysql_bridge.py 3.0 (Python 3.8+). Copy to bridge.cfg (chmod 600):
 #   python3 mysql_bridge.py bridge.cfg
 #   python3 mysql_bridge.py bridge.cfg --check-config
 # Environment overrides: BRIDGE_{LISTEN_HOST,LISTEN_PORT,LOG_LEVEL},
 # BRIDGE_PRIMARY_{HOST,PORT}, BRIDGE_REPLICA_{HOST,PORT,USER,PASSWORD,PASSWORD_FILE}.
 # In a normal install edit: [bridge] listen_host, [primary] host,
 # [replica] password (or password_file / BRIDGE_REPLICA_PASSWORD).
-# Only the shared database is replicated; local databases stay on the primary
-# and their reads always go there.
+# The bridge serves the shared database only (mrpg_shared). The local database
+# (mrpg_local) is a direct connection of the game server and never goes
+# through the bridge.
 
 [bridge]
 # Game servers connect here. Loopback only by default; the hop is plain MySQL,
@@ -22,15 +23,9 @@ max_clients = 64
 replica_pool_size = 16
 # false = send everything to the primary (incident mode, plain relay).
 route_selects_to_replica = true
-# After a write, matching reads use the primary this long (0 = off); keep it
-# above the replication lag.
+# After a write, reads use the primary this long (0 = off); keep it above the
+# replication lag, so a SELECT right after an INSERT sees the new row.
 read_your_writes_grace_sec = 2.0
-# table (recommended) | global | connection - who is affected; see README.
-#read_your_writes_scope = table
-# >0: poll the replica lag and bypass it while behind, stopped or unknown.
-# Needs GRANT REPLICA MONITOR (MariaDB 10.5+; older: REPLICATION CLIENT).
-#max_replica_lag_sec = 0
-#replica_lag_check_interval_sec = 2
 # 0 disables; keep above the game server's 60 s idle reuse.
 #client_idle_timeout_sec = 600
 #auth_timeout_sec = 10
@@ -66,8 +61,7 @@ use_tls = false
 
 [replica]
 # Read replica in this location (or [primary] itself for a plain proxy).
-# It carries the shared database only; local databases are read from the
-# primary.
+# It carries the shared database only.
 host = 127.0.0.1
 port = 3306
 #connect_timeout_sec = 3
@@ -76,7 +70,7 @@ port = 3306
 user = mrpg_bridge
 password = changeme
 #password_file = /etc/mrpg/bridge_replica_password
-# Database for reads without a default one.
+# Database for replica connections.
 database = mrpg_shared
 # Same TLS keys as [primary]; usually unnecessary on 127.0.0.1.
 use_tls = false

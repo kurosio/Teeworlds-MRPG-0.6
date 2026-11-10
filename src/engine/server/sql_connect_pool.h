@@ -12,8 +12,12 @@
 #include <atomic>
 #include <condition_variable>
 #include <cstdarg>
+#include <cstring>
 #include <memory>
 #include <queue>
+#include <string>
+#include <string_view>
+#include <vector>
 
 using namespace sql;
 class CConectionPool; // Forward declare
@@ -28,7 +32,24 @@ enum class DB
 	INSERT,
 	UPDATE,
 	REMOVE,
-	OTHER,
+};
+
+// Which of the two connections a query uses.
+enum class DbKind
+{
+	Shared = 0,
+	Local = 1,
+};
+
+// Connection settings of one database.
+struct DbSettings
+{
+	std::string m_HostPort; // "host:port"
+	std::string m_Login;
+	std::string m_Password;
+	std::string m_Database;
+	int m_PoolSize = 1;
+	bool m_UseTls = false;
 };
 
 // Helper to check for lost connection errors by error code or SQLSTATE.
@@ -145,11 +166,12 @@ using CallbackUpdatePtr = std::function<void(bool)>;
 /**
  * @class CThreadPool
  * @brief Manages a pool of persistent worker threads for executing database tasks.
+ *        One pool per database; every worker holds one connection to that database.
  */
 class CThreadPool
 {
 public:
-	CThreadPool(size_t numThreads, bool Local = false);
+	CThreadPool(DbKind Kind, int NumThreads);
 	~CThreadPool();
 
 	CThreadPool(const CThreadPool&) = delete;
@@ -183,7 +205,7 @@ private:
 	std::condition_variable m_cvCondition;
 	std::atomic<bool> m_bStop;
 	std::atomic<size_t> m_QueueSize { 0 };
-	bool m_Local;
+	DbKind m_Kind;
 };
 
 
@@ -205,38 +227,30 @@ public:
 
 	CConectionPool(const CConectionPool&) = delete;
 	CConectionPool& operator=(const CConectionPool&) = delete;
-	static std::unique_ptr<Connection> CreateConnection(bool Local = false);
+	static std::unique_ptr<Connection> CreateConnection(DbKind Kind);
 
-	// Startup, before the first query: reads the structure (list of tables) of the
-	// shared database, which chooses the database of every query, and checks that
-	// the tables of this server exist. The server must not start if it fails.
+	// Startup, before the first query: opens both connections and checks that
+	// the local tables are in the local database and not in the shared one.
+	// The server must not start if it fails.
 	bool InitDatabases();
 
-	// True if the table belongs to the local database of this server: the shared
-	// database does not have it (always false while sv_sql_database_local is not set).
+	// True if the table belongs to the local database (always false while
+	// sv_sql_local_database is not set).
 	bool IsLocalTable(std::string_view Table) const;
 
 private:
 	CConectionPool();
 	~CConectionPool();
 
-	// A query runs in one database. If the shared database has the table of the
-	// query, the query uses a connection to the shared database, otherwise a
-	// connection to the local one (see sql_table_routing.h). Call sites never
-	// name a database.
-	bool IsLocalQuery(const std::string& Query) const;
-	CThreadPool* GetThreadPool(bool Local) const;
+	// The table of the query chooses the connection: a local table uses the
+	// local pool, every other table the shared one.
+	DbKind KindOfTable(const char* pTable) const;
+	CThreadPool* GetThreadPool(DbKind Kind) const;
 
 	Driver* m_pDriver;
-	std::string m_LocalDatabase;
-	std::vector<std::string> m_vSharedTables;
-	std::atomic<bool> m_SharedTablesLoaded { false };
-	int m_SharedThreads = 0;
-	int m_LocalThreads = 0;
-
-	// sv_sql_pool_size is divided between the two databases, see the constructor
-	std::unique_ptr<CThreadPool> m_pThreadPool;
-	std::unique_ptr<CThreadPool> m_pLocalThreadPool;
+	DbSettings m_aSettings[2];
+	bool m_bHasLocal = false;
+	std::unique_ptr<CThreadPool> m_apThreadPools[2];
 
 public:
 	class CResultBase
@@ -245,6 +259,7 @@ public:
 		friend class CConectionPool;
 		std::string m_Query;
 		DB m_TypeQuery;
+		DbKind m_Kind = DbKind::Shared;
 	public:
 		const char* GetQueryString() const { return m_Query.c_str(); }
 	};
@@ -285,32 +300,13 @@ public:
 		void Execute(int DelayMilliseconds = 0) { AtExecute(CallbackUpdatePtr(), DelayMilliseconds); }
 	};
 
-	class CResultQueryCustom : public CResultQuery
-	{
-	public:
-		template <typename... Ts>
-		CResultQueryCustom& UpdateQuery(const char* pBuffer, Ts&&... args)
-		{
-			std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
-			m_Query = strQuery + ";";
-			return *this;
-		}
-	};
-
 private:
 	static std::unique_ptr<CResultSelect> PrepareQuerySelect(DB Type, const char* pSelect, const char* pTable, std::string strQuery)
 	{
 		auto Data = std::make_unique<CResultSelect>();
 		Data->m_Query = "SELECT " + std::string(pSelect) + " FROM " + std::string(pTable) + " " + strQuery + ";";
 		Data->m_TypeQuery = Type;
-		return Data;
-	}
-
-	static std::unique_ptr<CResultQueryCustom> PrepareQueryCustom(DB Type, std::string strQuery)
-	{
-		auto Data = std::make_unique<CResultQueryCustom>();
-		Data->m_Query = std::move(strQuery) + ";";
-		Data->m_TypeQuery = Type;
+		Data->m_Kind = GetInstance()->KindOfTable(pTable);
 		return Data;
 	}
 
@@ -324,6 +320,7 @@ private:
 			Data->m_Query = "UPDATE " + std::string(pTable) + " SET " + strQuery + ";";
 		else if(Type == DB::REMOVE)
 			Data->m_Query = "DELETE FROM " + std::string(pTable) + " " + strQuery + ";";
+		Data->m_Kind = GetInstance()->KindOfTable(pTable);
 		return Data;
 	}
 
@@ -350,19 +347,6 @@ public:
 	{
 		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
 		return PrepareQuerySelect(T, pSelect, pTable, std::move(strQuery))->Execute();
-	}
-
-	template<DB T, int Milliseconds = 0, typename... Ts>
-	static std::enable_if_t<T == DB::OTHER, void> Execute(const char* pBuffer, Ts&&... args)
-	{
-		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
-		PrepareQueryCustom(T, std::move(strQuery))->Execute(Milliseconds);
-	}
-	template<DB T, int Milliseconds = 0, typename... Ts>
-	static std::enable_if_t<T == DB::OTHER, void> Execute(CallbackUpdatePtr pCallbackResult, const char* pBuffer, Ts&&... args)
-	{
-		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
-		PrepareQueryCustom(T, std::move(strQuery))->AtExecute(std::move(pCallbackResult), Milliseconds);
 	}
 
 	template<DB T, int Milliseconds = 0, typename... Ts>

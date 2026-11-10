@@ -1,4 +1,4 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_VARIABLES_H
 #define GAME_VARIABLES_H
@@ -220,15 +220,28 @@ MACRO_CONFIG_INT(SvRageQuitDecreaseRating, sv_rage_quit_decrease_rating, 50, 10,
 MACRO_CONFIG_INT(SvHighlightExperts, sv_highlight_experts, 1, 0, 1, CFGFLAG_SERVER, "Highlight by aura experts professions.")
 
 
-// mysql
-MACRO_CONFIG_STR(SvMySqlHost, sv_sql_host, 32, "localhost", CFGFLAG_SERVER, "MySQL Host")
-MACRO_CONFIG_STR(SvMySqlDatabaseShared, sv_sql_database_shared, 32, "database", CFGFLAG_SERVER, "MySQL shared database: content, accounts and records, replicated between the servers")
-MACRO_CONFIG_STR(SvMySqlDatabaseLocal, sv_sql_database_local, 32, "", CFGFLAG_SERVER, "MySQL local database: the tables of this server that the shared database does not have (empty = one database)")
-MACRO_CONFIG_STR(SvMySqlLogin, sv_sql_login, 32, "root", CFGFLAG_SERVER, "MySQL Login")
-MACRO_CONFIG_STR(SvMySqlPassword, sv_sql_password, 32, "", CFGFLAG_SERVER, "MySQL Password")
-MACRO_CONFIG_INT(SvMySqlPort, sv_sql_port, 3306, 0, 65000, CFGFLAG_SERVER, "MySQL Port")
-MACRO_CONFIG_INT(SvMySqlPoolSize, sv_sql_pool_size, 3, 2, 12, CFGFLAG_SERVER, "MySQL Pool size (divided between the shared and the local database, the larger part for the shared one)");
-MACRO_CONFIG_INT(SvMySqlUseTls, sv_sql_use_tls, 0, 0, 1, CFGFLAG_SERVER, "Enable TLS/SSL for MySQL connection (0 = off, 1 = on)")
+// mysql: two connections. The shared database goes through the bridge
+// (other/sql_bridge/mysql_bridge.py): SELECTs are served by the local replica,
+// writes go to the primary over the WAN. The local database is a plain direct
+// connection without the bridge and without replication.
+MACRO_CONFIG_STR(SvMySqlHost, sv_sql_host, 32, "localhost", CFGFLAG_SERVER, "MySQL shared host (bridge)")
+MACRO_CONFIG_STR(SvMySqlDatabaseShared, sv_sql_database_shared, 32, "mrpg_shared", CFGFLAG_SERVER, "MySQL shared database: content, accounts and records, replicated between the servers")
+MACRO_CONFIG_STR(SvMySqlLogin, sv_sql_login, 32, "root", CFGFLAG_SERVER, "MySQL shared login")
+MACRO_CONFIG_STR(SvMySqlPassword, sv_sql_password, 32, "", CFGFLAG_SERVER, "MySQL shared password")
+MACRO_CONFIG_INT(SvMySqlPort, sv_sql_port, 3306, 0, 65000, CFGFLAG_SERVER, "MySQL shared port (bridge)")
+MACRO_CONFIG_INT(SvMySqlPoolSize, sv_sql_pool_size, 2, 1, 12, CFGFLAG_SERVER, "MySQL shared pool size (connections through the bridge)")
+MACRO_CONFIG_INT(SvMySqlUseTls, sv_sql_use_tls, 0, 0, 1, CFGFLAG_SERVER, "Enable TLS/SSL for the shared connection (0 = off, 1 = on; the bridge does not terminate TLS, so 0 when going through it)")
+
+// local database: direct connection, no bridge, no replica. Empty database
+// name = no local database, every query uses the shared connection. Empty
+// host = the local connection uses the shared endpoint (same server).
+MACRO_CONFIG_STR(SvMySqlLocalHost, sv_sql_local_host, 32, "", CFGFLAG_SERVER, "MySQL local host (empty = same endpoint as the shared one)")
+MACRO_CONFIG_STR(SvMySqlLocalDatabase, sv_sql_local_database, 32, "", CFGFLAG_SERVER, "MySQL local database: the tables of this server only (empty = one database)")
+MACRO_CONFIG_STR(SvMySqlLocalLogin, sv_sql_local_login, 32, "root", CFGFLAG_SERVER, "MySQL local login")
+MACRO_CONFIG_STR(SvMySqlLocalPassword, sv_sql_local_password, 32, "", CFGFLAG_SERVER, "MySQL local password")
+MACRO_CONFIG_INT(SvMySqlLocalPort, sv_sql_local_port, 3306, 0, 65000, CFGFLAG_SERVER, "MySQL local port")
+MACRO_CONFIG_INT(SvMySqlLocalPoolSize, sv_sql_local_pool_size, 1, 1, 12, CFGFLAG_SERVER, "MySQL local pool size (direct connections)")
+MACRO_CONFIG_INT(SvMySqlLocalUseTls, sv_sql_local_use_tls, 0, 0, 1, CFGFLAG_SERVER, "Enable TLS/SSL for the local connection (0 = off, 1 = on)")
 
 // mysql retry and timeout tuning
 MACRO_CONFIG_INT(SvSqlSelectMaxRetries, sv_sql_select_max_retries, 3, 0, 10, CFGFLAG_SERVER, "MySQL max retries for SELECT tasks")

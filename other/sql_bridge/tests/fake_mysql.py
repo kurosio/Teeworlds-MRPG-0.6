@@ -512,7 +512,7 @@ class Session:
 
 
 class FakeMySQLServer:
-    def __init__(self, name, users=None, databases=("mmotee", "other"), deprecate_eof=True,
+    def __init__(self, name, users=None, databases=("mrpg_shared", "other"), deprecate_eof=True,
                  session_track=True, mariadb=True, ext_caps=0x04, read_only=False, tls_ctx=None,
                  require_tls=False, plugin="mysql_native_password", auth_switch=False,
                  long_terminator=False, version="11.8.9-MariaDB-fake"):
@@ -595,7 +595,7 @@ class MiniClient:
         self.status = 0
         self.greeting_caps = 0
 
-    async def connect(self, port, user="game", password="gamepw", db="mmotee",
+    async def connect(self, port, user="game", password="gamepw", db="mrpg_shared",
                       deprecate_eof=True, mariadb=True, multi_statements=False,
                       session_track=True, charset=45, host="127.0.0.1", local_files=True,
                       request_ssl=False, compress=False):

@@ -44,7 +44,7 @@ host = 127.0.0.1
 port = {replica}
 user = bridge
 password = bridgepw
-database = mmotee
+database = mrpg_shared
 """
 
 

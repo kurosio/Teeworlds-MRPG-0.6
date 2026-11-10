@@ -11,10 +11,14 @@ game server (C) --/    (mysql_bridge.py)                    +--> replication -->
                                                             --/
 ```
 
-The bridge is a stdlib asyncio MySQL/MariaDB proxy. It sends plain
-`SELECT`/`SHOW`/`DESCRIBE`/`EXPLAIN` to the replica and everything else
-(writes, DDL, transactions, anything uncertain) to the primary; see
+The bridge is a stdlib asyncio MySQL/MariaDB proxy for the shared database
+only: plain `SELECT`s go to the replica, everything else (writes, DDL,
+`SHOW`, transactions, anything uncertain) to the primary; see
 [How routing works](#how-routing-works).
+
+The game server has two connections and picks one per query by the table it
+touches: `mrpg_shared` tables go through the bridge, `mrpg_local` tables go
+straight to the local MariaDB. The bridge never sees the local database.
 
 **Files:** `mysql_bridge.py` (the bridge), `bridge.cfg.example` (template),
 `replica_setup.sql` (primary accounts), `tests/` (tests, fake server, benchmark).
@@ -47,12 +51,14 @@ its local bridge only; 33060 on a bridge — the local game server only.
   `mrpg_shared` only (step 2.2). A replica never creates or changes a local
   database; a stale one is removed as described
   [below](#excluding-a-local-database-from-replication-later).
-* The game server uses one bridge, host, port and account for both databases
-  (login is relayed to the primary): shared reads go to the replica, local
-  reads to the primary (one WAN round trip each). A connection uses one
-  database and a statement never mixes tables of both.
+* The game server opens two connections: `sv_sql_*` for the shared database
+  (through the bridge, login relayed to the primary) and `sv_sql_local_*` for
+  the local one (direct, no bridge, no replica). A query names its table, and
+  the table decides the connection; a statement never mixes tables of both.
 * One local database per game server, named `mrpg_local_<location>` (keep the
-  prefix); two servers must never share one.
+  prefix); two servers must never share one. It lives on the game server's own
+  MariaDB; if you keep it on the primary instead, the ignore rule of step 2.1
+  keeps it out of the replicas (as before).
 
 ---
 
@@ -96,13 +102,10 @@ Apply the tuning from [`docs/mariadb.md`](../../docs/mariadb.md) and set
 ```bash
 mariadb -u root -p -e "CREATE DATABASE IF NOT EXISTS mrpg_shared CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mariadb -u root -p mrpg_shared < mrpg_shared.sql
-
-# once per game server: mrpg_local_eu, mrpg_local_us, ...
-mariadb -u root -p -e "CREATE DATABASE IF NOT EXISTS mrpg_local_eu CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mariadb -u root -p mrpg_local_eu < mrpg_local.sql
 ```
 
-The local databases stay on the primary; replicas never get them (step 2.1).
+`mrpg_local.sql` goes into `mrpg_local_<location>` on each game server (step 4);
+import it on the primary too if you want to keep the local databases there.
 
 ### 1.4 Accounts
 
@@ -223,15 +226,8 @@ FLUSH PRIVILEGES;
 SQL
 ```
 
-`mrpg_shared` only — local databases are not on the replica. For the lag guard
-(`max_replica_lag_sec`) also grant:
-
-```bash
-mariadb -u root -p -e "GRANT REPLICA MONITOR ON *.* TO 'mrpg_bridge'@'127.0.0.1';"
-# MariaDB < 10.5: GRANT REPLICATION CLIENT ON *.* TO ...
-```
-
-No other privileges are needed (the bridge replays a few session `SET`s).
+`mrpg_shared` only — that is all the bridge needs (it never touches another
+database and does not read the replication status).
 
 ### 2.5 Verify
 
@@ -321,9 +317,9 @@ database = mrpg_shared
 ```
 
 `[primary]` has no user/password on purpose: the game server's login is
-relayed and checked there. The bridge routes by statement and by the
-connection's database — shared reads to the replica, local reads to the
-primary (see [What is replicated](#what-is-replicated)).
+relayed and checked there. The bridge routes by statement only — plain
+`SELECT`s to the replica, everything else to the primary. It serves
+`mrpg_shared`; the local database does not go through it.
 
 Key settings (defaults in brackets; the rest is commented in
 `bridge.cfg.example`):
@@ -334,9 +330,7 @@ Key settings (defaults in brackets; the rest is commented in
 | `[bridge] allowed_clients` | all | source IP/CIDR allowlist; set it if `listen_host` is not loopback |
 | `[bridge] replica_pool_size` | 16 | persistent replica connections; keep above the sum of all `sv_sql_pool_size` |
 | `[bridge] route_selects_to_replica` | true | `false` = send everything to the primary (incident mode) |
-| `[bridge] read_your_writes_grace_sec` | 0 | matching reads use the primary this long after a write; set above the lag, e.g. 2 |
-| `[bridge] read_your_writes_scope` | `table` | `table`, `global` or `connection` ([Consistency](#consistency)) |
-| `[bridge] max_replica_lag_sec` | 0 | bypass a replica that is behind; needs `REPLICA MONITOR` |
+| `[bridge] read_your_writes_grace_sec` | 0 | reads use the primary this long after any write; set above the lag, e.g. 2 |
 | `[bridge] log_level` | `INFO` | `DEBUG` logs every routing decision |
 | `[primary] use_tls` | false | TLS to the primary; with `tls_ca_file` the certificate is verified |
 
@@ -375,7 +369,7 @@ python3 mysql_bridge.py bridge.cfg
 ```
 
 The config path is optional (default: `bridge.cfg` next to the script). The
-log shows `bridge 2.0 listening on ...` and a `stats replica=... primary=...
+log shows `bridge 3.0 listening on ...` and a `stats replica=... primary=...
 fallback=... pool=n/m replica=up` line every 30 s; `SIGTERM`/`SIGINT` stop it
 cleanly.
 
@@ -408,23 +402,38 @@ sudo journalctl -u mrpg-mysql-bridge -f
 
 ```ini
 #sql
+# shared database: through the bridge
 sv_sql_host "127.0.0.1"
 sv_sql_port 33060
 sv_sql_login "mrpg_user"
 sv_sql_password "<GAME_PASSWORD>"
 sv_sql_database_shared "mrpg_shared"
-sv_sql_database_local "mrpg_local_eu"
 sv_sql_pool_size 8
 sv_sql_use_tls 0
+
+# local database: direct to the local MariaDB, no bridge
+sv_sql_local_host "127.0.0.1"
+sv_sql_local_port 3306
+sv_sql_local_login "mrpg_user"
+sv_sql_local_password "<GAME_PASSWORD>"
+sv_sql_local_database "mrpg_local_eu"
+sv_sql_local_pool_size 2
+sv_sql_local_use_tls 0
 ```
 
 * `mrpg_user`, not `mrpg_bridge` (login is relayed to the primary);
   `sv_sql_password` is limited to 32 characters.
-* `sv_sql_database_local` is the only per-server line; without a complete
-  local database the server does not start. It exists on the primary only.
-* `sv_sql_pool_size` covers both databases (8 = 6 shared + 2 local). Bridge on
-  another host: `sv_sql_host` = its LAN IP, matching `listen_host`, firewall
-  33060 to the game-server host.
+* `sv_sql_pool_size` is the shared pool (through the bridge),
+  `sv_sql_local_pool_size` the local one. Both count their own connections.
+* `sv_sql_local_database` is the only per-server line; without a complete
+  local database the server does not start. `sv_sql_local_host` must point at
+  the MariaDB that holds it, **not** at the bridge.
+* Empty `sv_sql_local_database` = no local database, everything uses the
+  shared connection (single-database installs). Empty `sv_sql_local_host` =
+  reuse the shared endpoint — fine only without a bridge, because the bridge
+  does not serve the local database.
+* Bridge on another host: `sv_sql_host` = its LAN IP, matching
+  `listen_host`, firewall 33060 to the game-server host.
 
 ---
 
@@ -435,9 +444,8 @@ sv_sql_use_tls 0
 mariadb -h 127.0.0.1 -P 33060 -u mrpg_user -p mrpg_shared \
   -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='mrpg_shared';"
 
-# local database through the bridge (10 tables, none in the shared DB;
-# served by the primary)
-mariadb -h 127.0.0.1 -P 33060 -u mrpg_user -p mrpg_local_eu -e "SHOW TABLES;"
+# local database directly on the local MariaDB (10 tables, none in mrpg_shared)
+mariadb -h 127.0.0.1 -P 3306 -u mrpg_user -p mrpg_local_eu -e "SHOW TABLES;"
 
 # replica health
 mariadb -u root -p -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running|Seconds_Behind"
@@ -449,33 +457,33 @@ journalctl -u mrpg-mysql-bridge -f
 Start the game server and check its log:
 
 ```
-Shared database 'mrpg_shared', local database 'mrpg_local_eu' (127.0.0.1:33060).
-The pool is divided: 6 connections to the shared database (40 tables), 2 to the local one (10 tables).
+[SQL] Shared database 'mrpg_shared' (127.0.0.1:33060, 8 connections), local database 'mrpg_local_eu' (127.0.0.1:3306, 2 connections).
 ```
+
+The server refuses to start when a database is unreachable, when a local
+table is missing in the local database, or when one of them still sits in the
+shared database.
 
 ---
 
 ## Adding a game server later
 
-Create the local database on the **primary** only; no replica needs a change:
+Create the local database on that server's own MariaDB — no replica, no
+bridge and no primary change is needed:
 
 ```bash
 mariadb -u root -p -e "CREATE DATABASE IF NOT EXISTS mrpg_local_us CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mariadb -u root -p mrpg_local_us < mrpg_local.sql
-mariadb -u root -p <<'SQL'
-SET sql_log_bin = 0;
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON mrpg_local_us.* TO 'mrpg_user'@'%';
-SQL
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON mrpg_local_us.* TO 'mrpg_user'@'localhost';
 ```
 
-* Replicas skip the new database and its tables (step 2.1); their
-  `SHOW DATABASES` stays `mrpg_shared` only.
-* `SET sql_log_bin = 0` keeps the `GRANT` out of the binlog: the account
-  exists on the primary only, a replicated `GRANT` would stop replication.
-* No `mrpg_bridge` grant is needed. A name outside the `mrpg_local` prefix
-  needs its own rule on every replica
-  ([details](#excluding-a-local-database-from-replication-later)); a new
-  location needs its own replica and bridge (steps 2–3).
+* It is reached by `sv_sql_local_*`, so it never appears in a replica's
+  `SHOW DATABASES` and needs no `mrpg_bridge` grant.
+* Keeping it on the primary also works: the ignore rule of step 2.1 keeps it
+  out of the replicas, and `sv_sql_local_host` then points at the primary (one
+  WAN round trip per local query — prefer the game-server host).
+* A new location still needs its own replica and bridge (steps 2–3) for the
+  shared database.
 
 ---
 
@@ -501,7 +509,7 @@ move out. In this guide it is called `mrpg_shared`.
 4. Wait until every replica has applied the shared-database changes (step 2.5);
    `SHOW DATABASES` must still show `mrpg_shared` only.
 5. In every game server configuration replace `sv_sql_database` by
-   `sv_sql_database_shared` and add `sv_sql_database_local` (step 4); start
+   `sv_sql_database_shared` and add the `sv_sql_local_*` block (step 4); start
    and check the logs.
 
 ---
@@ -516,21 +524,20 @@ move out. In this guide it is called `mrpg_shared`.
 * **`client ... requested TLS` / `primary ... does not offer TLS`** — set
   `sv_sql_use_tls 0`; the bridge does not terminate TLS. If the primary lacks
   TLS, configure `ssl` there or disable `[primary] use_tls` behind a VPN.
-* **`replica lag check failed`** — grant `REPLICA MONITOR` (step 2.4) or set
-  `max_replica_lag_sec = 0`.
 * **Stale reads right after a write** — raise
   `read_your_writes_grace_sec`; see [Consistency](#consistency).
-* **`replica cannot use database 'mrpg_local_...'`** — expected: the replica
-  has no local database; the reads go to the primary and the probe repeats at
-  most every 30 s. If it names `mrpg_shared`, the replica is missing the
-  database or `mrpg_bridge` lacks `SELECT`.
+* **`replica cannot use database '...'`** — the replica is missing
+  `mrpg_shared`, or `mrpg_bridge` lacks `SELECT` on it. A local database name
+  here means `sv_sql_local_host` still points at the bridge.
 * **A local database appears in `SHOW DATABASES` on a replica** — stale copy;
   remove it (section above).
-* **`The local database '...' is unavailable` / `Tables found neither ...`** —
-  the database named by `sv_sql_database_local` must exist on the primary with
-  the tables of `mrpg_local.sql`, and `mrpg_user` needs its `GRANT`.
-* **`Tables found in both databases`** — the shared database still has local
-  tables; remove them on the primary and wait for the replica (step 2.5).
+* **`The local database '...' is unavailable`** — the database named by
+  `sv_sql_local_database` must exist on the host named by `sv_sql_local_host`
+  with the tables of `mrpg_local.sql`, and that login needs a `GRANT`.
+* **`Tables not found in the local database`** — import `mrpg_local.sql`
+  there; the server checks all ten tables at startup.
+* **`Local tables found in the shared database`** — the split is incomplete;
+  remove them from `mrpg_shared` and wait for the replicas (step 2.5).
 * **Replication broken** — `SHOW SLAVE STATUS\G` shows `Last_IO_Error` /
   `Last_SQL_Error`; fix, then `START SLAVE;`.
 * **Debugging** — `route_selects_to_replica = false` sends everything to the
@@ -545,37 +552,32 @@ to the replica:
 
 | Replica | Primary |
 |---|---|
-| `SELECT ...` / `WITH ... SELECT` / `(SELECT ...)` | every write, DDL, `CALL`, `DO`, `LOAD DATA` |
-| `SHOW TABLES / COLUMNS / INDEX / CREATE TABLE / TABLE STATUS ...` | `SELECT ... FOR UPDATE / LOCK IN SHARE MODE / FOR SHARE` |
-| `DESCRIBE` / `EXPLAIN SELECT` | `LAST_INSERT_ID()`, `FOUND_ROWS()`, `ROW_COUNT()`, `GET_LOCK()`, sequences, `@variables`, `INTO`, `SHOW WARNINGS/VARIABLES/STATUS/GRANTS/PROCESSLIST ...` |
-| | multi-statements, executable comments (`/*! ... */`), unparsable input |
-| | anything in a transaction or with `autocommit = 0`, after `LOCK TABLES` / `CREATE TEMPORARY TABLE`, and prepared statements |
+| a single plain `SELECT ...` / `(SELECT ...)` | everything else: writes, DDL, `SHOW`, `DESCRIBE`, `EXPLAIN`, `CALL` |
+| | `SELECT ... FOR UPDATE / LOCK IN SHARE MODE / FOR SHARE`, `SELECT ... INTO` |
+| | `LAST_INSERT_ID()`, `FOUND_ROWS()`, `ROW_COUNT()`, `GET_LOCK()`, `@variables`, `DATABASE()`, `LOAD_FILE()` |
+| | multi-statements and anything after a `SET` / `USE` / `BEGIN` / `LOCK TABLES` / `CREATE TEMPORARY TABLE` on that session |
+| | multi-result prepared statements (`COM_STMT_*` are relayed, never split) |
 
-String literals and comments are stripped before classification, so keywords
-in values do not change the route and literals are never logged.
+The first word decides the route, and string literals are blanked out first,
+so a `SELECT`'s values can neither change the route nor appear in the log.
+The rule can only be too careful (a `SELECT` served by the primary), never
+too loose.
 
-Routing is by statement and connection database. A read of a database the
-replica does not have fails there and is re-run on the primary; the bridge
-skips that database on the replica for 30 s, so at most one read per 30 s pays
-the probe — that is how local databases work.
-
-If the replica is down, slow, short of pool slots, lagging or erroring, the
-query goes to the primary. Responses up to `replica_buffer_kb` are buffered for
-that; a bigger stream cut by a replica failure closes that client connection
-(the game server reconnects). Session settings (`SET NAMES`, `SET sql_mode`,
-charset, current database) are mirrored on replica connections.
+If the replica is down, short of pool slots, slow or erroring, the query goes
+to the primary. Responses up to `replica_buffer_kb` are buffered for that; a
+bigger stream cut by a replica failure closes that client connection (the
+game server reconnects). The replica connections use the charset of the first
+game-server session; a session with another charset goes to the primary.
 
 ### Consistency
 
-* Same connection reads from the primary for `read_your_writes_grace_sec`
-  after a write; inside a transaction the window starts at `COMMIT`.
-* Other connections (`read_your_writes_scope = table`, default): reads
-  mentioning a recently written table use the primary (`global` = all reads,
-  `connection` = pre-2.0). Needed when the game writes and reads back on
-  different pooled connections.
+* After any write, **all** reads use the primary for
+  `read_your_writes_grace_sec` (one timestamp for the whole bridge) — the
+  game writes and reads back on different pooled connections, so a per-table
+  or per-connection rule would miss it. Set it above the replication lag.
+* A transaction stays on the primary from `BEGIN` to `COMMIT`/`ROLLBACK`.
 * Not covered: writes through another location's bridge appear when
-  replication catches up; keep the grace above the lag and use
-  `max_replica_lag_sec`.
+  replication catches up; keep the grace above the lag.
 
 ## Testing
 
@@ -597,8 +599,7 @@ interoperability tests run too. `tests/bench_bridge.py` is a micro-benchmark
   `BRIDGE_REPLICA_*`.
 * Bridge and replica ports stay on `127.0.0.1` (or LAN + `allowed_clients` +
   firewall), never on the internet; the game server ↔ bridge hop is plain.
-* `mrpg_bridge` has only `SELECT` on `mrpg_shared` (+ optional
-  `REPLICA MONITOR`).
+* `mrpg_bridge` has only `SELECT` on `mrpg_shared`.
 * `[primary] use_tls` + `tls_ca_file` when the WAN is not already encrypted.
 * Unauthenticated peers cannot reach the replica (login is checked by the
   primary); central 3306 only via VPN, `@'%'` masks tightened; `MASTER_SSL=1`
