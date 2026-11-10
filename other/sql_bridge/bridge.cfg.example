@@ -8,7 +8,14 @@
 #   BRIDGE_REPLICA_HOST, BRIDGE_REPLICA_PORT, BRIDGE_REPLICA_USER,
 #   BRIDGE_REPLICA_PASSWORD, BRIDGE_REPLICA_PASSWORD_FILE
 # Only the lines that are not commented out are required; everything else
-# shows its default.
+# shows its default. In a normal install you edit three values:
+#   [bridge]  listen_host   (keep 127.0.0.1 when the game server is local)
+#   [primary] host          (the central primary)
+#   [replica] password      (or password_file / BRIDGE_REPLICA_PASSWORD)
+#
+# Only mrpg_shared is replicated to the replica. The local databases
+# (mrpg_local_eu, ...) stay on the primary and their reads always go there,
+# so nothing here has to know their names.
 
 [bridge]
 # Where game servers connect. DEFAULT IS LOCALHOST ONLY - the bridge must
@@ -112,19 +119,24 @@ use_tls = false
 #tls_key_file =
 
 [replica]
-# Local read replica in the SAME location as this bridge. Reads are served
-# from here, so cross-location latency only affects writes.
-# If you have no replica yet, point these at [primary] - the bridge then
-# works as a plain proxy.
+# Local read replica in the SAME location as this bridge. Reads of the shared
+# database are served from here, so cross-location latency only affects
+# writes. If you have no replica yet, point these at [primary] - the bridge
+# then works as a plain proxy.
+# The replica carries the shared database ONLY: the local databases are
+# excluded from replication (README.md step 2.1), and reads of them are sent
+# to the primary.
 host = 127.0.0.1
 port = 3306
 #connect_timeout_sec = 3
-# SELECT-only account (see replica_setup.sql). mysql_native_password is
+# SELECT-only account on the replica, for the shared database only
+# (see replica_setup.sql / README.md step 2.4). mysql_native_password is
 # simplest; caching_sha2_password needs use_tls = true for the first login.
 user = mrpg_bridge
 password = changeme
 # Or keep the password out of this file (takes precedence over password):
 #password_file = /etc/mrpg/bridge_replica_password
+# Database used for reads that arrive without a default one (keep mrpg_shared).
 database = mrpg_shared
 # Same TLS keys as [primary]. Usually unnecessary for a replica on
 # 127.0.0.1; enable it if the replica is on another host.

@@ -79,7 +79,7 @@ mysql -u root -p -e "SHOW VARIABLES LIKE 'character_set_server';"
 The server uses two databases on the same MariaDB server, with the same account. Every connection of the server is opened to one of them:
 
 * `mrpg_shared` — content, accounts and records. When several game servers work together, this is the database that is replicated between them.
-* `mrpg_local` — the state of one game server (guilds, groups, auction, owners of houses). Every game server has its own.
+* `mrpg_local` — the state of one game server (guilds, groups, auction, owners of houses). Every game server has its own. It is **never replicated**: replication copies `mrpg_shared` only, and every replica excludes the local databases (`replicate_wild_ignore_table = mrpg_local%.%`, see [`other/sql_bridge/README.md`](../other/sql_bridge/README.md)).
 
 ```sql
 CREATE DATABASE IF NOT EXISTS mrpg_shared
@@ -154,7 +154,7 @@ Synchronous queries use one more connection for each database.
 
 `sv_sql_database_local ""` (or the name of the shared database) turns the split off: all tables are read from `sv_sql_database_shared` and all connections are opened to it, as in the older versions. This is the default of the server binary; the shipped `autoexec_server.cfg` sets `mrpg_local`. Set both names in the configuration file, not while the server runs.
 
-Every game server needs a local database of its own. If several game servers use the same MariaDB server (directly or through [`other/sql_bridge`](../other/sql_bridge/README.md)), give each of them another name, for example `sv_sql_database_local "mrpg_local_eu"`.
+Every game server needs a local database of its own. If several game servers use the same MariaDB server (directly or through [`other/sql_bridge`](../other/sql_bridge/README.md)), give each of them another name, for example `sv_sql_database_local "mrpg_local_eu"`. Keep the `mrpg_local` prefix: with the bridge, one replication rule (`mrpg_local%.%`) excludes all local databases from the replicas, and the reads of a local database are then served by the central database.
 
 At startup the server reads the tables of both databases. It does not start if:
 
