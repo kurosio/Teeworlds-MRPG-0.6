@@ -1,13 +1,9 @@
 -- Run on the CENTRAL PRIMARY database once, to create the accounts the
 -- bridges/replicas use, and to enable binary logging if not already on.
 --
--- Replication is SHARED ONLY: mrpg_shared is the only database that reaches
--- the replicas. Every local database (mrpg_local_eu, mrpg_local_us, ...) is
--- excluded on each replica with
---   replicate_wild_ignore_table = mrpg_local%.%
--- (README.md, steps 2.1 and "Excluding a local database from replication
--- later"). The local databases therefore need no account on the replicas and
--- none is granted here.
+-- Replication is shared-only: mrpg_shared reaches the replicas, the local
+-- databases do not (replicate_wild_ignore_table = mrpg_local%.% on every
+-- replica, see README.md). No local grant is needed here.
 
 CREATE USER IF NOT EXISTS 'mrpg_replica'@'%' IDENTIFIED BY 'changeme';
 GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'mrpg_replica'@'%';

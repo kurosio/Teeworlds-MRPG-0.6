@@ -154,7 +154,7 @@ Synchronous queries use one more connection for each database.
 
 `sv_sql_database_local ""` (or the name of the shared database) turns the split off: all tables are read from `sv_sql_database_shared` and all connections are opened to it, as in the older versions. This is the default of the server binary; the shipped `autoexec_server.cfg` sets `mrpg_local`. Set both names in the configuration file, not while the server runs.
 
-Every game server needs a local database of its own. If several game servers use the same MariaDB server (directly or through [`other/sql_bridge`](../other/sql_bridge/README.md)), give each of them another name, for example `sv_sql_database_local "mrpg_local_eu"`. Keep the `mrpg_local` prefix: with the bridge, one replication rule (`mrpg_local%.%`) excludes all local databases from the replicas, and the reads of a local database are then served by the central database.
+Every game server needs a local database of its own. If several game servers use the same MariaDB server (directly or through [`other/sql_bridge`](../other/sql_bridge/README.md)), give each of them another name, for example `sv_sql_database_local "mrpg_local_eu"`. Keep the `mrpg_local` prefix: on the bridge, the rule `replicate_wild_ignore_table = mrpg_local%.%` excludes all of them from the replicas.
 
 At startup the server reads the tables of both databases. It does not start if:
 
