@@ -21,11 +21,15 @@ namespace relay
 
 		while(true)
 		{
+			// The socket is non-blocking, so this returns as soon as the kernel
+			// has nothing more for us.
 			const int Bytes = net_tcp_recv(Socket, aChunk, (int)sizeof(aChunk));
 			if(Bytes > 0)
 			{
 				Reader.Append(aChunk, (size_t)Bytes);
 				Result.Bytes += (size_t)Bytes;
+				// A broken frame cannot be skipped, so there is nothing left to
+				// read from this connection.
 				if(Reader.Error())
 					return Result;
 				continue;
@@ -53,12 +57,13 @@ namespace relay
 				continue;
 			}
 
-			// Unreachable peer. Only a would-block is not an error and is retried
-			// by the next tick of the caller.
+			// Would block: the rest is written by the next tick of the caller.
+			// (A send of 0 bytes means the same.)
 			if(Bytes == 0 || net_would_block())
 				return Result;
 
-			// On Linux and Windows a failed send already means closed.
+			// Any other failure means the peer is gone: a reset, a closed socket
+			// or an unreachable host. There is nothing left to retry.
 			Result.Closed = true;
 			return Result;
 		}

@@ -361,9 +361,9 @@ void CServerSync::FlushSocket()
 	}
 
 	const relay::SStreamWrite Write = relay::Send(m_Socket, m_SendBuffer);
-	if(!Write.Ok())
+	if(Write.Closed)
 	{
-		Disconnect(Write.Closed ? "the relay is gone" : "failed to send data to the relay");
+		Disconnect("the relay is gone");
 		return;
 	}
 

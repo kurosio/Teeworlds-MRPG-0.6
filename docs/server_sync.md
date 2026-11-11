@@ -49,6 +49,8 @@ Both sides therefore treat every received byte as hostile input:
 
 | symptom | cause |
 | --- | --- |
+| a console window appears and disappears, the relay keeps running | expected on Windows: a console program always gets a console, and the relay hides its own window right after the start (`ShowWindow(GetConsoleWindow(), SW_HIDE)` in `src/relay/main.cpp`). The window belongs to the relay process, closing it or waiting for it does not stop the relay. Set `logfile` in `relay.cfg` — with a hidden window the log is the only way to read what the relay did. A console shared with a shell is left alone, and `mmoteeworlds_relay -s` lets `cmd.exe` start the relay with no console at all. |
+| the relay keeps running with no way to read its log | `logfile` is empty. The console is hidden and gone, nothing is written anywhere. |
 | `could not create the listening socket ...` | the port is taken by another process, or `bindaddr` is not an address of this host. The engine logs the exact `errno` line above it. |
 | relay runs but no server connects | wrong `relay_port`, a firewall, or `bindaddr` limited to loopback while the servers are remote. |
 | `::1` or `::` as `bindaddr` | write the address of one family; `bindaddr ::1` and `bindaddr "[::1]"` both work, and only that family is bound. |
@@ -121,6 +123,8 @@ relay_max_clients 64
 relay_password ""        # must match sv_sync_relay_password
 relay_name "mrpg-relay"
 #bindaddr 127.0.0.1      # optional
+#logfile "relay.log"     # optional, but set it on Windows: the console is hidden
+#logappend 1
 ```
 
 Every game server (`autoexec_server.cfg`):
@@ -136,6 +140,10 @@ sv_sync_relay_reconnect_ms 5000
 The console of the relay accepts these settings on the command line as whole
 config lines, so a value has to be quoted:
 `mmoteeworlds_relay "relay_port 8383" "relay_password secret"`.
+
+`mmoteeworlds_relay -s` lets `cmd.exe` start the relay without a console window
+(`start /b`), so no window flashes at all. The flag is recognized by the console
+itself and is not a setting, so it does not appear in `relay.cfg`.
 
 Messages produced while the relay is unreachable stay in the queue (up to 10000)
 and are sent after the reconnect. `Sync->IsConnected()` and
@@ -166,7 +174,10 @@ of every message is UTF-8 JSON; the limit of a frame is 8 MiB.
 | 18 | `LOCALIZATION_DATA` | server ↔ relay | raw `.txt` file (not implemented) |
 
 The relay rejects a duplicate `server_id`, a wrong password and anything sent
-before the handshake, and drops a connection on a malformed frame. The server
+before the handshake, and drops a connection on a malformed frame. The `reason`
+of a `REJECTED` frame is one of the texts of `EDropReason` in
+`src/relay/relay.h`, the same text the relay logs, so the log of a game server
+and the log of the relay can be compared directly. The server
 uses a non-blocking socket and does all the work in `Sync->OnTick()`, which the
 game calls once per `sv_sync_server_interval` seconds, so the game loop never
 waits on the network.

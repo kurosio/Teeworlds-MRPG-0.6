@@ -101,41 +101,48 @@ namespace relay
 		LOCALIZATION_DATA = 18,
 	};
 
-	// Name of every known message type, in the order of EMsg. `nullptr` marks
-	// the unused numbers, so the table is the single source of truth for both
-	// the name and the validity of a type byte.
-	inline const char *const *MsgNames()
+	/*
+	 * One entry per message type. The list is the single source of truth for
+	 * the name and for the validity of a type byte, so a message cannot be
+	 * added to EMsg without its name.
+	 */
+	struct SMsgInfo
 	{
-		static constexpr const char *s_apNames[] = {
-			// 0 is not a message type, the types start at 1.
-			nullptr,
-			"HELLO",                  // 1
-			"WELCOME",                // 2
-			"REJECTED",               // 3
-			"EVENT",                  // 4
-			"PING",                   // 5
-			"PONG",                   // 6
-			nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-			"LOCALIZATION_HASH",      // 16
-			"LOCALIZATION_REQUEST",   // 17
-			"LOCALIZATION_DATA",      // 18
-		};
-		return s_apNames;
-	}
+		EMsg Type;
+		const char *pName;
+	};
 
-	// Number of entries of MsgNames(); the highest defined type is 18.
-	inline constexpr size_t MSG_NAMES_COUNT = 19;
+	inline constexpr SMsgInfo MSG_INFOS[] = {
+		{EMsg::HELLO, "HELLO"},
+		{EMsg::WELCOME, "WELCOME"},
+		{EMsg::REJECTED, "REJECTED"},
+		{EMsg::EVENT, "EVENT"},
+		{EMsg::PING, "PING"},
+		{EMsg::PONG, "PONG"},
+		{EMsg::LOCALIZATION_HASH, "LOCALIZATION_HASH"},
+		{EMsg::LOCALIZATION_REQUEST, "LOCALIZATION_REQUEST"},
+		{EMsg::LOCALIZATION_DATA, "LOCALIZATION_DATA"},
+	};
 
 	inline bool IsKnownMsg(unsigned char Value)
 	{
-		const auto *pNames = MsgNames();
-		return Value < MSG_NAMES_COUNT && pNames[Value] != nullptr;
+		for(const SMsgInfo &Info : MSG_INFOS)
+		{
+			if((unsigned char)Info.Type == Value)
+				return true;
+		}
+		return false;
 	}
 
 	// "UNKNOWN" for a type that is not part of the protocol.
 	inline const char *MsgName(EMsg Msg)
 	{
-		return IsKnownMsg((unsigned char)Msg) ? MsgNames()[(unsigned char)Msg] : "UNKNOWN";
+		for(const SMsgInfo &Info : MSG_INFOS)
+		{
+			if(Info.Type == Msg)
+				return Info.pName;
+		}
+		return "UNKNOWN";
 	}
 
 	// Appends one frame to `Out`. Returns false for an oversized payload, which
@@ -165,8 +172,8 @@ namespace relay
 	 *
 	 * The buffer is compacted by the next Append() instead of by every Next(),
 	 * so draining a full batch of frames does not move the remainder once per
-	 * frame. Any length or type that cannot be valid sets Error() and stays set
-	 * until Reset(): the caller must close the connection.
+	 * frame. Any length or type that cannot be valid sets Error() and keeps it
+	 * set until Reset(): the caller must close the connection.
 	 */
 	class CFrameReader
 	{
@@ -192,37 +199,19 @@ namespace relay
 		// Returns true and fills `Type`/`Payload` when a whole frame is buffered.
 		bool Next(EMsg *pType, std::string *pPayload)
 		{
-			if(m_Error)
+			const size_t FrameSize = NextFrameSize();
+			if(FrameSize == 0)
 				return false;
 
-			if(m_Buffer.size() - m_Offset < (size_t)FRAME_HEADER_SIZE)
-				return false;
-
-			const auto *pHeader = (const unsigned char *)m_Buffer.data() + m_Offset;
-			const size_t Length = ((size_t)pHeader[0] << 24) | ((size_t)pHeader[1] << 16) |
-					      ((size_t)pHeader[2] << 8) | (size_t)pHeader[3];
-			if(Length < 1 || Length > (size_t)FRAME_MAX_LENGTH)
-			{
-				m_Error = true;
-				return false;
-			}
-
-			if(m_Buffer.size() - m_Offset < (size_t)FRAME_HEADER_SIZE + Length)
-				return false;
-
-			const unsigned char Type = (unsigned char)m_Buffer[m_Offset + FRAME_HEADER_SIZE];
-			if(!IsKnownMsg(Type))
-			{
-				m_Error = true;
-				return false;
-			}
-
+			// The frame is the type byte and the payload of `Length - 1` bytes.
+			const size_t Offset = m_Offset + FRAME_HEADER_SIZE;
+			const size_t Length = FrameSize - FRAME_HEADER_SIZE;
 			if(pType)
-				*pType = static_cast<EMsg>(Type);
+				*pType = static_cast<EMsg>((unsigned char)m_Buffer[Offset]);
 			if(pPayload)
-				pPayload->assign(m_Buffer, m_Offset + FRAME_HEADER_SIZE + 1, Length - 1);
+				pPayload->assign(m_Buffer, Offset + 1, Length - 1);
 
-			m_Offset += (size_t)FRAME_HEADER_SIZE + Length;
+			m_Offset += FrameSize;
 			return true;
 		}
 
@@ -236,6 +225,35 @@ namespace relay
 		}
 
 	private:
+		// Size of the whole frame at the read offset in bytes, 0 while it is
+		// incomplete. A length or a type that cannot be valid sets the error.
+		size_t NextFrameSize()
+		{
+			if(m_Error || m_Buffer.size() - m_Offset < (size_t)FRAME_HEADER_SIZE)
+				return 0;
+
+			const auto *pHeader = (const unsigned char *)m_Buffer.data() + m_Offset;
+			const size_t Length = ((size_t)pHeader[0] << 24) | ((size_t)pHeader[1] << 16) |
+				((size_t)pHeader[2] << 8) | (size_t)pHeader[3];
+			if(Length < 1 || Length > (size_t)FRAME_MAX_LENGTH)
+			{
+				m_Error = true;
+				return 0;
+			}
+
+			// Not everything of this frame has arrived yet.
+			if(m_Buffer.size() - m_Offset < (size_t)FRAME_HEADER_SIZE + Length)
+				return 0;
+
+			if(!IsKnownMsg((unsigned char)m_Buffer[m_Offset + FRAME_HEADER_SIZE]))
+			{
+				m_Error = true;
+				return 0;
+			}
+
+			return (size_t)FRAME_HEADER_SIZE + Length;
+		}
+
 		std::string m_Buffer;
 		size_t m_Offset = 0;
 		bool m_Error = false;

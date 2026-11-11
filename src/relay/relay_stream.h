@@ -20,6 +20,10 @@
  *
  * Nothing here ever blocks or retries: a pass moves what is available and
  * returns, the caller comes back on its next tick.
+ *
+ * Every failure of the socket means the connection is gone. A peer that resets
+ * the connection, closes it or turns out to be unreachable is treated the same:
+ * the connection is closed and opened again if the caller wants it back.
  */
 namespace relay
 {
@@ -36,8 +40,6 @@ namespace relay
 		bool Closed = false;
 		// The socket failed; the connection has to be closed.
 		bool Error = false;
-
-		bool Ok() const { return !Closed && !Error; }
 	};
 
 	// Appends every byte that is available right now to `Reader`.
@@ -48,14 +50,13 @@ namespace relay
 	{
 		// Bytes removed from the front of the buffer.
 		size_t Bytes = 0;
+		// The connection is gone; the caller closes it either way.
 		bool Closed = false;
-		bool Error = false;
-
-		bool Ok() const { return !Closed && !Error; }
 	};
 
 	// Writes as much of `Buffer` as the socket takes and removes it. `Bytes` is
 	// 0 when the socket would block, which is not an error: try again later.
+	// Any failure of the socket means the connection is gone.
 	SStreamWrite Send(NETSOCKET Socket, std::string &Buffer);
 }
 

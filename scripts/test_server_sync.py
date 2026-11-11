@@ -18,7 +18,9 @@ Checks of the relay:
   * rejection of a wrong password, of a duplicate server id and of an EVENT
     before the handshake;
   * disconnection on a malformed frame and on a relay-only message type;
-  * rejection of a mistyped HELLO and of a connection above the client limit.
+  * rejection of a mistyped HELLO and of a connection above the client limit;
+  * the log file from `logfile`, which is the only record of a relay that runs
+    without a console (Windows hides its window right after the start).
 
 Usage:
   python3 scripts/test_server_sync.py [path/to/mmoteeworlds_relay] [path/to/test_server_sync]
@@ -33,6 +35,7 @@ import socket
 import struct
 import subprocess
 import sys
+import tempfile
 import time
 
 HELLO = 1
@@ -335,6 +338,27 @@ def test_relay_full(port):
     b.close()
 
 
+def test_logfile(binary, port, workdir):
+    """`logfile` collects what the relay does; without it a relay started
+    without a console leaves no trace at all."""
+    logfile = os.path.join(workdir, "relay_test.log")
+    if os.path.exists(logfile):
+        os.remove(logfile)
+    relay = Relay(binary, port, PASSWORD, extra=("logfile %s" % logfile,))
+    try:
+        peer = Peer(port)
+        assert peer.hello(1)[0] == WELCOME
+        peer.close()
+    finally:
+        relay.stop()
+
+    assert os.path.exists(logfile), "the relay did not write %s" % logfile
+    with open(logfile, encoding="utf-8", errors="replace") as file:
+        log = file.read()
+    assert "listening on" in log, log[-400:]
+    assert "server 1" in log and "connected" in log, log[-400:]
+
+
 def test_numbers_out_of_int_range(port):
     """Numbers a peer may send must not throw inside the JSON helpers."""
     for value in ("18446744073709551615", "-9223372036854775809", "99999999999999999999999", "1e400"):
@@ -571,8 +595,9 @@ def main(argv):
         return 2
 
     failed = 0
-    # The relay tests above plus the five runs of the game server side below.
-    total = len(TESTS) + 8
+    # The relay tests above plus the runs of the game server side and of the
+    # relay process below.
+    total = len(TESTS) + 9
 
     def report(name, test, extra=(), needs_relay=True, password=PASSWORD):
         nonlocal failed
@@ -603,6 +628,9 @@ def main(argv):
     # The relay process itself: start, stop and fail in a predictable way.
     report("relay shuts down cleanly",
            lambda port: test_shutdown_is_clean(binary, port), needs_relay=False)
+    with tempfile.TemporaryDirectory() as workdir:
+        report("relay writes its logfile",
+               lambda port: test_logfile(binary, port, workdir), needs_relay=False)
     report("relay refuses a busy port",
            lambda port: test_port_in_use(binary, port), needs_relay=False)
     report("relay starts with bindaddr 127.0.0.1",

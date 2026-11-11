@@ -23,9 +23,10 @@ namespace relay
 	// payload is never a valid message, so callers can treat it as "failed".
 	std::string BuildJson(const nlohmann::json &Json);
 
-	// Type-safe field access with a default for a missing or mistyped field.
+	// Field access with a default for a missing or mistyped field. An integer is
+	// the only number type accepted, a float or a string falls back to
+	// `Default`; a number that does not fit into an int does the same.
 	int GetInt(const nlohmann::json &Json, const char *pKey, int Default = 0);
-	bool GetBool(const nlohmann::json &Json, const char *pKey, bool Default = false);
 	std::string GetString(const nlohmann::json &Json, const char *pKey, const std::string &Default = std::string());
 
 	// GetString() of a peer supplied name, cut to `MaxLength` bytes and stripped
