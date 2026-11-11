@@ -164,8 +164,20 @@ MACRO_CONFIG_INT(SvVanillaAntiSpoof, sv_vanilla_antispoof, 1, 0, 1, CFGFLAG_SERV
 MACRO_CONFIG_INT(SvServerInfoPerSecond, sv_server_info_per_second, 50, 0, 10000, CFGFLAG_SERVER, "Maximum number of complete server info responses that are sent out per second (0 for no limit)")
 MACRO_CONFIG_INT(SvVanConnPerSecond, sv_van_conn_per_second, 10, 0, 10000, CFGFLAG_SERVER, "Antispoof specific ratelimit (0 for no limit)")
 
-MACRO_CONFIG_INT(SvSyncServerID, sv_sync_server_id, 0, 0, 100000, CFGFLAG_SERVER, "Server ID for cross-server synchronization via tw_server_sync (0 = synchronization disabled)")
-MACRO_CONFIG_INT(SvSyncServerInterval, sv_sync_server_interval, 1, 1, 100000, CFGFLAG_SERVER, "Interval (in seconds) for cross-server synchronization via tw_server_sync")
+// Cross-server synchronization through the relay (see src/relay, mmoteeworlds_relay).
+MACRO_CONFIG_INT(SvSyncServerID, sv_sync_server_id, 0, 0, 100000, CFGFLAG_SERVER, "Unique server ID used for the cross-server synchronization through the relay (0 = synchronization disabled)")
+MACRO_CONFIG_INT(SvSyncServerInterval, sv_sync_server_interval, 1, 1, 100000, CFGFLAG_SERVER, "Interval (in seconds) for the cross-server synchronization through the relay")
+MACRO_CONFIG_STR(SvSyncRelayHost, sv_sync_relay_host, 128, "", CFGFLAG_SERVER, "Host of the synchronization relay (empty = synchronization disabled)")
+MACRO_CONFIG_INT(SvSyncRelayPort, sv_sync_relay_port, 8383, 0, 65535, CFGFLAG_SERVER, "Port of the synchronization relay")
+MACRO_CONFIG_STR(SvSyncRelayPassword, sv_sync_relay_password, 128, "", CFGFLAG_SERVER | CFGFLAG_NONTEEHISTORIC, "Password of the synchronization relay (must match relay_password of the relay)")
+MACRO_CONFIG_INT(SvSyncRelayReconnectMs, sv_sync_relay_reconnect_ms, 5000, 100, 600000, CFGFLAG_SERVER, "Delay between the reconnection attempts to the synchronization relay in milliseconds")
+
+// Relay executable (mmoteeworlds_relay). The CFGFLAG_MASTER commands are the only
+// ones created in that program, so the relay only exposes these settings.
+MACRO_CONFIG_INT(RelayPort, relay_port, 8383, 0, 65535, CFGFLAG_MASTER, "Port the relay listens on")
+MACRO_CONFIG_INT(RelayMaxClients, relay_max_clients, 64, 1, 4096, CFGFLAG_MASTER, "Maximum number of game servers connected to the relay")
+MACRO_CONFIG_STR(RelayPassword, relay_password, 128, "", CFGFLAG_MASTER | CFGFLAG_NONTEEHISTORIC, "Password the game servers must send to the relay (empty = no password)")
+MACRO_CONFIG_STR(RelayName, relay_name, 64, "relay", CFGFLAG_MASTER, "Name the relay reports to the connected servers")
 
 MACRO_CONFIG_INT(SvHardresetAfterDays, sv_hard_reset_after_days, 7, 1, 14, CFGFLAG_SAVE | CFGFLAG_SERVER, "Reset the server when it has been idle for a specified number of days without players")
 MACRO_CONFIG_INT(SvMaxAfkTime, sv_max_afk_time, 600, 0, 144400, CFGFLAG_SAVE | CFGFLAG_SERVER, "Afk timer")

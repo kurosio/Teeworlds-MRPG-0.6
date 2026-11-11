@@ -751,7 +751,9 @@ if(SERVER_COMPILE)
      "src/teeother/tools/geolite2pp/*.cpp" "src/teeother/tools/geolite2pp/*.hpp"
      "src/teeother/tools/*.h" "src/teeother/tools/flat_hash_map/*.h")
   set(GAME_GENERATED_SERVER src/generated/server_data.cpp src/generated/server_data.h)
-  set(SERVER_SRC ${ENGINE_SERVER} ${GAME_SERVER} ${GAME_GENERATED_SERVER} ${LOCALIZED_SERVER})
+  # The JSON helpers of the synchronization are shared with the relay.
+  set(SERVER_SRC ${ENGINE_SERVER} ${GAME_SERVER} ${GAME_GENERATED_SERVER} ${LOCALIZED_SERVER}
+    src/relay/relay_json.cpp src/relay/relay_stream.cpp)
 
   set(SERVER_INCLUDES_DIRS
     ${MARIADB_INCLUDE_DIRS}
@@ -796,6 +798,63 @@ if(SERVER_COMPILE)
 #    list(APPEND TARGETS_LINK ${TARGET_SERVER_LAUNCHER})
 #  endif()
 endif()
+
+########################################################################
+# RELAY
+########################################################################
+
+# The relay (mmoteeworlds_relay) is a standalone retransmitter for the
+# cross-server synchronization: every game server keeps one outgoing connection
+# to it, and an event of one server is forwarded to all the others. It shares
+# the wire protocol with the game server (src/relay/relay_protocol.h) and needs
+# no database. Built with the everything/package targets and on demand with
+# `--target mmoteeworlds_relay`.
+set(RELAY_EXECUTABLE mmoteeworlds_relay CACHE STRING "Name of the built relay executable")
+
+# The JSON helpers are shared by the relay and by the game server
+# (src/engine/server/server_sync.cpp), hence the separate source list.
+set(RELAY_SHARED_SRC
+  src/relay/relay_json.cpp
+  src/relay/relay_json.h
+  src/relay/relay_stream.cpp
+  src/relay/relay_stream.h
+  src/relay/relay_protocol.h
+)
+set_src(RELAY_SRC GLOB src/relay relay.cpp relay.h main.cpp)
+list(APPEND RELAY_SRC ${RELAY_SHARED_SRC})
+
+set(TARGET_RELAY ${RELAY_EXECUTABLE})
+add_executable(${TARGET_RELAY} EXCLUDE_FROM_ALL
+  ${RELAY_SRC}
+  ${DEPS}
+  $<TARGET_OBJECTS:engine-shared>
+  $<TARGET_OBJECTS:game-shared>
+)
+target_precompile_headers(${TARGET_RELAY} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/src/teeother/stdafx_shared.h>")
+target_link_libraries(${TARGET_RELAY} ${LIBS})
+
+list(APPEND TARGETS_OWN ${TARGET_RELAY})
+list(APPEND TARGETS_LINK ${TARGET_RELAY})
+
+# Test client of the synchronization, driven by scripts/test_server_sync.py. It
+# links the real CServerSync, so the test covers the server side of the protocol
+# as well. Never part of the packages or of the default build.
+set(TARGET_SYNC_TEST test_server_sync)
+add_executable(${TARGET_SYNC_TEST} EXCLUDE_FROM_ALL
+  src/relay/tests/sync_test_client.cpp
+  src/engine/server/server_sync.cpp
+  ${RELAY_SHARED_SRC}
+  ${DEPS}
+  $<TARGET_OBJECTS:engine-shared>
+  $<TARGET_OBJECTS:game-shared>
+)
+target_precompile_headers(${TARGET_SYNC_TEST} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/src/teeother/stdafx_shared.h>")
+target_include_directories(${TARGET_SYNC_TEST} PRIVATE src/game/server/core)
+target_include_directories(${TARGET_SYNC_TEST} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(${TARGET_SYNC_TEST} ${LIBS})
+
+list(APPEND TARGETS_OWN ${TARGET_SYNC_TEST})
+list(APPEND TARGETS_LINK ${TARGET_SYNC_TEST})
 
 ########################################################################
 # VARIOUS TARGETS
@@ -998,6 +1057,7 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME ${PROJECT_NAME})
 
 set(CPACK_TARGETS
   ${TARGET_SERVER}
+  ${TARGET_RELAY}
 #  ${TARGET_CLIENT}
 )
 #set(CPACK_DIRS data)
@@ -1005,6 +1065,7 @@ set(CPACK_DIRS server_data server_lang maps)
 set(CPACK_FILES
   license.txt
   storage.cfg
+  relay.cfg
   ${COPY_FILES_SERVER}
   #${COPY_FILES_CLIENT}
 )

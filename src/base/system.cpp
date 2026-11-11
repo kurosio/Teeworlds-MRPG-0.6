@@ -1845,15 +1845,19 @@ NETSOCKET net_tcp_create(NETADDR bindaddr)
 		/* bind, we should check for error */
 		tmpbindaddr.type = NETTYPE_IPV6;
 		netaddr_to_sockaddr_in6(&tmpbindaddr, &addr);
-		socket = priv_net_create_socket(AF_INET6, SOCK_STREAM, (struct sockaddr *)&addr, sizeof(addr));
-		if(socket >= 0)
+		const int ipv6socket = priv_net_create_socket(AF_INET6, SOCK_STREAM, (struct sockaddr *)&addr, sizeof(addr));
+		if(ipv6socket >= 0)
 		{
 			sock->type |= NETTYPE_IPV6;
-			sock->ipv6sock = socket;
+			sock->ipv6sock = ipv6socket;
+			socket = ipv6socket;
 		}
 	}
 
-	if(socket < 0)
+	// A requested family that cannot be bound is not fatal as long as another
+	// one worked: a host without IPv6, or an address that is only reachable over
+	// one family, would otherwise fail to create the socket at all.
+	if(sock->type == NETTYPE_INVALID)
 	{
 		free(sock);
 		sock = nullptr;

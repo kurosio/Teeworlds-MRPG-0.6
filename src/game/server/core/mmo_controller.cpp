@@ -61,7 +61,8 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 
 void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine* pStorage)
 {
-	// initialize cross-server synchronization
+	// initialize cross-server synchronization: the event is applied by the same
+	// component on every server, the payload comes from the relay
 	Sync->SetEventCallback([this](const std::string& EventName, const CServerSync::SRequest& Req) 
 	{
 		if(Req.WorldID < 0 || Req.WorldID >= Instance::Server()->GetWorldsSize())
@@ -752,7 +753,6 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 		}
 	});
 }
-
 
 // dump dialogs for translate
 void CMmoController::SyncLocalizations() const

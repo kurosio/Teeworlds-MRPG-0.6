@@ -1197,29 +1197,38 @@ void CGuildManager::OnGlobalTimePeriod(ETimePeriod Period)
 
 void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req)
 {
-	if (EventName == "guild_create")
+	// Only the ID of the changed guild travels through the relay: every server
+	// loads it from its own database by that ID. The handler is idempotent, the
+	// event may arrive after the guild was already loaded or removed here.
+	if(EventName == syncevents::GUILD_CREATE)
 	{
+		if(Req.Value <= 0 || GetGuildByID(Req.Value))
+			return;
+
 		ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
-		if (pRes->next())
-		{
-			InitGuildFromRow(pRes);
-			GS()->Chat(-1, "New guilds '{~}' have been created!", pRes->getString("Name").c_str());
-		}
+		if(!pRes->next())
+			return;
+
+		InitGuildFromRow(pRes);
+		GS()->Chat(-1, "New guilds '{~}' have been created!", pRes->getString("Name").c_str());
 	}
-	else if (EventName == "guild_disband")
+	else if(EventName == syncevents::GUILD_DISBAND)
 	{
-		auto pGuild = GetGuildByID(Req.Value);
-		if(pGuild)
-		{
-			GS()->Chat(-1, "The '{~}' guild has been disbanded.", pGuild->GetName());
+		const auto pGuild = GetGuildByID(Req.Value);
+		if(!pGuild)
+			return;
 
-			// release the guild house on this server
-			if(auto* pHouse = pGuild->GetHouse())
-				pHouse->UpdateGuild(nullptr);
+		GS()->Chat(-1, "The '{~}' guild has been disbanded.", pGuild->GetName());
 
-			delete pGuild;
-			CGuild::Data().erase(std::find(CGuild::Data().begin(), CGuild::Data().end(), pGuild));
-		}
+		// release the guild house on this server
+		if(auto* pHouse = pGuild->GetHouse())
+			pHouse->UpdateGuild(nullptr);
+
+		auto& Data = CGuild::Data();
+		const auto It = std::find(Data.begin(), Data.end(), pGuild);
+		if(It != Data.end())
+			Data.erase(It);
+		delete pGuild;
 	}
 }
 
@@ -1292,7 +1301,8 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 	pPlayer->Account()->ReinitializeGuild();
 	Database->Execute<DB::INSERT>(TW_GUILDS_TABLE, "(ID, Name, LeaderUID, Members) VALUES ('{}', '{}', '{}', '{}')",
 		InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
-	Sync->Push("guild_create", GS()->GetWorldID(), InitID);
+
+	Sync->Push(syncevents::GUILD_CREATE, GS()->GetWorldID(), InitID);
 	GS()->Chat(-1, "New guilds '{~}' have been created!", GuildName.cstr());
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
 }
@@ -1331,7 +1341,7 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	Database->Execute<DB::REMOVE>(TW_GUILDS_HISTORY_TABLE, "WHERE GuildID = '{}'", pGuild->GetID());
 	Database->Execute<DB::REMOVE>(TW_GUILDS_RANKS_TABLE, "WHERE GuildID = '{}'", pGuild->GetID());
 	Database->Execute<DB::REMOVE>(TW_GUILDS_TABLE, "WHERE ID = '{}'", pGuild->GetID());
-	Sync->Push("guild_disband", GS()->GetWorldID(), pGuild->GetID());
+	Sync->Push(syncevents::GUILD_DISBAND, GS()->GetWorldID(), pGuild->GetID());
 
 	// erase guild from server
 	delete pGuild;
