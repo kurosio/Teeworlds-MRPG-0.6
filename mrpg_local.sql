@@ -51,29 +51,6 @@ CREATE TABLE `tw_groups` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `tw_guilds`
---
-
-CREATE TABLE `tw_guilds` (
-  `ID` int(11) NOT NULL,
-  `Name` varchar(32) NOT NULL DEFAULT 'Member name',
-  `Members` varchar(512) DEFAULT NULL,
-  `DefaultRankID` int(11) DEFAULT NULL,
-  `LeaderUID` int(11) DEFAULT NULL,
-  `Level` int(11) NOT NULL DEFAULT 1,
-  `Exp` bigint(11) NOT NULL DEFAULT 0,
-  `Bank` longtext NOT NULL DEFAULT '0',
-  `Score` int(11) NOT NULL DEFAULT 0,
-  `LogFlag` bigint(11) NOT NULL DEFAULT 0,
-  `AvailableSlots` int(11) NOT NULL DEFAULT 2,
-  `ChairLevel` int(11) NOT NULL DEFAULT 1,
-  `DoorHealth` int(11) NOT NULL DEFAULT 1,
-  `DecorationSlots` int(11) NOT NULL DEFAULT 5
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `tw_guilds_decorations`
 --
 
@@ -109,19 +86,6 @@ CREATE TABLE `tw_guilds_invites` (
   `ID` int(11) NOT NULL,
   `GuildID` int(11) NOT NULL,
   `UserID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tw_guilds_ranks`
---
-
-CREATE TABLE `tw_guilds_ranks` (
-  `ID` int(11) NOT NULL,
-  `Rights` bigint(20) NOT NULL DEFAULT 0,
-  `Name` varchar(32) NOT NULL DEFAULT 'Rank name',
-  `GuildID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -188,17 +152,6 @@ ALTER TABLE `tw_groups`
   ADD KEY `tw_groups_ibfk_1` (`OwnerUID`);
 
 --
--- Indexes for table `tw_guilds`
---
-ALTER TABLE `tw_guilds`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `OwnerID` (`LeaderUID`),
-  ADD KEY `Bank` (`Bank`(768)),
-  ADD KEY `Level` (`Level`),
-  ADD KEY `Experience` (`Exp`);
-
---
 -- Indexes for table `tw_guilds_decorations`
 --
 ALTER TABLE `tw_guilds_decorations`
@@ -221,14 +174,6 @@ ALTER TABLE `tw_guilds_invites`
   ADD PRIMARY KEY (`ID`),
   ADD UNIQUE KEY `ID` (`ID`),
   ADD KEY `OwnerID` (`UserID`),
-  ADD KEY `MemberID` (`GuildID`);
-
---
--- Indexes for table `tw_guilds_ranks`
---
-ALTER TABLE `tw_guilds_ranks`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `ID` (`ID`),
   ADD KEY `MemberID` (`GuildID`);
 
 --
@@ -271,12 +216,6 @@ ALTER TABLE `tw_groups`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `tw_guilds`
---
-ALTER TABLE `tw_guilds`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `tw_guilds_decorations`
 --
 ALTER TABLE `tw_guilds_decorations`
@@ -295,12 +234,6 @@ ALTER TABLE `tw_guilds_invites`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `tw_guilds_ranks`
---
-ALTER TABLE `tw_guilds_ranks`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `tw_houses_decorations`
 --
 ALTER TABLE `tw_houses_decorations`
@@ -311,24 +244,6 @@ ALTER TABLE `tw_houses_decorations`
 --
 ALTER TABLE `tw_links`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- Constraints for dumped tables
---
-
---
--- Constraints for table `tw_guilds_invites`
---
-ALTER TABLE `tw_guilds_invites`
-  ADD CONSTRAINT `tw_guilds_invites_ibfk_1` FOREIGN KEY (`GuildID`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `tw_guilds_wars`
---
-ALTER TABLE `tw_guilds_wars`
-  ADD CONSTRAINT `tw_guilds_wars_ibfk_1` FOREIGN KEY (`GuildID1`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `tw_guilds_wars_ibfk_2` FOREIGN KEY (`GuildID2`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
-COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
