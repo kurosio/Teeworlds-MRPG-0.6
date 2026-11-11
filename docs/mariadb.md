@@ -92,9 +92,11 @@ CREATE DATABASE IF NOT EXISTS mrpg_local
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-CREATE USER IF NOT EXISTS 'mrpg_user'@'127.0.0.1' IDENTIFIED BY 'CHANGE_ME_STRONG_PASSWORD';
+CREATE USER IF NOT EXISTS 'mrpg_user'@'127.0.0.1' IDENTIFIED BY 'CHANGE_ME_SHARED_PASSWORD';
+CREATE USER IF NOT EXISTS 'mrpg_local'@'127.0.0.1' IDENTIFIED BY 'CHANGE_ME_LOCAL_PASSWORD';
 GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON mrpg_shared.* TO 'mrpg_user'@'127.0.0.1';
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON mrpg_local.* TO 'mrpg_user'@'127.0.0.1';
+-- Local game state has a separate, database-scoped account with full access.
+GRANT ALL PRIVILEGES ON mrpg_local.* TO 'mrpg_local'@'127.0.0.1';
 FLUSH PRIVILEGES;
 ```
 
@@ -136,11 +138,11 @@ sv_sql_database_shared "mrpg_shared"
 sv_sql_pool_size 3
 sv_sql_use_tls 0
 
-# local: direct, no bridge
-sv_sql_local_host ""          # empty = same as sv_sql_host
+# local: direct game-server → local MariaDB, never the bridge
+sv_sql_local_host "127.0.0.1"
 sv_sql_local_port "3306"
-sv_sql_local_login "root"
-sv_sql_local_password ""
+sv_sql_local_login "mrpg_local"
+sv_sql_local_password "CHANGE_ME_LOCAL_PASSWORD"
 sv_sql_local_database "mrpg_local"
 sv_sql_local_pool_size 1
 sv_sql_local_use_tls 0
@@ -156,6 +158,8 @@ Where the two point:
 | bridge for the shared database | the bridge (33060) | the MariaDB next to the server (3306) — **not** the bridge |
 
 The local SQL port is always MariaDB's own (`sv_sql_local_port`), never the bridge port: the bridge serves `mrpg_shared` only and would not know a local database. When the local database lives on the primary instead, set `sv_sql_local_host` to the primary — correct, but every local query then pays a WAN round trip.
+
+On a replica configured with `read_only = 1`, normal database grants alone still reject local writes with MariaDB error 1290. Grant the direct local account `READ ONLY ADMIN` in addition to its database-scoped `ALL PRIVILEGES`; this bypasses the global read-only guard but does not grant it access to `mrpg_shared`. `other/sql_bridge/setup_replication.sh` creates this exact account and grant automatically.
 
 `sv_sql_local_database ""` leaves the local connection unused: every query goes to the shared database, as in older versions. Set both names in the configuration file, not while the server runs. The shared login and the local login may differ; each connection is opened with its own account.
 

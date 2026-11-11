@@ -6,9 +6,10 @@
 # Automates steps 1-2 of other/sql_bridge/README.md:
 #   1) master  — Step 1 (MariaDB, binary log, mrpg_shared database, dump
 #                import, mrpg_replica / mrpg_bridge / mrpg_user accounts);
-#   2) replica — Step 2 (MariaDB, read-only, snapshot from the primary,
-#                CHANGE MASTER, local mrpg_bridge account, plus a local
-#                database mrpg_local_<location> and a dedicated local user);
+#   2) replica — Step 2 (MariaDB, read-only shared replica, snapshot from
+#                the primary, CHANGE MASTER, local mrpg_bridge account, plus
+#                a writable mrpg_local_<location> database and direct local
+#                game user);
 #   3) status  — replication state on this host;
 #   4) reset   — remove the configuration this script creates (stop/reset
 #                replication, move configs aside, optionally drop the
@@ -486,19 +487,6 @@ EOF
     fi
 }
 
-# parse_local_dbs <csv> — fills _DB_LIST (space-separated) and _LOCAL_GRANTS (SQL lines)
-parse_local_dbs() {
-    _DB_LIST=""
-    _LOCAL_GRANTS=""
-    for _db in $(printf '%s' "$1" | tr ',' ' '); do
-        check_ident "$_db"
-        _DB_LIST="$_DB_LIST $_db"
-        _LOCAL_GRANTS="$_LOCAL_GRANTS
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON ${_db}.* TO 'mrpg_user'@'$GAME_HOST_MASK';"
-    done
-    _DB_LIST=$(printf '%s' "$_DB_LIST" | sed 's/^ *//;s/ *$//')
-}
-
 # ---------- snapshot fetch (shared by the replica setup and the 1236 recovery) ----------
 
 # dump_remote_command <db> — the shell command run on the primary over ssh; detects
@@ -584,16 +572,12 @@ do_master() {
         die "dump file not found: $DUMP"
     fi
 
-    prompt "mrpg_user grants on local databases, comma-separated (empty = only $SHARED_DB)" ""
-    LOCAL_DBS=$REPLY
-
     GAME_HOST_MASK=""
     while :; do
         prompt "Host mask of mrpg_user on the primary (e.g. 10.0.0.% or %)" "%"
         if ( check_netmask "$REPLY" 2>/dev/null ); then GAME_HOST_MASK=$REPLY; break; fi
         info "Host mask: letters, digits, . _ % - : with no spaces or quotes."
     done
-    parse_local_dbs "$LOCAL_DBS"
 
     BIND_ADDRESS=""
     prompt "bind-address for MariaDB (empty = keep as is; set the private/VPN IP to allow replicas to connect)" ""
@@ -620,16 +604,13 @@ do_master() {
     UFW_NETWORK=$REPLY
     [ -n "$UFW_NETWORK" ] && check_cidr "$UFW_NETWORK"
 
-    _grants_show=$SHARED_DB.*
-    for _db in $_DB_LIST; do _grants_show="$_grants_show, $_db.*"; done
-
     info
     info "Plan for this host (primary/master):"
     info "  • install MariaDB, server_id=$SERVER_ID"
     info "  • binary log (ROW) + gtid_strict_mode → $MASTER_CONF"
     info "  • database $SHARED_DB (utf8mb4); dump import: ${DUMP:-skipped}"
-    info "  • accounts: mrpg_replica (REPLICATION SLAVE), mrpg_bridge (SELECT), mrpg_user (game)"
-    info "  • mrpg_user grants: $_grants_show (host '$GAME_HOST_MASK')"
+    info "  • accounts: mrpg_replica (REPLICATION SLAVE), mrpg_bridge (SELECT), mrpg_user (shared game database)"
+    info "  • mrpg_user grants: $SHARED_DB.* (host '$GAME_HOST_MASK'); local game accounts are created on each location host"
     [ -n "$BIND_ADDRESS" ] && info "  • bind-address = $BIND_ADDRESS"
     [ -n "$UFW_NETWORK" ]   && info "  • ufw: allow 3306/tcp only from $UFW_NETWORK"
     confirm_plan y
@@ -668,7 +649,7 @@ GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'mrpg_replica'@'%';
 CREATE USER IF NOT EXISTS 'mrpg_bridge'@'%' IDENTIFIED BY '$BRIDGE_READ_PASSWORD';
 GRANT SELECT ON $SHARED_DB.* TO 'mrpg_bridge'@'%';
 CREATE USER IF NOT EXISTS 'mrpg_user'@'$GAME_HOST_MASK' IDENTIFIED BY '$GAME_PASSWORD';
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON $SHARED_DB.* TO 'mrpg_user'@'$GAME_HOST_MASK';$_LOCAL_GRANTS
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON $SHARED_DB.* TO 'mrpg_user'@'$GAME_HOST_MASK';
 FLUSH PRIVILEGES;
 SET SESSION sql_log_bin = 1;
 EOF
@@ -731,9 +712,8 @@ server_id: $SERVER_ID
 
 mrpg_replica (replication, used by the replicas): $REPLICA_REPL_PASSWORD
 mrpg_bridge  (SELECT-only account for the bridge/replicas): $BRIDGE_READ_PASSWORD
-mrpg_user    (game server): $GAME_PASSWORD
+mrpg_user    (shared game database, via bridge): $GAME_PASSWORD
 mrpg_user host mask: $GAME_HOST_MASK
-mrpg_user grants on local databases: ${LOCAL_DBS:-none}
 
 Setting up a replica (on the location host): sudo sh setup_replication.sh
   → menu: 2) replica; answer the questions with the same passwords.
@@ -870,10 +850,11 @@ do_replica() {
     info "  • replication from $PRIMARY_HOST:$PRIMARY_PORT (GTID, MASTER_SSL=1)"
     info "  • local account mrpg_bridge@127.0.0.1 (SELECT on $SHARED_DB)"
     if [ "$LOCAL_DB_YN" = y ]; then
-        info "  • local database $LOCAL_DB_NAME + local account $LOCAL_USER@'$LOCAL_USER_HOST' (SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX)"
+        info "  • local database $LOCAL_DB_NAME + direct game account $LOCAL_USER@'$LOCAL_USER_HOST' (ALL PRIVILEGES on this database)"
+        info "  • $LOCAL_USER also gets READ ONLY ADMIN so it can write this local database while the shared replica stays read_only=1"
         info "  • local dump import: ${LOCAL_IMPORT:-skipped}"
     else
-        info "  • local database: created manually later (README, step 4)"
+        info "  • local database: created manually later (README, step 2.5)"
     fi
     [ "$SKIP_SNAPSHOT" = 1 ] || info "  • an existing copy of $SHARED_DB on this replica is dropped and re-created before the import (confirmed interactively)"
     confirm_plan y
@@ -989,11 +970,17 @@ FLUSH PRIVILEGES;
 EOF
 
     if [ "$LOCAL_DB_YN" = y ]; then
-        info "→ Local database $LOCAL_DB_NAME and local user $LOCAL_USER@'$LOCAL_USER_HOST'"
+        info "→ Local database $LOCAL_DB_NAME and direct game user $LOCAL_USER@'$LOCAL_USER_HOST'"
         sql_exec "CREATE DATABASE IF NOT EXISTS $LOCAL_DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-        sql_stdin "the local user $LOCAL_USER was NOT created — see the errors above" <<EOF
+        # The MariaDB instance remains read_only=1 to protect mrpg_shared. The
+        # local database is deliberately excluded from replication, therefore
+        # its game account must be allowed to bypass that global guard. READ
+        # ONLY ADMIN only bypasses read_only; ALL PRIVILEGES below is still
+        # limited to this one local schema.
+        sql_stdin "the local user $LOCAL_USER was NOT created/granted write access — see the errors above" <<EOF
 CREATE USER IF NOT EXISTS '$LOCAL_USER'@'$LOCAL_USER_HOST' IDENTIFIED BY '$LOCAL_USER_PASSWORD';
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON $LOCAL_DB_NAME.* TO '$LOCAL_USER'@'$LOCAL_USER_HOST';
+GRANT ALL PRIVILEGES ON $LOCAL_DB_NAME.* TO '$LOCAL_USER'@'$LOCAL_USER_HOST';
+GRANT READ ONLY ADMIN ON *.* TO '$LOCAL_USER'@'$LOCAL_USER_HOST';
 FLUSH PRIVILEGES;
 EOF
         if [ -n "$LOCAL_IMPORT" ]; then
@@ -1940,7 +1927,7 @@ final_ready_check() {
     info "=== Step 4 of 4 — final verification (the same calls the game server makes) ==="
     if [ "$DRY_RUN" = 1 ]; then
         info "+ replication: SHOW SLAVE STATUS (IO/SQL threads, Seconds_Behind_Master)"
-        info "+ local database: TCP login test with the sv_sql_local_* account"
+        info "+ local database: direct TCP login plus INSERT/ROLLBACK test with the sv_sql_local_* account"
         info "+ shared database through the bridge: TCP login test with the sv_sql_* account"
         info "(no connections are attempted in dry-run mode)"
         return 0
@@ -1967,7 +1954,9 @@ final_ready_check() {
         _rfail=$((_rfail + 1))
     fi
 
-    # 2) the local database answers with the account the game server will use
+    # 2) The local database is reached directly from the game server, never
+    # through the bridge. Test a real write because SELECT alone cannot catch
+    # the read_only=1 failure that would reject guild creation at runtime.
     if [ -n "$GAME_LOCAL_LOGIN" ]; then
         _lu=$GAME_LOCAL_LOGIN; _lp=$GAME_LOCAL_PW; _ldb=$GAME_LOCAL_DB
     elif [ "${LOCAL_DB_YN:-n}" = "y" ]; then
@@ -1976,11 +1965,14 @@ final_ready_check() {
         _lu=""
     fi
     if [ -n "$_lu" ]; then
-        if MYSQL_PWD="$_lp" "$MARIADB" --connect-timeout=5 -h 127.0.0.1 -P 3306 -u "$_lu" "$_ldb" -e 'SELECT 1 LIMIT 1' >/dev/null 2>&1; then
-            ok "local database answers ($_ldb, login $_lu)"
+        # Negative IDs are not generated by the game. The transaction is
+        # rolled back, so the probe never changes local game state.
+        _probe_id=$(( - ($$ % 2000000000) - 1 ))
+        if MYSQL_PWD="$_lp" "$MARIADB" --connect-timeout=5 -h 127.0.0.1 -P 3306 -u "$_lu" "$_ldb" -e "START TRANSACTION; INSERT INTO tw_guilds_ranks (ID, Rights, GuildID, Name) VALUES ($_probe_id, 0, $_probe_id, '__mrpg_write_probe__'); ROLLBACK;" >/dev/null 2>&1; then
+            ok "local database is directly readable and writable ($_ldb, login $_lu → 127.0.0.1:3306)"
         else
-            warn "local database does NOT answer with the sv_sql_local_* account ($_lu → $_ldb)"
-            info "  the game server would fail here too — fix the local grants, or the password in autoexec_server.cfg"
+            warn "local database is not writable with the sv_sql_local_* account ($_lu → $_ldb at 127.0.0.1:3306)"
+            info "  The game would receive MariaDB error 1290 on guild writes. Re-run replica setup to grant ALL PRIVILEGES on $_ldb.* plus READ ONLY ADMIN to the configured local account, then check sv_sql_local_host is 127.0.0.1 (not the bridge)."
             _rfail=$((_rfail + 1))
         fi
     else
