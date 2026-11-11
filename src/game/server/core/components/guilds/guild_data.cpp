@@ -399,18 +399,22 @@ void CGuild::CRanksManager::UpdateDefaultRank()
 		m_pDefaultRank = Get("Newbie");
 	}
 
-	// update the guild members
+	// Update every unresolved member first, then persist the complete list once.
+	// During startup a locally restored tw_guilds row can refer to ranks that
+	// were absent from tw_guilds_ranks. Calling SetRank with its normal save
+	// behavior inside this loop serializes the remaining unresolved members and
+	// dereferences their null rank pointers in CMembersManager::Save.
 	for(const auto& pIterMember : m_pGuild->GetMembers()->GetContainer())
 	{
 		const auto pMember = pIterMember.second;
 		if(!pMember->GetRank())
 		{
-			bool Status = pMember->SetRank(m_pDefaultRank);
+			bool Status = pMember->SetRank(m_pDefaultRank, false);
 			dbg_assert(Status, "guild cannot set a default rank for member");
 		}
 	}
 
-	// save the guild members
+	// All members have a valid rank now, so a single save is safe.
 	m_pGuild->GetMembers()->Save();
 }
 
@@ -534,7 +538,7 @@ bool CGuild::CMember::SetRank(GuildRankIdentifier RankID)
 	return SetRank(pRank);
 }
 
-bool CGuild::CMember::SetRank(CRank* pRank)
+bool CGuild::CMember::SetRank(CRank* pRank, bool SaveMembers)
 {
 	// check rank validity
 	if(!pRank)
@@ -542,7 +546,8 @@ bool CGuild::CMember::SetRank(CRank* pRank)
 
 	// implement rank change
 	m_pRank = pRank;
-	m_pGuild->GetMembers()->Save();
+	if(SaveMembers)
+		m_pGuild->GetMembers()->Save();
 
 	// send messages
 	const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
@@ -750,9 +755,19 @@ void CGuild::CMembersManager::Save() const
 	nlohmann::json MembersData;
 	for(auto& [UID, pMember] : m_apMembers)
 	{
+		// A malformed local snapshot must not turn a data-repair attempt into a
+		// server crash. UpdateDefaultRank repairs this during initialization; the
+		// guard is retained for an unexpected database/load failure.
+		const auto* pRank = pMember->GetRank();
+		if(!pRank)
+		{
+			dbg_msg("Guild", "Refusing to save guild %d: member %d has no local rank.", m_pGuild->GetID(), UID);
+			return;
+		}
+
 		nlohmann::json memberData;
 		memberData["id"] = UID;
-		memberData["rank_id"] = pMember->GetRank()->GetID();
+		memberData["rank_id"] = pRank->GetID();
 		memberData["deposit"] = pMember->GetDeposit().to_string().c_str();
 		MembersData["members"].push_back(memberData);
 	}

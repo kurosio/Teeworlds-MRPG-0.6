@@ -262,7 +262,10 @@ public:
 
 		void SetDeposit(const BigInt& Deposit) { m_Deposit = Deposit; }
 		[[nodiscard]] bool SetRank(GuildRankIdentifier RankID);
-		[[nodiscard]] bool SetRank(CRank* pRank);
+		// Startup repair can assign several missing ranks before persisting the
+		// complete member list. Persisting each assignment separately would save
+		// the still-unrepaired members with a null rank.
+		[[nodiscard]] bool SetRank(CRank* pRank, bool SaveMembers = true);
 		[[nodiscard]] bool DepositInBank(int Value);
 		[[nodiscard]] bool WithdrawFromBank(int Value);
 	};

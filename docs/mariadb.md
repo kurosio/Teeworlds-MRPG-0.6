@@ -171,6 +171,39 @@ At startup the server opens both databases. It does not start if:
 * a local table is missing in the local database (import `mrpg_local.sql`);
 * a local table sits in the shared database (a half-finished split would be read from the wrong side).
 
+### Guild rank integrity
+
+`tw_guilds` **and** `tw_guilds_ranks` are local tables. Guilds, their rank
+records, member JSON (`Members`) and `DefaultRankID` must therefore come from
+the same `mrpg_local_<location>` database. They are neither read through the
+bridge nor replicated from `mrpg_shared`.
+
+A crash at `CGuild::CRank::GetID(this=0x0)` means a member JSON rank ID has no
+matching row in the local `tw_guilds_ranks` table. This is data left by a
+partial old split (for example, copying `tw_guilds` but not
+`tw_guilds_ranks`), not a replication delay. Inspect the local database while
+the game server is stopped:
+
+```sql
+SELECT g.ID, g.Name, g.DefaultRankID,
+       r.ID AS default_rank_found, r.Name AS default_rank_name
+FROM mrpg_local_eu.tw_guilds AS g
+LEFT JOIN mrpg_local_eu.tw_guilds_ranks AS r
+  ON r.ID = g.DefaultRankID AND r.GuildID = g.ID
+WHERE r.ID IS NULL;
+
+SELECT GuildID, ID, Name
+FROM mrpg_local_eu.tw_guilds_ranks
+ORDER BY GuildID, ID;
+```
+
+Replace `mrpg_local_eu` with the configured `sv_sql_local_database`. Restore
+or move the matching rank rows from a backup of the **same location** before
+starting the server. The migration below copies both tables. The server also
+repairs unresolved members to the guild default as a last-resort startup
+repair and no longer dereferences a null rank during that repair; this avoids
+the crash, but it cannot reconstruct lost custom rank names or rights.
+
 ### Moving an existing database to two databases
 
 The existing database becomes the shared one. It may keep its name (set `sv_sql_database_shared` to it); only the local tables move out.
