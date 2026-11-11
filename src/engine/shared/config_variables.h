@@ -166,7 +166,8 @@ MACRO_CONFIG_INT(SvVanConnPerSecond, sv_van_conn_per_second, 10, 0, 10000, CFGFL
 
 // Cross-server synchronization through the relay (see src/relay, mmoteeworlds_relay).
 MACRO_CONFIG_INT(SvSyncServerID, sv_sync_server_id, 0, 0, 100000, CFGFLAG_SERVER, "Unique server ID used for the cross-server synchronization through the relay (0 = synchronization disabled)")
-MACRO_CONFIG_INT(SvSyncServerInterval, sv_sync_server_interval, 1, 1, 100000, CFGFLAG_SERVER, "Interval (in seconds) for the cross-server synchronization through the relay")
+MACRO_CONFIG_INT(SvSyncServerInterval, sv_sync_server_interval, 1, 1, 100000, CFGFLAG_SERVER, "Interval (in seconds) for the cross-server synchronization through the relay when fast events are disabled")
+MACRO_CONFIG_INT(SvSyncFastEvents, sv_sync_fast_events, 1, 0, 1, CFGFLAG_SERVER, "Process relay traffic every game tick to minimize account-session takeover latency")
 MACRO_CONFIG_INT(SvAccountSessionRefresh, sv_account_session_refresh, 15, 5, 3600, CFGFLAG_SERVER, "Seconds between account-session ownership checks (the relay takeover event is immediate)")
 MACRO_CONFIG_STR(SvSyncRelayHost, sv_sync_relay_host, 128, "", CFGFLAG_SERVER, "Host of the synchronization relay (empty = synchronization disabled)")
 MACRO_CONFIG_INT(SvSyncRelayPort, sv_sync_relay_port, 8383, 0, 65535, CFGFLAG_SERVER, "Port of the synchronization relay")

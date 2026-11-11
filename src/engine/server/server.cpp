@@ -2168,8 +2168,9 @@ int CServer::Run(ILogger* pLogger)
 					pGameServer->OnTick();
 				}
 
-				// synchronize server data with the database at specified intervals
-				if(Tick() % (TickSpeed() * g_Config.m_SvSyncServerInterval) == 0)
+				// keep relay events at game-tick latency for session takeover; the
+				// interval remains a fallback when fast events are disabled
+				if(g_Config.m_SvSyncFastEvents || Tick() % (TickSpeed() * g_Config.m_SvSyncServerInterval) == 0)
 					Sync->OnTick();
 			}
 

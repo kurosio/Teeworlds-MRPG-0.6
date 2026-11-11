@@ -42,6 +42,7 @@ namespace syncevents
 	inline constexpr const char *GUILD_DISBAND = "guild_disband";
 	inline constexpr const char *GUILD_UPDATE = "guild_update";
 	inline constexpr const char *ACCOUNT_SESSION_TAKEOVER = "account_session_takeover";
+	inline constexpr const char *ACCOUNT_SESSION_TAKEOVER_ACK_PREFIX = "account_session_takeover_ack:";
 }
 
 class CServerSync

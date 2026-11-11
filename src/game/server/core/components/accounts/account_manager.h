@@ -45,8 +45,8 @@ public:
 	AccountCodeResult LoginAccountRaw(int ClientID, const char* pLogin, const char* pPassword);
 
 	void TryLoginGuestByTimeoutCode(int ClientID, const char* pNickname, const char* pCode, const char* pGuestLogin);
-	void ValidateLocalSessions(int AccountID);
-	void QueueSessionEvent(int AccountID);
+	void ValidateLocalSessions(int AccountID, int AckEventID = 0, int AckWorldID = 0, int AckTargetServerID = 0);
+	void BeginSessionTakeover(CPlayer* pPlayer, const std::string& Token, int PreviousServerID, int PreviousClientID, const std::string& PreviousToken, int PreviousHeartbeat, int PreviousHeartbeatAge, bool RecommendPin);
 	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false);
 	void SetPinCode(int ClientID, const char* pCurrentPasswordOrPin, const char* pNewPin, bool IsChangingPin);
 	void ChangePassword(int ClientID, const char* pOldPassword, const char* pNewPassword, const char* pPinCode);
@@ -82,13 +82,42 @@ private:
 	{
 		int m_AccountID {};
 		std::string m_Token {};
+		int m_AckEventID {};
+		int m_AckWorldID {};
+		int m_AckTargetServerID {};
+	};
+
+	struct SPendingLogin
+	{
+		int m_ClientID {};
+		int m_AccountID {};
+		std::string m_Token {};
+		int m_PreviousServerID {};
+		int m_PreviousClientID {};
+		std::string m_PreviousToken {};
+		int m_PreviousHeartbeat {};
+		int m_PreviousHeartbeatAge{ -1 };
+		int m_EventID {};
+		int m_StartTick {};
+		bool m_RemoteAck {};
+		bool m_RelayFailed {};
+		bool m_RecommendPin {};
 	};
 
 	void ProcessPendingKicks();
+	void UpdateLocalSessionHeartbeats();
+	void SendSessionEvents();
+	void ProcessPendingLogins();
+	void CompleteLogin(int ClientID, int AccountID, const std::string& Token, bool RecommendPin, int PreviousServerID);
+	void RestorePreviousSession(const SPendingLogin& Pending);
+	void QueueLocalSessionKicks(int AccountID, const std::string& Token);
+	bool HasAnyLocalSession(int AccountID) const;
+	bool HasOtherLocalSession(int AccountID, const std::string& Token) const;
 	void AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* pProf) const;
 
 	std::vector<SPendingKick> m_vPendingKicks {};
 	std::vector<SSessionValidation> m_vSessionValidations {};
+	std::vector<SPendingLogin> m_vPendingLogins {};
 	std::vector<int> m_vSessionEvents {};
 	std::mutex m_SessionMutex {};
 	int m_LastSessionCheck = 0;
