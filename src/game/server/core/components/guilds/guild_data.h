@@ -380,6 +380,7 @@ public:
 		delete m_pBankManager;
 		delete m_pRanks;
 		delete m_pMembers;
+		m_pLogger = new CLogEntry(this, Logflag);
 		m_pBankManager = new CBank(Bank, this);
 		m_pRanks = new CRanksManager(this, DefaultRankID);
 		m_pMembers = new CMembersManager(this, JsonMembers);
