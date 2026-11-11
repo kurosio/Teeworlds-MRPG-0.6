@@ -5,6 +5,10 @@
 #include <game/server/core/mmo_component.h>
 #include <base/timeperiod.h>
 
+#include <mutex>
+#include <string>
+#include <vector>
+
 #include "account_data.h"
 
 class CAccountManager : public MmoComponent
@@ -16,6 +20,8 @@ class CAccountManager : public MmoComponent
 	}
 
 	void OnPlayerLogin(CPlayer* pPlayer) override;
+	void OnTick() override;
+	void OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req) override;
 	void OnClientReset(int ClientID) override;
 	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
@@ -39,6 +45,8 @@ public:
 	AccountCodeResult LoginAccountRaw(int ClientID, const char* pLogin, const char* pPassword);
 
 	void TryLoginGuestByTimeoutCode(int ClientID, const char* pNickname, const char* pCode, const char* pGuestLogin);
+	void ValidateLocalSessions(int AccountID);
+	void QueueSessionEvent(int AccountID);
 	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false);
 	void SetPinCode(int ClientID, const char* pCurrentPasswordOrPin, const char* pNewPin, bool IsChangingPin);
 	void ChangePassword(int ClientID, const char* pOldPassword, const char* pNewPassword, const char* pPinCode);
@@ -63,7 +71,27 @@ public:
 	void ShowPlayerAttributesByGroup(CPlayer* pPlayer, std::string_view Title, AttributeGroup Group) const;
 
 private:
+	struct SPendingKick
+	{
+		int m_ClientID {};
+		int m_AccountID {};
+		std::string m_Token {};
+	};
+
+	struct SSessionValidation
+	{
+		int m_AccountID {};
+		std::string m_Token {};
+	};
+
+	void ProcessPendingKicks();
 	void AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* pProf) const;
+
+	std::vector<SPendingKick> m_vPendingKicks {};
+	std::vector<SSessionValidation> m_vSessionValidations {};
+	std::vector<int> m_vSessionEvents {};
+	std::mutex m_SessionMutex {};
+	int m_LastSessionCheck = 0;
 };
 
 #endif

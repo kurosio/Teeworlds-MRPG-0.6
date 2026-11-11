@@ -3,6 +3,7 @@
 #include "account_manager.h"
 
 #include <base/hash_ctxt.h>
+#include <base/system.h>
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
 #include <game/server/worldmodes/default.h>
@@ -17,6 +18,9 @@
 
 #include <teeother/components/localization.h>
 
+#include <algorithm>
+#include <mutex>
+
 constexpr int LENGTH_LOGPASS_MAX = 12;
 constexpr int LENGTH_LOGPASS_MIN = 4;
 constexpr int LENGTH_PIN_MAX = 6;
@@ -26,6 +30,17 @@ constexpr int AUTH_FIELD_PASSWORD = 1;
 
 namespace
 {
+	constexpr const char* ACCOUNT_SESSIONS_TABLE = "tw_account_sessions";
+	constexpr const char* ACCOUNT_SESSION_TAKEOVER_REASON = "Account session was taken over";
+	constexpr int ACCOUNT_SESSION_TOKEN_LENGTH = 48;
+
+	std::string GenerateSessionToken()
+	{
+		char aToken[65] {};
+		secure_random_password(aToken, sizeof(aToken), ACCOUNT_SESSION_TOKEN_LENGTH);
+		return std::string(aToken);
+	}
+
 	bool CheckLoginPasswordLength(CGS* pGS, int ClientID, const char* pLogin, const char* pPassword)
 	{
 		const int LengthLogin = str_length(pLogin);
@@ -50,6 +65,7 @@ class DbAuthorization
 		std::string m_Language{};
 		std::string m_LoginDate{};
 		std::string m_PinCode{};
+		std::string m_SessionToken{};
 	};
 	using CAuthorizationContextPtr = std::shared_ptr<DbAsync::CContext<CAuthorizationPayload>>;
 
@@ -107,13 +123,45 @@ class DbAuthorization
 			return;
 		}
 
-		if(pContext->GS()->GetPlayerByUserID(pContext->Data().m_AccountID) != nullptr)
+		auto& Data = pContext->Data();
+		Database->Execute<DB::INSERT>([pContext](bool Success) { OnClaimSession(pContext, Success); },
+			ACCOUNT_SESSIONS_TABLE,
+			"(AccountID, ServerID, ClientID, SessionToken, Heartbeat, UpdatedAt) VALUES ('{}', '{}', '{}', '{}', 1, NOW()) ON DUPLICATE KEY UPDATE ServerID = VALUES(ServerID), ClientID = VALUES(ClientID), SessionToken = VALUES(SessionToken), Heartbeat = 1, UpdatedAt = NOW()",
+			Data.m_AccountID, g_Config.m_SvSyncServerID, pContext->GetClientID(), Data.m_SessionToken);
+	}
+
+	static void OnClaimSession(const CAuthorizationContextPtr& pContext, bool Success)
+	{
+		auto* pPlayer = pContext->GetPlayer(false);
+		if(!pPlayer)
+			return;
+
+		if(!Success)
 		{
-			pContext->GS()->Chat(pContext->GetClientID(), "This account is already online.");
+			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: account session could not be reserved.");
 			return;
 		}
 
-		auto pData = Database->Prepare<DB::SELECT>("*", "tw_accounts_data", "WHERE ID = '{}'", pContext->Data().m_AccountID);
+		const auto& Data = pContext->Data();
+		auto pCheck = Database->Prepare<DB::SELECT>("ServerID, SessionToken", ACCOUNT_SESSIONS_TABLE,
+			"WHERE AccountID = '{}' FOR UPDATE", Data.m_AccountID);
+		pCheck->AtExecute([pContext](ResultPtr pRes) { OnValidateClaim(pContext, pRes); });
+	}
+
+	static void OnValidateClaim(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
+	{
+		auto* pPlayer = pContext->GetPlayer(false);
+		if(!pPlayer)
+			return;
+
+		const auto& Data = pContext->Data();
+		if(!pRes->next() || pRes->getString("SessionToken") != Data.m_SessionToken)
+		{
+			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: another login took over this account.");
+			return;
+		}
+
+		auto pData = Database->Prepare<DB::SELECT>("*", "tw_accounts_data", "WHERE ID = '{}'", Data.m_AccountID);
 		pData->AtExecute([pContext](ResultPtr pDataRes) { OnLoadAccountData(pContext, pDataRes); });
 	}
 
@@ -136,6 +184,9 @@ class DbAuthorization
 			pPlayer->GetSharedData().m_GuestLogin.clear();
 
 		pPlayer->Account()->Init(Data.m_AccountID, pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Language, Data.m_LoginDate, std::move(pRes));
+		pPlayer->Account()->SetSessionToken(Data.m_SessionToken);
+		Data.m_pAccountManager->ValidateLocalSessions(Data.m_AccountID);
+		Data.m_pAccountManager->QueueSessionEvent(Data.m_AccountID);
 		pContext->GS()->Chat(pContext->GetClientID(), "Login successful. Welcome back!");
 		if(Data.m_PinCode.empty() && !pPlayer->IsGuestLogin())
 		{
@@ -158,7 +209,7 @@ public:
 	static void StartAuthorization(CAccountManager* pMgr, int ClientID, std::string Login, std::string Pass, std::string Nick)
 	{
 		auto pContext = DbAsync::MakeContext<DbAuthorization::CAuthorizationPayload>(ClientID,
-			DbAuthorization::CAuthorizationPayload { pMgr, Login, Pass, 0, {}, {}, {} });
+			DbAuthorization::CAuthorizationPayload { pMgr, Login, Pass, 0, {}, {}, {}, GenerateSessionToken() });
 		auto pAuth = Database->Prepare<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '{}'", Nick);
 		pAuth->AtExecute([pContext](ResultPtr pRes) { DbAuthorization::OnCheckNickname(pContext, pRes); });
 	}
@@ -342,8 +393,148 @@ void CAccountManager::OnPlayerLogin(CPlayer* pPlayer)
 
 void CAccountManager::OnClientReset(int ClientID)
 {
+	int AccountID = 0;
+	std::string SessionToken;
+	if(const auto It = CAccountData::ms_aData.find(ClientID); It != CAccountData::ms_aData.end())
+	{
+		AccountID = It->second.GetID();
+		SessionToken = It->second.GetSessionToken();
+	}
+
+	if(AccountID > 0 && !SessionToken.empty())
+	{
+		Database->Execute<DB::REMOVE>(ACCOUNT_SESSIONS_TABLE,
+			"WHERE AccountID = '{}' AND SessionToken = '{}'", AccountID, SessionToken);
+	}
+
 	CAccountSharedData::ms_aPlayerSharedData.erase(ClientID);
 	CAccountData::ms_aData.erase(ClientID);
+}
+
+void CAccountManager::QueueSessionEvent(int AccountID)
+{
+	if(AccountID <= 0)
+		return;
+
+	std::lock_guard<std::mutex> Lock(m_SessionMutex);
+	m_vSessionEvents.push_back(AccountID);
+}
+
+void CAccountManager::ValidateLocalSessions(int AccountID)
+{
+	if(AccountID <= 0)
+		return;
+
+	auto pCheck = Database->Prepare<DB::SELECT>("ServerID, SessionToken", ACCOUNT_SESSIONS_TABLE,
+		"WHERE AccountID = '{}' FOR UPDATE", AccountID);
+	pCheck->AtExecute([this, AccountID](ResultPtr pRes)
+	{
+		if(!pRes->next())
+			return;
+
+		const auto SessionToken = pRes->getString("SessionToken");
+		if(SessionToken.empty())
+			return;
+
+		std::lock_guard<std::mutex> Lock(m_SessionMutex);
+		m_vSessionValidations.push_back({AccountID, SessionToken});
+	});
+}
+
+void CAccountManager::OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req)
+{
+	if(EventName != syncevents::ACCOUNT_SESSION_TAKEOVER || Req.Value <= 0)
+		return;
+
+	ValidateLocalSessions(Req.Value);
+}
+
+void CAccountManager::OnTick()
+{
+	ProcessPendingKicks();
+
+	std::vector<int> vSessionEvents;
+	{
+		std::lock_guard<std::mutex> Lock(m_SessionMutex);
+		vSessionEvents.swap(m_vSessionEvents);
+	}
+	for(const int AccountID : vSessionEvents)
+		Sync->Push(syncevents::ACCOUNT_SESSION_TAKEOVER, INITIALIZER_WORLD_ID, AccountID);
+
+	if(GS()->GetWorldID() != INITIALIZER_WORLD_ID)
+		return;
+
+	const int RefreshSeconds = g_Config.m_SvAccountSessionRefresh;
+	if(RefreshSeconds <= 0)
+		return;
+
+	const int64_t Now = time_get() / time_freq();
+	if(m_LastSessionCheck != 0 && Now - m_LastSessionCheck < RefreshSeconds)
+		return;
+	m_LastSessionCheck = (int)Now;
+
+	std::vector<int> vAccounts;
+	for(const auto& [ClientID, Data] : CAccountData::ms_aData)
+	{
+		if(Data.GetID() <= 0 || Data.GetSessionToken().empty())
+			continue;
+
+		if(std::find(vAccounts.begin(), vAccounts.end(), Data.GetID()) == vAccounts.end())
+			vAccounts.push_back(Data.GetID());
+	}
+
+	for(const int AccountID : vAccounts)
+		ValidateLocalSessions(AccountID);
+}
+
+void CAccountManager::ProcessPendingKicks()
+{
+	std::vector<SSessionValidation> vValidations;
+	{
+		std::lock_guard<std::mutex> Lock(m_SessionMutex);
+		vValidations.swap(m_vSessionValidations);
+	}
+
+	std::vector<SPendingKick> vKicks;
+	for(const auto& Validation : vValidations)
+	{
+		for(const auto& [ClientID, Data] : CAccountData::ms_aData)
+		{
+			if(Data.GetID() == Validation.m_AccountID && !Data.GetSessionToken().empty()
+				&& Data.GetSessionToken() != Validation.m_Token)
+			{
+				vKicks.push_back({ClientID, Data.GetID(), Data.GetSessionToken()});
+			}
+		}
+	}
+
+	{
+		std::lock_guard<std::mutex> Lock(m_SessionMutex);
+		for(auto& Kick : vKicks)
+			m_vPendingKicks.push_back(std::move(Kick));
+	}
+
+	std::vector<SPendingKick> vPendingKicks;
+	{
+		std::lock_guard<std::mutex> Lock(m_SessionMutex);
+		vPendingKicks.swap(m_vPendingKicks);
+	}
+
+	for(const auto& Kick : vPendingKicks)
+	{
+		const auto It = CAccountData::ms_aData.find(Kick.m_ClientID);
+		if(It == CAccountData::ms_aData.end() || It->second.GetID() != Kick.m_AccountID
+			|| It->second.GetSessionToken() != Kick.m_Token)
+		{
+			continue;
+		}
+
+		auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(Kick.m_ClientID));
+		if(!pGS || !pGS->GetPlayer(Kick.m_ClientID, false))
+			continue;
+
+		pGS->Server()->Kick(Kick.m_ClientID, ACCOUNT_SESSION_TAKEOVER_REASON);
+	}
 }
 
 void CAccountManager::AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* pProf) const

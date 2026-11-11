@@ -30,6 +30,7 @@ class CAccountData
 	bool m_ReadyToPlay {};
 	std::string m_Login{};
 	std::string m_LastLoginDate{};
+	std::string m_SessionToken{};
 	int m_CrimeScore {};
 	int m_LastTickCrimeScoreChanges {};
 
@@ -115,6 +116,8 @@ public:
 	void InitEquipmentPresets(const std::string& PresetsJson);
 	void SaveEquipmentPresets();
 	int GetID() const { return m_ID; }
+	const std::string& GetSessionToken() const { return m_SessionToken; }
+	void SetSessionToken(const std::string& Token) { m_SessionToken = Token; }
 	void SetReadyToPlay(bool State) { m_ReadyToPlay = State; }
 	bool IsReadyToPlay() const { return m_ReadyToPlay; }
 

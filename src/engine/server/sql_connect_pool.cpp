@@ -2,6 +2,8 @@
 #include "sql_connect_pool.h"
 #include "sql_lost_query_logger.h"
 
+#include <mutex>
+
 namespace
 {
 	constexpr std::string_view LOCAL_TABLES[] = {
@@ -596,6 +598,13 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection(DbKind Kind)
 	const int64_t lastFailure = LastConnectFailure.load();
 	if(lastFailure > 0 && DurationMs(lastFailure, now) < g_Config.m_SvSqlConnectRetryDelayMs)
 		return nullptr;
+
+	// MariaDB Connector/C++ 1.1.4 has shared state in its URL parser.
+	// Worker threads that call connect() concurrently corrupt it and crash
+	// inside UrlParser::parseHaMode(), so connector creation is serialized.
+	// Queries still run in parallel after the connection exists.
+	static std::mutex s_ConnectionMutex;
+	std::lock_guard<std::mutex> Lock(s_ConnectionMutex);
 
 	try
 	{

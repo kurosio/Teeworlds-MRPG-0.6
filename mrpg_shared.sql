@@ -173,6 +173,23 @@ CREATE TABLE `tw_accounts_data` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `tw_account_sessions`
+--
+
+CREATE TABLE `tw_account_sessions` (
+  `AccountID` int(11) NOT NULL,
+  `ServerID` int(11) NOT NULL,
+  `ClientID` int(11) NOT NULL,
+  `SessionToken` varchar(64) NOT NULL,
+  `Heartbeat` bigint(20) NOT NULL DEFAULT 0,
+  `UpdatedAt` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`AccountID`),
+  KEY `tw_account_sessions_server` (`ServerID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `tw_accounts_items`
 --
 
