@@ -1199,7 +1199,10 @@ void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SReque
 		{
 			ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
 			if (pRes->next())
+			{
 				pGuild->InitFromRow(pRes);
+				dbg_msg("guild", "guild updated: %s", pGuild->GetName());
+			}
 		}
 	}
 
