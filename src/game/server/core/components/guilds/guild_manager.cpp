@@ -1182,7 +1182,7 @@ void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SReque
 {
 	if(EventName == syncevents::GUILD_CREATE)
 	{
-		if(Req.Value <= 0 || GetGuildByID(Req.Value))
+		if(Req.Value <= 0 || GetGuildByID(Req.Value) || Req.ServerID == g_Config.m_SvSyncServerID)
 			return;
 
 		ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
@@ -1195,6 +1195,9 @@ void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SReque
 
 	else if (EventName == syncevents::GUILD_UPDATE)
 	{
+		if (Req.ServerID == g_Config.m_SvSyncServerID)
+			return;
+
 		if(const auto pGuild = GetGuildByID(Req.Value))
 		{
 			ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
@@ -1208,6 +1211,9 @@ void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SReque
 
 	else if(EventName == syncevents::GUILD_DISBAND)
 	{
+		if (Req.ServerID == g_Config.m_SvSyncServerID)
+			return;
+
 		if (const auto pGuild = GetGuildByID(Req.Value))
 		{
 			GS()->Chat(-1, "The '{~}' guild has been disbanded.", pGuild->GetName());
