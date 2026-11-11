@@ -14,15 +14,17 @@ GRANT SELECT ON mrpg_shared.* TO 'mrpg_bridge'@'%';
 
 FLUSH PRIVILEGES;
 
--- On each LOCATION replica, after importing a dump of the primary, run
--- (MASTER_SSL=1 encrypts the replication stream over the WAN):
+-- On each LOCATION replica, after importing a fresh dump made with
+-- --master-data=2 --gtid, explicitly apply the dump's commented
+-- SET GLOBAL gtid_slave_pos='…' value, then run (MASTER_SSL=1 encrypts the
+-- replication stream over the WAN):
 --   CHANGE MASTER TO
 --     MASTER_HOST='db-central.example.com',
 --     MASTER_USER='mrpg_replica',
 --     MASTER_PASSWORD='changeme',
---     MASTER_USE_GTID=CURRENT_POS,
+--     MASTER_USE_GTID=slave_pos,
 --     MASTER_SSL=1;
 --   START SLAVE;
 -- Check replication lag with: SHOW SLAVE STATUS\G  (Seconds_Behind_Master)
--- and confirm that only mrpg_shared exists there:
---   SHOW DATABASES LIKE 'mrpg%';
+-- The location's intentionally created mrpg_local_<location> database is
+-- local state and is not modified by replication.

@@ -7,6 +7,7 @@ namespace
 	constexpr std::string_view LOCAL_TABLES[] = {
 		"tw_auction_slots",
 		"tw_groups",
+		"tw_guilds",
 		"tw_guilds_decorations",
 		"tw_guilds_history",
 		"tw_guilds_invites",

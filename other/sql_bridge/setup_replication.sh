@@ -6,9 +6,10 @@
 # Automates steps 1-2 of other/sql_bridge/README.md:
 #   1) master  — Step 1 (MariaDB, binary log, mrpg_shared database, dump
 #                import, mrpg_replica / mrpg_bridge / mrpg_user accounts);
-#   2) replica — Step 2 (MariaDB, read-only, snapshot from the primary,
-#                CHANGE MASTER, local mrpg_bridge account, plus a local
-#                database mrpg_local_<location> and a dedicated local user);
+#   2) replica — Step 2 (MariaDB, read-only shared replica, snapshot from
+#                the primary, CHANGE MASTER, local mrpg_bridge account, plus
+#                a writable mrpg_local_<location> database and direct local
+#                game user);
 #   3) status  — replication state on this host;
 #   4) reset   — remove the configuration this script creates (stop/reset
 #                replication, move configs aside, optionally drop the
@@ -486,19 +487,6 @@ EOF
     fi
 }
 
-# parse_local_dbs <csv> — fills _DB_LIST (space-separated) and _LOCAL_GRANTS (SQL lines)
-parse_local_dbs() {
-    _DB_LIST=""
-    _LOCAL_GRANTS=""
-    for _db in $(printf '%s' "$1" | tr ',' ' '); do
-        check_ident "$_db"
-        _DB_LIST="$_DB_LIST $_db"
-        _LOCAL_GRANTS="$_LOCAL_GRANTS
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON ${_db}.* TO 'mrpg_user'@'$GAME_HOST_MASK';"
-    done
-    _DB_LIST=$(printf '%s' "$_DB_LIST" | sed 's/^ *//;s/ *$//')
-}
-
 # ---------- snapshot fetch (shared by the replica setup and the 1236 recovery) ----------
 
 # dump_remote_command <db> — the shell command run on the primary over ssh; detects
@@ -584,16 +572,12 @@ do_master() {
         die "dump file not found: $DUMP"
     fi
 
-    prompt "mrpg_user grants on local databases, comma-separated (empty = only $SHARED_DB)" ""
-    LOCAL_DBS=$REPLY
-
     GAME_HOST_MASK=""
     while :; do
         prompt "Host mask of mrpg_user on the primary (e.g. 10.0.0.% or %)" "%"
         if ( check_netmask "$REPLY" 2>/dev/null ); then GAME_HOST_MASK=$REPLY; break; fi
         info "Host mask: letters, digits, . _ % - : with no spaces or quotes."
     done
-    parse_local_dbs "$LOCAL_DBS"
 
     BIND_ADDRESS=""
     prompt "bind-address for MariaDB (empty = keep as is; set the private/VPN IP to allow replicas to connect)" ""
@@ -620,16 +604,13 @@ do_master() {
     UFW_NETWORK=$REPLY
     [ -n "$UFW_NETWORK" ] && check_cidr "$UFW_NETWORK"
 
-    _grants_show=$SHARED_DB.*
-    for _db in $_DB_LIST; do _grants_show="$_grants_show, $_db.*"; done
-
     info
     info "Plan for this host (primary/master):"
     info "  • install MariaDB, server_id=$SERVER_ID"
     info "  • binary log (ROW) + gtid_strict_mode → $MASTER_CONF"
     info "  • database $SHARED_DB (utf8mb4); dump import: ${DUMP:-skipped}"
-    info "  • accounts: mrpg_replica (REPLICATION SLAVE), mrpg_bridge (SELECT), mrpg_user (game)"
-    info "  • mrpg_user grants: $_grants_show (host '$GAME_HOST_MASK')"
+    info "  • accounts: mrpg_replica (REPLICATION SLAVE), mrpg_bridge (SELECT), mrpg_user (shared game database)"
+    info "  • mrpg_user grants: $SHARED_DB.* (host '$GAME_HOST_MASK'); local game accounts are created on each location host"
     [ -n "$BIND_ADDRESS" ] && info "  • bind-address = $BIND_ADDRESS"
     [ -n "$UFW_NETWORK" ]   && info "  • ufw: allow 3306/tcp only from $UFW_NETWORK"
     confirm_plan y
@@ -668,7 +649,7 @@ GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'mrpg_replica'@'%';
 CREATE USER IF NOT EXISTS 'mrpg_bridge'@'%' IDENTIFIED BY '$BRIDGE_READ_PASSWORD';
 GRANT SELECT ON $SHARED_DB.* TO 'mrpg_bridge'@'%';
 CREATE USER IF NOT EXISTS 'mrpg_user'@'$GAME_HOST_MASK' IDENTIFIED BY '$GAME_PASSWORD';
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON $SHARED_DB.* TO 'mrpg_user'@'$GAME_HOST_MASK';$_LOCAL_GRANTS
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON $SHARED_DB.* TO 'mrpg_user'@'$GAME_HOST_MASK';
 FLUSH PRIVILEGES;
 SET SESSION sql_log_bin = 1;
 EOF
@@ -731,9 +712,8 @@ server_id: $SERVER_ID
 
 mrpg_replica (replication, used by the replicas): $REPLICA_REPL_PASSWORD
 mrpg_bridge  (SELECT-only account for the bridge/replicas): $BRIDGE_READ_PASSWORD
-mrpg_user    (game server): $GAME_PASSWORD
+mrpg_user    (shared game database, via bridge): $GAME_PASSWORD
 mrpg_user host mask: $GAME_HOST_MASK
-mrpg_user grants on local databases: ${LOCAL_DBS:-none}
 
 Setting up a replica (on the location host): sudo sh setup_replication.sh
   → menu: 2) replica; answer the questions with the same passwords.
@@ -782,6 +762,10 @@ do_replica() {
     info "  3) skip (the database has already been imported)"
     SNAPSHOT=""
     FROM_PRIMARY=""
+    # Position recorded by the fresh --gtid snapshot. mariadb-dump writes the
+    # SET GLOBAL gtid_slave_pos statement commented when --master-data=2 is
+    # used, so the script applies this position explicitly after the import.
+    SNAPSHOT_GTID=""
     SKIP_SNAPSHOT=0
     while :; do
         prompt "Choice" "2"
@@ -870,10 +854,11 @@ do_replica() {
     info "  • replication from $PRIMARY_HOST:$PRIMARY_PORT (GTID, MASTER_SSL=1)"
     info "  • local account mrpg_bridge@127.0.0.1 (SELECT on $SHARED_DB)"
     if [ "$LOCAL_DB_YN" = y ]; then
-        info "  • local database $LOCAL_DB_NAME + local account $LOCAL_USER@'$LOCAL_USER_HOST' (SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX)"
+        info "  • local database $LOCAL_DB_NAME + direct game account $LOCAL_USER@'$LOCAL_USER_HOST' (ALL PRIVILEGES on this database)"
+        info "  • $LOCAL_USER also gets READ ONLY ADMIN so it can write this local database while the shared replica stays read_only=1"
         info "  • local dump import: ${LOCAL_IMPORT:-skipped}"
     else
-        info "  • local database: created manually later (README, step 4)"
+        info "  • local database: created manually later (README, step 2.5)"
     fi
     [ "$SKIP_SNAPSHOT" = 1 ] || info "  • an existing copy of $SHARED_DB on this replica is dropped and re-created before the import (confirmed interactively)"
     confirm_plan y
@@ -918,35 +903,35 @@ EOF
             fi
         fi
         if [ "$DRY_RUN" != 1 ]; then
-            _dump_gtid=$(extract_gtid_pos "$_snap")
-            if [ -z "$_dump_gtid" ]; then
-                warn "the snapshot does not record a GTID position (dump without --gtid) — GTID replication cannot start from it."
-                info "  answering y imports the data only: replication will still not run (1236) — you will need a fresh dump made with --gtid (snapshot option 2 over SSH)."
-                ask_yn "Import the data anyway (replication stays broken)?" n
-                [ "$REPLY" = y ] || { [ -n "$_tmpdump" ] && rm -f "$_tmpdump"; die "re-create the dump with --gtid (README, step 2) or use option 2 (SSH pull)"; }
-            else
-                info "Snapshot records GTID position: $_dump_gtid"
-                # probe the replication master (never prompts): the explicit SSH address when
-                # one was given (snapshot option 2), otherwise try root@PRIMARY_HOST for option 1
-                if [ -n "$FROM_PRIMARY" ]; then _probe="$FROM_PRIMARY"; else _probe="root@$PRIMARY_HOST"; fi
-                _pri_pos=$(ssh -o BatchMode=yes -o ConnectTimeout=8 "$_probe" "if [ \$(id -u) = 0 ]; then mariadb -u root -N -e 'SELECT @@global.gtid_binlog_pos'; else sudo -n mariadb -u root -N -e 'SELECT @@global.gtid_binlog_pos'; fi" 2>/dev/null || true)
-                if [ -n "$_pri_pos" ]; then
-                    info "primary gtid_binlog_pos now:    $_pri_pos"
-                    _cov=$(gtid_end_compare "$_dump_gtid" "$_pri_pos")
-                    case "$_cov" in
-                        fresh)
-                            ok "the snapshot position matches the primary's current position." ;;
-                        behind)
-                            warn "the snapshot was taken before the primary's current position —"
-                            info "  the primary may have already purged those binlogs (expire_logs_days) → Last_IO_Error 1236."
-                            info "  the safest option is a fresh dump (snapshot option 2 — SSH pull)." ;;
-                        foreign)
-                            die "the snapshot is FOREIGN to this primary — it contains a position this server never had (or an ahead one). This is guaranteed Last_IO_Error 1236. Re-create the dump ON the primary (menu 2, snapshot option 2), or use a dump created after the primary was rebuilt/reset." ;;
-                    esac
-                elif [ -n "$FROM_PRIMARY" ]; then
-                    info "note: could not query the primary's gtid_binlog_pos (BatchMode ssh failed) — skipping the comparison"
-                fi
+            SNAPSHOT_GTID=$(extract_gtid_pos "$_snap")
+            if [ -z "$SNAPSHOT_GTID" ]; then
+                [ -n "$_tmpdump" ] && rm -f "$_tmpdump"
+                die "the snapshot does not record SET GLOBAL gtid_slave_pos (dump without --gtid) — aborting because starting GTID replication from it would cause error 1236. Re-create it with --master-data=2 --gtid (snapshot option 2 over SSH)."
             fi
+            check_gtid_pos "$SNAPSHOT_GTID"
+            info "Snapshot records GTID position: $SNAPSHOT_GTID"
+            # probe the replication master (never prompts): the explicit SSH address when
+            # one was given (snapshot option 2), otherwise try root@PRIMARY_HOST for option 1
+            if [ -n "$FROM_PRIMARY" ]; then _probe="$FROM_PRIMARY"; else _probe="root@$PRIMARY_HOST"; fi
+            _pri_pos=$(ssh -o BatchMode=yes -o ConnectTimeout=8 "$_probe" "if [ \$(id -u) = 0 ]; then mariadb -u root -N -e 'SELECT @@global.gtid_binlog_pos'; else sudo -n mariadb -u root -N -e 'SELECT @@global.gtid_binlog_pos'; fi" 2>/dev/null || true)
+            if [ -n "$_pri_pos" ]; then
+                info "primary gtid_binlog_pos now:    $_pri_pos"
+                _cov=$(gtid_end_compare "$SNAPSHOT_GTID" "$_pri_pos")
+                case "$_cov" in
+                    fresh)
+                        ok "the snapshot position matches the primary's current position." ;;
+                    behind)
+                        warn "the snapshot was taken before the primary's current position —"
+                        info "  the primary may have already purged those binlogs (expire_logs_days) → Last_IO_Error 1236."
+                        info "  the safest option is a fresh dump (snapshot option 2 — SSH pull)." ;;
+                    foreign)
+                        die "the snapshot is FOREIGN to this primary — it contains a position this server never had (or an ahead one). This is guaranteed Last_IO_Error 1236. Re-create the dump ON the primary (menu 2, snapshot option 2), or use a dump created after the primary was rebuilt/reset." ;;
+                esac
+            elif [ -n "$FROM_PRIMARY" ]; then
+                info "note: could not query the primary's gtid_binlog_pos (BatchMode ssh failed) — skipping the comparison"
+            fi
+        else
+            SNAPSHOT_GTID="<GTID from snapshot>"
         fi
         pre_import_clean_shared_db
         import_dump "$SHARED_DB" "$_snap"
@@ -967,18 +952,29 @@ EOF
         "$MARIADB" -u root -e "STOP SLAVE" >/dev/null 2>&1 || true
         "$MARIADB" -u root -e "RESET SLAVE" >/dev/null 2>&1 || true
     fi
+    if [ "$SKIP_SNAPSHOT" != 1 ]; then
+        # --master-data=2 comments the dump's SET GLOBAL gtid_slave_pos line.
+        # Do this after the final RESET SLAVE, otherwise the replica can ask the
+        # primary for its stale pre-import GTID and immediately get error 1236.
+        set_gtid_slave_pos "$SNAPSHOT_GTID"
+        _gtid_bootstrap=slave_pos
+    else
+        # No snapshot was imported, so preserve the legacy explicit choice:
+        # CURRENT_POS is only valid when the existing data and GTID state match.
+        _gtid_bootstrap=CURRENT_POS
+    fi
     if ! sql_stdin <<EOF
 CHANGE MASTER TO
   MASTER_HOST='$PRIMARY_HOST',
   MASTER_PORT=$PRIMARY_PORT,
   MASTER_USER='mrpg_replica',
   MASTER_PASSWORD='$REPLICA_REPL_PASSWORD',
-  MASTER_USE_GTID=CURRENT_POS,
+  MASTER_USE_GTID=$_gtid_bootstrap,
   MASTER_SSL=1;
 START SLAVE;
 EOF
     then
-        die "CHANGE MASTER/START SLAVE failed — see the SQL errors above. Check: primary reachable ($PRIMARY_HOST:$PRIMARY_PORT), the mrpg_replica password, and that the primary supports MASTER_SSL. The replica is NOT configured; fix the cause and rerun menu 2."
+        die "CHANGE MASTER/START SLAVE failed — see the SQL errors above. Check: primary reachable ($PRIMARY_HOST:$PRIMARY_PORT), the mrpg_replica password, MASTER_SSL, and the snapshot GTID position. The replica is NOT configured; fix the cause and rerun menu 2."
     fi
 
     info "→ Local mrpg_bridge account"
@@ -989,11 +985,17 @@ FLUSH PRIVILEGES;
 EOF
 
     if [ "$LOCAL_DB_YN" = y ]; then
-        info "→ Local database $LOCAL_DB_NAME and local user $LOCAL_USER@'$LOCAL_USER_HOST'"
+        info "→ Local database $LOCAL_DB_NAME and direct game user $LOCAL_USER@'$LOCAL_USER_HOST'"
         sql_exec "CREATE DATABASE IF NOT EXISTS $LOCAL_DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-        sql_stdin "the local user $LOCAL_USER was NOT created — see the errors above" <<EOF
+        # The MariaDB instance remains read_only=1 to protect mrpg_shared. The
+        # local database is deliberately excluded from replication, therefore
+        # its game account must be allowed to bypass that global guard. READ
+        # ONLY ADMIN only bypasses read_only; ALL PRIVILEGES below is still
+        # limited to this one local schema.
+        sql_stdin "the local user $LOCAL_USER was NOT created/granted write access — see the errors above" <<EOF
 CREATE USER IF NOT EXISTS '$LOCAL_USER'@'$LOCAL_USER_HOST' IDENTIFIED BY '$LOCAL_USER_PASSWORD';
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON $LOCAL_DB_NAME.* TO '$LOCAL_USER'@'$LOCAL_USER_HOST';
+GRANT ALL PRIVILEGES ON $LOCAL_DB_NAME.* TO '$LOCAL_USER'@'$LOCAL_USER_HOST';
+GRANT READ ONLY ADMIN ON *.* TO '$LOCAL_USER'@'$LOCAL_USER_HOST';
 FLUSH PRIVILEGES;
 EOF
         if [ -n "$LOCAL_IMPORT" ]; then
@@ -1031,8 +1033,7 @@ EOF
         done
         if [ "$_ok" = 1 ]; then
             _lag=$(printf '%s\n' "$_status" | sed -n 's/^ *Seconds_Behind_Master: //p' | head -1)
-            ok "Replication is running (IO/SQL threads: Yes; Seconds_Behind_Master: ${_lag:-?})"
-            maybe_switch_to_slave_pos
+            ok "Replication is running (IO/SQL threads: Yes; Seconds_Behind_Master: ${_lag:-?}; GTID mode: $_gtid_bootstrap)"
         else
             warn "replication did not come up — details:"
             if [ -z "$(printf '%s' "$_status" | grep -E 'Slave_IO_Running|Slave_SQL_Running')" ]; then
@@ -1371,9 +1372,36 @@ SET SESSION foreign_key_checks = 1;"
 
 # ---------- GTID snapshots & recovery (1236) ----------
 
-# extract_gtid_pos <dump> — print the GTID position recorded by mariadb-dump --gtid (empty if none)
+# extract_gtid_pos <dump> — print the primary GTID recorded by
+# mariadb-dump --master-data=2 --gtid. The resulting SET GLOBAL
+# gtid_slave_pos line is deliberately commented in a --master-data=2 dump,
+# but it is still the exact point from which this replica must start.
 extract_gtid_pos() {
-    grep -aiEo "gtid_binlog_pos[^;]{0,200}'[^']*'" "$1" 2>/dev/null | tail -1 | sed -e "s/^.*'\([^']*\)'.*$/\1/"
+    grep -aiEo "gtid_(slave|binlog)_pos[[:space:]]*=[[:space:]]*'[^']*'" "$1" 2>/dev/null |
+        tail -1 | sed -e "s/^.*'\([^']*\)'.*$/\1/"
+}
+
+# check_gtid_pos <position> — dump content is data, never interpolate an
+# unchecked value into SET GLOBAL. MariaDB GTID sets contain only digits,
+# commas and hyphens (domain-server-sequence[/range]).
+check_gtid_pos() {
+    _checked_gtid=$(printf '%s' "$1" | tr -d '[:space:]')
+    case "$_checked_gtid" in
+        ''|*[!0-9,-]*) die "invalid GTID position in snapshot: '$1'" ;;
+    esac
+}
+
+# set_gtid_slave_pos <position> — persist the fresh snapshot position before
+# CHANGE MASTER ... MASTER_USE_GTID=slave_pos. mariadb-dump comments this SET
+# when --master-data=2 is used, so importing the dump alone leaves the stale
+# replica position in place and causes error 1236.
+set_gtid_slave_pos() {
+    if [ "$DRY_RUN" = 1 ]; then
+        info "+ $MARIADB -u root -e \"SET GLOBAL gtid_slave_pos = '<GTID parsed from snapshot>';\""
+        return 0
+    fi
+    check_gtid_pos "$1"
+    sql_exec "SET GLOBAL gtid_slave_pos = '$_checked_gtid';"
 }
 
 # gtid_end_compare <dump-set> <primary-set> — decide whether the dump's end
@@ -1427,7 +1455,7 @@ reprovision_from_ssh() {
     FROM_PRIMARY=$REPLY
     if [ "$DRY_RUN" = 1 ]; then
         info "+ ssh (background, progress) $FROM_PRIMARY '<fresh dump --gtid>' > <tmp>"
-        info "+ DROP/CREATE $SHARED_DB; import; STOP/RESET SLAVE; CHANGE MASTER ... START SLAVE"
+        info "+ DROP/CREATE $SHARED_DB; import; SET GLOBAL gtid_slave_pos=<snapshot>; CHANGE MASTER ... MASTER_USE_GTID=slave_pos; START SLAVE"
         return 0
     fi
     info "This will DROP mrpg_shared on this host and re-import it from a FRESH snapshot."
@@ -1440,12 +1468,21 @@ reprovision_from_ssh() {
         tmp_snapshot_disarm
         die "fresh snapshot failed — see the messages above; fix the cause and retry (menu 2)"
     fi
-    info "Fresh snapshot downloaded."
+    _fresh_gtid=$(extract_gtid_pos "$_tmpdump")
+    if [ -z "$_fresh_gtid" ]; then
+        tmp_snapshot_disarm
+        die "the fresh snapshot has no SET GLOBAL gtid_slave_pos (it was not made with --gtid); refusing to start replication from an unknown position."
+    fi
+    check_gtid_pos "$_fresh_gtid"
+    info "Fresh snapshot GTID position: $_fresh_gtid"
     "$MARIADB" -u root -e "STOP SLAVE" >/dev/null 2>&1 || true
     "$MARIADB" -u root -e "RESET SLAVE" >/dev/null 2>&1 || true
     sql_drop_db "$SHARED_DB"
     sql_exec "CREATE DATABASE IF NOT EXISTS $SHARED_DB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     import_dump "$SHARED_DB" "$_tmpdump" 1
+    # See the equivalent setup path above: --master-data=2 comments this line
+    # in the dump, so it must be applied explicitly after the import.
+    set_gtid_slave_pos "$_fresh_gtid"
     tmp_snapshot_disarm
     if ! sql_stdin <<EOF
 CHANGE MASTER TO
@@ -1453,7 +1490,7 @@ CHANGE MASTER TO
   MASTER_PORT=$PRIMARY_PORT,
   MASTER_USER='mrpg_replica',
   MASTER_PASSWORD='$REPLICA_REPL_PASSWORD',
-  MASTER_USE_GTID=CURRENT_POS,
+  MASTER_USE_GTID=slave_pos,
   MASTER_SSL=1;
 START SLAVE;
 EOF
@@ -1469,36 +1506,10 @@ EOF
         _t=$((_t + 1)); sleep 2
     done
     if [ "$_ok2" = 1 ]; then
-        ok "Replication is running again."
-        maybe_switch_to_slave_pos
+        ok "Replication is running again in slave_pos mode."
     else
         warn "still not running — details:"
         printf '%s\n' "$_st" | grep -E 'Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master|Last_IO_Error|Last_SQL_Error' | sed 's/^/  /'
-    fi
-}
-
-# maybe_switch_to_slave_pos — steady-state mode. CURRENT_POS is one-shot bootstrap
-# (with no binlog on the replica, gtid_binlog_pos is in-memory and lost on restart);
-# slave_pos persists in the InnoDB-backed mysql.gtid_slave_pos table, so replication
-# survives restarts. Call ONLY after replication was verified running.
-maybe_switch_to_slave_pos() {
-    if [ "$DRY_RUN" = 1 ]; then
-        info "+ (offer) STOP SLAVE; CHANGE MASTER TO MASTER_USE_GTID=slave_pos; START SLAVE"
-        return 0
-    fi
-    ask_yn "Replication works. Switch to MASTER_USE_GTID=slave_pos now? (recommended)" y
-    [ "$REPLY" = y ] || { info "Keeping MASTER_USE_GTID=CURRENT_POS."; return 0; }
-    if "$MARIADB" -u root -e "STOP SLAVE; CHANGE MASTER TO MASTER_USE_GTID=slave_pos; START SLAVE" >/dev/null 2>&1; then
-        sleep 2
-        _st=$("$MARIADB" -u root -e "SHOW SLAVE STATUS\G" 2>/dev/null || true)
-        _io=$(printf '%s\n' "$_st" | sed -n 's/^ *Slave_IO_Running: //p' | head -1)
-        if [ "$_io" = "Yes" ]; then
-            ok "Replication restarted in slave_pos mode"
-        else
-            warn "restarted, but the IO thread is not Yes — check SHOW SLAVE STATUS\G"
-        fi
-    else
-        warn "CHANGE MASTER TO MASTER_USE_GTID=slave_pos failed — keeping CURRENT_POS"
     fi
 }
 
@@ -1940,7 +1951,7 @@ final_ready_check() {
     info "=== Step 4 of 4 — final verification (the same calls the game server makes) ==="
     if [ "$DRY_RUN" = 1 ]; then
         info "+ replication: SHOW SLAVE STATUS (IO/SQL threads, Seconds_Behind_Master)"
-        info "+ local database: TCP login test with the sv_sql_local_* account"
+        info "+ local database: direct TCP login plus INSERT/ROLLBACK test with the sv_sql_local_* account"
         info "+ shared database through the bridge: TCP login test with the sv_sql_* account"
         info "(no connections are attempted in dry-run mode)"
         return 0
@@ -1967,7 +1978,9 @@ final_ready_check() {
         _rfail=$((_rfail + 1))
     fi
 
-    # 2) the local database answers with the account the game server will use
+    # 2) The local database is reached directly from the game server, never
+    # through the bridge. Test a real write because SELECT alone cannot catch
+    # the read_only=1 failure that would reject guild creation at runtime.
     if [ -n "$GAME_LOCAL_LOGIN" ]; then
         _lu=$GAME_LOCAL_LOGIN; _lp=$GAME_LOCAL_PW; _ldb=$GAME_LOCAL_DB
     elif [ "${LOCAL_DB_YN:-n}" = "y" ]; then
@@ -1976,11 +1989,14 @@ final_ready_check() {
         _lu=""
     fi
     if [ -n "$_lu" ]; then
-        if MYSQL_PWD="$_lp" "$MARIADB" --connect-timeout=5 -h 127.0.0.1 -P 3306 -u "$_lu" "$_ldb" -e 'SELECT 1 LIMIT 1' >/dev/null 2>&1; then
-            ok "local database answers ($_ldb, login $_lu)"
+        # Negative IDs are not generated by the game. The transaction is
+        # rolled back, so the probe never changes local game state.
+        _probe_id=$(( - ($$ % 2000000000) - 1 ))
+        if MYSQL_PWD="$_lp" "$MARIADB" --connect-timeout=5 -h 127.0.0.1 -P 3306 -u "$_lu" "$_ldb" -e "START TRANSACTION; INSERT INTO tw_guilds_ranks (ID, Rights, GuildID, Name) VALUES ($_probe_id, 0, $_probe_id, '__mrpg_write_probe__'); ROLLBACK;" >/dev/null 2>&1; then
+            ok "local database is directly readable and writable ($_ldb, login $_lu → 127.0.0.1:3306)"
         else
-            warn "local database does NOT answer with the sv_sql_local_* account ($_lu → $_ldb)"
-            info "  the game server would fail here too — fix the local grants, or the password in autoexec_server.cfg"
+            warn "local database is not writable with the sv_sql_local_* account ($_lu → $_ldb at 127.0.0.1:3306)"
+            info "  The game would receive MariaDB error 1290 on guild writes. Re-run replica setup to grant ALL PRIVILEGES on $_ldb.* plus READ ONLY ADMIN to the configured local account, then check sv_sql_local_host is 127.0.0.1 (not the bridge)."
             _rfail=$((_rfail + 1))
         fi
     else
