@@ -87,3 +87,4 @@ web-tools/editor-studio/data/change-requests/
 
 # Local SQL bridge credentials
 /other/sql_bridge/bridge.cfg
+*.cred

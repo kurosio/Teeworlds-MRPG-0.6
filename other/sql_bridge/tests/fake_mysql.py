@@ -598,7 +598,7 @@ class MiniClient:
     async def connect(self, port, user="game", password="gamepw", db="mrpg_shared",
                       deprecate_eof=True, mariadb=True, multi_statements=False,
                       session_track=True, charset=45, host="127.0.0.1", local_files=True,
-                      request_ssl=False, compress=False):
+                      request_ssl=False, compress=False, ext_caps=0):
         self.r, self.w = await asyncio.open_connection(host, port)
         seq, g = await read_pkt(self.r)
         if g[:1] == b"\xff":
@@ -633,8 +633,12 @@ class MiniClient:
         if compress:
             want |= CLIENT_COMPRESS
         self.caps = want & (caps | CLIENT_SSL | CLIENT_COMPRESS)
+        self.ext_caps = ext_caps if mariadb else 0
         token = native_token(password, salt[:20])
-        head = struct.pack("<IIB", self.caps, 1 << 24, charset) + b"\x00" * 23
+        head = bytearray(struct.pack("<IIB", self.caps, 1 << 24, charset) + b"\x00" * 23)
+        # extended MariaDB capability flags live in bytes 28..31
+        struct.pack_into("<I", head, 28, self.ext_caps)
+        head = bytes(head)
         if request_ssl:
             data, _ = pkt(1, head)
             self.w.write(data)

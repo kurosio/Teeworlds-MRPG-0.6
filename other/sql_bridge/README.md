@@ -39,6 +39,177 @@ its local bridge only; 33060 on a bridge — the local game server only.
 
 ---
 
+## Quick automated setup (`setup_replication.sh`)
+
+The steps below (Steps 1–2) can be automated on a fresh Debian/Ubuntu host with
+`setup_replication.sh` in this directory. The script takes no arguments — it is
+fully interactive: pick what to set up in the menu (`1` = master, `2` =
+replica, `3` = status, `4` = reset), then answer the questions one by one (Enter accepts
+the value in `[brackets]`). Before changing anything it shows the plan and
+asks to confirm: `Y` = apply, `t` = print the commands without running them
+(dry-run, no root needed), `n` = abort. If replication does not come up, the
+verification step prints the relevant `SHOW SLAVE STATUS` fields (`Last_IO_Error` /
+`Last_SQL_Error`) instead of a bare warning. Menu option `4` (reset) undoes the
+setup on the local host: stops/resets replication, moves the configs aside to
+`*.removed.<date>` (nothing is deleted silently), and optionally drops the
+accounts and databases the script created — dropping the shared database
+requires typing `yes` explicitly.
+
+```bash
+# on the central primary (master) — step 1: choose 1 in the menu,
+# answer the questions (server_id, local-DBs for the game account, ...)
+sudo sh setup_replication.sh
+
+# on each location (replica) — step 2: choose 2, enter the primary host,
+# the mrpg_replica password from the master output; the snapshot is either
+# a ready file on the host or pulled over SSH (sudo mariadb-dump on the
+# primary) by the script itself
+sudo sh setup_replication.sh
+
+# check on either host: choose 3
+sudo sh setup_replication.sh
+```
+
+SSH for the snapshot is interactive: a password/passphrase is asked on the
+terminal, and the primary's host key is added automatically on first use
+(`StrictHostKeyChecking=accept-new` — a changed key is still rejected; fix it
+with `ssh-keygen -R <primary-host>`). Password login as root is often disabled
+(`PermitRootLogin prohibit-password`) — use an ssh key
+(`ssh-keygen && ssh-copy-id root@<primary-host>`).
+
+Passwords are asked without echo; an empty answer generates a random one
+(except the `mrpg_replica` password on a replica — that one comes from the
+master). Generated passwords are saved to `/root/mrpg-replication-<date>.cred`
+(mode 600). The script is idempotent: old configs are backed up next to the
+new ones, an existing dump is not re-imported into a non-empty database
+(it asks first), and accounts are created with `CREATE USER IF NOT EXISTS`.
+On the master it also verifies after the restart that the requested
+`server_id` and `log_bin = ON` actually took effect (so a config that was
+not loaded — e.g. an `.cnf` written into the wrong directory or an include
+order problem — stops the run instead of producing a silently broken
+replication setup), and `RESET SLAVE`/`CHANGE MASTER` failures abort with a
+clear error instead of continuing half-configured. Temp snapshot files are
+removed even on Ctrl+C, and the SSH pull is interactive from the real
+terminal (falling back to `/dev/null` stdin when there is none).
+
+The replica flow also sets up the **local** side: it optionally creates the
+per-server database `mrpg_local_<location>` (e.g. `mrpg_local_eu`), imports
+`mrpg_local.sql`, verifies the table count (expected 10), and creates a
+dedicated account for the game server's `sv_sql_local_*` connection (default
+`mrpg_local@127.0.0.1`, grants on the local database only — never on the
+shared one and never through the bridge). Menu option `4` (reset) can drop
+that account and database too, with the same typed-`yes` safeguard for data.
+
+After the replication steps are applied, the replica flow additionally offers:
+
+* The post-setup steps take their **defaults from what was created earlier in
+  the same run** (the local `mrpg_local_*` database/user for `sv_sql_local_*`,
+  the `mrpg_bridge` account and password for `bridge.cfg`, the entered primary
+  host/port). When the local side was not created in this run, the step offers
+  the `mrpg_local%` databases/users it finds on this host instead of a guessed
+  name, and `mysql_bridge.py` defaults to the directory the script itself
+  lives in (where it ships in this repository). Config files are written
+  atomically (temp file → rename, the previous file is backed up first), and
+  the `bridge.cfg` is validated with `mysql_bridge.py --check-config` and with
+  an actual TCP login to the local replica — if the password or grants are
+  wrong, the script says so and offers to fix them instead of leaving the
+  bridge to fail at startup.
+* **Step 4 (game server):** asks for the directory containing
+  `autoexec_server.cfg` (e.g. `~/.teeworlds` — it must already exist and contain
+  the file). It removes **every** old `sv_sql*` line (commented-out ones too)
+  and the `#sql` marker, backs up the file to `autoexec_server.cfg.bak.<date>`,
+  and appends a fresh `#sql` block: `sv_sql_*` → the bridge on `127.0.0.1:33060`,
+  `sv_sql_local_*` → the local MariaDB on `127.0.0.1:3306` with the local
+  database created in this run.
+* **Step 3 (bridge):** asks for the directory containing `mysql_bridge.py`
+  (e.g. `~/Teeworlds-MRPG-0.6/other/sql_bridge`) and writes `bridge.cfg` there
+  (chmod 600, backs up a previous one to `bridge.cfg.bak.<date>`): listen
+  `127.0.0.1:33060`, `[primary]` = the values you entered, `[replica]` =
+  `mrpg_bridge` with the local replica `127.0.0.1:3306`. If the file validates,
+  the script runs `python3 mysql_bridge.py bridge.cfg --check-config`. `bridge.cfg`
+  is git-ignored — never commit it.
+* **Systemd unit:** offers to install the bridge as a service
+  (`/etc/systemd/system/mrpg-mysql-bridge.service`, unit `mrpg-mysql-bridge`,
+  user `mrpg` — created with `useradd -r -s /usr/sbin/nologin mrpg` if missing),
+  then asks separately whether to **enable it on boot** and whether to **start it
+  now**. When the bridge runs as the `mrpg` user, the script grants only
+  `bridge.cfg` itself to it (not the whole directory). If `systemctl` is
+  missing or any answer is `n`, the unit is skipped and
+  the manual example in step 3 below applies. If the service fails to start,
+  `journalctl -xeu mrpg-mysql-bridge` has the reason (the sandbox-friendly
+  checks below pinpoint the usual one: the replica login).
+
+  **Final verification (step 4):** before "Replica is ready" is printed the
+  script re-runs, as usable proof, the exact connections the game server
+  makes — `SHOW SLAVE STATUS` (IO/SQL threads), a TCP login with the
+  `sv_sql_local_*` account against the local MariaDB, and a login with the
+  `sv_sql_*` account **through the bridge** (which the bridge relays to the
+  primary). It prints a per-item ✅/⚠ list and either **"The server is ready
+to work."** or **"The server is NOT fully ready"** with the cause and the
+  exact fix for each failed item (wrong `mrpg_user` password, primary
+  unreachable, missing grants, …). A green checkmark there is the same test
+  the game server would run at startup.
+
+**Which `MASTER_USE_GTID` to use — `CURRENT_POS` or `slave_pos`?**
+`MASTER_USE_GTID=CURRENT_POS` is the one-shot **bootstrap** mode: after
+`mariadb-dump --gtid` the replica's (in-memory) `gtid_binlog_pos` holds the
+primary's position at dump time, and replication starts from there. On a replica
+**without its own binlog** this value is lost on restart, so CURRENT_POS is not
+a steady state — after replication is verified running, switch to
+**`MASTER_USE_GTID=slave_pos`** (the script offers this, default `y`):
+the position is persisted in the InnoDB-backed `mysql.gtid_slave_pos` and
+replication survives restarts. `slave_pos` right after provisioning is wrong —
+`gtid_slave_pos` is empty then, and the primary would replay its whole history
+(duplicate-table/row errors). The script also issues `RESET SLAVE` before
+`CHANGE MASTER` so stale coordinates never interfere, and it only offers the
+switch when `Slave_IO_Running`/`Slave_SQL_Running` are Yes.
+
+**`Last_IO_Error` 1236 — "connecting slave requested to start from GTID … which
+is not in the master's binlog".** The replica asked the primary for a GTID that
+no longer exists in its binlog: the snapshot is **stale** (the binlog with that
+GTID was purged by `expire_logs_days`/`PURGE BINARY LOGS`, or the dump came from
+a different or rebuilt primary). No position "skip" is safe — the replica would
+silently miss the transactions in the gap. The script detects this exact error
+after `START SLAVE` (and on every later config run it prints the full
+`Last_IO_Error`/`Last_SQL_Error`) and offers to **re-provision with a fresh
+snapshot**: drop `mrpg_shared`, pull a brand-new dump over SSH, reimport, redo
+`CHANGE MASTER` + `START SLAVE`, re-verify automatically. Before importing any
+snapshot the script also checks it records a GTID position at all (a plain dump
+without `--gtid` cannot provision GTID replication) and **verifies the dump
+against the primary's current position over SSH** (it asks the primary for
+`@@global.gtid_binlog_pos` and compares component by component): a dump whose
+position **ahead of or foreign to** that server (e.g. one taken from a
+different/rebuilt primary) is refused outright; a position **behind** it may be
+purged and gets a warning — take a fresh dump (snapshot option `2`) in that
+case. To compare by hand on the primary: `mariadb -e "SELECT @@global.gtid_binlog_pos"`
+vs the `SET @@GLOBAL.gtid_binlog_pos=…` line near the top of the dump.
+To recover: answer `y` to the
+script's offer (or menu `4` reset → menu `2` with snapshot option `2` —
+SSH pull of a fresh dump, never the stale file).
+
+**Fresh import always starts from a clean `mrpg_shared`.** Before importing a
+snapshot the script drops and re-creates `mrpg_shared` on the replica (asks
+first, default `y` — the snapshot is the source of truth; if replication is
+currently running, it requires typing `yes`). The replica copy is by
+definition stale, and this guarantees the import binds the dump's GTID as
+the start position and lands on an empty database — no `ERROR 1050`, no
+duplicated rows, no stale `gtid_binlog_pos` left from a previous attempt.
+Declining keeps the old behavior (the import then asks about recreating the
+non-empty database). Drops run with `SET sql_log_bin = 0` only when this
+server actually has binary logging (binlog-less replicas run a plain
+`DROP DATABASE`).
+
+The SSH snapshot download prints progress every 15 seconds (`… downloaded N MB
+so far`) — a multi-GB dump is a long silent transfer otherwise. If the local
+dump import fails (e.g. `ERROR 1050 (42S01): Table 'tw_auction_slots' already
+exists` in a `mrpg_local_<location>` that already has tables), the script
+offers to **drop and recreate** the database and re-import it — you must
+type `yes` to confirm; declining keeps the database untouched. The same
+drop-and-recreate offer is available for the **shared** database import on
+the master (step 1) and after a failed re-import.
+
+---
+
 ## What is replicated
 
 | Database | Holds | Primary | Replica |
@@ -182,9 +353,14 @@ On the **primary**, preferably at low traffic (`--single-transaction` keeps
 InnoDB consistent; `--gtid` stamps the dump with the GTID position):
 
 ```bash
+# MariaDB 10.x: the option is called --master-data (= --source-data on MySQL 8);
+# either works for this flow (it only stamps binlog coordinates as a comment)
 mariadb-dump -u root -p --single-transaction --quick --routines --triggers --events \
-  --source-data=2 --gtid mrpg_shared > mrpg_shared_snapshot.sql
+  --master-data=2 --gtid mrpg_shared > mrpg_shared_snapshot.sql
 ```
+
+`setup_replication.sh` auto-detects which of the two spellings your dump
+supports when it pulls the snapshot over SSH.
 
 Copy the dump to the replica host, then on the **replica**:
 
@@ -555,7 +731,7 @@ to the replica:
 | a single plain `SELECT ...` / `(SELECT ...)` | everything else: writes, DDL, `SHOW`, `DESCRIBE`, `EXPLAIN`, `CALL` |
 | | `SELECT ... FOR UPDATE / LOCK IN SHARE MODE / FOR SHARE`, `SELECT ... INTO` |
 | | `LAST_INSERT_ID()`, `FOUND_ROWS()`, `ROW_COUNT()`, `GET_LOCK()`, `@variables`, `DATABASE()`, `LOAD_FILE()` |
-| | multi-statements and anything after a `SET` / `USE` / `BEGIN` / `LOCK TABLES` / `CREATE TEMPORARY TABLE` on that session |
+| | multi-statements and anything after a `SET` / `USE` / `BEGIN` / `LOCK TABLES` / `CREATE TEMPORARY TABLE` on that session — the Connector/C++ connect-time bootstrap (`set autocommit=1, session_track_schema=1[, sql_mode = concat(@@sql_mode,',STRICT_TRANS_TABLES')]`) is the one exemption |
 | | multi-result prepared statements (`COM_STMT_*` are relayed, never split) |
 
 The first word decides the route, and string literals are blanked out first,
@@ -568,6 +744,15 @@ to the primary. Responses up to `replica_buffer_kb` are buffered for that; a
 bigger stream cut by a replica failure closes that client connection (the
 game server reconnects). The replica connections use the charset of the first
 game-server session; a session with another charset goes to the primary.
+
+Sessions that negotiate `MARIADB_CLIENT_CACHE_METADATA` (MariaDB
+Connector/C++ sets it on **every** connection) are *not* pinned to the
+primary: the bridge never negotiates the flag with the replica, so replica
+responses always carry full inline metadata — which a client that knows the
+flag parses as `has_metadata = 1` (bare result headers are always valid for
+such clients; the flag only lets a server omit metadata for repeated
+statements). Routing plain SELECTs from those clients to the replica is
+byte-safe.
 
 ### Consistency
 
@@ -604,3 +789,20 @@ interoperability tests run too. `tests/bench_bridge.py` is a micro-benchmark
 * Unauthenticated peers cannot reach the replica (login is checked by the
   primary); central 3306 only via VPN, `@'%'` masks tightened; `MASTER_SSL=1`
   encrypts replication.
+
+### Which account goes where (the automation prints this card at the end)
+
+| Setting | Value | Account lives on | For |
+|---|---|---|---|
+| `sv_sql_host` / `sv_sql_port` | `127.0.0.1` / `33060` | — | the **bridge** on the same host (not the WAN primary) |
+| `sv_sql_login` / `sv_sql_password` | `mrpg_user` / `<GAME_PASSWORD>` | primary | the game; the bridge relays the login to the primary |
+| `sv_sql_database_shared` | `mrpg_shared` | primary + every replica | replicated account data |
+| `sv_sql_local_*` | `127.0.0.1:3306`, local account (automation: `mrpg_local`) | the location host | this server's local database (direct, no bridge) |
+| bridge `[primary]` | `<primary>:3306` | primary | writes and fallback |
+| bridge `[replica]` | `127.0.0.1:3306`, `mrpg_bridge` | the location host | reads from the local replica |
+
+Rules of thumb: `sv_sql_login` is **never** `root`, `mrpg_bridge` or
+`mrpg_replica`; the bridge's `[replica]` section uses the **local** SELECT-only
+account; replication credentials never reach the game. Both `menu 1` (master)
+and `menu 2` (replica) end with a **FINAL CARD** summary of exactly these
+values for the host type.

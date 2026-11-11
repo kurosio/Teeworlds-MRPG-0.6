@@ -315,6 +315,56 @@ class TestScanner(unittest.TestCase):
         self.assertEqual(done, [0])
 
 
+class TestRoutingCacheMetadata(BridgeTestCase):
+    primary_kwargs = {"ext_caps": 0x10}
+    replica_kwargs = {"ext_caps": 0x10}
+
+    async def test_cache_metadata_client_reads_from_replica(self):
+        # MariaDB Connector/C++ sets MARIADB_CLIENT_CACHE_METADATA on every
+        # connection; it must not pin the session to the primary.
+        b = await self.bridge()
+        c = await self.client(b, ext_caps=0x10)
+        self.assertEqual(await self.served_by(c, "SELECT * FROM tw_accounts WHERE ID = 1"),
+                         "replica")
+        # writes still go to the primary and back
+        res = await c.query("INSERT INTO tw_accounts (a) VALUES (1)")
+        self.assertTrue(self.primary.queries_matching("INSERT INTO tw_accounts"))
+        self.assertFalse(self.replica.queries_matching("INSERT"))
+        # replica connections are not negotiating cache metadata: extended caps are 0
+        for s in self.replica.sessions:
+            self.assertEqual(s.ext, 0)
+
+class TestBenignConnectSet(BridgeTestCase):
+    """The Connector/C++ connect-time bootstrap must not pin the session."""
+
+    async def test_connector_bootstrap_set_does_not_pin(self):
+        b = await self.bridge()
+        c = await self.client(b, ext_caps=0x10)
+        await c.query("set autocommit=1, session_track_schema=1, sql_mode = concat(@@sql_mode,',STRICT_TRANS_TABLES')")
+        self.assertEqual(await self.served_by(c, "SELECT * FROM tw_accounts WHERE ID = 1"),
+                         "replica")
+
+    async def test_any_other_set_still_pins(self):
+        b = await self.bridge()
+        c = await self.client(b)
+        await c.query("set @myvar=1")
+        self.assertEqual(await self.served_by(c, "SELECT * FROM tw_accounts WHERE ID = 1"),
+                         "primary")
+        c2 = await self.client(b)
+        await c2.query("set session_track_schema=1, autocommit=0")
+        self.assertEqual(await self.served_by(c2, "SELECT * FROM tw_accounts WHERE ID = 1"),
+                         "primary")
+
+    async def test_connector_bootstrap_then_write_grace(self):
+        b = await self.bridge(read_your_writes_grace_sec="0.4")
+        c = await self.client(b, ext_caps=0x10)
+        await c.query("set autocommit=1, session_track_schema=1, sql_mode = concat(@@sql_mode,',STRICT_TRANS_TABLES')")
+        await c.query("INSERT INTO tw_accounts (a) VALUES (1)")
+        self.assertEqual(await self.served_by(c, "SELECT * FROM tw_accounts"), "primary")
+        await asyncio.sleep(0.5)
+        self.assertEqual(await self.served_by(c, "SELECT * FROM tw_accounts"), "replica")
+
+
 class TestGreeting(unittest.IsolatedAsyncioTestCase):
     async def test_parse_and_patch(self):
         srv = await FakeMySQLServer("p", tls_ctx=None).start()
