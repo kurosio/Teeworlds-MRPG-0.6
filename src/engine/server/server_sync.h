@@ -40,6 +40,7 @@ namespace syncevents
 {
 	inline constexpr const char *GUILD_CREATE = "guild_create";
 	inline constexpr const char *GUILD_DISBAND = "guild_disband";
+	inline constexpr const char *GUILD_UPDATE = "guild_update";
 }
 
 class CServerSync

@@ -31,6 +31,7 @@ bool CGuild::Upgrade(GuildUpgrade Type)
 		// Add and send a history entry for the upgrade
 		m_pLogger->Add(LOGFLAG_UPGRADES_CHANGES, "'%s' upgraded to %d level", pUpgradeField->getDescription(), pUpgradeField->m_Value);
 		GS()->ChatGuild(m_ID, "'{}' upgraded to {} level", pUpgradeField->getDescription(), pUpgradeField->m_Value);
+		Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_ID);
 		return true;
 	}
 
@@ -87,6 +88,7 @@ GuildResult CGuild::SetLeader(int AccountID)
 	const char* pNickNewLeader = Instance::Server()->GetAccountNickname(m_LeaderUID);
 	m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "New guild leader '%s'", pNickNewLeader);
 	GS()->ChatGuild(m_ID, "New guild leader '{~}'", pNickNewLeader);
+	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_ID);
 	return GuildResult::SUCCESSFUL;
 }
 
@@ -161,6 +163,7 @@ void CGuild::HandleTimePeriod(ETimePeriod Period)
 		m_pMembers->ResetDeposits();
 		GS()->ChatGuild(m_ID, "Membership deposits have been reset.");
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Membership deposits have been reset.");
+		Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_ID);
 	}
 }
 
@@ -226,6 +229,7 @@ void CGuild::CBank::Add(const BigInt& Value)
 {
 	m_Value += Value;
 	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Value, m_pGuild->GetID());
+	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
 }
 
 bool CGuild::CBank::Spend(const BigInt& Value)
@@ -235,6 +239,7 @@ bool CGuild::CBank::Spend(const BigInt& Value)
 
 	m_Value -= Value;
 	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Value, m_pGuild->GetID());
+	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
 	return true;
 }
 
@@ -327,6 +332,7 @@ GuildResult CGuild::CRank::Rename(std::string NewRank)
 	// implement renaming
 	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "renamed rank '%s' to '%s'", m_Rank.c_str(), cstrNewRank.cstr());
 	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Name = '{}' WHERE ID = '{}'", cstrNewRank.cstr(), m_ID);
+	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
 	m_Rank = cstrNewRank.cstr();
 	return GuildResult::RANK_SUCCESSFUL;
 }
@@ -340,6 +346,7 @@ void CGuild::CRank::ToggleRight(int64_t Right)
 
 		m_Rights ^= Right;
 		Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Rights = '{}' WHERE ID = '{}'", m_Rights, m_ID);
+		Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
 		return;
 	}
 }
@@ -444,6 +451,7 @@ GuildResult CGuild::CRanksManager::Add(const std::string& Rank)
 	// send messages
 	GS()->ChatGuild(GuildID, "New rank is created [{~}]!", cstrRank.cstr());
 	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "added rank '%s'", cstrRank.cstr());
+	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
 	return GuildResult::RANK_SUCCESSFUL;
 }
 
@@ -479,6 +487,7 @@ GuildResult CGuild::CRanksManager::Remove(const std::string& Rank)
 	// send messages
 	GS()->ChatGuild(m_pGuild->GetID(), "Rank '{~}' successfully delete", cstrRank.cstr());
 	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "removed rank '%s'", cstrRank.cstr());
+	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
 	return GuildResult::RANK_SUCCESSFUL;
 }
 

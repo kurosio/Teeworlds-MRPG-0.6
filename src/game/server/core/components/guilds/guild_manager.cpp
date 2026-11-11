@@ -10,30 +10,13 @@
 
 #include <components/houses/entities/house_door.h>
 
-namespace
-{
-	void InitGuildFromRow(ResultPtr& pRes)
-	{
-		const GuildIdentifier ID = pRes->getInt("ID");
-		const auto Name = pRes->getString("Name");
-		const auto JsonMembers = pRes->getString("Members");
-		const auto DefaultRankID = pRes->getInt("DefaultRankID");
-		const auto LeaderUID = pRes->getInt("LeaderUID");
-		const auto Level = pRes->getInt("Level");
-		const auto Experience = pRes->getUInt64("Exp");
-		const auto Bank = pRes->getBigInt("Bank");
-		const auto Score = pRes->getInt("Score");
-		const auto LogFlag = pRes->getInt64("LogFlag");
-		CGuild::CreateElement(ID)->Init(Name, JsonMembers, DefaultRankID, Level, Experience, Score, LeaderUID, Bank, LogFlag, &pRes);
-	}
-}
-
 void CGuildManager::OnPreInit()
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE);
 	while (pRes->next())
 	{
-		InitGuildFromRow(pRes);
+		const GuildIdentifier ID = pRes->getInt("ID");
+		CGuild::CreateElement(ID)->InitFromRow(pRes);
 	}
 
 	InitWars();
@@ -1197,9 +1180,6 @@ void CGuildManager::OnGlobalTimePeriod(ETimePeriod Period)
 
 void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req)
 {
-	// Only the ID of the changed guild travels through the relay: every server
-	// loads it from its own database by that ID. The handler is idempotent, the
-	// event may arrive after the guild was already loaded or removed here.
 	if(EventName == syncevents::GUILD_CREATE)
 	{
 		if(Req.Value <= 0 || GetGuildByID(Req.Value))
@@ -1209,26 +1189,36 @@ void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SReque
 		if(!pRes->next())
 			return;
 
-		InitGuildFromRow(pRes);
+		CGuild::CreateElement(Req.Value)->InitFromRow(pRes);
 		GS()->Chat(-1, "New guilds '{~}' have been created!", pRes->getString("Name").c_str());
 	}
+
+	else if (EventName == syncevents::GUILD_UPDATE)
+	{
+		if(const auto pGuild = GetGuildByID(Req.Value))
+		{
+			ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
+			if (pRes->next())
+				pGuild->InitFromRow(pRes);
+		}
+	}
+
 	else if(EventName == syncevents::GUILD_DISBAND)
 	{
-		const auto pGuild = GetGuildByID(Req.Value);
-		if(!pGuild)
-			return;
+		if (const auto pGuild = GetGuildByID(Req.Value))
+		{
+			GS()->Chat(-1, "The '{~}' guild has been disbanded.", pGuild->GetName());
 
-		GS()->Chat(-1, "The '{~}' guild has been disbanded.", pGuild->GetName());
+			// release the guild house on this server
+			if (auto* pHouse = pGuild->GetHouse())
+				pHouse->UpdateGuild(nullptr);
 
-		// release the guild house on this server
-		if(auto* pHouse = pGuild->GetHouse())
-			pHouse->UpdateGuild(nullptr);
-
-		auto& Data = CGuild::Data();
-		const auto It = std::find(Data.begin(), Data.end(), pGuild);
-		if(It != Data.end())
-			Data.erase(It);
-		delete pGuild;
+			auto& Data = CGuild::Data();
+			const auto It = std::find(Data.begin(), Data.end(), pGuild);
+			if (It != Data.end())
+				Data.erase(It);
+			delete pGuild;
+		}
 	}
 }
 

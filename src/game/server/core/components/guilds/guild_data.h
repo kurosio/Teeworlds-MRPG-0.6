@@ -376,11 +376,20 @@ public:
 		m_UpgradesData.initFields(pRes);
 
 		// components init
-		m_pLogger = new CLogEntry(this, Logflag);
+		delete m_pLogger;
+		delete m_pBankManager;
+		delete m_pRanks;
+		delete m_pMembers;
 		m_pBankManager = new CBank(Bank, this);
 		m_pRanks = new CRanksManager(this, DefaultRankID);
 		m_pMembers = new CMembersManager(this, JsonMembers);
 		m_pRanks->UpdateDefaultRank();
+	}
+
+	void InitFromRow(ResultPtr& pRes)
+	{
+		Init(pRes->getString("Name"), pRes->getString("Members"), pRes->getInt("DefaultRankID"), pRes->getInt("Level"),
+			pRes->getUInt64("Exp"), pRes->getInt("Score"), pRes->getInt("LeaderUID"), pRes->getBigInt("Bank"), pRes->getInt64("LogFlag"), &pRes);
 	}
 
 	// Get guild ID
