@@ -487,7 +487,28 @@ EOF
     fi
 }
 
-# ---------- snapshot fetch (shared by the replica setup and the 1236 recovery) ----------
+# reset_replica_binlog_state — a location replica does not serve downstream
+# replicas, so it must not keep its own binary-log GTID state. A prior primary
+# configuration can leave log_bin enabled; in that state SET gtid_slave_pos
+# rejects an older snapshot with ER_GTID_POSITION_NOT_FOUND / 1947. Resetting
+# MASTER here is safe because it happens only while re-provisioning from a
+# complete snapshot and only clears this host's local binary logs, not tables.
+reset_replica_binlog_state() {
+    if [ "$DRY_RUN" = 1 ]; then
+        info "+ if @@global.log_bin=ON: RESET MASTER (clear stale local gtid_binlog_pos before applying the snapshot GTID)"
+        return 0
+    fi
+    if [ "$(_log_bin_on)" != "ON" ]; then
+        info "Replica binary log is disabled; no local GTID binlog state to reset."
+        return 0
+    fi
+    warn "Binary logging is enabled on this replica; clearing its local binary logs before GTID bootstrap."
+    sql_exec "RESET MASTER;"
+    _replica_binlog_gtid=$("$MARIADB" -u root -N -e "SELECT @@global.gtid_binlog_pos" 2>/dev/null || true)
+    info "Replica local gtid_binlog_pos after RESET MASTER: ${_replica_binlog_gtid:-(empty)}"
+}
+
+# ---------- snapshot fetch (shared by the replica setup and the 1236 recovery)
 
 # dump_remote_command <db> — the shell command run on the primary over ssh; detects
 # mariadb-dump vs mysqldump and --source-data vs --master-data (MySQL 8 vs MariaDB 10.x)
@@ -762,6 +783,10 @@ do_replica() {
     info "  3) skip (the database has already been imported)"
     SNAPSHOT=""
     FROM_PRIMARY=""
+    # Position recorded by the fresh --gtid snapshot. mariadb-dump writes the
+    # SET GLOBAL gtid_slave_pos statement commented when --master-data=2 is
+    # used, so the script applies this position explicitly after the import.
+    SNAPSHOT_GTID=""
     SKIP_SNAPSHOT=0
     while :; do
         prompt "Choice" "2"
@@ -871,6 +896,8 @@ do_replica() {
 server_id = $SERVER_ID
 bind-address = 127.0.0.1
 read_only = 1
+# A location replica is not a relay source; avoid its own binlog GTID state.
+skip-log-bin
 gtid_strict_mode = 1
 # only mrpg_shared is replicated; local databases are excluded
 replicate_wild_ignore_table = mrpg_local%.%
@@ -899,35 +926,35 @@ EOF
             fi
         fi
         if [ "$DRY_RUN" != 1 ]; then
-            _dump_gtid=$(extract_gtid_pos "$_snap")
-            if [ -z "$_dump_gtid" ]; then
-                warn "the snapshot does not record a GTID position (dump without --gtid) — GTID replication cannot start from it."
-                info "  answering y imports the data only: replication will still not run (1236) — you will need a fresh dump made with --gtid (snapshot option 2 over SSH)."
-                ask_yn "Import the data anyway (replication stays broken)?" n
-                [ "$REPLY" = y ] || { [ -n "$_tmpdump" ] && rm -f "$_tmpdump"; die "re-create the dump with --gtid (README, step 2) or use option 2 (SSH pull)"; }
-            else
-                info "Snapshot records GTID position: $_dump_gtid"
-                # probe the replication master (never prompts): the explicit SSH address when
-                # one was given (snapshot option 2), otherwise try root@PRIMARY_HOST for option 1
-                if [ -n "$FROM_PRIMARY" ]; then _probe="$FROM_PRIMARY"; else _probe="root@$PRIMARY_HOST"; fi
-                _pri_pos=$(ssh -o BatchMode=yes -o ConnectTimeout=8 "$_probe" "if [ \$(id -u) = 0 ]; then mariadb -u root -N -e 'SELECT @@global.gtid_binlog_pos'; else sudo -n mariadb -u root -N -e 'SELECT @@global.gtid_binlog_pos'; fi" 2>/dev/null || true)
-                if [ -n "$_pri_pos" ]; then
-                    info "primary gtid_binlog_pos now:    $_pri_pos"
-                    _cov=$(gtid_end_compare "$_dump_gtid" "$_pri_pos")
-                    case "$_cov" in
-                        fresh)
-                            ok "the snapshot position matches the primary's current position." ;;
-                        behind)
-                            warn "the snapshot was taken before the primary's current position —"
-                            info "  the primary may have already purged those binlogs (expire_logs_days) → Last_IO_Error 1236."
-                            info "  the safest option is a fresh dump (snapshot option 2 — SSH pull)." ;;
-                        foreign)
-                            die "the snapshot is FOREIGN to this primary — it contains a position this server never had (or an ahead one). This is guaranteed Last_IO_Error 1236. Re-create the dump ON the primary (menu 2, snapshot option 2), or use a dump created after the primary was rebuilt/reset." ;;
-                    esac
-                elif [ -n "$FROM_PRIMARY" ]; then
-                    info "note: could not query the primary's gtid_binlog_pos (BatchMode ssh failed) — skipping the comparison"
-                fi
+            SNAPSHOT_GTID=$(extract_gtid_pos "$_snap")
+            if [ -z "$SNAPSHOT_GTID" ]; then
+                [ -n "$_tmpdump" ] && rm -f "$_tmpdump"
+                die "the snapshot does not record SET GLOBAL gtid_slave_pos (dump without --gtid) — aborting because starting GTID replication from it would cause error 1236. Re-create it with --master-data=2 --gtid (snapshot option 2 over SSH)."
             fi
+            check_gtid_pos "$SNAPSHOT_GTID"
+            info "Snapshot records GTID position: $SNAPSHOT_GTID"
+            # probe the replication master (never prompts): the explicit SSH address when
+            # one was given (snapshot option 2), otherwise try root@PRIMARY_HOST for option 1
+            if [ -n "$FROM_PRIMARY" ]; then _probe="$FROM_PRIMARY"; else _probe="root@$PRIMARY_HOST"; fi
+            _pri_pos=$(ssh -o BatchMode=yes -o ConnectTimeout=8 "$_probe" "if [ \$(id -u) = 0 ]; then mariadb -u root -N -e 'SELECT @@global.gtid_binlog_pos'; else sudo -n mariadb -u root -N -e 'SELECT @@global.gtid_binlog_pos'; fi" 2>/dev/null || true)
+            if [ -n "$_pri_pos" ]; then
+                info "primary gtid_binlog_pos now:    $_pri_pos"
+                _cov=$(gtid_end_compare "$SNAPSHOT_GTID" "$_pri_pos")
+                case "$_cov" in
+                    fresh)
+                        ok "the snapshot position matches the primary's current position." ;;
+                    behind)
+                        warn "the snapshot was taken before the primary's current position —"
+                        info "  the primary may have already purged those binlogs (expire_logs_days) → Last_IO_Error 1236."
+                        info "  the safest option is a fresh dump (snapshot option 2 — SSH pull)." ;;
+                    foreign)
+                        die "the snapshot is FOREIGN to this primary — it contains a position this server never had (or an ahead one). This is guaranteed Last_IO_Error 1236. Re-create the dump ON the primary (menu 2, snapshot option 2), or use a dump created after the primary was rebuilt/reset." ;;
+                esac
+            elif [ -n "$FROM_PRIMARY" ]; then
+                info "note: could not query the primary's gtid_binlog_pos (BatchMode ssh failed) — skipping the comparison"
+            fi
+        else
+            SNAPSHOT_GTID="<GTID from snapshot>"
         fi
         pre_import_clean_shared_db
         import_dump "$SHARED_DB" "$_snap"
@@ -948,18 +975,32 @@ EOF
         "$MARIADB" -u root -e "STOP SLAVE" >/dev/null 2>&1 || true
         "$MARIADB" -u root -e "RESET SLAVE" >/dev/null 2>&1 || true
     fi
+    if [ "$SKIP_SNAPSHOT" != 1 ]; then
+        # --master-data=2 comments the dump's SET GLOBAL gtid_slave_pos line.
+        # Do this after the final RESET SLAVE, otherwise the replica can ask the
+        # primary for its stale pre-import GTID and immediately get error 1236.
+        # A leftover local binary log may otherwise reject the snapshot GTID
+        # with error 1947, so clear it first when log_bin is still enabled.
+        reset_replica_binlog_state
+        set_gtid_slave_pos "$SNAPSHOT_GTID"
+        _gtid_bootstrap=slave_pos
+    else
+        # No snapshot was imported, so preserve the legacy explicit choice:
+        # CURRENT_POS is only valid when the existing data and GTID state match.
+        _gtid_bootstrap=CURRENT_POS
+    fi
     if ! sql_stdin <<EOF
 CHANGE MASTER TO
   MASTER_HOST='$PRIMARY_HOST',
   MASTER_PORT=$PRIMARY_PORT,
   MASTER_USER='mrpg_replica',
   MASTER_PASSWORD='$REPLICA_REPL_PASSWORD',
-  MASTER_USE_GTID=CURRENT_POS,
+  MASTER_USE_GTID=$_gtid_bootstrap,
   MASTER_SSL=1;
 START SLAVE;
 EOF
     then
-        die "CHANGE MASTER/START SLAVE failed — see the SQL errors above. Check: primary reachable ($PRIMARY_HOST:$PRIMARY_PORT), the mrpg_replica password, and that the primary supports MASTER_SSL. The replica is NOT configured; fix the cause and rerun menu 2."
+        die "CHANGE MASTER/START SLAVE failed — see the SQL errors above. Check: primary reachable ($PRIMARY_HOST:$PRIMARY_PORT), the mrpg_replica password, MASTER_SSL, and the snapshot GTID position. The replica is NOT configured; fix the cause and rerun menu 2."
     fi
 
     info "→ Local mrpg_bridge account"
@@ -1018,8 +1059,7 @@ EOF
         done
         if [ "$_ok" = 1 ]; then
             _lag=$(printf '%s\n' "$_status" | sed -n 's/^ *Seconds_Behind_Master: //p' | head -1)
-            ok "Replication is running (IO/SQL threads: Yes; Seconds_Behind_Master: ${_lag:-?})"
-            maybe_switch_to_slave_pos
+            ok "Replication is running (IO/SQL threads: Yes; Seconds_Behind_Master: ${_lag:-?}; GTID mode: $_gtid_bootstrap)"
         else
             warn "replication did not come up — details:"
             if [ -z "$(printf '%s' "$_status" | grep -E 'Slave_IO_Running|Slave_SQL_Running')" ]; then
@@ -1358,9 +1398,36 @@ SET SESSION foreign_key_checks = 1;"
 
 # ---------- GTID snapshots & recovery (1236) ----------
 
-# extract_gtid_pos <dump> — print the GTID position recorded by mariadb-dump --gtid (empty if none)
+# extract_gtid_pos <dump> — print the primary GTID recorded by
+# mariadb-dump --master-data=2 --gtid. The resulting SET GLOBAL
+# gtid_slave_pos line is deliberately commented in a --master-data=2 dump,
+# but it is still the exact point from which this replica must start.
 extract_gtid_pos() {
-    grep -aiEo "gtid_binlog_pos[^;]{0,200}'[^']*'" "$1" 2>/dev/null | tail -1 | sed -e "s/^.*'\([^']*\)'.*$/\1/"
+    grep -aiEo "gtid_(slave|binlog)_pos[[:space:]]*=[[:space:]]*'[^']*'" "$1" 2>/dev/null |
+        tail -1 | sed -e "s/^.*'\([^']*\)'.*$/\1/"
+}
+
+# check_gtid_pos <position> — dump content is data, never interpolate an
+# unchecked value into SET GLOBAL. MariaDB GTID sets contain only digits,
+# commas and hyphens (domain-server-sequence[/range]).
+check_gtid_pos() {
+    _checked_gtid=$(printf '%s' "$1" | tr -d '[:space:]')
+    case "$_checked_gtid" in
+        ''|*[!0-9,-]*) die "invalid GTID position in snapshot: '$1'" ;;
+    esac
+}
+
+# set_gtid_slave_pos <position> — persist the fresh snapshot position before
+# CHANGE MASTER ... MASTER_USE_GTID=slave_pos. mariadb-dump comments this SET
+# when --master-data=2 is used, so importing the dump alone leaves the stale
+# replica position in place and causes error 1236.
+set_gtid_slave_pos() {
+    if [ "$DRY_RUN" = 1 ]; then
+        info "+ $MARIADB -u root -e \"SET GLOBAL gtid_slave_pos = '<GTID parsed from snapshot>';\""
+        return 0
+    fi
+    check_gtid_pos "$1"
+    sql_exec "SET GLOBAL gtid_slave_pos = '$_checked_gtid';"
 }
 
 # gtid_end_compare <dump-set> <primary-set> — decide whether the dump's end
@@ -1414,7 +1481,7 @@ reprovision_from_ssh() {
     FROM_PRIMARY=$REPLY
     if [ "$DRY_RUN" = 1 ]; then
         info "+ ssh (background, progress) $FROM_PRIMARY '<fresh dump --gtid>' > <tmp>"
-        info "+ DROP/CREATE $SHARED_DB; import; STOP/RESET SLAVE; CHANGE MASTER ... START SLAVE"
+        info "+ DROP/CREATE $SHARED_DB; import; if log_bin=ON RESET MASTER; SET GLOBAL gtid_slave_pos=<snapshot>; CHANGE MASTER ... MASTER_USE_GTID=slave_pos; START SLAVE"
         return 0
     fi
     info "This will DROP mrpg_shared on this host and re-import it from a FRESH snapshot."
@@ -1427,12 +1494,24 @@ reprovision_from_ssh() {
         tmp_snapshot_disarm
         die "fresh snapshot failed — see the messages above; fix the cause and retry (menu 2)"
     fi
-    info "Fresh snapshot downloaded."
+    _fresh_gtid=$(extract_gtid_pos "$_tmpdump")
+    if [ -z "$_fresh_gtid" ]; then
+        tmp_snapshot_disarm
+        die "the fresh snapshot has no SET GLOBAL gtid_slave_pos (it was not made with --gtid); refusing to start replication from an unknown position."
+    fi
+    check_gtid_pos "$_fresh_gtid"
+    info "Fresh snapshot GTID position: $_fresh_gtid"
     "$MARIADB" -u root -e "STOP SLAVE" >/dev/null 2>&1 || true
     "$MARIADB" -u root -e "RESET SLAVE" >/dev/null 2>&1 || true
     sql_drop_db "$SHARED_DB"
     sql_exec "CREATE DATABASE IF NOT EXISTS $SHARED_DB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     import_dump "$SHARED_DB" "$_tmpdump" 1
+    # See the equivalent setup path above: --master-data=2 comments this line
+    # in the dump, so it must be applied explicitly after the import. Clear a
+    # leftover local binary log first, or MariaDB rejects the older snapshot
+    # GTID with error 1947.
+    reset_replica_binlog_state
+    set_gtid_slave_pos "$_fresh_gtid"
     tmp_snapshot_disarm
     if ! sql_stdin <<EOF
 CHANGE MASTER TO
@@ -1440,7 +1519,7 @@ CHANGE MASTER TO
   MASTER_PORT=$PRIMARY_PORT,
   MASTER_USER='mrpg_replica',
   MASTER_PASSWORD='$REPLICA_REPL_PASSWORD',
-  MASTER_USE_GTID=CURRENT_POS,
+  MASTER_USE_GTID=slave_pos,
   MASTER_SSL=1;
 START SLAVE;
 EOF
@@ -1456,36 +1535,10 @@ EOF
         _t=$((_t + 1)); sleep 2
     done
     if [ "$_ok2" = 1 ]; then
-        ok "Replication is running again."
-        maybe_switch_to_slave_pos
+        ok "Replication is running again in slave_pos mode."
     else
         warn "still not running — details:"
         printf '%s\n' "$_st" | grep -E 'Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master|Last_IO_Error|Last_SQL_Error' | sed 's/^/  /'
-    fi
-}
-
-# maybe_switch_to_slave_pos — steady-state mode. CURRENT_POS is one-shot bootstrap
-# (with no binlog on the replica, gtid_binlog_pos is in-memory and lost on restart);
-# slave_pos persists in the InnoDB-backed mysql.gtid_slave_pos table, so replication
-# survives restarts. Call ONLY after replication was verified running.
-maybe_switch_to_slave_pos() {
-    if [ "$DRY_RUN" = 1 ]; then
-        info "+ (offer) STOP SLAVE; CHANGE MASTER TO MASTER_USE_GTID=slave_pos; START SLAVE"
-        return 0
-    fi
-    ask_yn "Replication works. Switch to MASTER_USE_GTID=slave_pos now? (recommended)" y
-    [ "$REPLY" = y ] || { info "Keeping MASTER_USE_GTID=CURRENT_POS."; return 0; }
-    if "$MARIADB" -u root -e "STOP SLAVE; CHANGE MASTER TO MASTER_USE_GTID=slave_pos; START SLAVE" >/dev/null 2>&1; then
-        sleep 2
-        _st=$("$MARIADB" -u root -e "SHOW SLAVE STATUS\G" 2>/dev/null || true)
-        _io=$(printf '%s\n' "$_st" | sed -n 's/^ *Slave_IO_Running: //p' | head -1)
-        if [ "$_io" = "Yes" ]; then
-            ok "Replication restarted in slave_pos mode"
-        else
-            warn "restarted, but the IO thread is not Yes — check SHOW SLAVE STATUS\G"
-        fi
-    else
-        warn "CHANGE MASTER TO MASTER_USE_GTID=slave_pos failed — keeping CURRENT_POS"
     fi
 }
 
