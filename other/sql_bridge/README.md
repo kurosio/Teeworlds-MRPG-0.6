@@ -337,6 +337,8 @@ sudo tee /etc/mysql/mariadb.conf.d/61-mrpg-replica.cnf >/dev/null <<'CNF'
 server_id = 2                       # unique per replica: 2, 3, 4, ...
 bind-address = 127.0.0.1            # only the local bridge needs it
 read_only = 1                       # the bridge never writes to a replica
+# This location is not a relay source: no local binary log / binlog GTID state.
+skip-log-bin
 gtid_strict_mode = 1
 # replication is shared-only: keep the local databases out
 replicate_wild_ignore_table = mrpg_local%.%
@@ -352,6 +354,12 @@ sudo systemctl restart mariadb
   the pattern (`mrpg_local%.tw_%` would let it through).
 * Skipped events still advance the GTID position, so local changes never
   break replication. Put the rule on replicas only, never on the primary.
+* `skip-log-bin` prevents a location replica from retaining its own
+  `gtid_binlog_pos`. A previous primary configuration may leave binary logging
+  enabled; when provisioning from a snapshot the script detects that case and
+  runs `RESET MASTER` **on the replica only** before applying the snapshot
+  `gtid_slave_pos`. Do not use this setup for a replica that itself serves
+  downstream replicas.
 * One line per value in `my.cnf` (no comma list); another database name needs
   its own line. Routines/events are not filtered — keep them out of local DBs.
 
@@ -389,6 +397,11 @@ CREATE DATABASE mrpg_shared CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 SET SESSION foreign_key_checks = 1;
 SQL
 mariadb -u root -p mrpg_shared < "$DUMP"
+# A leftover primary configuration can leave local binlogs on a replica.
+# Clear them here; this affects only this replica's binlog files, not tables.
+if mariadb -u root -p -N -e "SELECT @@global.log_bin" | grep -qxE 'ON|1'; then
+  mariadb -u root -p -e "RESET MASTER;"
+fi
 mariadb -u root -p -e "SET GLOBAL gtid_slave_pos = '$DUMP_GTID';"
 ```
 

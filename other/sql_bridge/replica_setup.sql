@@ -15,7 +15,8 @@ GRANT SELECT ON mrpg_shared.* TO 'mrpg_bridge'@'%';
 FLUSH PRIVILEGES;
 
 -- On each LOCATION replica, after importing a fresh dump made with
--- --master-data=2 --gtid, explicitly apply the dump's commented
+-- --master-data=2 --gtid, disable/reset any leftover local binary log
+-- (RESET MASTER on this replica only), explicitly apply the dump's commented
 -- SET GLOBAL gtid_slave_pos='…' value, then run (MASTER_SSL=1 encrypts the
 -- replication stream over the WAN):
 --   CHANGE MASTER TO

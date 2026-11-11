@@ -487,7 +487,28 @@ EOF
     fi
 }
 
-# ---------- snapshot fetch (shared by the replica setup and the 1236 recovery) ----------
+# reset_replica_binlog_state — a location replica does not serve downstream
+# replicas, so it must not keep its own binary-log GTID state. A prior primary
+# configuration can leave log_bin enabled; in that state SET gtid_slave_pos
+# rejects an older snapshot with ER_GTID_POSITION_NOT_FOUND / 1947. Resetting
+# MASTER here is safe because it happens only while re-provisioning from a
+# complete snapshot and only clears this host's local binary logs, not tables.
+reset_replica_binlog_state() {
+    if [ "$DRY_RUN" = 1 ]; then
+        info "+ if @@global.log_bin=ON: RESET MASTER (clear stale local gtid_binlog_pos before applying the snapshot GTID)"
+        return 0
+    fi
+    if [ "$(_log_bin_on)" != "ON" ]; then
+        info "Replica binary log is disabled; no local GTID binlog state to reset."
+        return 0
+    fi
+    warn "Binary logging is enabled on this replica; clearing its local binary logs before GTID bootstrap."
+    sql_exec "RESET MASTER;"
+    _replica_binlog_gtid=$("$MARIADB" -u root -N -e "SELECT @@global.gtid_binlog_pos" 2>/dev/null || true)
+    info "Replica local gtid_binlog_pos after RESET MASTER: ${_replica_binlog_gtid:-(empty)}"
+}
+
+# ---------- snapshot fetch (shared by the replica setup and the 1236 recovery)
 
 # dump_remote_command <db> — the shell command run on the primary over ssh; detects
 # mariadb-dump vs mysqldump and --source-data vs --master-data (MySQL 8 vs MariaDB 10.x)
@@ -875,6 +896,8 @@ do_replica() {
 server_id = $SERVER_ID
 bind-address = 127.0.0.1
 read_only = 1
+# A location replica is not a relay source; avoid its own binlog GTID state.
+skip-log-bin
 gtid_strict_mode = 1
 # only mrpg_shared is replicated; local databases are excluded
 replicate_wild_ignore_table = mrpg_local%.%
@@ -956,6 +979,9 @@ EOF
         # --master-data=2 comments the dump's SET GLOBAL gtid_slave_pos line.
         # Do this after the final RESET SLAVE, otherwise the replica can ask the
         # primary for its stale pre-import GTID and immediately get error 1236.
+        # A leftover local binary log may otherwise reject the snapshot GTID
+        # with error 1947, so clear it first when log_bin is still enabled.
+        reset_replica_binlog_state
         set_gtid_slave_pos "$SNAPSHOT_GTID"
         _gtid_bootstrap=slave_pos
     else
@@ -1455,7 +1481,7 @@ reprovision_from_ssh() {
     FROM_PRIMARY=$REPLY
     if [ "$DRY_RUN" = 1 ]; then
         info "+ ssh (background, progress) $FROM_PRIMARY '<fresh dump --gtid>' > <tmp>"
-        info "+ DROP/CREATE $SHARED_DB; import; SET GLOBAL gtid_slave_pos=<snapshot>; CHANGE MASTER ... MASTER_USE_GTID=slave_pos; START SLAVE"
+        info "+ DROP/CREATE $SHARED_DB; import; if log_bin=ON RESET MASTER; SET GLOBAL gtid_slave_pos=<snapshot>; CHANGE MASTER ... MASTER_USE_GTID=slave_pos; START SLAVE"
         return 0
     fi
     info "This will DROP mrpg_shared on this host and re-import it from a FRESH snapshot."
@@ -1481,7 +1507,10 @@ reprovision_from_ssh() {
     sql_exec "CREATE DATABASE IF NOT EXISTS $SHARED_DB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     import_dump "$SHARED_DB" "$_tmpdump" 1
     # See the equivalent setup path above: --master-data=2 comments this line
-    # in the dump, so it must be applied explicitly after the import.
+    # in the dump, so it must be applied explicitly after the import. Clear a
+    # leftover local binary log first, or MariaDB rejects the older snapshot
+    # GTID with error 1947.
+    reset_replica_binlog_state
     set_gtid_slave_pos "$_fresh_gtid"
     tmp_snapshot_disarm
     if ! sql_stdin <<EOF
