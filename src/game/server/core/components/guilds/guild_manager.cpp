@@ -1193,12 +1193,21 @@ void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SReque
 		GS()->Chat(-1, "New guilds '{~}' have been created!", pRes->getString("Name").c_str());
 	}
 
+	else if (EventName == syncevents::GUILD_UPDATE)
+	{
+		if(const auto pGuild = GetGuildByID(Req.Value))
+		{
+			ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
+			if (pRes->next())
+			{
+				pGuild->InitFromRow(pRes);
+				dbg_msg("guild", "guild updated: %s", pGuild->GetName());
+			}
+		}
+	}
 
 	else if(EventName == syncevents::GUILD_DISBAND)
 	{
-		if (Req.ServerID == g_Config.m_SvSyncServerID)
-			return;
-
 		if (const auto pGuild = GetGuildByID(Req.Value))
 		{
 			GS()->Chat(-1, "The '{~}' guild has been disbanded.", pGuild->GetName());
