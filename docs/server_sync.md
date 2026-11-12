@@ -67,24 +67,27 @@ The message carries **only the event and the IDs** — no guild data:
 `sv_sync_server_id` of the sender, `world` the world that produced the event and
 `value` the ID of the changed object — for the guild events, the guild ID.
 
-The event names are constants of `server_sync.h` (`syncevents::GUILD_CREATE`,
-`syncevents::GUILD_DISBAND`), so a sender and the `OnSyncEvent()` handler of the
-receivers cannot drift apart.
+The event names are constants in `src/engine/server/server_sync.h`. Current
+built-in events cover guild create/update/disband, auction-slot create/remove,
+and account-session takeover/acknowledgement. The relay forwards the event
+without interpreting its meaning; every receiver must implement the matching
+handler. For guild and auction state, handlers refresh or remove the relevant
+record using the shared database. Account-session takeover is a request/ack
+exchange and is handled separately by the account manager.
 
-The receiving server applies the event with the same handler as before
-(`OnSyncEvent`): for `guild_create` it selects the row from its own `tw_guilds`
-by `value` and calls `InitGuildFromRow()`, for `guild_disband` it finds the guild
-by ID and removes it. The relay does not look into the payload.
-
-This means the guild tables must be shared between the servers (the same
-database, or a replicated one) — otherwise the `SELECT` on the receiving server
-finds nothing. That is the assumption the synchronization has always made.
-
-Delivery is **at least once**: a message is kept until its bytes are on the
-socket, so a connection that dies mid-write re-sends it after the reconnect. The
-handlers are idempotent (a `guild_create` for a guild that is already loaded is
-ignored, a `guild_disband` for an unknown ID does nothing) and the `id` of the
-sender drops the repeats.
+For guild and auction refreshes, the corresponding records must be visible to
+every game server (the same database or a replicated shared database), or a
+receiver cannot apply the event. The account takeover flow also assumes shared
+account data. Local-only tables must not be used as cross-server state.
+Delivery is not durable or acknowledged end to end. The sending server keeps
+unsent frames in memory and retries them after reconnect if the connection
+breaks mid-write; once a frame has been written to its TCP socket, it is removed
+from that queue, even though the relay may not yet have forwarded or receivers
+may not have processed it. The queue is bounded (10,000 messages) and is lost
+when the sending process exits. Duplicate IDs are filtered by receivers for
+frames that are retried, so persistent-state handlers should still be
+idempotent. Treat relay synchronization as a low-latency notification mechanism,
+not as a durable message bus or substitute for shared database consistency.
 
 ## Source layout
 
@@ -102,13 +105,14 @@ and `src/engine/server/server_sync.cpp` for the game server.
 
 ## Adding a new event
 
-1. Add the name to `syncevents` in `src/engine/server/server_sync.h`.
+1. Add the event name to `syncevents` in `src/engine/server/server_sync.h`.
 2. Send it from the component that changes the data:
    `Sync->Push(syncevents::MY_EVENT, GS()->GetWorldID(), ObjectID);`
-3. Add a branch to `OnSyncEvent()` of that same component. It must load the
-   object **from the database by `Req.Value`** and must be safe to run twice:
-   the delivery is at-least-once and the event can arrive after the local state
-   already matches the database.
+3. Add the matching receiver behavior. For shared persistent state, reload the
+   object from the shared database using `Req.Value` and make the operation
+   idempotent: an event may be delivered again or arrive after local state is
+   already current. For request/ack events, define and validate the expected
+   state machine instead. Never treat relay payloads as trusted input.
 
 No change in `src/relay` is needed: the relay forwards unknown event names
 unchanged, it only knows the envelope.
@@ -134,6 +138,8 @@ sv_sync_server_id 1               # unique per server, 0 = disabled
 sv_sync_relay_host "relay.local"  # empty = disabled
 sv_sync_relay_port 8383
 sv_sync_relay_password ""
+sv_sync_fast_events 1            # 1 = every game tick; 0 = use the interval below
+sv_sync_server_interval 1        # seconds when fast events are disabled
 sv_sync_relay_reconnect_ms 5000
 ```
 
@@ -145,9 +151,11 @@ config lines, so a value has to be quoted:
 (`start /b`), so no window flashes at all. The flag is recognized by the console
 itself and is not a setting, so it does not appear in `relay.cfg`.
 
-Messages produced while the relay is unreachable stay in the queue (up to 10000)
-and are sent after the reconnect. `Sync->IsConnected()` and
-`Sync->PendingCount()` are available for console output or metrics.
+Messages produced while the relay is unreachable stay in the in-memory queue
+(up to 10,000) and are sent after reconnect; additional messages are dropped
+when it is full, and queued messages are lost if the game server exits.
+`Sync->IsConnected()` and `Sync->PendingCount()` are available for console
+output or metrics.
 
 ## Wire protocol
 
@@ -159,8 +167,7 @@ Frames, both directions (`src/relay/relay_protocol.h`):
 +---------------------+------------+---------------------------+
 ```
 
-`length` counts the type byte plus the payload, so the minimum is 1. The payload
-of every message is UTF-8 JSON; the limit of a frame is 8 MiB.
+`length` counts the type byte plus the payload, so the minimum is 1. The payloads of currently implemented control and event messages are UTF-8 JSON. `LOCALIZATION_DATA` is reserved for raw localization-file bytes but is not implemented. The limit of a frame is 8 MiB.
 
 | type | name | direction | payload |
 | --- | --- | --- | --- |
@@ -177,10 +184,11 @@ The relay rejects a duplicate `server_id`, a wrong password and anything sent
 before the handshake, and drops a connection on a malformed frame. The `reason`
 of a `REJECTED` frame is one of the texts of `EDropReason` in
 `src/relay/relay.h`, the same text the relay logs, so the log of a game server
-and the log of the relay can be compared directly. The server
-uses a non-blocking socket and does all the work in `Sync->OnTick()`, which the
-game calls once per `sv_sync_server_interval` seconds, so the game loop never
-waits on the network.
+and the log of the relay can be compared directly. The server uses a non-blocking socket and performs relay work in `Sync->OnTick()`;
+the game loop does not wait on network I/O. With the default
+`sv_sync_fast_events 1`, `OnTick()` runs every game tick. Set it to `0` to use
+`sv_sync_server_interval` seconds between relay updates (higher latency, fewer
+updates).
 
 ## Localization groundwork
 
@@ -236,8 +244,9 @@ the packages.
   gone. The table itself can be dropped from existing databases:
   `DROP TABLE IF EXISTS tw_server_sync;`
 * The `tw_server_sync` code is gone; the connection handles the timing itself.
-  `sv_sync_server_interval` still decides how often `CServerSync::OnTick()` runs
-  and `sv_sync_relay_reconnect_ms` the delay between the reconnection attempts.
+  `sv_sync_fast_events` controls whether `CServerSync::OnTick()` runs every game
+  tick; when disabled, `sv_sync_server_interval` sets its interval.
+  `sv_sync_relay_reconnect_ms` is the delay between reconnection attempts.
 * `CServerSync::PushEvent()` was folded into `Push()`, which now returns the
   message ID itself.
 * The same socket, clock and JSON plumbing no longer exists twice:

@@ -114,10 +114,10 @@ mysql -u root -p mrpg_local < mrpg_local.sql
 
 | Database | Tables |
 |---|---|
-| `mrpg_local` | `tw_auction_slots`, `tw_groups`, `tw_guilds`, `tw_guilds_decorations`, `tw_guilds_history`, `tw_guilds_invites`, `tw_guilds_ranks`, `tw_guilds_wars`, `tw_houses_decorations`, `tw_links` |
+| `mrpg_local` | `tw_groups`, `tw_guilds_decorations`, `tw_guilds_history`, `tw_guilds_invites`, `tw_houses_decorations`, `tw_links` |
 | `mrpg_shared` | every other table |
 
-The ten local tables are a fixed list in the server (`LOCAL_TABLES` in `src/engine/server/sql_connect_pool.cpp`). Every query names its table, and the first name decides the connection: a name from that list uses the local connection, every other name the shared one. The game code never names a database, and nothing is parsed from the SQL text.
+The six local tables are a fixed list in the server (`LOCAL_TABLES` in `src/engine/server/sql_connect_pool.cpp`). Every query names its table, and the first name decides the connection: a name from that list uses the local connection, every other name the shared one. The game code never names a database, and nothing is parsed from the SQL text.
 
 Notes:
 
@@ -130,10 +130,10 @@ Notes:
 
 ```
 # shared: through the bridge (or straight to the primary without one)
-sv_sql_host "localhost"
+sv_sql_host "127.0.0.1"
 sv_sql_port "33060"
-sv_sql_login "root"
-sv_sql_password ""
+sv_sql_login "mrpg_user"
+sv_sql_password "CHANGE_ME_SHARED_PASSWORD"
 sv_sql_database_shared "mrpg_shared"
 sv_sql_pool_size 3
 sv_sql_use_tls 0
@@ -163,7 +163,7 @@ On a replica configured with `read_only = 1`, normal database grants alone still
 
 `sv_sql_local_database ""` leaves the local connection unused: every query goes to the shared database, as in older versions. Set both names in the configuration file, not while the server runs. The shared login and the local login may differ; each connection is opened with its own account.
 
-Every game server needs a local database of its own; give each of them another name, for example `sv_sql_local_database "mrpg_local_eu"`.
+For split-database deployments, every game server needs a local database of its own; give each of them another name, for example `sv_sql_local_database "mrpg_local_eu"`.
 
 At startup the server opens both databases. It does not start if:
 
@@ -173,88 +173,29 @@ At startup the server opens both databases. It does not start if:
 
 ### Moving an existing database to two databases
 
-The existing database becomes the shared one. It may keep its name (set `sv_sql_database_shared` to it); only the local tables move out.
+The current server routes exactly these six tables to the local database:
+`tw_groups`, `tw_guilds_decorations`, `tw_guilds_history`,
+`tw_guilds_invites`, `tw_houses_decorations`, and `tw_links`. This list is
+version-specific; older instructions that move `tw_guilds`, auction, rank, or
+war tables describe an earlier schema and must not be followed for this
+version. `tw_guilds` and the other unlisted tables stay in the shared database.
 
-If the existing database is replicated between several game servers, follow "Upgrading a single database" in [`other/sql_bridge/README.md`](../other/sql_bridge/README.md): it says where to run the statements below.
+Migration is data-sensitive and legacy schemas differ. Before changing
+anything, stop every game server that can write to the database and take a
+verified backup. Create the local schema from the current `mrpg_local.sql`
+file, then migrate data for the six listed tables only, checking each table's
+columns and row counts against the source. Do not blindly use `CREATE TABLE …
+LIKE` against an old schema: the table definitions may no longer match the
+current dump. If the old schema stores house ownership in `tw_houses.UserID`
+or `tw_guilds_houses.GuildID` rather than in `tw_links`, convert those rows to
+the current `tw_links` format as a separate, reviewed step. Keep the source
+tables and backup until the new installation has been checked.
 
-Stop the game server and make a backup of the existing database (`mysqldump -u root -p old_db > old_db.sql`). Then run as `root` on the MariaDB server of the game (replace `old_db` with the name of the existing database):
-
-```sql
-CREATE DATABASE IF NOT EXISTS mrpg_local
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-USE mrpg_local;
-SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
-
-CREATE TABLE tw_auction_slots      LIKE old_db.tw_auction_slots;
-CREATE TABLE tw_groups             LIKE old_db.tw_groups;
-CREATE TABLE tw_guilds             LIKE old_db.tw_guilds;
-CREATE TABLE tw_guilds_decorations LIKE old_db.tw_guilds_decorations;
-CREATE TABLE tw_guilds_history     LIKE old_db.tw_guilds_history;
-CREATE TABLE tw_guilds_invites     LIKE old_db.tw_guilds_invites;
-CREATE TABLE tw_guilds_ranks       LIKE old_db.tw_guilds_ranks;
-CREATE TABLE tw_guilds_wars        LIKE old_db.tw_guilds_wars;
-CREATE TABLE tw_houses_decorations LIKE old_db.tw_houses_decorations;
-
-INSERT INTO tw_auction_slots      SELECT * FROM old_db.tw_auction_slots;
-INSERT INTO tw_groups             SELECT * FROM old_db.tw_groups;
-INSERT INTO tw_guilds             SELECT * FROM old_db.tw_guilds;
-INSERT INTO tw_guilds_decorations SELECT * FROM old_db.tw_guilds_decorations;
-INSERT INTO tw_guilds_history     SELECT * FROM old_db.tw_guilds_history;
-INSERT INTO tw_guilds_invites     SELECT * FROM old_db.tw_guilds_invites;
-INSERT INTO tw_guilds_ranks       SELECT * FROM old_db.tw_guilds_ranks;
-INSERT INTO tw_guilds_wars        SELECT * FROM old_db.tw_guilds_wars;
-INSERT INTO tw_houses_decorations SELECT * FROM old_db.tw_houses_decorations;
-
--- CREATE TABLE ... LIKE does not copy foreign keys
-ALTER TABLE tw_guilds_invites
-  ADD CONSTRAINT tw_guilds_invites_ibfk_1 FOREIGN KEY (GuildID) REFERENCES tw_guilds (ID) ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE tw_guilds_wars
-  ADD CONSTRAINT tw_guilds_wars_ibfk_1 FOREIGN KEY (GuildID1) REFERENCES tw_guilds (ID) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT tw_guilds_wars_ibfk_2 FOREIGN KEY (GuildID2) REFERENCES tw_guilds (ID) ON DELETE CASCADE ON UPDATE CASCADE;
-```
-
-The owners of houses are stored in `tw_links`. If the existing database already has this table, copy it like the other ones:
-
-```sql
-CREATE TABLE tw_links LIKE old_db.tw_links;
-INSERT INTO tw_links SELECT * FROM old_db.tw_links;
-```
-
-If it does not (the owners are still in the columns `tw_houses.UserID` and `tw_guilds_houses.GuildID`), create the table from these columns:
-
-```sql
-CREATE TABLE tw_links (
-  ID int(11) NOT NULL AUTO_INCREMENT,
-  Type varchar(32) NOT NULL,
-  OwnerID bigint(20) NOT NULL,
-  TargetID bigint(20) NOT NULL,
-  PRIMARY KEY (ID)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-INSERT INTO tw_links (Type, OwnerID, TargetID)
-  SELECT 'player_house', UserID, ID FROM old_db.tw_houses WHERE UserID IS NOT NULL;
-INSERT INTO tw_links (Type, OwnerID, TargetID)
-  SELECT 'guild_house', GuildID, ID FROM old_db.tw_guilds_houses WHERE GuildID IS NOT NULL;
-```
-
-Compare the number of rows of every table, for example:
-
-```sql
-SELECT (SELECT COUNT(*) FROM old_db.tw_guilds) AS old_rows, (SELECT COUNT(*) FROM mrpg_local.tw_guilds) AS new_rows;
-```
-
-Then remove the copied tables from the old database, before the game server starts: while the shared database still has a local table, the server refuses to start (the tables with foreign keys to `tw_guilds` go first):
-
-```sql
-USE old_db;
-DROP TABLE tw_guilds_invites, tw_guilds_wars;
-DROP TABLE tw_auction_slots, tw_groups, tw_guilds, tw_guilds_decorations, tw_guilds_history, tw_guilds_ranks, tw_houses_decorations;
-DROP TABLE IF EXISTS tw_links;
-
--- only if the owners of houses were still stored in these columns
-ALTER TABLE tw_houses DROP COLUMN UserID;
-ALTER TABLE tw_guilds_houses DROP COLUMN GuildID;
-```
-
-Give the account of the game server access to the new database (see section 3), then set `sv_sql_database_shared` (the old database) and `sv_sql_local_database` (`mrpg_local`) — plus `sv_sql_local_host` and `sv_sql_local_login` if the local database is on another MariaDB — and start the server.
+Before starting the server, ensure the local database contains all six tables
+and that none of those six tables remains in the shared database. The server
+checks both conditions at startup and refuses an ambiguous split. Grant the
+game account access to the new local database, set `sv_sql_database_shared`
+to the shared database and `sv_sql_local_database` to the per-server local
+database, then start the server and inspect its SQL startup log. For
+multi-server replicas, follow the current [SQL bridge upgrade guide](../other/sql_bridge/README.md)
+instead of manually moving replicated tables on a live installation.
