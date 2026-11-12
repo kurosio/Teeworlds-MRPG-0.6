@@ -187,6 +187,7 @@ public:
 	const char* Localize(int ClientID, const char* pText) override;
 	void SetClientLanguage(int ClientID, const char* pLanguage) override;
 	const char* GetClientLanguage(int ClientID) const override;
+	const char* GetDefaultLanguage() const override;
 	const char* GetWorldName(int WorldID) override;
 	CWorldDetail* GetWorldDetail(int WorldID) override;
 	bool IsWorldType(int WorldID, WorldType Type) const override;

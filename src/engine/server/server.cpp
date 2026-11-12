@@ -297,7 +297,16 @@ void CServer::SetClientLanguage(int ClientID, const char* pLanguage)
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
 		return;
 
+	if(!pLanguage || !pLanguage[0])
+		pLanguage = GetDefaultLanguage();
+
 	str_copy(m_aClients[ClientID].m_aLanguage, pLanguage, sizeof(m_aClients[ClientID].m_aLanguage));
+}
+
+const char* CServer::GetDefaultLanguage() const
+{
+	const char* pLanguage = g_Config.m_SvDefaultLanguage;
+	return pLanguage[0] && m_pLocalization && m_pLocalization->HasLanguage(pLanguage) ? pLanguage : "en";
 }
 
 bool CServer::IsClientChangingWorld(int ClientID)
@@ -337,7 +346,7 @@ int CServer::GetWorldsSize() const
 const char* CServer::GetClientLanguage(int ClientID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
-		return "en";
+		return GetDefaultLanguage();
 	return m_aClients[ClientID].m_aLanguage;
 }
 
@@ -429,9 +438,11 @@ int CServer::Init()
 	m_GameHourTime = 0;
 	m_CurrentGameTick = 0;
 
+	// the config can still be empty at this point, so fall back to english
+	const char* pDefaultLanguage = g_Config.m_SvDefaultLanguage[0] ? g_Config.m_SvDefaultLanguage : "en";
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		str_copy(m_aClients[i].m_aLanguage, "en", sizeof(m_aClients[i].m_aLanguage));
+		str_copy(m_aClients[i].m_aLanguage, pDefaultLanguage, sizeof(m_aClients[i].m_aLanguage));
 		m_aClients[i].m_State = CClient::STATE_EMPTY;
 		m_aClients[i].m_aName[0] = 0;
 		m_aClients[i].m_aClan[0] = 0;
@@ -885,6 +896,7 @@ int CServer::NewClientNoAuthCallback(int ClientID, void* pUser)
 	CServer* pThis = (CServer*)pUser;
 
 	pThis->GameServer(INITIALIZER_WORLD_ID)->OnClearClientData(ClientID);
+	str_copy(pThis->m_aClients[ClientID].m_aLanguage, pThis->GetDefaultLanguage(), sizeof(pThis->m_aClients[ClientID].m_aLanguage));
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
 	pThis->m_aClients[ClientID].m_aClan[0] = 0;
@@ -912,7 +924,7 @@ int CServer::NewClientCallback(int ClientID, void* pUser)
 	pIdMap[0] = ClientID;
 
 	pThis->GameServer(INITIALIZER_WORLD_ID)->OnClearClientData(ClientID);
-	str_copy(pThis->m_aClients[ClientID].m_aLanguage, "en", sizeof(pThis->m_aClients[ClientID].m_aLanguage));
+	str_copy(pThis->m_aClients[ClientID].m_aLanguage, pThis->GetDefaultLanguage(), sizeof(pThis->m_aClients[ClientID].m_aLanguage));
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_AUTH;
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
 	pThis->m_aClients[ClientID].m_aClan[0] = 0;

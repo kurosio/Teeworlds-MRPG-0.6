@@ -189,6 +189,7 @@ public:
 	virtual const char* Localize(int ClientID, const char* pText) = 0;
 	virtual void SetClientLanguage(int ClientID, const char* pLanguage) = 0;
 	virtual const char* GetClientLanguage(int ClientID) const = 0;
+	virtual const char* GetDefaultLanguage() const = 0;
 
 	// Bots
 	virtual void InitClientBot(int ClientID) = 0;

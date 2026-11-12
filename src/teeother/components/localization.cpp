@@ -69,6 +69,18 @@ bool CLocalization::Init()
 	});
 
 	dbg_assert(!hasError, "localization: can't load laguage index file.");
+
+	// fall back to the mother language (or the first available one) when the
+	// configured default language is not present in the language index
+	if(!m_pMainLanguage)
+	{
+		m_pMainLanguage = FindLanguage(g_pMotherLanguageFile);
+		if(!m_pMainLanguage && m_pLanguages.size() > 0)
+			m_pMainLanguage = m_pLanguages[0];
+
+		if(m_pMainLanguage)
+			dbg_msg("localization", "default language '%s' is not available, using '%s'", g_Config.m_SvDefaultLanguage, m_pMainLanguage->GetFilename());
+	}
 	return true;
 }
 
@@ -96,6 +108,11 @@ CLocalization::CLanguage* CLocalization::FindLanguage(const char* pLanguageFile)
 	}
 
 	return nullptr;
+}
+
+bool CLocalization::HasLanguage(const char* pLanguageFile) const
+{
+	return FindLanguage(pLanguageFile) != nullptr;
 }
 
 const char* CLocalization::LocalizeWithDepth(const char* pLanguageFile, const char* pText, int Depth)

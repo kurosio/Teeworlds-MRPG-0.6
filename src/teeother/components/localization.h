@@ -71,6 +71,7 @@ public:
 
 	bool Init();
 	bool Reload();
+	bool HasLanguage(const char* pLanguageFile) const;
 	const char* Localize(const char* pLanguageCode, const char* pText);
 	array<CLanguage*> m_pLanguages{};
 
