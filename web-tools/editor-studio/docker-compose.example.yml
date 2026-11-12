@@ -9,6 +9,8 @@ services:
     volumes:
       - ./scenarios:/var/www/html/scenarios
       - ./data:/var/www/html/data
+      # Optional: mount deploy keys read-only; set key paths in SSH servers to these paths.
+      # - ${SSH_KEY_DIR:-./ssh-keys}:/run/editor-ssh-keys:ro
     environment:
       - PHP_MEMORY_LIMIT=${PHP_MEMORY_LIMIT:-512M}
       - PHP_UPLOAD_MAX_FILESIZE=${PHP_UPLOAD_MAX_FILESIZE:-100M}

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSH servers • Editor Studio</title>
+  <script src="editor-core/page-loader.js"></script>
+  <style>
+    .ssh-grid { display:grid; grid-template-columns:minmax(280px,.8fr) minmax(360px,1.2fr); gap:16px; }
+    .ssh-list { display:grid; gap:8px; max-height:68vh; overflow:auto; }
+    .ssh-row { display:flex; align-items:flex-start; gap:10px; padding:12px; border:1px solid var(--editor-soft-border); border-radius:12px; background:var(--editor-surface-2); }
+    .ssh-row.selected { border-color:color-mix(in srgb,var(--editor-primary) 55%,transparent); }
+    .ssh-row-main { flex:1; min-width:0; cursor:pointer; }
+    .ssh-row-title { font-weight:650; overflow-wrap:anywhere; }
+    .ssh-row-meta { color:var(--editor-text-muted); font-size:12px; overflow-wrap:anywhere; margin-top:3px; }
+    .ssh-badge { display:inline-flex; padding:2px 7px; border-radius:999px; font-size:11px; border:1px solid var(--editor-soft-border); color:var(--editor-text-muted); }
+    .ssh-badge.on { color:var(--editor-success); border-color:color-mix(in srgb,var(--editor-success) 40%,transparent); }
+    .ssh-badge.off { color:var(--editor-warning); }
+    .ssh-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .ssh-fields .wide { grid-column:1/-1; }
+    .ssh-action-bar { display:flex; flex-wrap:wrap; gap:8px; }
+    .ssh-hint { border:1px solid var(--editor-soft-border); background:var(--editor-soft-bg); border-radius:10px; padding:10px 12px; font-size:12px; color:var(--editor-text-muted); }
+    .ssh-result { border-left:3px solid var(--editor-success); padding:7px 10px; background:var(--editor-soft-bg); border-radius:4px 9px 9px 4px; font-size:12px; overflow-wrap:anywhere; }
+    .ssh-result.bad { border-left-color:var(--editor-danger); }
+    .ssh-empty { padding:24px 12px; color:var(--editor-text-muted); text-align:center; border:1px dashed var(--editor-soft-border); border-radius:12px; }
+    @media(max-width:900px){.ssh-grid{grid-template-columns:1fr}.ssh-list{max-height:35vh}}
+    @media(max-width:560px){.ssh-fields{grid-template-columns:1fr}.ssh-fields .wide{grid-column:auto}}
+  </style>
+</head>
+<body class="editor-theme" data-editor="ssh-servers">
+  <div class="editor-page">
+    <div class="editor-page-header">
+      <div class="editor-page-title">
+        <i class="fa-solid fa-server text-accent text-xl"></i>
+        <div><h1>SSH servers</h1><div class="editor-page-sub">Manage SSH connections and remotely control game servers.</div></div>
+      </div>
+      <div class="editor-page-actions"><div data-i18n-switcher-host></div><button id="btn-refresh" class="editor-btn editor-btn-secondary"><i class="fa-solid fa-rotate"></i><span>Refresh</span></button></div>
+    </div>
+    <div class="editor-page-body">
+      <section class="editor-panel-card mb-4">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div><h2 class="text-lg font-semibold">Manage selected servers</h2><div class="editor-muted-text text-xs mt-1">Only selected and enabled servers are included in bulk actions.</div></div>
+          <div class="ssh-action-bar">
+            <button id="btn-update-all" class="editor-btn editor-btn-secondary" data-action="update"><i class="fa-solid fa-arrows-rotate"></i><span>Update</span></button>
+            <button id="btn-start-all" class="editor-btn editor-btn-secondary" data-action="start"><i class="fa-solid fa-play"></i><span>Start</span></button>
+            <button id="btn-stop-all" class="editor-btn editor-btn-secondary" data-action="stop"><i class="fa-solid fa-stop"></i><span>Stop</span></button>
+          </div>
+        </div>
+      </section>
+      <div class="ssh-grid">
+        <section class="editor-panel-card">
+          <div class="flex items-center justify-between gap-2 mb-3"><h2 class="text-lg font-semibold">Server collection</h2><button id="btn-add" class="editor-btn editor-btn-primary editor-btn--sm"><i class="fa-solid fa-plus"></i><span>Add server</span></button></div>
+          <div class="flex items-center gap-2 mb-3"><label class="flex items-center gap-2 text-sm"><input id="select-all" type="checkbox" class="form-checkbox editor-checkbox"><span>Select all</span></label><span id="server-count" class="editor-muted-text text-xs ml-auto"></span></div>
+          <div id="server-list" class="ssh-list"></div>
+        </section>
+        <section class="editor-panel-card">
+          <div class="flex items-start justify-between gap-3 mb-4"><div><h2 id="form-title" class="text-lg font-semibold">New server</h2><div class="editor-muted-text text-xs mt-1">SSH access uses a private key available to the web-server user.</div></div><button id="btn-delete" class="editor-btn editor-btn-secondary editor-btn--sm" hidden><i class="fa-solid fa-trash"></i><span>Delete</span></button></div>
+          <form id="server-form" class="ssh-fields" autocomplete="off">
+            <input type="hidden" id="f-id">
+            <label><span class="editor-label">Name</span><input id="f-name" required maxlength="80" class="w-full editor-input form-input" placeholder="Example: EU-1"></label>
+            <label><span class="editor-label">Include in bulk actions</span><select id="f-enabled" class="w-full editor-input form-select"><option value="1">Yes</option><option value="0">No</option></select></label>
+            <label><span class="editor-label">SSH host</span><input id="f-host" required class="w-full editor-input form-input" placeholder="game.example.com"></label>
+            <label><span class="editor-label">SSH port</span><input id="f-port" type="number" min="1" max="65535" value="22" required class="w-full editor-input form-input"></label>
+            <label><span class="editor-label">SSH user</span><input id="f-user" required class="w-full editor-input form-input" placeholder="deploy"></label>
+            <label><span class="editor-label">Private key path on the web server</span><input id="f-key" class="w-full editor-input form-input" placeholder="/home/editor/.ssh/id_ed25519"></label>
+            <label class="wide"><span class="editor-label">Remote working directory</span><input id="f-directory" required class="w-full editor-input form-input" placeholder="/srv/teeworlds/server-1"></label>
+            <div class="wide editor-section-divider"></div>
+            <div class="wide"><h3 class="font-semibold">Game server commands</h3><div class="editor-muted-text text-xs mt-1">Commands run on the remote host over SSH. Configure your own scripts or systemd commands.</div></div>
+            <label class="wide"><span class="editor-label">Update</span><input id="f-update" class="w-full editor-input form-input" placeholder="Example: cd /srv/teeworlds && ./update.sh"></label>
+            <label class="wide"><span class="editor-label">Start</span><input id="f-start" class="w-full editor-input form-input" placeholder="systemctl start teeworlds@server-1"></label>
+            <label class="wide"><span class="editor-label">Stop</span><input id="f-stop" class="w-full editor-input form-input" placeholder="systemctl stop teeworlds@server-1"></label>
+            <div class="wide ssh-hint">Commands are run from this server's remote working directory. SSH passwords are not stored; use a key readable by the web-server user.</div>
+            <div class="wide flex flex-wrap gap-2 pt-1"><button id="btn-save" type="submit" class="editor-btn editor-btn-primary"><i class="fa-solid fa-floppy-disk"></i><span>Save</span></button><button id="btn-new-form" type="button" class="editor-btn editor-btn-secondary">Clear form</button></div>
+            <div id="form-status" class="wide text-sm"></div>
+          </form>
+        </section>
+      </div>
+      <section class="editor-panel-card mt-4"><h2 class="text-lg font-semibold">Operation results</h2><div id="operation-results" class="grid gap-2 mt-3"><div class="editor-muted-text text-sm">No operations have run yet.</div></div></section>
+      <div class="ssh-hint mt-4">Security: SSH actions are admin-only. Commands run as the web-server system user; test them on one server first. Host fingerprints are accepted on first connection and saved on the server.</div>
+    </div>
+  </div>
+<script>
+(() => {
+  const API = 'api/ssh-servers.php';
+  const Page = EditorCore.Page;
+  const $ = Page.byId;
+  const esc = Page.esc;
+  let servers = [];
+  let selectedId = '';
+  let busy = false;
+  const fields = ['id','name','host','port','user','key_path','directory','enabled','update_command','start_command','stop_command'];
+  const setStatus = (message, good = false) => { $('form-status').textContent = message; $('form-status').className = `wide text-sm ${good ? 'text-green-600' : 'text-red-500'}`; };
+  const call = async (body = null) => {
+    const result = await EditorCore.Http.json(API, body ? {method:'POST', body, timeout: body.action === 'save' ? 20000 : 120000} : {timeout:20000});
+    if (!result.ok) throw new Error(result.error || 'Request failed');
+    return result;
+  };
+  function renderList() {
+    const list = $('server-list');
+    $('server-count').textContent = `${servers.length} server(s)`;
+    $('select-all').checked = servers.length > 0 && servers.every(server => server.selected);
+    if (!servers.length) { list.innerHTML = '<div class="ssh-empty">The server collection is empty.<br>Add your first SSH server.</div>'; return; }
+    list.innerHTML = servers.map((server) => `<div class="ssh-row${selectedId === server.id ? ' selected' : ''}">
+      <input id="pick-${esc(server.id)}" type="checkbox" class="form-checkbox editor-checkbox mt-1" aria-label="Select ${esc(server.name)}" ${server.selected ? 'checked' : ''}>
+      <div class="ssh-row-main" data-edit="${esc(server.id)}"><div class="flex items-center flex-wrap gap-2"><span class="ssh-row-title">${esc(server.name)}</span><span class="ssh-badge ${server.enabled ? 'on':'off'}">${server.enabled ? 'enabled':'excluded'}</span></div><div class="ssh-row-meta">${esc(server.user)}@${esc(server.host)}:${Number(server.port)} · ${esc(server.directory)}</div></div>
+      </div>`).join('');
+    list.querySelectorAll('[data-edit]').forEach(node => node.addEventListener('click', () => editServer(node.dataset.edit)));
+    list.querySelectorAll('input[type=checkbox]').forEach(input => input.addEventListener('change', () => { const item = servers.find(s => s.id === input.id.slice(5)); if (item) item.selected = input.checked; $('select-all').checked = servers.length > 0 && servers.every(s => s.selected); }));
+  }
+  function fillForm(server = null) {
+    const value = server || {id:'',name:'',host:'',port:22,user:'',key_path:'',directory:'',enabled:true,update_command:'',start_command:'',stop_command:''};
+    const inputIds = {id:'f-id',name:'f-name',host:'f-host',port:'f-port',user:'f-user',key_path:'f-key',directory:'f-directory',enabled:'f-enabled',update_command:'f-update',start_command:'f-start',stop_command:'f-stop'};
+    for (const key of fields) {
+      const input = $(inputIds[key]);
+      if (!input) continue;
+      if (key === 'enabled') input.value = value.enabled ? '1':'0';
+      else input.value = value[key] ?? '';
+    }
+    $('f-update').value = value.update_command || '';
+    $('f-start').value = value.start_command || '';
+    $('f-stop').value = value.stop_command || '';
+    $('form-title').textContent = server ? `Server: ${server.name}` : 'New server';
+    $('btn-delete').hidden = !server;
+    setStatus('');
+  }
+  function editServer(id) { selectedId = id; fillForm(servers.find(server => server.id === id)); renderList(); }
+  function formData() {
+    return {id:$('f-id').value || undefined,name:$('f-name').value.trim(),host:$('f-host').value.trim(),port:Number($('f-port').value),user:$('f-user').value.trim(),key_path:$('f-key').value.trim(),directory:$('f-directory').value.trim(),enabled:$('f-enabled').value === '1',update_command:$('f-update').value.trim(),start_command:$('f-start').value.trim(),stop_command:$('f-stop').value.trim()};
+  }
+  async function load() {
+    try {
+      const response = await call();
+      const selection = new Map(servers.map(s => [s.id,!!s.selected]));
+      servers = response.servers.map(s => ({...s,selected:selection.get(s.id) ?? true}));
+      renderList();
+      if (selectedId) { const current = servers.find(s => s.id === selectedId); if (current) fillForm(current); else {selectedId='';fillForm();} }
+    } catch (error) { setStatus(error.message); $('server-list').innerHTML = `<div class="ssh-empty">${esc(error.message)}</div>`; }
+  }
+  async function save() {
+    const item = formData();
+    const index = servers.findIndex(s => s.id === item.id);
+    const next = servers.map(s => ({...s}));
+    if (index >= 0) next[index] = {...next[index],...item}; else next.push(item);
+    try {
+      $('btn-save').disabled = true;
+      const response = await call({action:'save',servers:next});
+      const selection = new Map(servers.map(s => [s.id,!!s.selected]));
+      servers = response.servers.map(s => ({...s,selected:selection.get(s.id) ?? true}));
+      selectedId = item.id || servers[servers.length-1]?.id || '';
+      setStatus('Settings saved.', true);
+      renderList();
+      const current = servers.find(s => s.id === selectedId); if (current) fillForm(current);
+    } catch (error) { setStatus(error.message); }
+    finally { $('btn-save').disabled = false; }
+  }
+  function chosenIds() { return servers.filter(s => s.selected && s.enabled).map(s => s.id); }
+  async function run(action, ids = chosenIds()) {
+    if (!ids.length) { $('operation-results').innerHTML = '<div class="ssh-result bad">Select at least one enabled server.</div>'; return; }
+    const label = {update:'server update',start:'server start',stop:'server stop'}[action];
+    if (!await EditorCore.Page.confirm(`Run ${label} over SSH on ${ids.length} server(s)?`)) return;
+    busy = true;
+    document.querySelectorAll('[data-action]').forEach(button => button.disabled = true);
+    $('operation-results').innerHTML = '<div class="ssh-result">SSH operation is running…</div>';
+    try {
+      const response = await call({action,ids});
+      $('operation-results').innerHTML = response.results.map(result => `<div class="ssh-result${result.ok?'':' bad'}"><b>${esc(result.name)}</b>: ${esc(result.message)}</div>`).join('');
+    } catch (error) { $('operation-results').innerHTML = `<div class="ssh-result bad">${esc(error.message)}</div>`; }
+    finally { busy = false; document.querySelectorAll('[data-action]').forEach(button => button.disabled = false); }
+  }
+  $('server-form').addEventListener('submit', event => {event.preventDefault();save();});
+  $('btn-add').addEventListener('click', () => {selectedId='';fillForm();renderList();$('f-name').focus();});
+  $('btn-new-form').addEventListener('click', () => {selectedId='';fillForm();renderList();});
+  $('btn-refresh').addEventListener('click', load);
+  $('btn-delete').addEventListener('click', async () => {
+    if (!selectedId || !await EditorCore.Page.confirm('Delete this server from the collection?')) return;
+    try { const next=servers.filter(s=>s.id!==selectedId); await call({action:'save',servers:next}); servers=next; selectedId='';fillForm();renderList();setStatus('Server deleted.',true); } catch(error){setStatus(error.message);}
+  });
+  $('select-all').addEventListener('change', () => { servers.forEach(s => s.selected=$('select-all').checked); renderList(); });
+  document.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => run(button.dataset.action)));
+  fillForm(); load();
+})();
+</script>
+</body>
+</html>

@@ -294,6 +294,7 @@ class DbRegistration
 		std::string m_PasswordSalt{};
 		std::string m_Nickname{};
 		std::string m_RegisteredIP{};
+		std::string m_Language{};
 	};
 	using CRegistrationContextPtr = std::shared_ptr<DbAsync::CContext<CRegistrationPayload>>;
 
@@ -372,8 +373,8 @@ class DbRegistration
 	{
 		const auto& Data = pContext->Data();
 		Database->Execute<DB::INSERT>([pContext](bool Updated) { OnInsertAccount(pContext, Updated); },
-			"tw_accounts", "(Username, Password, PasswordSalt, RegisterDate, RegisteredIP) VALUES ('{}', '{}', '{}', UTC_TIMESTAMP(), '{}')",
-			Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt, Data.m_RegisteredIP);
+			"tw_accounts", "(Username, Password, PasswordSalt, RegisterDate, RegisteredIP, Language) VALUES ('{}', '{}', '{}', UTC_TIMESTAMP(), '{}', '{}')",
+			Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt, Data.m_RegisteredIP, Data.m_Language);
 
 	}
 
@@ -442,8 +443,9 @@ public:
 		char aSalt[32] = { 0 };
 		secure_random_password(aSalt, sizeof(aSalt), 24);
 		const auto AccountPasswordHash = CAccountManager::HashPassword(Pass, aSalt);
+		const std::string Language = pPlayer->GetLanguage();
 		auto pContext = DbAsync::MakeContext<DbRegistration::CRegistrationPayload>(ClientID,
-			DbRegistration::CRegistrationPayload { pMgr, 0, Login, Pass, AccountPasswordHash, aSalt, Nick, RegisterIP });
+			DbRegistration::CRegistrationPayload { pMgr, 0, Login, Pass, AccountPasswordHash, aSalt, Nick, RegisterIP, Language });
 		pPlayer->GetSharedData().m_pAuthorizationAttempt = pContext;
 		auto pLookup = Database->Prepare<DB::SELECT>("d.ID, a.Username, a.TimeoutCode", "tw_accounts_data d LEFT JOIN tw_accounts a ON a.ID = d.ID", "WHERE d.Nick = '{}' LIMIT 1", Nick);
 		pLookup->AtExecute([pContext](ResultPtr pRes) { OnLookup(pContext, pRes); });

@@ -297,7 +297,7 @@ void CServer::SetClientLanguage(int ClientID, const char* pLanguage)
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
 		return;
 
-	if(!pLanguage || !pLanguage[0])
+	if(!pLanguage || !pLanguage[0] || (m_pLocalization && !m_pLocalization->HasLanguage(pLanguage)))
 		pLanguage = GetDefaultLanguage();
 
 	str_copy(m_aClients[ClientID].m_aLanguage, pLanguage, sizeof(m_aClients[ClientID].m_aLanguage));
