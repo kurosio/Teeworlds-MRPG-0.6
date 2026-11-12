@@ -228,6 +228,13 @@ else
   echo "[bridge] SKIP_INSTALL=1 -> skipping dependency installation."
 fi
 
+# the discord bridge reads discord/bridge.cfg (or $DISCORD_BRIDGE_CONFIG); fail before starting anything
+echo "[bridge] checking discord bridge config..."
+(
+  cd "$DISCORD_DIR"
+  "$PYTHON" main.py --check-config
+) || { echo "[bridge] fix the discord bridge config (template: $DISCORD_DIR/bridge.cfg.example)"; exit 1; }
+
 echo "[bridge] starting skins_api on http://$HOST:$PORT ..."
 (
   cd "$SKINS_DIR"

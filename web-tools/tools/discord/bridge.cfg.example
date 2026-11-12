@@ -1,0 +1,107 @@
+# Teeworlds <-> Discord bridge. Copy to bridge.cfg (chmod 600) and edit:
+#   python3 main.py                  (reads bridge.cfg next to main.py)
+#   python3 main.py /path/to/bridge.cfg
+#   python3 main.py --check-config   (validate and list the servers)
+# One bridge process serves every game server listed below: their chat goes to
+# one Discord channel, each message under the tag of its server, and a message
+# written in that channel is said on all servers at once.
+# Comments are whole lines starting with # or ; (a # inside a value is kept).
+# Environment overrides: DISCORD_BOT_TOKEN, ECON_PASSWORD (default econ
+# password), DISCORD_BRIDGE_CONFIG (config path).
+
+[discord]
+# Bot token (Developer Portal -> Bot). Enable "Message Content Intent" there.
+token = YOUR_DISCORD_BOT_TOKEN
+# Channel the servers are bridged to. The bot needs Send Messages and Manage
+# Webhooks in it (without the webhook it falls back to plain bot messages).
+channel_id = 552211416841584656
+# Messages starting with this prefix are not relayed to the servers.
+#command_prefix = !
+# Role allowed to use /bridge_servers, /bridge_mute, /bridge_unmute and
+# /bridge_mutelist. Not set = members with the Administrator permission.
+#admin_role_id = 123456789012345678
+#webhook_name = Teeworlds Bridge
+# Register the slash commands on every start.
+#sync_commands = true
+
+[bridge]
+# What a Discord message is prefixed with in the game chat: "[DS] Author: text".
+# The bridge also uses it to ignore its own messages coming back from the servers.
+#discord_tag = [DS]
+# Longest game chat line; longer Discord messages are split into several lines.
+#max_message_length = 128
+# Discord messages are cut to this length before they are sent to the servers.
+#max_discord_message_length = 300
+# Game chat waiting for Discord; when it overflows the oldest messages are dropped.
+#queue_size = 200
+#webhook_send_timeout = 10
+#player_cache_timeout = 3
+# skins_api endpoint used for the avatars (it must be reachable by Discord).
+#skin_api_url = http://127.0.0.1:8000/render
+#server_skin = bowlingball
+#unknown_skin = default
+
+[status]
+# Channel with the status message (one embed per server that has game_address).
+# Not set = no status message; flags and skins of the players still work.
+channel_id = 536497172728774667
+# Existing status message to edit; not set = found among the pins or sent anew.
+#message_id =
+#update_interval_minutes = 2
+#master_url = https://master1.ddnet.org/ddnet/15/servers.json
+#show_join_button = true
+# Link of a player name in the status message, {name} is the nickname.
+# Leave empty (player_url =) for plain names.
+#player_url = https://ddnet.org/players/{name}
+
+[econ]
+# Defaults for every server below; a server may override host and password.
+host = 127.0.0.1
+password = CHANGE_ME
+#connect_timeout = 10
+#auth_timeout = 5
+# Seconds of silence after which the connection is probed.
+#read_timeout = 60
+#send_timeout = 5
+# Seconds between reconnect attempts. After a rejected password the delay
+# doubles up to reconnect_delay_max (the server bans repeated wrong passwords).
+#reconnect_delay = 15
+#reconnect_delay_max = 300
+
+[logging]
+# Relative to this file. Leave empty (file =) to log to the console only.
+#file = bridge.log
+#level = INFO
+#status_level = INFO
+
+# --- game servers -------------------------------------------------------------
+# One [server:TAG] section per game server. TAG (1-16 characters, no spaces) is
+# shown on Discord in front of the nickname: "[EU] nickname". Each server needs
+# the external console enabled in its autoexec:
+#   ec_port 7310
+#   ec_password "CHANGE_ME"
+#   ec_bindaddr "localhost"   (anything else: firewall the port)
+#
+#   econ_port      ec_port of the server (required)
+#   econ_host      default: host from [econ]
+#   econ_password  default: password from [econ]
+#   game_address   public ip:port as registered on the master server; used for
+#                  the status message and for the flags/skins of the players
+#   name           name in the status message and /bridge_servers (default: TAG)
+#   enabled        false = keep the section, do not connect
+
+[server:EU]
+name = Europe
+econ_port = 7310
+game_address = 103.27.156.253:8310
+
+#[server:RU]
+#name = Russia
+#econ_host = 10.0.0.2
+#econ_port = 7310
+#econ_password = another-password
+#game_address = 203.0.113.10:8310
+
+#[server:CN]
+#econ_port = 7311
+#enabled = false

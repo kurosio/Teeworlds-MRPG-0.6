@@ -2,8 +2,7 @@
 import re
 import urllib.parse
 import logging
-from typing import Optional, Dict
-from config import SKIN_API_URL
+from typing import Dict, List, Optional
 
 logger = logging.getLogger("TeeworldsBridge.Utils")
 
@@ -296,12 +295,12 @@ def normalize_nickname(nickname: str) -> str:
     return normalized
 
 
-def get_skin_url(skin_name: str, body_color: int, feet_color: int) -> str:
+def get_skin_url(base_url: str, skin_name: str, body_color: int = 0, feet_color: int = 0) -> str:
     """Generates a URL to render a Teeworlds skin via skins_api."""
     if not skin_name:
         skin_name = "default"
 
-    base_url = (SKIN_API_URL or "http://127.0.0.1:8000/render").rstrip("/")
+    base_url = (base_url or "http://127.0.0.1:8000/render").rstrip("/")
     params = {"name": skin_name}
     if int(body_color or 0) != 0 or int(feet_color or 0) != 0:
         params["body"] = str(body_color)
@@ -317,3 +316,68 @@ def clean_message(text: str) -> str:
     """Removes non-printable characters except common whitespace."""
     cleaned = text.replace('\x00', '')
     return ''.join(ch for ch in cleaned if ch.isprintable() or ch in '\n\r\t').strip()
+
+
+def split_message(text: str, limit: int) -> List[str]:
+    """Splits text into chunks of at most `limit` characters, preferring to break at spaces."""
+    text = " ".join(text.split())
+    if limit <= 0 or not text:
+        return [text] if text else []
+
+    chunks: List[str] = []
+    while len(text) > limit:
+        cut = text.rfind(" ", 0, limit + 1)
+        if cut < limit // 2:
+            cut = limit  # no reasonable break point: cut the word
+        chunks.append(text[:cut].rstrip())
+        text = text[cut:].lstrip()
+    if text:
+        chunks.append(text)
+    return chunks
+
+
+def format_game_lines(discord_tag: str, author: str, content: str, max_length: int) -> List[str]:
+    """
+    Formats a Discord message as game chat lines: "<tag> <author>: <text>".
+
+    A long message becomes several lines and every one of them starts with the tag, so the
+    bridge recognises all of them as its own when the server echoes them back.
+    """
+    author = clean_message(author).replace(":", " ")
+    author = " ".join(author.split()) or "DiscordUser"
+
+    # the prefix may take at most half of a line
+    max_author_length = max(max_length // 2 - len(discord_tag) - 3, 4)
+    if len(author) > max_author_length:
+        author = author[:max_author_length - 1].rstrip() + "…"
+
+    prefix = f"{discord_tag} {author}: "
+    body_limit = max(max_length - len(prefix), 8)
+    return [prefix + chunk for chunk in split_message(content, body_limit)]
+
+
+def format_discord_username(label: str, nickname: str, suffix: str = "", limit: int = 80) -> str:
+    """Builds the webhook name "<[TAG]> <nickname> (<suffix>)" within Discord's length limit."""
+    tail = f" ({suffix})" if suffix else ""
+    head = f"{label} " if label else ""
+    room = limit - len(head) - len(tail)
+    if room < 4:
+        return f"{head}{nickname}"[:limit]
+    if len(nickname) > room:
+        nickname = nickname[:room - 1] + "…"
+    return f"{head}{nickname}{tail}"
+
+
+def format_duration(seconds: float) -> str:
+    """Short human readable duration: 42s, 5m, 3h 12m, 2d 4h."""
+    seconds = int(max(seconds, 0))
+    if seconds < 60:
+        return f"{seconds}s"
+    minutes, _ = divmod(seconds, 60)
+    if minutes < 60:
+        return f"{minutes}m"
+    hours, minutes = divmod(minutes, 60)
+    if hours < 24:
+        return f"{hours}h {minutes}m"
+    days, hours = divmod(hours, 24)
+    return f"{days}d {hours}h"

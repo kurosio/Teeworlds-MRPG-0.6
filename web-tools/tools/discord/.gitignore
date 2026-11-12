@@ -1,0 +1,5 @@
+# local configuration (token, econ passwords) and runtime state
+bridge.cfg
+bridge.log
+muted_players.json
+bridge_disabled.json

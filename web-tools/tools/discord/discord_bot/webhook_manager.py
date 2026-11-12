@@ -5,42 +5,32 @@ import aiohttp
 from typing import Optional
 import asyncio
 
-from config import WEBHOOK_NAME
-
 logger = logging.getLogger("TeeworldsBridge.WebhookManager")
 
 class WebhookManager:
     """Handles finding, creating, and sending messages via a Discord webhook."""
 
-    def __init__(self, bot: discord.Client, http_session: aiohttp.ClientSession):
+    def __init__(self, bot: discord.Client, http_session: aiohttp.ClientSession, webhook_name: str):
         self.bot = bot
         self.http_session = http_session
+        self.webhook_name = webhook_name
         self.webhook: Optional[discord.Webhook] = None
         self._target_channel_id: Optional[int] = None
         self._target_channel: Optional[discord.TextChannel] = None
         self._init_lock = asyncio.Lock()
         self._send_lock = asyncio.Lock()
 
-    async def initialize(self, channel_id: int):
+    async def initialize(self, channel: discord.TextChannel) -> bool:
         """Sets the target channel and attempts to find or create the webhook."""
         async with self._init_lock:
-            if self.webhook and self._target_channel_id == channel_id:
-                logger.debug(f"WebhookManager already initialized for channel {channel_id}.")
+            if self.webhook and self._target_channel_id == channel.id:
+                logger.debug(f"WebhookManager already initialized for channel {channel.id}.")
                 return True
 
-            self._target_channel_id = channel_id
-            logger.debug(f"WebhookManager: Attempting initialization for channel ID {channel_id}")
-            channel = self.bot.get_channel(channel_id)
-
-            if not isinstance(channel, discord.TextChannel):
-                self._target_channel = None
-                self.webhook = None
-                return False
-
+            self._target_channel_id = channel.id
             self._target_channel = channel
-            logger.info(f"Webhook Manager targeting channel: #{channel.name} ({channel_id})")
-            success = await self._find_or_create_webhook()
-            return success
+            logger.info(f"Webhook Manager targeting channel: #{channel.name} ({channel.id})")
+            return await self._find_or_create_webhook()
 
 
     async def _find_or_create_webhook(self) -> bool:
@@ -62,16 +52,15 @@ class WebhookManager:
             webhooks = await self._target_channel.webhooks()
             logger.debug(f"WebhookManager: Fetched {len(webhooks)} webhooks.")
             for wh in webhooks:
-                if wh.name == WEBHOOK_NAME and wh.user == self.bot.user:
+                if wh.name == self.webhook_name and wh.user == self.bot.user:
                     self.webhook = wh
                     logger.info(f"WebhookManager: Found existing webhook '{wh.name}' ({wh.id}).")
                     return True
 
             # creating new webhook
-            logger.info(f"WebhookManager: Creating new webhook '{WEBHOOK_NAME}'...")
-            logger.debug("WebhookManager: Creating webhook via API...")
+            logger.info(f"WebhookManager: Creating new webhook '{self.webhook_name}'...")
             self.webhook = await self._target_channel.create_webhook(
-                name=WEBHOOK_NAME,
+                name=self.webhook_name,
                 reason="Teeworlds Bridge Webhook"
             )
             logger.info(f"WebhookManager: Created webhook '{self.webhook.name}' ({self.webhook.id}).")
@@ -91,14 +80,14 @@ class WebhookManager:
     async def send(self, username: str, content: str, avatar_url: Optional[str] = None):
         """Sends a message using the managed webhook."""
         async with self._init_lock:
-             webhook_to_use = self.webhook
-             channel_id = self._target_channel_id
+            webhook_to_use = self.webhook
+            channel = self._target_channel
 
         if not webhook_to_use:
-            if channel_id is not None:
-                logger.warning(f"WebhookManager: Webhook unavailable. Trying reinitialize for channel {channel_id}.")
+            if channel is not None:
+                logger.warning(f"WebhookManager: Webhook unavailable. Trying reinitialize for channel {channel.id}.")
                 try:
-                    await self.initialize(channel_id)
+                    await self.initialize(channel)
                 except Exception as e:
                     logger.error(f"WebhookManager: Reinitialize failed: {e}")
                 async with self._init_lock:

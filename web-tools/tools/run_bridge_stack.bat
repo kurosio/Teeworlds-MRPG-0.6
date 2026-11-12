@@ -49,6 +49,17 @@ if "%SKIP_INSTALL%"=="1" (
   )
 )
 
+REM The discord bridge reads discord\bridge.cfg (or %%DISCORD_BRIDGE_CONFIG%%); fail before starting anything
+echo [run_bridge_stack] Checking discord bridge config...
+pushd "%DISCORD_DIR%"
+"%PYTHON_CMD%" main.py --check-config
+if errorlevel 1 (
+  popd
+  echo [run_bridge_stack] Fix the discord bridge config ^(template: %DISCORD_DIR%\bridge.cfg.example^).
+  exit /b 1
+)
+popd
+
 echo [run_bridge_stack] Starting skins_api on http://%BRIDGE_HOST%:%BRIDGE_PORT% ...
 start "skins_api" /min cmd /c "cd /d "%SKINS_DIR%" && "%PYTHON_CMD%" -m uvicorn main:app --host %BRIDGE_HOST% --port %BRIDGE_PORT%"
 

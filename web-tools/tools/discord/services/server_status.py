@@ -1,20 +1,49 @@
 # services/server_status.py
+"""
+Server status of every configured game server, taken from the master server.
+
+The master list is downloaded once per cycle and all servers are looked up in
+it. The players of each server are cached per server, the bridge uses that
+cache for flags and skins.
+"""
 import asyncio
-import aiohttp
 import logging
-import urllib.parse
-from typing import Optional, Dict, Any, Tuple, List, Union
-from config import MASTER_SERVER_API_URL, GAME_SERVER_ADDRESS, STATUS_UPDATE_LOG_LEVEL
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+import aiohttp
+
+from config import BridgeConfig, ServerConfig
 from utils.helpers import normalize_nickname
 
-class ServerStatusService:
-    """Fetches and processes Teeworlds server status from the master server."""
+PlayerCache = Dict[str, Dict[str, Any]]
 
-    def __init__(self, session: aiohttp.ClientSession):
+
+@dataclass(frozen=True)
+class ServerStatus:
+    """Result of one status cycle for one server."""
+    server: ServerConfig
+    found: bool = False                              # listed on the master server
+    info: Optional[Dict[str, Any]] = None            # "info" object of the master entry
+    players: PlayerCache = field(default_factory=dict)
+    master_available: bool = True                    # False when the master list could not be fetched
+
+
+def strip_address_scheme(address: str) -> str:
+    """'tw-0.6+udp://1.2.3.4:8303' -> '1.2.3.4:8303'."""
+    return address.split("://", 1)[-1].strip().lower()
+
+
+class ServerStatusService:
+    """Fetches the master server list and keeps per-server player caches."""
+
+    def __init__(self, session: aiohttp.ClientSession, config: BridgeConfig):
         self.http_session = session
+        self.master_url = config.status.master_url
+        self.servers: List[ServerConfig] = [server for server in config.servers if server.game_address]
         self.logger = logging.getLogger("TeeworldsBridge.StatusService")
-        self.logger.setLevel(STATUS_UPDATE_LOG_LEVEL)
-        self.player_cache: Dict[str, Dict[str, Any]] = {}
+        self.logger.setLevel(config.logging.status_level)
+        self._player_caches: Dict[str, PlayerCache] = {}
         self._cache_lock = asyncio.Lock()
 
     @staticmethod
@@ -38,148 +67,114 @@ class ServerStatusService:
             if feet_color is None:
                 feet_color = skin_raw.get("color_feet", skin_raw.get("feet_color", 0))
 
-        return int(body_color or 0), int(feet_color or 0)
+        try:
+            return int(body_color or 0), int(feet_color or 0)
+        except (TypeError, ValueError):
+            return 0, 0
 
     async def _fetch_master_server_data(self) -> Optional[Union[Dict, List]]:
         """Fetches the full server list from the master server API."""
         try:
-            self.logger.debug(f"Fetching server list from {MASTER_SERVER_API_URL}")
-            async with self.http_session.get(MASTER_SERVER_API_URL, timeout=20) as response:
-                self.logger.debug(f"API response status: {response.status}")
-                response.raise_for_status() # Вызовет исключение для 4xx/5xx
+            self.logger.debug(f"Fetching server list from {self.master_url}")
+            async with self.http_session.get(self.master_url, timeout=aiohttp.ClientTimeout(total=20)) as response:
+                response.raise_for_status()
 
-                content_type = response.content_type.lower()
-                if 'application/json' not in content_type:
-                    self.logger.warning(f"API returned non-JSON content type: {content_type}")
-                    text = await response.text()
-                    self.logger.warning(f"API Response Text (first 500 chars): {text[:500]}")
+                content_type = (response.content_type or "").lower()
+                if "json" not in content_type:
+                    self.logger.warning(f"Master server returned non-JSON content type: {content_type}")
                     return None
 
-                data = await response.json()
-                self.logger.debug(f"Successfully fetched and parsed JSON data from API.")
-                return data
+                return await response.json(content_type=None)
 
         except aiohttp.ClientResponseError as e:
-             self.logger.error(f"API HTTP error fetching server list: Status {e.status}, Message: {e.message}, URL: {e.request_info.url}")
-             return None
-        except aiohttp.ClientConnectionError as e:
-             self.logger.error(f"API connection error fetching server list: {e}")
-             return None
+            self.logger.error(f"Master server HTTP error: status {e.status}, message: {e.message}")
+        except aiohttp.ClientError as e:
+            self.logger.error(f"Master server connection error: {e}")
         except asyncio.TimeoutError:
-            self.logger.error(f"API request timed out fetching server list ({MASTER_SERVER_API_URL}).")
-            return None
+            self.logger.error(f"Master server request timed out ({self.master_url}).")
         except Exception as e:
             self.logger.error(f"Unexpected error fetching/parsing master server data: {e}", exc_info=True)
-            return None
+        return None
 
+    @staticmethod
+    def _index_by_address(data: Optional[Union[Dict, List]]) -> Dict[str, Dict[str, Any]]:
+        """Maps 'host:port' to the master entry of the server registered with that address."""
+        servers_list = data.get("servers") if isinstance(data, dict) else data if isinstance(data, list) else None
+        index: Dict[str, Dict[str, Any]] = {}
+        for entry in servers_list or []:
+            if not isinstance(entry, dict):
+                continue
+            for address in entry.get("addresses") or []:
+                if isinstance(address, str):
+                    index.setdefault(strip_address_scheme(address), entry)
+        return index
 
-    def _find_our_server(self, data: Optional[Union[Dict, List]]) -> Tuple[Optional[Dict[str, Any]], bool]:
-        """Finds the specific game server info within the master server data."""
-        if not data: return None, False
+    def _build_player_cache(self, server_info: Optional[Dict[str, Any]]) -> PlayerCache:
+        """Builds the player cache of one server from its master info."""
+        players: PlayerCache = {}
+        clients = server_info.get("clients") if isinstance(server_info, dict) else None
+        for client in clients or []:
+            if not isinstance(client, dict):
+                continue
+            player_name = client.get("name")
+            if not player_name:
+                continue
 
-        servers_list = data.get("servers") if isinstance(data, dict) else data if isinstance(data, list) else []
-        if not servers_list:
-            self.logger.warning("Master server data is valid but contains no 'servers' list or list is empty.")
-            return None, False
+            skin_raw = client.get("skin", {})
+            body_color, feet_color = self._resolve_skin_colors(client, skin_raw)
+            players[normalize_nickname(player_name)] = {
+                "name": player_name,
+                "clan": client.get("clan", ""),
+                "country": client.get("country", -1),
+                "skin": skin_raw,
+                "skin_name": self._resolve_skin_name(skin_raw),
+                "body_color": body_color,
+                "feet_color": feet_color,
+            }
+        return players
 
-        target_addr_simple = GAME_SERVER_ADDRESS
-        target_addr_full = f"tw-0.6+udp://{GAME_SERVER_ADDRESS}"
+    async def update_status(self) -> List[ServerStatus]:
+        """Fetches the master list once and returns the status of every server with a game address."""
+        if not self.servers:
+            return []
 
-        self.logger.debug(f"Searching for server address: {target_addr_simple} or {target_addr_full}")
-
-        for server in servers_list:
-            addresses = server.get("addresses", [])
-            if target_addr_full in addresses or target_addr_simple in addresses:
-                server_name_log = server.get("info", {}).get("name", "Unnamed")
-                self.logger.debug(f"Found matching server: '{server_name_log}' at {GAME_SERVER_ADDRESS}")
-                server_info = server.get("info")
-                if server_info:
-                    return server_info, True
-                else:
-                    self.logger.warning(f"Server found but 'info' field is missing or null.")
-                    return None, True
-
-        self.logger.warning(f"Server address {GAME_SERVER_ADDRESS} not found in the master server list.")
-        return None, False
-
-
-    async def _update_player_cache(self, server_info: Optional[Dict]):
-        """Updates the internal player cache based on server info."""
-        new_player_data: Dict[str, Dict[str, Any]] = {}
-        log_sample = True
-
-        # update cache
-        if server_info and "clients" in server_info:
-            clients = server_info.get("clients", [])
-            if not clients:
-                 self.logger.debug("Server info present but no clients listed.")
-            else:
-                for client in clients:
-                    player_name = client.get("name")
-                    if player_name:
-                        if log_sample:
-                            self.logger.debug(f"Sample client data from API: {client}")
-                            log_sample = False
-
-                        normalized_name = normalize_nickname(player_name)
-                        skin_raw = client.get("skin", {})
-                        skin_name = self._resolve_skin_name(skin_raw)
-                        body_color, feet_color = self._resolve_skin_colors(client, skin_raw)
-
-                        new_player_data[normalized_name] = {
-                            "name": player_name,
-                            "clan": client.get("clan", ""),
-                            "country": client.get("country", -1),
-                            "skin": skin_raw,
-                            "skin_name": skin_name,
-                            "body_color": body_color,
-                            "feet_color": feet_color,
-                        }
-        else:
-            self.logger.info("No server info or no clients section, clearing player cache.")
-
-        async with self._cache_lock:
-             updated_count = len(new_player_data)
-             old_count = len(self.player_cache)
-             self.player_cache = new_player_data
-             
-             if old_count != updated_count:
-                 self.logger.info(f"Player cache updated: {old_count} -> {updated_count} players.")
-             elif updated_count > 0:
-                 self.logger.debug(f"Player cache refreshed: {updated_count} players (count unchanged).")
-             else:
-                 self.logger.debug("Player cache remains empty.")
-
-
-    async def update_status(self) -> Tuple[Optional[Dict[str, Any]], bool]:
-        """Fetches master server data, finds our server, updates cache, and returns results."""
-        self.logger.info("Starting server status update cycle...")
+        self.logger.debug("Starting server status update cycle...")
         master_data = await self._fetch_master_server_data()
-        server_info, server_found = self._find_our_server(master_data)
-        await self._update_player_cache(server_info)
-        self.logger.info("Server status update cycle finished.")
-        return server_info, server_found
+        master_available = master_data is not None
+        index = self._index_by_address(master_data)
+        if master_available and not index:
+            self.logger.warning("Master server data contains no servers.")
 
+        statuses: List[ServerStatus] = []
+        new_caches: Dict[str, PlayerCache] = {}
+        for server in self.servers:
+            entry = index.get(strip_address_scheme(server.game_address))
+            info = entry.get("info") if entry else None
+            if not isinstance(info, dict):
+                info = None
+            players = self._build_player_cache(info)
+            new_caches[server.key] = players
+            statuses.append(ServerStatus(server=server, found=entry is not None, info=info,
+                                         players=players, master_available=master_available))
+            if master_available and entry is None:
+                self.logger.warning(f"{server.label} {server.game_address} is not on the master server list.")
 
-    async def get_player_skin_info(self, normalized_nickname: str) -> Optional[Dict[str, Any]]:
-         """Retrieves skin information for a player from the cache."""
-         async with self._cache_lock:
-            player_data = self.player_cache.get(normalized_nickname)
-
-         if player_data:
-             self.logger.debug(f"Cache hit for skin info: '{normalized_nickname}'")
-             skin_name = str(player_data.get("skin_name", "default") or "default")
-             return {
-                 "skin_name": skin_name,
-                 "body_color": player_data.get("body_color", 0),
-                 "feet_color": player_data.get("feet_color", 0),
-             }
-         else:
-             self.logger.debug(f"Cache miss for skin info: '{normalized_nickname}'")
-             return None
-
-
-    async def get_player_cache(self) -> Dict[str, Dict[str, Any]]:
-        """Returns a copy of the current player cache."""
         async with self._cache_lock:
-            return self.player_cache.copy()
+            if master_available:
+                self._player_caches = new_caches
+            # a failed fetch keeps the previous caches: flags/skins stay until the next good cycle
+
+        summary = ", ".join(f"{status.server.label} {len(status.players)}" for status in statuses)
+        self.logger.info(f"Server status updated (players online: {summary}).")
+        return statuses
+
+    async def get_player(self, tag: str, nickname: str) -> Optional[Dict[str, Any]]:
+        """Returns cached data of a player of the given server (None when unknown)."""
+        async with self._cache_lock:
+            cache = self._player_caches.get(tag.casefold(), {})
+            return cache.get(normalize_nickname(nickname)) or cache.get(nickname)
+
+    async def get_player_cache(self, tag: str) -> PlayerCache:
+        """Returns a copy of the player cache of the given server."""
+        async with self._cache_lock:
+            return dict(self._player_caches.get(tag.casefold(), {}))

@@ -1,23 +1,24 @@
 # models/econ.py
-from typing import Union, TypedDict, Literal
+"""Events parsed from the Econ output of a game server."""
+from dataclasses import dataclass
+from typing import Union
 
-class EconChatMessage(TypedDict):
-    type: Literal["chat"]
+SYSTEM_NICKNAME = "***"
+
+
+@dataclass(frozen=True)
+class EconChatMessage:
+    """A public chat line: a player message or a server ('***') message."""
     nickname: str
     message: str
+    is_system: bool = False
 
-class EconJoinMessage(TypedDict): # Placeholder, currently unused
-    type: Literal["join"]
+
+@dataclass(frozen=True)
+class EconBridgeToggle:
+    """A player switched the relay of his own messages on/off (/bridge_enable, /bridge_disable)."""
     nickname: str
+    enabled: bool
 
-class EconLeaveMessage(TypedDict): # Placeholder, currently unused
-    type: Literal["leave"]
-    nickname: str
-    reason: str
 
-class EconOtherMessage(TypedDict):
-    type: Literal["other"]
-    raw: str
-
-# Union type for easier type checking in handlers
-EconMessage = Union[EconChatMessage, EconJoinMessage, EconLeaveMessage, EconOtherMessage, None]
+EconEvent = Union[EconChatMessage, EconBridgeToggle]
