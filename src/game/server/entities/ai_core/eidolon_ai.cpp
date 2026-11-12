@@ -41,12 +41,6 @@ void CEidolonAI::OnDie(int Killer, int Weapon)
 	if (!pOwner || ItemID <= NOPE)
 		return;
 
-	if (auto* pItem = pOwner->GetItem(ItemID); pItem && pItem->HasItem() && pItem->GetDurability() > 0)
-	{
-		pItem->SetDurability(0);
-		GS()->Chat(pOwner->GetCID(), "Your eidolon has fallen. Repair its item or respawn to summon it again.");
-	}
-
 	pOwner->GetSharedData().m_PendingEidolonItemBreaks.insert(ItemID);
 	m_pPlayer->SetEidolonDead();
 }

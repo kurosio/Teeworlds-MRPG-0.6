@@ -275,8 +275,21 @@ void CPlayer::ProcessEidolonDeaths()
 	GetSharedData().m_PendingEidolonItemBreaks.clear();
 	for(int ItemID : Pending)
 	{
-		if(auto* pEidolon = GetEidolon(); pEidolon && pEidolon->m_EidolonItemID == ItemID)
-			TryRemoveEidolon();
+		auto* pEidolon = GetEidolon();
+		if (!pEidolon || pEidolon->m_EidolonItemID != ItemID)
+			continue;
+
+		const auto& ItemDescriptions = CItemDescription::Data();
+		if (ItemDescriptions.contains(ItemID))
+		{
+			if (auto* pItem = GetItem(ItemID); pItem->HasItem() && pItem->GetDurability() > 0)
+			{
+				pItem->SetDurability(0);
+				GS()->Chat(GetCID(), "Your eidolon has fallen. Repair its item or respawn to summon it again.");
+			}
+		}
+
+		TryRemoveEidolon();
 	}
 }
 
