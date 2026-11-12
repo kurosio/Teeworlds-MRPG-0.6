@@ -1326,6 +1326,8 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 		delete pPlayer;
 		pPlayer = nullptr;
 	}
+
+	m_aBroadcastStates[ClientID] = {};
 }
 
 void CGS::OnClientDirectInput(int ClientID, void* pInput)
@@ -1434,7 +1436,8 @@ const char* CGS::NetVersion() const { return GAME_NETVERSION; }
 void CGS::OnClearClientData(int ClientID)
 {
 	Core()->OnResetClientData(ClientID);
-	VoteWrapper::Data()[ClientID].clear();
+	VoteWrapper::Data().erase(ClientID);
+	CVoteOptional::Data().erase(ClientID);
 
 	// clear active snap bots for player
 	for(auto& pActiveSnap : DataBotInfo::ms_aDataBot)

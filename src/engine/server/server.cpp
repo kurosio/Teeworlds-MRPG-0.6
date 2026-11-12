@@ -878,22 +878,19 @@ void CServer::DoSnapshot(int WorldID)
 
 int CServer::ClientRejoinCallback(int ClientID, void* pUser)
 {
-	CServer* pThis = (CServer*)pUser;
-
-	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
-	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
-	pThis->m_aClients[ClientID].m_DDNetVersion = VERSION_NONE;
-	pThis->m_aClients[ClientID].m_GotDDNetVersionPacket = false;
-	pThis->m_aClients[ClientID].m_DDNetVersionSettled = false;
-
-	pThis->m_aClients[ClientID].Reset();
-	pThis->SendMap(ClientID);
-	return 0;
+	// A network rejoin proves only that the endpoint has a valid network token,
+	// not that it still represents the same player or account. Tear down the old
+	// game session before accepting start info from the new connection.
+	DelClientCallback(ClientID, "Reconnecting", pUser);
+	return NewClientNoAuthCallback(ClientID, pUser);
 }
 
 int CServer::NewClientNoAuthCallback(int ClientID, void* pUser)
 {
 	CServer* pThis = (CServer*)pUser;
+	int* pIdMap = pThis->GetIdMap(ClientID);
+	memset(pIdMap, -1, sizeof(int) * VANILLA_MAX_CLIENTS);
+	pIdMap[0] = ClientID;
 
 	pThis->GameServer(INITIALIZER_WORLD_ID)->OnClearClientData(ClientID);
 	str_copy(pThis->m_aClients[ClientID].m_aLanguage, pThis->GetDefaultLanguage(), sizeof(pThis->m_aClients[ClientID].m_aLanguage));
