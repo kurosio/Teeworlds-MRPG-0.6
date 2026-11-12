@@ -13,12 +13,10 @@ namespace DbAsync
 	{
 		int m_ClientID { -1 };
 		int m_WorldID { INITIALIZER_WORLD_ID };
+		std::weak_ptr<void> m_pConnectionLifetime;
 
 	public:
-		explicit CContextBase(int ClientID, int WorldID = INITIALIZER_WORLD_ID)
-			: m_ClientID(ClientID), m_WorldID(WorldID == INITIALIZER_WORLD_ID ? ResolveClientWorldID(ClientID) : WorldID)
-		{
-		}
+		explicit CContextBase(int ClientID, int WorldID = INITIALIZER_WORLD_ID);
 
 		int GetClientID() const { return m_ClientID; }
 		int GetWorldID() const { return m_WorldID; }

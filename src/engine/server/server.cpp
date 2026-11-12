@@ -2161,6 +2161,10 @@ int CServer::Run(ILogger* pLogger)
 					}
 				}
 
+				// async safety only by server tick
+				CConectionPool::ProcessCallbacks();
+
+				// game server tick
 				MultiWorlds()->GetWorld(INITIALIZER_WORLD_ID)->GameServer()->OnTickGlobal();
 				for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 				{

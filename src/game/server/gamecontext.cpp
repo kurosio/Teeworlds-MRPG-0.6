@@ -998,7 +998,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 					Chat(ClientCID, "Use: /timeout <code>.");
 				}
 				else
-					Core()->AccountManager()->TryLoginGuestByTimeoutCode(ClientCID, Nickname, SharedData.m_TimeoutCode.c_str(), SharedData.m_GuestLogin.c_str());
+					Core()->AccountManager()->LoginAccountRaw(ClientCID, SharedData.m_GuestLogin.c_str(), SharedData.m_GuestLogin.c_str());
 			}
 			else if(SharedData.m_AuthType == AUTH_TYPE_GUEST)
 			{

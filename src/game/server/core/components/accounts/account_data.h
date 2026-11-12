@@ -224,6 +224,8 @@ struct CAccountSharedData
 {
 	int m_LastKilledByWeapon;
 	CAuctionSlot m_TempAuctionSlot;
+	std::weak_ptr<void> m_pAuthorizationAttempt{};
+	std::shared_ptr<void> m_pConnectionLifetime = std::make_shared<int>(0);
 
 	// guest account data
 	int m_AuthType {};

@@ -26,6 +26,7 @@
 #include "components/accounts/account_listener.h"
 #include "components/inventory/inventory_listener.h"
 
+#include <game/server/core/tools/db_async_context.h>
 #include <teeother/components/localization.h>
 
 namespace
@@ -703,13 +704,14 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 	const auto AsyncEnterRes = Database->Prepare<DB::SELECT>("d.ID, d.Nick, a.Username, a.TimeoutCode",
 		"tw_accounts_data d JOIN tw_accounts a ON a.ID = d.ID", "WHERE d.Nick = '{}'", Nickname.cstr());
 
-	AsyncEnterRes->AtExecute([CapturedNickname = std::string(Nickname.cstr()), ClientID](ResultPtr pRes)
+	auto pContext = DbAsync::MakeContext(ClientID);
+	AsyncEnterRes->AtExecute([pContext, CapturedNickname = std::string(Nickname.cstr()), ClientID](ResultPtr pRes)
 	{
 		auto* pGS = (CGS*)Instance::Server()->GameServerPlayer(ClientID);
 		if(!pGS)
 			return;
 
-		auto* pPlayer = pGS->GetPlayer(ClientID);
+		auto* pPlayer = pContext->GetPlayer();
 		if(!pPlayer)
 			return;
 

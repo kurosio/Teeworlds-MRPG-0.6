@@ -7,6 +7,7 @@
 #include <mariadb/conncpp/Driver.hpp>
 #include <mariadb/conncpp/Exception.hpp>
 #include <mariadb/conncpp/ResultSet.hpp>
+#include <mariadb/conncpp/ResultSetMetaData.hpp>
 #include <mariadb/conncpp/Statement.hpp>
 
 #include <atomic>
@@ -65,8 +66,8 @@ inline bool is_connection_lost(SQLException& e)
 // SECTION: WrapperResultSet Class
 // =================================================================
 
-// WrapperResultSet is a temporary wrapper that owns the Statement and ResultSet.
-// Its lifetime is confined to the scope of a single query execution.
+// Synchronous results own their connector Statement/ResultSet. Async results are
+// detached on the worker and own only copied values when delivered to the game.
 class WrapperResultSet
 {
 public:
@@ -82,28 +83,84 @@ public:
 	WrapperResultSet& operator=(const WrapperResultSet&) = delete;
 	WrapperResultSet(WrapperResultSet&&) = default;
 	WrapperResultSet& operator=(WrapperResultSet&&) = default;
-	explicit operator bool() const { return m_pResult != nullptr; }
+	explicit operator bool() const { return m_Detached || m_pResult != nullptr; }
+
+	// Copy on the SQL worker before its connection is reused. No connector objects
+	// cross into the game thread (even a buffered ResultSet owns a Statement).
+	void Detach()
+	{
+		if(!m_pResult)
+			return;
+
+		auto* pMeta = m_pResult->getMetaData();
+		while(m_pResult->next())
+		{
+			auto& Row = m_Rows.emplace_back();
+			for(unsigned int i = 1; i <= pMeta->getColumnCount(); ++i)
+				Row.emplace_back(pMeta->getColumnLabel(i).c_str(), m_pResult->getString(i).c_str());
+		}
+		m_Detached = true;
+		m_pResult.reset();
+		m_pStmt.reset();
+		m_pConnection.reset();
+	}
 
 	// --- Full accessor implementations ---
-	bool getBoolean(const SQLString& column) const { return m_pResult ? m_pResult->getBoolean(column) : false; }
-	int getInt(const SQLString& column) const { return m_pResult ? m_pResult->getInt(column) : 0; }
-	unsigned int getUInt(const SQLString& column) const { return m_pResult ? m_pResult->getUInt(column) : 0; }
-	int64_t getInt64(const SQLString& column) const { return m_pResult ? m_pResult->getInt64(column) : 0; }
-	uint64_t getUInt64(const SQLString& column) const { return m_pResult ? m_pResult->getUInt64(column) : 0; }
-	double getDouble(const SQLString& column) const { return m_pResult ? m_pResult->getDouble(column) : 0.0; }
-	float getFloat(const SQLString& column) const { return m_pResult ? static_cast<float>(m_pResult->getDouble(column)) : 0.0f; }
-	std::string getString(const SQLString& column) const { return m_pResult ? std::string(m_pResult->getString(column).c_str()) : ""; }
-	std::string getDateTime(const SQLString& column) const { return m_pResult ? std::string(m_pResult->getString(column).c_str()) : ""; }
-	bool next() const { return m_pResult && m_pResult->next(); }
-	size_t rowsCount() const { return m_pResult ? m_pResult->rowsCount() : 0; }
-	size_t getRow() const { return m_pResult ? m_pResult->getRow() : 0; }
+	bool getBoolean(const SQLString& column) const 
+	{ 
+		return m_Detached ? std::strtoll(Value(column).c_str(), nullptr, 10) != 0 : m_pResult ? m_pResult->getBoolean(column) : false; 
+	}
+	int getInt(const SQLString& column) const 
+	{
+		return m_Detached ? static_cast<int>(std::strtoll(Value(column).c_str(), nullptr, 10)) : m_pResult ? m_pResult->getInt(column) : 0; 
+	}
+	unsigned int getUInt(const SQLString& column) const 
+	{
+		return m_Detached ? static_cast<unsigned int>(std::strtoull(Value(column).c_str(), nullptr, 10)) : m_pResult ? m_pResult->getUInt(column) : 0; 
+	}
+	int64_t getInt64(const SQLString& column) const 
+	{ 
+		return m_Detached ? std::strtoll(Value(column).c_str(), nullptr, 10) : m_pResult ? m_pResult->getInt64(column) : 0; 
+	}
+	uint64_t getUInt64(const SQLString& column) const 
+	{ 
+		return m_Detached ? std::strtoull(Value(column).c_str(), nullptr, 10) : m_pResult ? m_pResult->getUInt64(column) : 0; 
+	}
+	double getDouble(const SQLString& column) const 
+	{ 
+		return m_Detached ? std::strtod(Value(column).c_str(), nullptr) : m_pResult ? m_pResult->getDouble(column) : 0.0; 
+	}
+	float getFloat(const SQLString& column) const 
+	{ 
+		return m_Detached ? static_cast<float>(std::strtod(Value(column).c_str(), nullptr)) : m_pResult ? static_cast<float>(m_pResult->getDouble(column)) : 0.0f; 
+	}
+	std::string getString(const SQLString& column) const 
+	{ 
+		return m_Detached ? Value(column) : m_pResult ? std::string(m_pResult->getString(column).c_str()) : ""; 
+	}
+	std::string getDateTime(const SQLString& column) const 
+	{ 
+		return m_Detached ? Value(column) : m_pResult ? std::string(m_pResult->getString(column).c_str()) : ""; 
+	}
+	bool next() const 
+	{
+		return m_Detached ? (++m_Row <= m_Rows.size()) : m_pResult && m_pResult->next(); 
+	}
+	size_t rowsCount() const 
+	{
+		return m_Detached ? m_Rows.size() : m_pResult ? m_pResult->rowsCount() : 0; 
+	}
+	size_t getRow() const 
+	{ 
+		return m_Detached ? m_Row : m_pResult ? m_pResult->getRow() : 0; 
+	}
 
 	nlohmann::json getJson(const SQLString& column) const
 	{
-		if(!m_pResult)
+		if(!*this)
 			return nullptr;
 
-		const std::string jsonString = m_pResult->getString(column).c_str();
+		const std::string jsonString = getString(column).c_str();
 		if(jsonString.empty())
 			return nullptr;
 
@@ -124,10 +181,10 @@ public:
 
 	BigInt getBigInt(const SQLString& column) const
 	{
-		if(!m_pResult)
+		if(!*this)
 			return BigInt();
 
-		const std::string stringValue = m_pResult->getString(column).c_str();
+		const std::string stringValue = getString(column).c_str();
 		if(stringValue.empty())
 			return BigInt();
 
@@ -146,6 +203,19 @@ public:
 	}
 
 private:
+	const std::string& Value(const SQLString& Column) const
+	{
+		const auto& Row = m_Rows.at(m_Row - 1);
+		for(const auto& [Name, Value] : Row)
+			if(str_comp_nocase(Name.c_str(), Column.c_str()) == 0)
+				return Value;
+
+		throw std::out_of_range("Unknown SQL column");
+	}
+
+	bool m_Detached = false;
+	mutable size_t m_Row = 0;
+	std::vector<std::vector<std::pair<std::string, std::string>>> m_Rows;
 	std::unique_ptr<Statement> m_pStmt;
 	std::unique_ptr<ResultSet> m_pResult;
 	std::shared_ptr<Connection> m_pConnection;
@@ -233,6 +303,10 @@ public:
 	// the local tables are in the local database and not in the shared one.
 	// The server must not start if it fails.
 	bool InitDatabases();
+
+	// Async callbacks are applied only by the server tick, never by SQL workers.
+	static void PostCallback(std::function<void()> Callback);
+	static void ProcessCallbacks();
 
 	// True if the table belongs to the local database (always false while
 	// sv_sql_local_database is not set).

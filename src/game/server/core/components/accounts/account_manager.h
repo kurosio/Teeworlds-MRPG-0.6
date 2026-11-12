@@ -44,10 +44,9 @@ public:
 	AccountCodeResult LoginAccount(int ClientID, const char *pLogin, const char *pPassword);
 	AccountCodeResult LoginAccountRaw(int ClientID, const char* pLogin, const char* pPassword);
 
-	void TryLoginGuestByTimeoutCode(int ClientID, const char* pNickname, const char* pCode, const char* pGuestLogin);
 	void ValidateLocalSessions(int AccountID, int AckEventID = 0, int AckWorldID = 0, int AckTargetServerID = 0);
-	void BeginSessionTakeover(CPlayer* pPlayer, const std::string& Token, int PreviousServerID, int PreviousClientID, const std::string& PreviousToken, int PreviousHeartbeat, int PreviousHeartbeatAge, bool RecommendPin);
-	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false);
+	void BeginSessionTakeover(CPlayer* pPlayer, const std::string& Token, int PreviousServerID, int PreviousClientID, const std::string& PreviousToken, int PreviousHeartbeat, int PreviousHeartbeatAge, bool RecommendPin, int64_t ClaimDeadline);
+	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false, int64_t ClaimDeadline = 0);
 	void SetPinCode(int ClientID, const char* pCurrentPasswordOrPin, const char* pNewPin, bool IsChangingPin);
 	void ChangePassword(int ClientID, const char* pOldPassword, const char* pNewPassword, const char* pPinCode);
 	bool ChangeNickname(const std::string& newNickname, int ClientID) const;
@@ -99,6 +98,7 @@ private:
 		int m_PreviousHeartbeatAge{ -1 };
 		int m_EventID {};
 		int m_StartTick {};
+		int64_t m_ClaimDeadline {};
 		bool m_RemoteAck {};
 		bool m_RelayFailed {};
 		bool m_RecommendPin {};
@@ -108,7 +108,7 @@ private:
 	void UpdateLocalSessionHeartbeats();
 	void SendSessionEvents();
 	void ProcessPendingLogins();
-	void CompleteLogin(int ClientID, int AccountID, const std::string& Token, bool RecommendPin, int PreviousServerID);
+	bool CompleteLogin(int ClientID, int AccountID, const std::string& Token, bool RecommendPin, int PreviousServerID, int64_t ClaimDeadline);
 	void RestorePreviousSession(const SPendingLogin& Pending);
 	void QueueLocalSessionKicks(int AccountID, const std::string& Token);
 	bool HasAnyLocalSession(int AccountID) const;

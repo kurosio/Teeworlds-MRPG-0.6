@@ -6,6 +6,9 @@
 
 namespace
 {
+	std::mutex s_CallbackMutex;
+	std::queue<std::function<void()>> s_Callbacks;
+
 	constexpr std::string_view LOCAL_TABLES[] = {
 		"tw_auction_slots",
 		"tw_groups",
@@ -210,7 +213,8 @@ namespace
 		if(!Callback)
 			return;
 
-		Callback(std::move(pResult));
+		pResult->Detach();
+		CConectionPool::PostCallback([Callback, pResult = std::move(pResult)] { Callback(pResult); });
 	}
 
 	void NotifyDml(const CallbackUpdatePtr& Callback, bool Updated)
@@ -218,7 +222,7 @@ namespace
 		if(!Callback)
 			return;
 
-		Callback(Updated);
+		CConectionPool::PostCallback([Callback, Updated] { Callback(Updated); });
 	}
 
 	using CAsyncSelectContext = CAsyncQueryContext<CallbackResultPtr>;
@@ -322,6 +326,35 @@ namespace
 				NotifyDml(pContext->Callback(), false);
 			}
 		};
+	}
+}
+
+void CConectionPool::PostCallback(std::function<void()> Callback)
+{
+	std::lock_guard<std::mutex> Lock(s_CallbackMutex);
+	s_Callbacks.push(std::move(Callback));
+}
+
+void CConectionPool::ProcessCallbacks()
+{
+	std::queue<std::function<void()>> Callbacks;
+	{
+		std::lock_guard<std::mutex> Lock(s_CallbackMutex);
+		Callbacks.swap(s_Callbacks);
+	}
+
+	while(!Callbacks.empty())
+	{
+		try
+		{
+			Callbacks.front()();
+		}
+		catch(const std::exception& e)
+		{
+			dbg_msg("SQL Callback", "Failed to apply query result: %s", e.what());
+		}
+
+		Callbacks.pop();
 	}
 }
 

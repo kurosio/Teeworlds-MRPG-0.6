@@ -798,7 +798,7 @@ void CAccountData::UpdateAuthTimeoutCodeIfNeeded()
 		auto pContext = DbAsync::MakeContext(pPlayer->GetCID());
 		Database->Execute<DB::UPDATE>([pContext](bool Updated)
 		{
-			if(Updated)
+			if(Updated && pContext->GetPlayer())
 			{
 				pContext->GS()->Chat(pContext->GetClientID(), "Timeout code has been updated!");
 				pContext->GS()->Chat(pContext->GetClientID(), "You will now use it to authorize your account.");
