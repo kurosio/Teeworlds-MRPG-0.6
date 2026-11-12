@@ -1332,7 +1332,7 @@ reset_replica() {
     _rm_local_db=$REPLY
     if [ -n "$_rm_local_db" ]; then
         check_ident "$_rm_local_db"
-        confirm_typed_yes "Database $_rm_local_db on this host will be dropped. This deletes LOCAL game state (guilds, groups, auction, house owners) — it is not replicated anywhere."
+        confirm_typed_yes "Database $_rm_local_db on this host will be dropped. This deletes LOCAL game state (guilds, groups, house owners) — it is not replicated anywhere."
     fi
     ask_yn "Restart MariaDB now?" y
     _restart=$REPLY

@@ -10,6 +10,7 @@ class CAuctionManager : public MmoComponent
 	~CAuctionManager() override;
 
 	void OnPreInit() override;
+	void OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req) override;
 
 	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;

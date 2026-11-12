@@ -10,7 +10,6 @@ namespace
 	std::queue<std::function<void()>> s_Callbacks;
 
 	constexpr std::string_view LOCAL_TABLES[] = {
-		"tw_auction_slots",
 		"tw_groups",
 		"tw_guilds_decorations",
 		"tw_guilds_history",

@@ -33,6 +33,40 @@ void CAuctionManager::OnPreInit()
 	}
 }
 
+void CAuctionManager::OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req)
+{
+	if (Req.Value <= 0 || GS()->GetWorldID() != Req.WorldID)
+		return;
+
+	// sync auction slot create
+	if(EventName == syncevents::AUCTION_SLOT_CREATE)
+	{
+		if(Req.Value <= 0 || GetSlot(Req.Value))
+			return;
+
+		auto pSelect = Database->Prepare<DB::SELECT>("*", TW_AUCTION_SLOTS_TABLE, "WHERE ID = '{}'", Req.Value);
+		pSelect->AtExecute([this, SlotID = Req.Value](ResultPtr pRes)
+		{
+			if(GetSlot(SlotID) || !pRes->next())
+				return;
+
+			CItem Item(pRes->getInt("ItemID"), pRes->getInt("Value"), pRes->getInt("Enchant"));
+			Item.SetStringData(pRes->getString("Data"));
+			CAuctionSlot::CreateElement(SlotID)->Init(Item, pRes->getInt("Price"), pRes->getInt("OwnerID"));
+		});
+	}
+
+	// sync auction slot remove
+	else if(EventName == syncevents::AUCTION_SLOT_REMOVE)
+	{
+		if(auto* pSlot = GetSlot(Req.Value))
+		{
+			std::erase(CAuctionSlot::Data(), pSlot);
+			delete pSlot;
+		}
+	}
+}
+
 void CAuctionManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
@@ -356,6 +390,7 @@ void CAuctionManager::CreateSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData) c
 			Database->Execute<DB::INSERT>(TW_AUCTION_SLOTS_TABLE, "(ID, ItemID, Value, Price, Enchant, OwnerID, Data) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', NULLIF(UNHEX('{}'), ''))",
 				InitID, pItem->GetID(), pItem->GetValue(), pAuctionData->GetPrice(), pItem->GetEnchant(), pPlayer->Account()->GetID(), sqlstr::HexEncode(pItem->GetStringData()));
 			CAuctionSlot::CreateElement(InitID)->Init(*pItem, pAuctionData->GetPrice(), AccountID);
+			Sync->Push(syncevents::AUCTION_SLOT_CREATE, GS()->GetWorldID(), InitID);
 
 			// send messages
 			const int AvailableSlots = g_Config.m_SvMaxPlayerAuctionSlots - GetSlotsCountByAccountID(AccountID);
@@ -447,5 +482,7 @@ void CAuctionManager::RemoveSlotByID(int ID) const
 	{
 		Database->Execute<DB::REMOVE>(TW_AUCTION_SLOTS_TABLE, "WHERE ID = '{}'", ID);
 		std::erase(CAuctionSlot::Data(), pSlot);
+		delete pSlot;
+		Sync->Push(syncevents::AUCTION_SLOT_REMOVE, GS()->GetWorldID(), ID);
 	}
 }

@@ -41,6 +41,8 @@ namespace syncevents
 	inline constexpr const char *GUILD_CREATE = "guild_create";
 	inline constexpr const char *GUILD_DISBAND = "guild_disband";
 	inline constexpr const char *GUILD_UPDATE = "guild_update";
+	inline constexpr const char *AUCTION_SLOT_CREATE = "auction_slot_create";
+	inline constexpr const char *AUCTION_SLOT_REMOVE = "auction_slot_remove";
 	inline constexpr const char *ACCOUNT_SESSION_TAKEOVER = "account_session_takeover";
 	inline constexpr const char *ACCOUNT_SESSION_TAKEOVER_ACK_PREFIX = "account_session_takeover_ack:";
 }

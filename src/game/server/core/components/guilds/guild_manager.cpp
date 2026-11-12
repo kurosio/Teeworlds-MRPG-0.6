@@ -1109,32 +1109,45 @@ void CGuildManager::OnGlobalTimePeriod(ETimePeriod Period)
 
 void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req)
 {
+	if (Req.Value <= 0 || GS()->GetWorldID() != Req.WorldID)
+		return;
+
+	// sync event guild create
 	if(EventName == syncevents::GUILD_CREATE)
 	{
-		if(Req.Value <= 0 || GetGuildByID(Req.Value) || Req.ServerID == g_Config.m_SvSyncServerID)
+		if(GetGuildByID(Req.Value))
 			return;
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
-		if(!pRes->next())
-			return;
+		auto pSelect = Database->Prepare<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
+		pSelect->AtExecute([this, GuildID = Req.Value](ResultPtr pRes)
+		{
+			if(GetGuildByID(GuildID) || !pRes->next())
+				return;
 
-		CGuild::CreateElement(Req.Value)->InitFromRow(pRes);
-		GS()->Chat(-1, "New guilds '{~}' have been created!", pRes->getString("Name").c_str());
+			CGuild::CreateElement(GuildID)->InitFromRow(pRes);
+			GS()->Chat(-1, "New guilds '{~}' have been created!", pRes->getString("Name").c_str());
+		});
 	}
 
+	// sync event guild update
 	else if (EventName == syncevents::GUILD_UPDATE)
 	{
-		if(const auto pGuild = GetGuildByID(Req.Value))
+		if(!GetGuildByID(Req.Value))
+			return;
+
+		auto pSelect = Database->Prepare<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
+		pSelect->AtExecute([this, GuildID = Req.Value](ResultPtr pRes)
 		{
-			ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
-			if (pRes->next())
-			{
-				pGuild->InitFromRow(pRes);
-				dbg_msg("guild", "guild updated: %s", pGuild->GetName());
-			}
-		}
+			const auto pGuild = GetGuildByID(GuildID);
+			if(!pGuild || !pRes->next())
+				return;
+
+			pGuild->InitFromRow(pRes);
+			dbg_msg("guild", "guild updated: %s", pGuild->GetName());
+		});
 	}
 
+	// sync event guild disband
 	else if(EventName == syncevents::GUILD_DISBAND)
 	{
 		if (const auto pGuild = GetGuildByID(Req.Value))

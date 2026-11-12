@@ -24,22 +24,6 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `tw_auction_slots`
---
-
-CREATE TABLE `tw_auction_slots` (
-  `ID` int(11) NOT NULL,
-  `ItemID` int(11) NOT NULL,
-  `Value` int(11) NOT NULL,
-  `Enchant` int(11) NOT NULL DEFAULT 0,
-  `Data` text DEFAULT NULL,
-  `Price` int(11) NOT NULL,
-  `OwnerID` int(11) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `tw_groups`
 --
 
@@ -122,16 +106,6 @@ CREATE TABLE `tw_links` (
 --
 
 --
--- Indexes for table `tw_auction_slots`
---
-ALTER TABLE `tw_auction_slots`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `ItemID` (`ItemID`),
-  ADD KEY `OwnerID` (`OwnerID`),
-  ADD KEY `Price` (`Price`);
-
---
 -- Indexes for table `tw_groups`
 --
 ALTER TABLE `tw_groups`
@@ -182,12 +156,6 @@ ALTER TABLE `tw_links`
 --
 -- AUTO_INCREMENT for dumped tables
 --
-
---
--- AUTO_INCREMENT for table `tw_auction_slots`
---
-ALTER TABLE `tw_auction_slots`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_groups`

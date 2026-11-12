@@ -59,7 +59,6 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 
 }
 
-
 void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine* pStorage)
 {
 	// initialize cross-server synchronization: the event is applied by the same

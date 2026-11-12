@@ -517,6 +517,22 @@ INSERT INTO `tw_attributes` (`ID`, `Name`, `Price`, `Group`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `tw_auction_slots`
+--
+
+CREATE TABLE `tw_auction_slots` (
+  `ID` int(11) NOT NULL,
+  `ItemID` int(11) NOT NULL,
+  `Value` int(11) NOT NULL,
+  `Enchant` int(11) NOT NULL DEFAULT 0,
+  `Data` text DEFAULT NULL,
+  `Price` int(11) NOT NULL,
+  `OwnerID` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `tw_bots_info`
 --
 
@@ -2236,6 +2252,16 @@ ALTER TABLE `tw_attributes`
   ADD PRIMARY KEY (`ID`);
 
 --
+-- Indexes for table `tw_auction_slots`
+--
+ALTER TABLE `tw_auction_slots`
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `ID` (`ID`),
+  ADD KEY `ItemID` (`ItemID`),
+  ADD KEY `OwnerID` (`OwnerID`),
+  ADD KEY `Price` (`Price`);
+
+--
 -- Indexes for table `tw_bots_info`
 --
 ALTER TABLE `tw_bots_info`
@@ -2503,6 +2529,12 @@ ALTER TABLE `tw_achievements`
 --
 ALTER TABLE `tw_aethers`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT for table `tw_auction_slots`
+--
+ALTER TABLE `tw_auction_slots`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_bots_info`
