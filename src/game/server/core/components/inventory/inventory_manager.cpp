@@ -88,7 +88,7 @@ void CInventoryManager::OnPlayerLogin(CPlayer* pPlayer)
 		const auto Durability = pRes->getInt("Durability");
 		const auto ExpiresAt = pRes->getInt("ExpiresAt");
 
-		CPlayerItem(ItemID, ClientID).Init(Value, Enchant, Durability, Settings, ExpiresAt);
+		CPlayerItem(ItemID, ClientID).Init(Value, Enchant, Durability, Settings, ExpiresAt, pRes->getString("Data"));
 	}
 
 	// remove expired temporary items after loading inventory

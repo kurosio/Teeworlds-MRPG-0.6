@@ -3,6 +3,40 @@
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
 
+namespace
+{
+// Preserve empty slots as well: account-wide slots can override profession slots.
+void CollectEquippedItems(CPlayer* pPlayer, const EquippedSlots& Slots,
+	std::map<ItemType, std::optional<int>>& Equipment)
+{
+	for(const auto& [SlotType, ItemID] : Slots.getSlots())
+	{
+		if(ItemID)
+		{
+			auto* pItem = pPlayer->GetItem(*ItemID);
+			Equipment[SlotType] = pItem && pItem->HasItem() ? ItemID : std::nullopt;
+		}
+		else
+			Equipment[SlotType] = std::nullopt;
+	}
+}
+
+bool HasPresetItem(CPlayer* pPlayer, int ItemID)
+{
+	if(!CItemDescription::Data().contains(ItemID))
+		return false;
+	const auto* pItem = pPlayer->GetItem(ItemID);
+	return pItem && pItem->HasItem();
+}
+
+void EquipPresetItem(CPlayer* pPlayer, int ItemID)
+{
+	auto* pItem = pPlayer->GetItem(ItemID);
+	if(pItem && pItem->HasItem() && !pItem->IsEquipped())
+		pItem->Equip();
+}
+}
+
 CGS* EquipmentPresets::GS() const
 {
 	return (CGS*)Instance::GameServerPlayer(m_ClientID);
@@ -149,37 +183,23 @@ bool EquipmentPresets::Sanitize(int SlotIndex)
 		return false;
 
 	bool changed = false;
-	for (auto& [itemType, itemIDOpt] : preset.Equipment)
+	const auto SanitizeItem = [pPlayer, &changed](std::optional<int>& ItemID)
 	{
-		if (!itemIDOpt.has_value())
-			continue;
+		if(!ItemID)
+			return;
 
-		const int itemID = *itemIDOpt;
-		auto* pPlayerItem = pPlayer->GetItem(itemID);
-		const bool valid = CItemDescription::Data().contains(itemID) && pPlayerItem && pPlayerItem->HasItem();
-
-		if (!valid)
+		// GetItem is called before checking the description, as in the original path.
+		auto* pPlayerItem = pPlayer->GetItem(*ItemID);
+		if(!CItemDescription::Data().contains(*ItemID) || !pPlayerItem || !pPlayerItem->HasItem())
 		{
-			itemIDOpt = std::nullopt;
+			ItemID = std::nullopt;
 			changed = true;
 		}
-	}
-
-	for (auto& moduleIDOpt : preset.Modules)
-	{
-		if (!moduleIDOpt.has_value())
-			continue;
-
-		const int moduleID = *moduleIDOpt;
-		auto* pPlayerItem = pPlayer->GetItem(moduleID);
-		const bool valid = CItemDescription::Data().contains(moduleID) && pPlayerItem && pPlayerItem->HasItem();
-
-		if (!valid)
-		{
-			moduleIDOpt = std::nullopt;
-			changed = true;
-		}
-	}
+	};
+	for(auto& [ItemType, ItemID] : preset.Equipment)
+		SanitizeItem(ItemID);
+	for(auto& ModuleID : preset.Modules)
+		SanitizeItem(ModuleID);
 
 	return changed;
 }
@@ -287,40 +307,10 @@ bool EquipmentPresets::savePresetImpl(int SlotIndex, const std::string& Name, CP
 	auto* pAccount = pPlayer->Account();
 	int CurrentProfessionID = (int)pAccount->GetActiveProfessionID();
 
-	// collect current active equipped items
+	// Account-wide slots are collected second so they retain precedence.
 	std::map<ItemType, std::optional<int>> Equipment;
-	for (const auto& [SlotType, ItemIDOpt] : pAccount->GetActiveProfession()->GetEquippedSlots().getSlots())
-	{
-		if (ItemIDOpt.has_value())
-		{
-			auto* pItem = pPlayer->GetItem(ItemIDOpt.value());
-			if (pItem && pItem->HasItem())
-				Equipment[SlotType] = ItemIDOpt.value();
-			else
-				Equipment[SlotType] = std::nullopt;
-		}
-		else
-		{
-			Equipment[SlotType] = std::nullopt;
-		}
-	}
-
-	// collect current equipped items
-	for (const auto& [SlotType, ItemIDOpt] : pAccount->GetEquippedSlots().getSlots())
-	{
-		if (ItemIDOpt.has_value())
-		{
-			auto* pItem = pPlayer->GetItem(ItemIDOpt.value());
-			if (pItem && pItem->HasItem())
-				Equipment[SlotType] = ItemIDOpt.value();
-			else
-				Equipment[SlotType] = std::nullopt;
-		}
-		else
-		{
-			Equipment[SlotType] = std::nullopt;
-		}
-	}
+	CollectEquippedItems(pPlayer, pAccount->GetActiveProfession()->GetEquippedSlots(), Equipment);
+	CollectEquippedItems(pPlayer, pAccount->GetEquippedSlots(), Equipment);
 
 	// collect all equipped modules
 	std::vector<std::optional<int>> Modules;
@@ -354,35 +344,13 @@ bool EquipmentPresets::loadPresetImpl(int SlotIndex, CPlayer* pPlayer)
 	if (preset.Name.empty() && preset.Equipment.empty() && preset.Modules.empty())
 		return false;
 
-	// check if all items are still available
-	for (auto& [itemType, itemIDOpt] : preset.Equipment)
-	{
-		if (!itemIDOpt.has_value())
-			continue;
-
-		const int itemID = itemIDOpt.value();
-		if (!CItemDescription::Data().contains(itemID))
+	// Validate everything before changing the player's profession or equipment.
+	for(const auto& [ItemType, ItemID] : preset.Equipment)
+		if(ItemID && !HasPresetItem(pPlayer, *ItemID))
 			return false;
-
-		auto* pPlayerItem = pPlayer->GetItem(itemID);
-		if (!pPlayerItem || !pPlayerItem->HasItem())
+	for(const auto& ModuleID : preset.Modules)
+		if(ModuleID && !HasPresetItem(pPlayer, *ModuleID))
 			return false;
-	}
-
-	// check if all modules are still available
-	for (const auto& moduleIDOpt : preset.Modules)
-	{
-		if (!moduleIDOpt.has_value())
-			continue;
-
-		const int moduleID = moduleIDOpt.value();
-		if (!CItemDescription::Data().contains(moduleID))
-			return false;
-
-		auto* pPlayerItem = pPlayer->GetItem(moduleID);
-		if (!pPlayerItem || !pPlayerItem->HasItem())
-			return false;
-	}
 
 	// change profession if needed
 	auto* pAccount = pPlayer->Account();
@@ -437,24 +405,12 @@ bool EquipmentPresets::loadPresetImpl(int SlotIndex, CPlayer* pPlayer)
 		}
 	}
 
-	// equip preset items only if they are not already equipped
-	for (const auto& [itemType, itemIDOpt] : preset.Equipment)
-	{
-		if (!itemIDOpt.has_value())
-			continue;
-
-		auto* pItem = pPlayer->GetItem(itemIDOpt.value());
-		if (pItem && pItem->HasItem() && !pItem->IsEquipped())
-			pItem->Equip();
-	}
-
-	// equip preset modules only if they are not already equipped
-	for (const int moduleID : PresetModules)
-	{
-		auto* pItem = pPlayer->GetItem(moduleID);
-		if (pItem && pItem->HasItem() && !pItem->IsEquipped())
-			pItem->Equip();
-	}
+	// Equip only items and modules that are not already equipped.
+	for(const auto& [ItemType, ItemID] : preset.Equipment)
+		if(ItemID)
+			EquipPresetItem(pPlayer, *ItemID);
+	for(const int ModuleID : PresetModules)
+		EquipPresetItem(pPlayer, ModuleID);
 
 	// notify about change equipment preset
 	g_EventListenerManager.Notify<IEventListener::PlayerChangePreset>(pPlayer, SlotIndex);

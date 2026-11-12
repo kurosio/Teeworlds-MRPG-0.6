@@ -114,6 +114,7 @@ void CPlayer::Tick()
 	if(!IsAuthed() || !Account()->IsReadyToPlay())
 		return;
 
+	ProcessEidolonDeaths();
 	const int TickSpeed = Server()->TickSpeed();
 	const int CurrentTick = Server()->Tick();
 
@@ -241,6 +242,10 @@ void CPlayer::TryCreateEidolon()
 	if(!eidolonItemID.has_value())
 		return;
 
+	const auto* pItem = GetItem(*eidolonItemID);
+	if(!pItem || !pItem->HasItem() || pItem->GetDurability() <= 0)
+		return;
+
 	// try to create eidolon
 	if(const auto* pEidolonData = GS()->GetEidolonByItemID(eidolonItemID.value()))
 	{
@@ -259,6 +264,31 @@ void CPlayer::TryRemoveEidolon()
 	{
 		GS()->DestroyPlayer(m_EidolonCID.value());
 		m_EidolonCID.reset();
+	}
+}
+
+void CPlayer::ProcessEidolonDeaths()
+{
+	// Run after the world tick: durability listeners may destroy the bot, so
+	// they must not run inside the eidolon's own death callback.
+	auto Pending = std::move(GetSharedData().m_PendingEidolonItemBreaks);
+	GetSharedData().m_PendingEidolonItemBreaks.clear();
+	for(int ItemID : Pending)
+	{
+		if(auto* pEidolon = GetEidolon(); pEidolon && pEidolon->m_EidolonItemID == ItemID)
+			TryRemoveEidolon();
+	}
+}
+
+void CPlayer::ReviveEidolonsOnSpawn()
+{
+	// Respawning is the alternative to repairing; restore only items broken
+	// by an eidolon's death, not unrelated damaged equipment.
+	auto& playerItems = CPlayerItem::Data()[m_ClientID];
+	for(auto& [ItemID, PlayerItem] : playerItems)
+	{
+		if(PlayerItem.HasItem() && PlayerItem.Info()->IsGroup(ItemGroup::Equipment) && PlayerItem.Info()->IsType(ItemType::EquipEidolon) && PlayerItem.GetDurability() <= 0)
+			PlayerItem.SetDurability(100);
 	}
 }
 

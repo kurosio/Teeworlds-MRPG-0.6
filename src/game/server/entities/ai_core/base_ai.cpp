@@ -42,6 +42,39 @@ CGS* CBaseAI::GS() const
 	return m_pPlayer->GS();
 }
 
+CPlayer* CBaseAI::FindClosestAttackablePlayerOrEidolon(float Radius)
+{
+	CPlayer* pClosest = nullptr;
+	float ClosestDistance = Radius;
+	const vec2 Position = m_pCharacter->GetPos();
+	for(int ClientID = 0; ClientID < MAX_CLIENTS; ++ClientID)
+	{
+		auto* pCandidate = GS()->GetPlayer(ClientID, false, true);
+		if(!pCandidate || !GS()->IsPlayerInWorld(ClientID))
+			continue;
+		if(pCandidate->IsBot())
+		{
+			auto* pBot = static_cast<CPlayerBot*>(pCandidate);
+			if(pBot->GetBotType() != TYPE_BOT_EIDOLON || pBot->IsDisabledBotDamage())
+				continue;
+		}
+
+		auto* pCharacter = pCandidate->GetCharacter();
+		const float Distance = distance(Position, pCharacter->GetPos());
+		if(Distance > ClosestDistance || !pCharacter->IsAllowedPVP(m_ClientID))
+			continue;
+		if(GS()->Collision()->IntersectLineDoor(Position, pCharacter->GetPos()) ||
+			GS()->Collision()->IntersectLineWithInvisible(Position, pCharacter->GetPos(), nullptr, nullptr))
+			continue;
+
+		pClosest = pCandidate;
+		ClosestDistance = Distance;
+	}
+	if(pClosest)
+		m_Target.UpdateCollided(false);
+	return pClosest;
+}
+
 CPlayer* CBaseAI::SearchPlayerCondition(float Distance, const std::function<bool(CPlayer*)>& Condition)
 {
 	for(int i = 0; i < MAX_PLAYERS; i++)

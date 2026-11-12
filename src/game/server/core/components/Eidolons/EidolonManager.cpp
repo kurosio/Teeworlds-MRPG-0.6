@@ -3,10 +3,75 @@
 #include "EidolonManager.h"
 
 #include <game/server/gamecontext.h>
+#include <game/server/playerbot.h>
+#include <game/server/core/components/accounts/profession.h>
 
-using namespace sqlstr;
+namespace
+{
+	bool ReadProgress(const CPlayerItem* pItem, nlohmann::json& Data, int& Level, uint64_t& Experience, int& Points)
+	{
+		Data = pItem->GetStringData().empty() ? nlohmann::json::object() : nlohmann::json::parse(pItem->GetStringData(), nullptr, false);
+		if(!Data.is_object())
+			return false;
+		try
+		{
+			Level = Data.value("level", 1);
+			Experience = Data.value("exp", uint64_t(0));
+			Points = Data.value("up", 0);
+			return Level >= 1 && Points >= 0;
+		}
+		catch(const nlohmann::json::exception&)
+		{
+			return false;
+		}
+	}
+}
 
-#define TW_TABLE_EIDOLON_ENHANCEMENTS "tw_account_eidolon_enhancements"
+void CEidolonManager::OnPreInit()
+{
+	m_Events.Init(this, IEventListener::PlayerProfessionExperience);
+	m_Events.Register();
+}
+
+void CEidolonManager::OnPlayerProfessionExperience(CPlayer* pPlayer, CProfession* pProfession, uint64_t& Experience)
+{
+	if(!pPlayer || !pPlayer->IsAuthed() || !pProfession || !pProfession->IsProfessionType(PROFESSION_TYPE_WAR) || !Experience)
+		return;
+
+	auto* pEidolon = pPlayer->GetEidolon();
+	if(!pEidolon || !pEidolon->GetCharacter() || !pEidolon->GetCharacter()->IsAlive())
+		return;
+
+	auto* pItem = pPlayer->GetItem(pEidolon->m_EidolonItemID);
+	if(!pItem->HasItem() || !pItem->IsEquipped())
+		return;
+
+	nlohmann::json Data;
+	int Level, Points;
+	uint64_t Current;
+	if(!ReadProgress(pItem, Data, Level, Current, Points))
+		return;
+
+	uint64_t Remaining = Experience;
+	const int OldLevel = Level;
+	while(Remaining >= computeExperience(Level) - Current)
+	{
+		Remaining -= computeExperience(Level) - Current;
+		Current = 0;
+		++Level;
+		if(Points < std::numeric_limits<int>::max())
+			++Points;
+	}
+
+	const uint64_t Room = computeExperience(Level) - 1 - Current;
+	Current += std::min(Remaining, Room);
+	Data["level"] = Level;
+	Data["exp"] = Current;
+	Data["up"] = Points;
+
+	if(pItem->SetStringData(Data.dump()) && Level > OldLevel)
+		static_cast<CGS*>(Instance::GameServerPlayer(pPlayer->GetCID()))->Chat(pPlayer->GetCID(), "Your eidolon reached level {}!", Level);
+}
 
 bool CEidolonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
@@ -16,8 +81,6 @@ bool CEidolonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	{
         const int EidolonID = GetIfExists<int>(Extras, 0, NOPE);
 		m_EidolonItemSelected[ClientID] = EidolonID;
-
-		//pPlayer->m_TempMenuValue = MENU_EIDOLON_SELECT;
 		pPlayer->m_VotesData.UpdateVotes(MENU_EIDOLON_SELECT);
 		return true;
 	}

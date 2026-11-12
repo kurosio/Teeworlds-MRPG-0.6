@@ -84,7 +84,9 @@ void CInventoryListener::OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* p
 		return;
 
 	const auto currentDurability = pItem->GetDurability();
-	if((OldDurability <= 0 && currentDurability > 0) ||
+	if (currentDurability > OldDurability && pItem->Info()->IsType(ItemType::EquipEidolon))
+		pPlayer->GetSharedData().m_PendingEidolonItemBreaks.erase(pItem->GetID());
+	if ((OldDurability <= 0 && currentDurability > 0) ||
 		(OldDurability > 0 && currentDurability <= 0))
 		UpdateAttributesForItem(pPlayer, pItem);
 

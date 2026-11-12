@@ -170,33 +170,19 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 void CMobAI::OnTargetRules(float Radius)
 {
-	const auto* pTarget = GS()->GetPlayer(m_Target.GetCID(), false, true);
-	auto* pPlayer = SearchPlayerCondition(Radius, [&](const CPlayer* pCandidate)
+	// Players and their eidolons compete on equal terms by distance.
+	CPlayer* pTarget = FindClosestAttackablePlayerOrEidolon(Radius);
+	if(!pTarget)
 	{
-		const bool DamageDisabled = pCandidate->GetCharacter()->m_Core.m_DamageDisabled;
-
-		if(pTarget)
+		// Keep the existing fallback for other hostile bots (e.g. guardians).
+		pTarget = SearchPlayerBotCondition(Radius, [&](CPlayerBot* pCandidate)
 		{
-			const int CurrentTotalAttHP = pTarget->GetTotalAttributeValue(AttributeIdentifier::HP);
-			const int CandidateTotalAttHP = pCandidate->GetTotalAttributeValue(AttributeIdentifier::HP);
-			return !DamageDisabled && (CurrentTotalAttHP < CandidateTotalAttHP);
-		}
-
-		return !DamageDisabled;
-	});
-
-	if(!pPlayer)
-	{
-		pPlayer = SearchPlayerBotCondition(Radius, [&](CPlayerBot* pCandidate)
-		{
-			return m_pCharacter->IsAllowedPVP(pCandidate->GetCID());
+			return pCandidate->GetBotType() != TYPE_BOT_EIDOLON &&
+				m_pCharacter->IsAllowedPVP(pCandidate->GetCID());
 		});
 	}
-
-	if(pPlayer)
-	{
-		m_Target.Set(pPlayer->GetCID(), 100);
-	}
+	if(pTarget)
+		m_Target.Set(pTarget->GetCID(), 100);
 }
 
 void CMobAI::Process()

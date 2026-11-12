@@ -1806,8 +1806,13 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 		// eidolon
 		if(Type == ItemType::EquipEidolon)
 		{
-			m_pPlayer->TryRemoveEidolon();
-			m_pPlayer->TryCreateEidolon();
+			const auto EquippedItem = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipEidolon);
+			const auto* pEidolon = m_pPlayer->GetEidolon();
+			if((EquippedItem && *EquippedItem == *UpdatedItemID) || (pEidolon && pEidolon->m_EidolonItemID == *UpdatedItemID))
+			{
+				m_pPlayer->TryRemoveEidolon();
+				m_pPlayer->TryCreateEidolon();
+			}
 		}
 
 		// check and limit ammo

@@ -1,6 +1,4 @@
-#include "get_valid_ai_util.h"
 #include "eidolon_ai.h"
-#include "mob_ai.h"
 
 #include <game/server/entities/character_bot.h>
 #include <game/server/gamecontext.h>
@@ -13,38 +11,16 @@ CEidolonAI::CEidolonAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 
 bool CEidolonAI::CanDamage(CPlayer* pFrom)
 {
-	if(pFrom->IsBot())
-	{
-		auto* pFromBot = static_cast<CPlayerBot*>(pFrom);
-		if(auto* pMobAI = GetValidAI<CMobAI>(pFromBot))
-			return !pMobAI->IsNeutral();
-	}
-
-	auto* pOwner = m_pPlayer->GetEidolonOwner();
-	if(pOwner != pFrom)
-	{
-		if(pOwner)
-		{
-			auto* pOwnerLastAttacker = pOwner->GetCharacter()->GetLastPlayerAttacker(2);
-			if(pOwnerLastAttacker &&
-				pOwnerLastAttacker->GetCID() == pFrom->GetCID())
-				return true;
-
-			auto* pFromChar = pFrom->GetCharacter();
-			if(pFromChar)
-			{
-				auto pFromLastAttacker = pFromChar->GetLastPlayerAttacker(2);
-				if(pFromLastAttacker &&
-					(pFromLastAttacker->GetCID() == pOwner->GetCID() ||
-						pFromLastAttacker->GetCID() == m_pPlayer->GetCID()))
-					return true;
-			}
-		}
-
+	if(!pFrom)
 		return false;
-	}
 
-	return false;
+	const auto* pOwner = m_pPlayer->GetEidolonOwner();
+	const auto* pOwnerCharacter = pOwner ? pOwner->GetCharacter() : nullptr;
+	if(!pOwnerCharacter || pFrom == pOwner || !pFrom->GetCharacter())
+		return false;
+
+	// Use the owner's PvP, group, guild, scenario, bot and safe-zone rules.
+	return pOwnerCharacter->IsAllowedPVP(pFrom->GetCID());
 }
 
 void CEidolonAI::OnSpawn()
@@ -55,23 +31,24 @@ void CEidolonAI::OnSpawn()
 
 void CEidolonAI::OnDie(int Killer, int Weapon)
 {
-	auto* pOwner = m_pPlayer->GetEidolonOwner();
-	if(!pOwner || !pOwner->GetCharacter())
+	// World deaths are used to remove an eidolon when its owner changes
+	// equipment, dies or leaves the world. Self deaths include death tiles.
+	if(Weapon == WEAPON_WORLD)
 		return;
 
-	if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
+	auto* pOwner = m_pPlayer->GetEidolonOwner();
+	const int ItemID = m_pPlayer->m_EidolonItemID;
+	if (!pOwner || ItemID <= NOPE)
+		return;
+
+	if (auto* pItem = pOwner->GetItem(ItemID); pItem && pItem->HasItem() && pItem->GetDurability() > 0)
 	{
-		auto EquippedEidolonItemIdOpt = pOwner->GetEquippedSlotItemID(ItemType::EquipEidolon);
-		if(EquippedEidolonItemIdOpt.has_value())
-		{
-			auto* pPlayerItem = pOwner->GetItem(EquippedEidolonItemIdOpt.value());
-			if(pPlayerItem && pPlayerItem->GetDurability() > 0)
-			{
-				//pPlayerItem->SetDurability(0); TODO crashed by event listener inventory durability item it's updated from character all item's and these item's destroyed eidolon character.
-				pOwner->GS()->Chat(pOwner->GetCID(), "Your eidolon item 'durability is 0'.");
-			}
-		}
+		pItem->SetDurability(0);
+		GS()->Chat(pOwner->GetCID(), "Your eidolon has fallen. Repair its item or respawn to summon it again.");
 	}
+
+	pOwner->GetSharedData().m_PendingEidolonItemBreaks.insert(ItemID);
+	m_pPlayer->SetEidolonDead();
 }
 
 void CEidolonAI::OnTargetRules(float Radius)

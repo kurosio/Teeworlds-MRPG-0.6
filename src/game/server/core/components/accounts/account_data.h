@@ -224,6 +224,7 @@ struct CAccountSharedData
 {
 	int m_LastKilledByWeapon;
 	CAuctionSlot m_TempAuctionSlot;
+	std::unordered_set<int> m_PendingEidolonItemBreaks{};
 	std::weak_ptr<void> m_pAuthorizationAttempt{};
 	std::shared_ptr<void> m_pConnectionLifetime = std::make_shared<int>(0);
 

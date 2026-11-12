@@ -164,6 +164,8 @@ public:
 	CPlayerBot* GetEidolon() const;
 	void TryCreateEidolon();
 	void TryRemoveEidolon();
+	void ProcessEidolonDeaths();
+	void ReviveEidolonsOnSpawn();
 
 private:
 	virtual void GetFormatedName(char* aBuffer, int BufferSize);

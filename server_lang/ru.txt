@@ -1198,9 +1198,6 @@ $item_description239
 Priests robes
 == Одеяния священников
 
-To do this, select the guild from the list below
-== Для этого выберите гильдию из списка ниже
-
 You must be logged in to set or change a PIN code.
 == Чтобы установить или изменить PIN-код, необходимо войти в систему.
 
@@ -2220,9 +2217,6 @@ Your '{}' of '{~.2}%' has expired.
 You have become a member of the group!
 == Вы стали членом группы!
 
-Guild wars
-== Войны гильдий
-
 Most Valuable '{}'. With help '{} points'.
 == Самый ценный '{}'. С помощью '{} очков'.
 
@@ -2746,9 +2740,6 @@ $item_name276
 J: Adamantite rod
 == J: Адамант. удочка
 
-You can't declare war on your own guild.
-== Вы не можете объявить войну своей гильдии.
-
 $item_description39
 The usual copper pickaxe
 == Обычная медная кирка
@@ -2971,9 +2962,6 @@ Auto switch weapon on pickup
 $dialog_quest100
 For your second task, you are to visit the Conjurers' Guild.
 == Для вашего второго задания вам нужно посетить Гильдию Заклинателей.
-
-You can declare war on another guild
-== Вы можете объявить войну другой гильдии
 
 - You already have the item
 == - У вас уже есть этот предмет
@@ -4718,9 +4706,6 @@ Multi-Use Item
 $dialog_quest211
 The three locations you visited will feature prominently in your life as an adventurer─it is best you grow familiar with them as soon as possible.
 == Три места, которые ты посетил, будут играть важную роль в твоей жизни как искателя приключений — лучше всего, если ты познакомишься с ними как можно скорее.
-
-Score: {}(your) / {}(enemy)
-== Счет: {}(ваш) / {}(враг)
 
 in her beautiful hair, and uses a small amount
 == в её прекрасных волосах, и использует небольшое количество
@@ -8101,9 +8086,6 @@ $quest_name38
 Wizard | Puppeteer?
 == Волшебник | Може, куколка?
 
-♆ Declare war on another guild
-== ♆ Объявить войну другой гильдии
-
 This item has already been planted on this farm.
 == Предмет уже посажен на этой ферме.
 
@@ -8471,9 +8453,6 @@ Invalid settings index.
 coupon
 == купон
 
-war created
-== война началась
-
 /guild create <name> - create a new guild
 == /guild create <имя> - создать новую гильдию
 
@@ -8734,9 +8713,6 @@ $quest_name34
 Lancer | Armor boy
 == Копейщик | Мальчик в броне.
 
-War with the guild: {}
-== Война с гильдией: {}
-
 You have left the guild!
 == Вы покинули гильдию!
 
@@ -8762,9 +8738,6 @@ A system error has occurred, contact administrator.
 
 Price for upgrading guild member slots
 == Цена за улучшение слотов участников гильдии
-
-Duration of a guild war in minutes
-== Продолжительность войны гильдий в минутах
 
 Class profession: {}
 == Класс и профессия: {}
@@ -9019,9 +8992,6 @@ Armor | Dps
 $dialog_quest264
 And you may also be aware that Ixali activity has risen sharply in the region of late. What you may not know is that this increase coincided almost exactly with the first recorded sighting of the aforementioned individual.
 == И вы также можете знать, что активность Икали резко возросла в регионе в последнее время. Возможно, вы не знаете, что это увеличение почти совпало с первым зафиксированным наблюдением указанного лица.
-
-Time until the end of the war: {}
-== Время до окончания войны: {}
 
 $quest_name23
 Renewing the Covenant
@@ -9784,9 +9754,6 @@ While I attempt to instill some backbone into this so-called “soldier,” woul
 Transfer ownership {}
 == Передать владение {}
 
-This guild cannot be declared war at this time.
-== Этой гильдии нельзя объявить войну в данный момент.
-
 $quest_name56
 Miner | Annihilation
 == Шахтер | Аннигиляция
@@ -9859,9 +9826,6 @@ Gold
 
 (Warning) Add new bot on database or update if finding <clientid> <bot name>
 == (Предупреждение) Добавьте нового бота в базу данных или обновите, если найдете <clientid> <имя бота>
-
-List of guilds to declare war
-== Список гильдий для объявления войны
 
 $quest_name48
 Farmer | Reconnaissance
@@ -9942,9 +9906,6 @@ The voucher code '{}' has expired.
 $item_description107
 Untreated Leather
 == Необработанная кожа
-
-war not created
-== война не создана
 
 The rank '{}' has been successfully added!
 == Ранг '{}' успешно добавлен!

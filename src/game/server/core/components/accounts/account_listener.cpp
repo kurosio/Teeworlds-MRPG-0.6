@@ -38,26 +38,23 @@ void CAccountListener::OnCharacterSpawn(CPlayer* pPlayer)
 	} };
 
 
-	bool bestExpert = false;
+	bool IsTopExpert = false;
 	const auto AccountID = pPlayer->Account()->GetID();
-	auto ApplyLayer = [&]()
+	// Each matching profession gets two aura layers.
+	for(int Layer = 0; Layer < 2; ++Layer)
 	{
-		for(const auto& data : s_aLevelingData)
+		for(const auto& Profession : s_aLevelingData)
 		{
-			const auto& Biggest = m_LevelingTracker.GetTrackingData((int)data.m_Identifier);
-			if(Biggest && AccountID == (*Biggest).AccountID)
+			const auto Leader = m_LevelingTracker.GetTrackingData((int)Profession.m_Identifier);
+			if(Leader && AccountID == Leader->AccountID)
 			{
-				pPlayer->GetCharacter()->AddMultipleOrbit(data.m_Projectile, 1, data.m_Type, data.m_Subtype, data.m_OrbitType);
-				bestExpert = true;
+				pPlayer->GetCharacter()->AddMultipleOrbit(Profession.m_Projectile, 1, Profession.m_Type, Profession.m_Subtype, Profession.m_OrbitType);
+				IsTopExpert = true;
 			}
 		}
-	};
+	}
 
-	// apply aura layer
-	ApplyLayer();
-	ApplyLayer();
-
-	if(bestExpert)
+	if(IsTopExpert)
 		pPlayer->GS()->Chat(pPlayer->GetCID(), "You are the top expert in your profession on the server. Visual highlighting is now active.");
 }
 
@@ -181,8 +178,6 @@ void CLevelingTracker::UpdateTrackingDataIfNecessary(CPlayer* pPlayer, int Profe
 
 std::optional<TrackingLevelingData> CLevelingTracker::GetTrackingData(int ProfessionID) const
 {
-	if(!m_vTrackingData.contains(ProfessionID))
-		return std::nullopt;
-
-	return m_vTrackingData.at(ProfessionID);
+	const auto It = m_vTrackingData.find(ProfessionID);
+	return It != m_vTrackingData.end() ? std::make_optional(It->second) : std::nullopt;
 }

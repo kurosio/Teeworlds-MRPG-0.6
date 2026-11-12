@@ -22,15 +22,15 @@ public:
 
 private:
 	std::vector<SlotEntry> m_Slots {};
-	auto findSlotIter(const std::vector<EquippedSlots::SlotEntry>& slots, ItemType type) const
+	auto findSlotIter(ItemType type) const
 	{
-		return std::ranges::find_if(slots, [type](const auto& entry)
+		return std::ranges::find_if(m_Slots, [type](const auto& entry)
 			{ return entry.first == type; });
 	}
 
-	auto findSlotIter(std::vector<EquippedSlots::SlotEntry>& slots, ItemType type)
+	auto findSlotIter(ItemType type)
 	{
-		return std::ranges::find_if(slots, [type](const auto& entry)
+		return std::ranges::find_if(m_Slots, [type](const auto& entry)
 			{ return entry.first == type; });
 	}
 };

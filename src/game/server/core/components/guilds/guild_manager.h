@@ -13,7 +13,6 @@ class CGuildManager : public MmoComponent
 		// free data
 		mystd::freeContainer(CGuild::Data());
 		mystd::freeContainer(CGuildHouse::Data());
-		mystd::freeContainer(CGuildWarHandler::Data());
 	};
 
 	void OnPreInit() override;
@@ -27,8 +26,6 @@ class CGuildManager : public MmoComponent
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;
 	void OnGlobalTimePeriod(ETimePeriod Period) override;
 	void OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req) override;
-
-	void InitWars() const;
 
 public:
 	void Create(CPlayer *pPlayer, const char *pGuildName) const;
@@ -52,7 +49,6 @@ private:
 	void ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const;
 	void ShowRequests(CPlayer* pPlayer) const;
 	void ShowDetail(CPlayer* pPlayer, CGuildHouse* pHouse) const;
-	void ShowDeclareWarMenu(int ClientID) const;
 	void ShowDoorsControl(CPlayer* pPlayer) const;
 	void ShowHouseMembers(CPlayer* pPlayer) const;
 	void ShowFarmzonesControl(CPlayer* pPlayer) const;

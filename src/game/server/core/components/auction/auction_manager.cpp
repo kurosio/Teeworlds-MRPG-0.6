@@ -27,7 +27,9 @@ void CAuctionManager::OnPreInit()
 		int OwnerID = pRes->getInt("OwnerID");
 
 		// init by server
-		CAuctionSlot::CreateElement(ID)->Init({ItemID, Value, Enchant}, Price, OwnerID);
+		CItem Item(ItemID, Value, Enchant);
+		Item.SetStringData(pRes->getString("Data"));
+		CAuctionSlot::CreateElement(ID)->Init(Item, Price, OwnerID);
 	}
 }
 
@@ -272,7 +274,9 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 
 		// start creating new slot
 		CAuctionSlot* pAuctionData = &pPlayer->GetSharedData().m_TempAuctionSlot;
-		pAuctionData->SetItem({ ItemID, 1, pPlayer->GetItem(ItemID)->GetEnchant(), 0, 0});
+		CItem Item(ItemID, 1, pPlayer->GetItem(ItemID)->GetEnchant(), 0, 0);
+		Item.SetStringData(pPlayer->GetItem(ItemID)->GetStringData());
+		pAuctionData->SetItem(Item);
 		pAuctionData->SetPrice(maximum(1, pAuctionData->GetItem()->Info()->GetInitialPrice()));
 		pPlayer->m_VotesData.UpdateVotes(MENU_AUCTION_CREATE_SLOT);
 		return true;
@@ -338,6 +342,9 @@ void CAuctionManager::CreateSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData) c
 		const CItem* pItem = pAuctionData->GetItem();
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pItem->GetID());
 
+		// Refresh data at listing time, not when the auction menu was opened.
+		pAuctionData->GetItem()->SetStringData(pPlayerItem->GetStringData());
+
 		// try to spend selling auction item
 		if(pPlayer->Account()->SpendCurrency(pItem->GetValue(), pItem->GetID()))
 		{
@@ -346,8 +353,8 @@ void CAuctionManager::CreateSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData) c
 			const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // Increment the highest group ID by 1, or set to 1 if no previous group exists
 
 			// insert new slot
-			Database->Execute<DB::INSERT>(TW_AUCTION_SLOTS_TABLE, "(ID, ItemID, Value, Price, Enchant, OwnerID) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
-				InitID, pItem->GetID(), pItem->GetValue(), pAuctionData->GetPrice(), pItem->GetEnchant(), pPlayer->Account()->GetID());
+			Database->Execute<DB::INSERT>(TW_AUCTION_SLOTS_TABLE, "(ID, ItemID, Value, Price, Enchant, OwnerID, Data) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', NULLIF(UNHEX('{}'), ''))",
+				InitID, pItem->GetID(), pItem->GetValue(), pAuctionData->GetPrice(), pItem->GetEnchant(), pPlayer->Account()->GetID(), sqlstr::HexEncode(pItem->GetStringData()));
 			CAuctionSlot::CreateElement(InitID)->Init(*pItem, pAuctionData->GetPrice(), AccountID);
 
 			// send messages

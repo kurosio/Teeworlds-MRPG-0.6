@@ -16,6 +16,9 @@ CGuild::~CGuild()
 
 bool CGuild::Upgrade(GuildUpgrade Type)
 {
+	if(Type != GuildUpgrade::AvailableSlots && Type != GuildUpgrade::ChairLevel && Type != GuildUpgrade::DecorationSlots)
+		return false;
+
 	auto* pUpgradeField = &m_UpgradesData.getField<int>((int)Type);
 
 	// check maximum for available slots
@@ -167,23 +170,6 @@ void CGuild::HandleTimePeriod(ETimePeriod Period)
 	}
 }
 
-bool CGuild::StartWar(CGuild* pTargetGuild)
-{
-	if(!pTargetGuild || pTargetGuild->GetWar() || GetWar())
-		return false;
-
-	CGuildWarHandler* pWarHandler = CGuildWarHandler::CreateElement();
-	const time_t TimeNow = time(nullptr);
-	const time_t TimeUntilPreparationEnd = TimeNow + (g_Config.m_SvGuildWarPreparationMinutes * 60);
-	const time_t TimeUntilSiegeEnd = TimeUntilPreparationEnd + (g_Config.m_SvGuildWarDurationMinutes * 60);
-	const time_t TimeUntilCooldownEnd = TimeUntilSiegeEnd + (g_Config.m_SvGuildWarHouseCooldownMinutes * 60);
-	pWarHandler->Init({ this, pTargetGuild, 0 }, { pTargetGuild, this, 0 }, TimeUntilPreparationEnd, TimeUntilSiegeEnd, TimeUntilCooldownEnd);
-
-	GS()->ChatGuild(GetID(), "War declared against '{~}'. Preparation started.", pTargetGuild->GetName());
-	GS()->ChatGuild(pTargetGuild->GetID(), "Guild '{~}' declared war on you. Prepare your defense.", GetName());
-	return true;
-}
-
 int CGuild::GetUpgradePrice(GuildUpgrade Type)
 {
 	int TotalPrice = 0;
@@ -191,7 +177,6 @@ int CGuild::GetUpgradePrice(GuildUpgrade Type)
 
 	switch(Type)
 	{
-		case GuildUpgrade::DoorHealth:
 		case GuildUpgrade::DecorationSlots:
 			TotalPrice = CurrentPoint * g_Config.ms_SvGuildLowUpgradePrice;
 			break;
@@ -225,11 +210,16 @@ CGS* CGuild::CBank::GS() const
 	return m_pGuild->GS();
 }
 
+void CGuild::CBank::Save() const
+{
+	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Value, m_pGuild->GetID());
+	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
+}
+
 void CGuild::CBank::Add(const BigInt& Value)
 {
 	m_Value += Value;
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Value, m_pGuild->GetID());
-	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
+	Save();
 }
 
 bool CGuild::CBank::Spend(const BigInt& Value)
@@ -238,8 +228,7 @@ bool CGuild::CBank::Spend(const BigInt& Value)
 		return false;
 
 	m_Value -= Value;
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Value, m_pGuild->GetID());
-	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
+	Save();
 	return true;
 }
 
@@ -703,8 +692,8 @@ GuildResult CGuild::CMembersManager::Kick(int AccountID)
 
 bool CGuild::CMembersManager::HasFreeSlots() const
 {
-	const int CurrentSlots = m_pGuild->GetUpgrades().getRef<int>((int)GuildUpgrade::AvailableSlots);
-	return (int)m_apMembers.size() < CurrentSlots;
+	const auto [UsedSlots, TotalSlots] = GetCurrentSlots();
+	return UsedSlots < TotalSlots;
 }
 
 std::pair<int, int> CGuild::CMembersManager::GetCurrentSlots() const
@@ -721,11 +710,6 @@ void CGuild::CMembersManager::ResetDeposits()
 
 	// Save the updated member list
 	Save();
-}
-
-int CGuild::CMembersManager::GetOnlineCount() const
-{
-	return (int)std::count_if(m_apMembers.begin(), m_apMembers.end(), [](const auto& pMember) { return pMember.second->IsOnline(); });
 }
 
 void CGuild::CMembersManager::Init(const std::string& JsonMembers)
@@ -773,7 +757,8 @@ void CGuild::CMembersManager::Save() const
 
 CGuild::CMember* CGuild::CMembersManager::Get(int AccountID)
 {
-	return m_apMembers.find(AccountID) != m_apMembers.end() ? m_apMembers[AccountID] : nullptr;
+	const auto It = m_apMembers.find(AccountID);
+	return It != m_apMembers.end() ? It->second : nullptr;
 }
 
 
@@ -800,16 +785,24 @@ void CGuild::CRequestsManager::Init()
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '{}'", m_pGuild->GetID());
 	while(pRes->next())
 	{
-		// Get the rank ID, name, and access level from the database query result
+		// Load the account that sent the request
 		int AccountID = pRes->getInt("UserID");
 		m_aRequestsJoin.push_back(new RequestData(AccountID));
 	}
 }
 
+CGuild::RequestsContainer::iterator CGuild::CRequestsManager::FindRequest(int AccountID)
+{
+	return std::find_if(m_aRequestsJoin.begin(), m_aRequestsJoin.end(), [AccountID](const RequestData* pRequest)
+	{
+		return pRequest->GetFromUID() == AccountID;
+	});
+}
+
 GuildResult CGuild::CRequestsManager::Request(int FromUID)
 {
 	// Check if the invite already exists in the guild's invites container
-	if(std::any_of(m_aRequestsJoin.begin(), m_aRequestsJoin.end(), [&FromUID](const RequestData* p){ return p->GetFromUID() == FromUID; }))
+	if(FindRequest(FromUID) != m_aRequestsJoin.end())
 		return GuildResult::MEMBER_REQUEST_ALREADY_SEND;
 
 	// Check if the guild's member list has free slots
@@ -832,12 +825,9 @@ GuildResult CGuild::CRequestsManager::Request(int FromUID)
 GuildResult CGuild::CRequestsManager::Accept(int UserID, const CMember* pFromMember)
 {
 	// Find the request with the given UserID in the m_aRequestsJoin vector
-	auto Iter = std::find_if(m_aRequestsJoin.begin(), m_aRequestsJoin.end(), [&UserID](const RequestData* pRequest)
-	{
-		return pRequest->GetFromUID() == UserID;
-	});
+	auto Iter = FindRequest(UserID);
 
-	// If the request is not found, return an undefined error
+	// Process the request if it exists
 	if(Iter != m_aRequestsJoin.end())
 	{
 		// Remove the request from the database and delete it from memory
@@ -867,10 +857,7 @@ GuildResult CGuild::CRequestsManager::Accept(int UserID, const CMember* pFromMem
 void CGuild::CRequestsManager::Deny(int UserID, const CMember* pFromMember)
 {
 	// Find the request in m_aRequestsJoin that matches the UserID
-	auto Iter = std::find_if(m_aRequestsJoin.begin(), m_aRequestsJoin.end(), [&UserID](const RequestData* pRequest)
-	{
-		return pRequest->GetFromUID() == UserID;
-	});
+	auto Iter = FindRequest(UserID);
 
 	// If the request was found
 	if(Iter != m_aRequestsJoin.end())

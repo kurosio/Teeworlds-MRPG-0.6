@@ -52,26 +52,10 @@ void CQuestMobAI::OnDie(int Killer, int Weapon)
 
 void CQuestMobAI::OnTargetRules(float Radius)
 {
-	const auto* pTarget = GS()->GetPlayer(m_Target.GetCID(), false, true);
-	const auto* pPlayer = SearchPlayerCondition(Radius, [&](const CPlayer* pCandidate)
-	{
-		const bool DamageDisabled = pCandidate->GetCharacter()->m_Core.m_DamageDisabled;
-		const bool IsActiveForClient = m_pQuestMobInfo->m_ActiveForClient[pCandidate->GetCID()];
-
-		if(pTarget)
-		{
-			const int CurrentTotalAttHP = pTarget->GetTotalAttributeValue(AttributeIdentifier::HP);
-			const int CandidateTotalAttHP = pCandidate->GetTotalAttributeValue(AttributeIdentifier::HP);
-			return !DamageDisabled && IsActiveForClient && CurrentTotalAttHP < CandidateTotalAttHP;
-		}
-
-		return !DamageDisabled && IsActiveForClient;
-	});
-
-	if(pPlayer)
-	{
-		m_Target.Set(pPlayer->GetCID(), 100);
-	}
+	// IsAllowedPVP also checks whether this quest mob is active for the
+	// player, including the owner when the candidate is an eidolon.
+	if(auto* pTarget = FindClosestAttackablePlayerOrEidolon(Radius))
+		m_Target.Set(pTarget->GetCID(), 100);
 }
 
 void CQuestMobAI::Process()

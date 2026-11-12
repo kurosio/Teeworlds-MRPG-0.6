@@ -32,6 +32,7 @@ CREATE TABLE `tw_auction_slots` (
   `ItemID` int(11) NOT NULL,
   `Value` int(11) NOT NULL,
   `Enchant` int(11) NOT NULL DEFAULT 0,
+  `Data` text DEFAULT NULL,
   `Price` int(11) NOT NULL,
   `OwnerID` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -86,20 +87,6 @@ CREATE TABLE `tw_guilds_invites` (
   `ID` int(11) NOT NULL,
   `GuildID` int(11) NOT NULL,
   `UserID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tw_guilds_wars`
---
-
-CREATE TABLE `tw_guilds_wars` (
-  `GuildID1` int(11) NOT NULL,
-  `GuildID2` int(11) NOT NULL,
-  `TimeUntilEnd` bigint(20) NOT NULL,
-  `Score1` int(11) NOT NULL DEFAULT 0,
-  `Score2` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -175,13 +162,6 @@ ALTER TABLE `tw_guilds_invites`
   ADD UNIQUE KEY `ID` (`ID`),
   ADD KEY `OwnerID` (`UserID`),
   ADD KEY `MemberID` (`GuildID`);
-
---
--- Indexes for table `tw_guilds_wars`
---
-ALTER TABLE `tw_guilds_wars`
-  ADD PRIMARY KEY (`GuildID1`,`GuildID2`),
-  ADD KEY `GuildID2` (`GuildID2`);
 
 --
 -- Indexes for table `tw_houses_decorations`

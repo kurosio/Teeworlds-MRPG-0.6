@@ -3,6 +3,7 @@
 #include "item_data.h"
 
 #include <game/server/gamecontext.h>
+#include <engine/server/sql_string_helpers.h>
 #include <game/server/entity_manager.h>
 #include <generated/server_data.h>
 
@@ -29,6 +30,7 @@ namespace
 			int m_Enchant{};
 			int m_Durability{};
 			time_t m_ExpiresAt{};
+			std::string m_Data{};
 			uint64_t m_Key{};
 			uint64_t m_Serial{};
 		};
@@ -84,20 +86,20 @@ namespace
 
 			Database->Execute<DB::INSERT>([pContext](bool Updated) { OnFinalize(pContext, Updated); },
 				"tw_accounts_items",
-				"(ItemID, UserID, Value, Settings, Enchant, Durability, ExpiresAt) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}') "
-				"ON DUPLICATE KEY UPDATE Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}', ExpiresAt = '{}'",
-				Data.m_ItemID, Data.m_UserID, Data.m_Value, Data.m_Settings, Data.m_Enchant, Data.m_Durability, Data.m_ExpiresAt,
-				Data.m_Value, Data.m_Settings, Data.m_Enchant, Data.m_Durability, Data.m_ExpiresAt);
+				"(ItemID, UserID, Value, Settings, Enchant, Durability, ExpiresAt, Data) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', NULLIF(UNHEX('{}'), '')) "
+				"ON DUPLICATE KEY UPDATE Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}', ExpiresAt = '{}', Data = NULLIF(UNHEX('{}'), '')",
+				Data.m_ItemID, Data.m_UserID, Data.m_Value, Data.m_Settings, Data.m_Enchant, Data.m_Durability, Data.m_ExpiresAt, sqlstr::HexEncode(Data.m_Data),
+				Data.m_Value, Data.m_Settings, Data.m_Enchant, Data.m_Durability, Data.m_ExpiresAt, sqlstr::HexEncode(Data.m_Data));
 		}
 
 	public:
-		static void Start(CPlayer* pPlayer, int ItemID, int Value, int Settings, int Enchant, int Durability, time_t ExpiresAt)
+		static void Start(CPlayer* pPlayer, int ItemID, int Value, int Settings, int Enchant, int Durability, time_t ExpiresAt, const std::string& ItemData)
 		{
 			const int UserID = pPlayer->Account()->GetID();
 			const uint64_t Key = MakeKey(UserID, ItemID);
 			const uint64_t Serial = NextSerial(Key);
 			auto pContext = DbAsync::MakeContext<CSavePayload>(pPlayer->GetCID(), CSavePayload {
-				UserID, ItemID, Value, Settings, Enchant, Durability > 0 ? Durability : 100, ExpiresAt, Key, Serial,
+				UserID, ItemID, Value, Settings, Enchant, Durability > 0 ? Durability : 100, ExpiresAt, ItemData, Key, Serial,
 			});
 
 			OnWrite(pContext);
@@ -124,6 +126,15 @@ inline static int randomRangecount(int startrandom, int endrandom, int count)
 		result += random;
 	}
 	return result;
+}
+
+bool CPlayerItem::SetStringData(const std::string& Data)
+{
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed() || m_Value < 1)
+		return false;
+	m_StringData = Data;
+	return Save();
 }
 
 bool CPlayerItem::SetEnchant(int Enchant)
@@ -277,7 +288,7 @@ bool CPlayerItem::IsEquipped() const
 	return false;
 }
 
-bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, time_t StartExpiresAt, bool Message)
+bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, time_t StartExpiresAt, bool Message, const std::string& StartData)
 {
 	if(Value < 1)
 		return false;
@@ -313,7 +324,9 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, time_t Sta
 			MailWrapper Mail("System", pPlayer->Account()->GetID(), "No place for item.");
 			Mail.AddDescLine("You already have this item.");
 			Mail.AddDescLine("We can't put it in inventory");
-			Mail.AttachItem(CItem(m_ID, 1, StartEnchant, 100));
+			CItem Item(m_ID, 1, StartEnchant, 100);
+			Item.SetStringData(StartData);
+			Mail.AttachItem(Item);
 			Mail.Send();
 			return false;
 		}
@@ -328,6 +341,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, time_t Sta
 		m_Enchant = StartEnchant;
 		m_Settings = StartSettings;
 		m_ExpiresAt = StartExpiresAt;
+		m_StringData = StartData;
 		StartEmbeddedScenario(ScenarioBlocks::ItemGot);
 	}
 
@@ -404,6 +418,8 @@ bool CPlayerItem::Remove(int Value)
 		}
 
 		m_Value -= Value;
+		if(m_Value == 0)
+			m_StringData.clear();
 		if(Save())
 		{
 			g_EventListenerManager.Notify<IEventListener::PlayerLostItem>(pPlayer, this, Value);
@@ -665,7 +681,7 @@ bool CPlayerItem::Save()
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
-	DbInventorySave::Start(pPlayer, m_ID, m_Value, m_Settings, m_Enchant, m_Durability, m_ExpiresAt);
+	DbInventorySave::Start(pPlayer, m_ID, m_Value, m_Settings, m_Enchant, m_Durability, m_ExpiresAt, m_StringData);
 
 	return true;
 }

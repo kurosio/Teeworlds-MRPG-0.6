@@ -18,6 +18,7 @@ protected:
 	int m_Durability {};
 	time_t m_ExpiresAt {};
 	int m_Settings {};
+	std::string m_StringData {};
 
 public:
 	CItem() = default;
@@ -33,11 +34,13 @@ public:
 	int GetDurability() const { return m_Durability; }
 	int GetSettings() const { return m_Settings; }
 	time_t GetExpiresAt() const { return m_ExpiresAt; }
+	const std::string& GetStringData() const { return m_StringData; }
 	bool IsValid() const { return CItemDescription::Data().contains(m_ID) && m_Value > 0; }
 	CItemDescription* Info() const { return &CItemDescription::Data()[m_ID]; }
 	std::string GetStringEnchantLevel() const { return Info()->GetStringEnchantLevel(m_Enchant); }
 
 	// setters
+	virtual bool SetStringData(const std::string& Data) { m_StringData = Data; return true; }
 	void SetID(ItemIdentifier ID) { m_ID = ID; }
 
 	virtual bool SetValue(int Value)
@@ -86,13 +89,14 @@ public:
 	{
 	}
 
-	void Init(int Value, int Enchant, int Durability, int Settings, time_t ExpiresAt = 0)
+	void Init(int Value, int Enchant, int Durability, int Settings, time_t ExpiresAt = 0, const std::string& Data = {})
 	{
 		m_Value = Value;
 		m_Enchant = Enchant;
 		m_Durability = Durability;
 		m_Settings = Settings;
 		m_ExpiresAt = ExpiresAt;
+		m_StringData = Data;
 		CPlayerItem::m_pData[m_ClientID][m_ID] = *this;
 	}
 
@@ -109,7 +113,7 @@ public:
 
 	// main functions
 	bool StartEmbeddedScenario(ScenarioBlock Block);
-	bool Add(int Value, int StartSettings = 0, int StartEnchant = 0, time_t StartExpiresAt = 0, bool Message = true);
+	bool Add(int Value, int StartSettings = 0, int StartEnchant = 0, time_t StartExpiresAt = 0, bool Message = true, const std::string& StartData = {});
 	bool Remove(int Value);
 	bool Equip();
 	bool UnEquip();
@@ -119,6 +123,7 @@ public:
 
 
 	// override functions
+	bool SetStringData(const std::string& Data) override;
 	bool SetValue(int Value) override;
 	bool SetEnchant(int Enchant) override;
 	bool SetDurability(int Durability) override;
@@ -145,6 +150,8 @@ inline void to_json(nlohmann::json& j, const CItem& data)
 		j["durability"] = data.GetDurability();
 	if(data.GetExpiresAt() != 0)
 		j["lifetime"] = maximum<time_t>(0, data.GetExpiresAt() - time(nullptr));
+	if(!data.GetStringData().empty())
+		j["data"] = data.GetStringData();
 }
 
 inline void from_json(const nlohmann::json& j, CItem& data)
@@ -158,6 +165,7 @@ inline void from_json(const nlohmann::json& j, CItem& data)
 	data.SetValue(j.at("value").get<int>());
 
 	// optional fields
+	data.SetStringData(j.value("data", std::string{}));
 	data.SetEnchant(j.value("enchant", 0));
 	data.SetDurability(j.value("durability", 100));
 	const auto Lifetime = j.value<time_t>("lifetime", 0);

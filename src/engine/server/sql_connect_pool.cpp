@@ -15,7 +15,6 @@ namespace
 		"tw_guilds_decorations",
 		"tw_guilds_history",
 		"tw_guilds_invites",
-		"tw_guilds_wars",
 		"tw_houses_decorations",
 		"tw_links",
 	};

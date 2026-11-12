@@ -4,7 +4,6 @@
 #define GAME_SERVER_CORE_COMPONENTS_GUILDS_GUILD_DATA_H
 
 #include <components/houses/guild_house_data.h>
-#include "guild_war_data.h"
 
 #define TW_GUILDS_TABLE "tw_guilds"
 #define TW_GUILDS_RANKS_TABLE "tw_guilds_ranks"
@@ -12,7 +11,6 @@
 #define TW_GUILDS_INVITES_TABLE "tw_guilds_invites"
 
 // Forward declaration and alias
-class CGuildWarData;
 using GuildIdentifier = int;
 using GuildRankIdentifier = int;
 
@@ -24,8 +22,7 @@ enum GuildMisc
 	GUILD_LOGS_MAX_COUNT = 50,             // Max number of log entries for a guild
 	GUILD_NEW_UPGRADE_SLOTS = 2,           // New guilds start with 2 additional slots
 	GUILD_NEW_UPGRADE_CHAIR = 1,           // New guilds start with 1 chair upgrade
-	GUILD_NEW_UPGRADE_DOOR_HEALTH = 1,     // New guilds start with 1 door health
-	GUILD_NEW_UPGRADE_DECORATION_SLOT = 5, // New guilds start with 1 door health
+	GUILD_NEW_UPGRADE_DECORATION_SLOT = 5, // New guilds start with 5 decoration slots
 	GUILD_RENT_DAYS_DEFAULT = 3,           // Default rent duration for a guild
 };
 
@@ -64,9 +61,7 @@ enum class GuildUpgrade : size_t
 	NumGuildUpgr,                        // Total number of guild upgrades
 
 	ChairLevel = 1,                      // Upgrade for house chair experience
-	DoorHealth = 2,                      // Upgrade for house door health
 	DecorationSlots = 3,                 // Upgrade additional decoration slots
-	NumGuildHouseUpgr                    // Total number of guild house upgrades
 };
 
 // Flags for tracking guild activity logs
@@ -131,7 +126,6 @@ inline constexpr std::array<GuildRankRightInfo, 11> s_aGuildRankRights
 
 class CGuild : public MultiworldIdentifiableData< std::deque < CGuild* > >
 {
-	friend class CGuildWarHandler;
 	friend class CGuildHouse;
 
 public:
@@ -154,6 +148,9 @@ public:
 
 		void Add(const BigInt& Value);
 		[[nodiscard]] bool Spend(const BigInt& Value);
+	
+	private:
+		void Save() const;
 	};
 
 	/* -------------------------------------
@@ -284,7 +281,6 @@ public:
 		MembersContainer& GetContainer() { return m_apMembers; }
 		std::pair<int, int> GetCurrentSlots() const;
 		bool HasFreeSlots() const;
-		int GetOnlineCount() const;
 
 		[[nodiscard]] GuildResult Join(int AccountID);
 		[[nodiscard]] GuildResult Kick(int AccountID);
@@ -329,6 +325,7 @@ public:
 
 	private:
 		void Init();
+		RequestsContainer::iterator FindRequest(int AccountID);
 	};
 
 private:
@@ -343,7 +340,6 @@ private:
 	{
 		DBField<int>((int)GuildUpgrade::AvailableSlots, "AvailableSlots", "Available slots", GUILD_NEW_UPGRADE_SLOTS, GUILD_MAX_SLOTS),
 		DBField<int>((int)GuildUpgrade::ChairLevel, "ChairLevel", "Chair level", GUILD_NEW_UPGRADE_CHAIR, 100),
-		DBField<int>((int)GuildUpgrade::DoorHealth, "DoorHealth", "Max door health", GUILD_NEW_UPGRADE_DOOR_HEALTH, 20),
 		DBField<int>((int)GuildUpgrade::DecorationSlots, "DecorationSlots", "Decoration slots", GUILD_NEW_UPGRADE_DECORATION_SLOT, 30),
 	};
 
@@ -351,7 +347,6 @@ private:
 	CLogEntry* m_pLogger {};
 	CRanksManager* m_pRanks {};
 	CMembersManager* m_pMembers {};
-	CGuildWarData* m_pWar {};
 	CGuildHouse* m_pHouse {};
 
 public:
@@ -491,15 +486,6 @@ public:
 
 	// Handle time-based events
 	void HandleTimePeriod(ETimePeriod Period);
-
-	// Start a war with another guild
-	bool StartWar(CGuild* pTargetGuild);
-
-	// Get current guild war data
-	CGuildWarData* GetWar() const
-	{
-		return m_pWar;
-	}
 
 	// Check if an account is a member of the guild
 	static bool IsAccountMemberGuild(int AccountID);

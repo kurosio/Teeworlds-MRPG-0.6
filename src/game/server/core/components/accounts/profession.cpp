@@ -134,25 +134,25 @@ void CProfession::ResetUpgrades()
 
 	// reset by all attributes
 	int RefundedPointsTotal = 0;
-	for(auto& [ID, currentValue] : m_Attributes)
+	for(auto& [ID, CurrentValue] : m_Attributes)
 	{
-		int initialValue = (m_ProfessionType == PROFESSION_TYPE_OTHER ? 1 : 0);
-		if(currentValue > initialValue)
+		int InitialValue = (m_ProfessionType == PROFESSION_TYPE_OTHER ? 1 : 0);
+		if(CurrentValue > InitialValue)
 		{
-			int PointsToRefund = currentValue - initialValue;
+			int PointsToRefund = CurrentValue - InitialValue;
 			auto* pAttInfo = GS()->GetAttributeInfo(ID);
 
 			PointsToRefund *= pAttInfo->GetUpgradePrice();
 			m_UpgradePoint += PointsToRefund;
 			RefundedPointsTotal += PointsToRefund;
-			currentValue = initialValue;
+			CurrentValue = InitialValue;
 
 			// update player by raw attribute
-			auto totalAttribute = pPlayer->GetTotalRawAttributeValue(ID);
-			pPlayer->UpdateTotalAttributeValue(ID, totalAttribute);
+			auto TotalAttribute = pPlayer->GetTotalRawAttributeValue(ID);
+			pPlayer->UpdateTotalAttributeValue(ID, TotalAttribute);
 		}
-		else if(currentValue < initialValue)
-			currentValue = initialValue;
+		else if(CurrentValue < InitialValue)
+			CurrentValue = InitialValue;
 	}
 
 	// information

@@ -6,8 +6,11 @@
 
 #include "EidolonInfoData.h"
 
-class CEidolonManager : public MmoComponent
+class CEidolonManager : public MmoComponent, public IEventListener
 {
+	ScopedEventListener m_Events;
+	void OnPreInit() override;
+	void OnPlayerProfessionExperience(CPlayer* pPlayer, CProfession* pProfession, uint64_t& Experience) override;
 	int m_EidolonItemSelected[MAX_PLAYERS] {};
 
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason) override;

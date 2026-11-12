@@ -4,7 +4,7 @@
 
 void EquippedSlots::initSlot(ItemType type, std::optional<int> itemID)
 {
-	auto it = findSlotIter(m_Slots, type);
+	auto it = findSlotIter(type);
 	if(it != m_Slots.end())
 		it->second = itemID;
 	else
@@ -13,12 +13,12 @@ void EquippedSlots::initSlot(ItemType type, std::optional<int> itemID)
 
 bool EquippedSlots::hasSlot(ItemType type) const
 {
-	return findSlotIter(m_Slots, type) != m_Slots.end();
+	return findSlotIter(type) != m_Slots.end();
 }
 
 std::optional<int> EquippedSlots::getEquippedItemID(ItemType type) const
 {
-	auto it = findSlotIter(m_Slots, type);
+	auto it = findSlotIter(type);
 	return it != m_Slots.end() ? it->second : std::nullopt;
 }
 
@@ -32,7 +32,7 @@ void EquippedSlots::load(const std::string& equippedSlotsJson)
 		for(auto& [strType, jsonItemID] : jsonData.items())
 		{
 			const auto currentItemType = (ItemType)std::stoi(strType);
-			auto it = findSlotIter(m_Slots, currentItemType);
+			auto it = findSlotIter(currentItemType);
 			if(it == m_Slots.end())
 				continue;
 
@@ -57,7 +57,7 @@ bool EquippedSlots::equipItem(int itemID)
 	const auto* pGS = (CGS*)Instance::GameServer();
 	const auto* pItemInfo = pGS->GetItemInfo(itemID);
 	const auto typeToEquip = pItemInfo->GetType();
-	auto it = findSlotIter(m_Slots, typeToEquip);
+	auto it = findSlotIter(typeToEquip);
 
 	if(it == m_Slots.end() || (it->second.has_value() && it->second.value() == itemID))
 		return false;
@@ -74,7 +74,7 @@ bool EquippedSlots::unequipItem(int itemID)
 	auto* pGS = (CGS*)Instance::GameServer();
 	auto* pItemInfo = pGS->GetItemInfo(itemID);
 	const auto typeToUnequip = pItemInfo->GetType();
-	auto it = findSlotIter(m_Slots, typeToUnequip);
+	auto it = findSlotIter(typeToUnequip);
 
 	if(it == m_Slots.end() || !it->second.has_value() || it->second.value() != itemID)
 		return false;

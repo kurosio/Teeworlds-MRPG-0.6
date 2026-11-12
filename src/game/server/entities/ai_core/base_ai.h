@@ -44,6 +44,7 @@ protected:
 	IServer* Server() const;
 	CGS* GS() const;
 
+	CPlayer* FindClosestAttackablePlayerOrEidolon(float Radius);
 	CPlayer* SearchPlayerCondition(float Distance, const std::function<bool(CPlayer*)>& Condition);
 	CPlayerBot* SearchPlayerBotCondition(float Distance, const std::function<bool(CPlayerBot*)>& Condition);
 

@@ -32,6 +32,7 @@ class CPlayerBot : public CPlayer
 	int m_MaxMana{};
 	int m_Mana{};
 	bool m_DisabledBotDamage{};
+	bool m_EidolonDead{};
 	CQuestBotMobInfo m_QuestMobInfo{};
 	MobBotInfo m_MobInfo {};
 
@@ -88,7 +89,8 @@ public:
 
 	int CalculateAttribute(AttributeIdentifier ID, int PowerLevel, bool Boss) const;
 
-	int m_EidolonItemID;
+	int m_EidolonItemID {NOPE};
+	void SetEidolonDead() { m_EidolonDead = true; }
 	CPlayer* GetEidolonOwner() const;
 	bool IsDisabledBotDamage() const { return m_DisabledBotDamage; }
 	float GetActiveDistance() const;

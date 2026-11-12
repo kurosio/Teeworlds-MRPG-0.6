@@ -201,6 +201,7 @@ CREATE TABLE `tw_accounts_items` (
   `Enchant` int(11) NOT NULL,
   `Durability` int(11) NOT NULL DEFAULT 100,
   `ExpiresAt` bigint(20) NOT NULL DEFAULT 0,
+  `Data` text DEFAULT NULL,
   `UserID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
 

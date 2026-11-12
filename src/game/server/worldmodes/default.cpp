@@ -98,6 +98,7 @@ bool CGameControllerDefault::OnCharacterSpawn(CCharacter* pChr)
 		pChr->GiveWeapon(i, MaximumAmmo);
 
 	// eidolons
+	pChr->GetPlayer()->ReviveEidolonsOnSpawn();
 	pChr->GetPlayer()->TryCreateEidolon();
 	return true;
 }

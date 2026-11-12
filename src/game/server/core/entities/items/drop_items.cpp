@@ -57,7 +57,7 @@ bool CEntityDropItem::TakeItem(int ClientID)
 	}
 
 	// simple subject delivery
-	pPlayerItem->Add(m_DropItem.GetValue(), 0, m_DropItem.GetEnchant());
+	pPlayerItem->Add(m_DropItem.GetValue(), 0, m_DropItem.GetEnchant(), 0, true, m_DropItem.GetStringData());
 	GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, 10, "\0");
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_INVENTORY);
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_EQUIPMENT);

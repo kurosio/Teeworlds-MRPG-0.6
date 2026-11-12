@@ -145,6 +145,9 @@ bool CPlayerBot::IsConversational() const
 
 void CPlayerBot::PrepareRespawnTick()
 {
+	m_WantSpawn = true;
+
+	// Set interval and some flags
 	if(m_BotType == TYPE_BOT_MOB)
 	{
 		m_DisabledBotDamage = false;
@@ -164,6 +167,7 @@ void CPlayerBot::PrepareRespawnTick()
 	{
 		m_DisabledBotDamage = false;
 		m_aPlayerTick[Respawn] = Server()->Tick();
+		m_WantSpawn = !m_EidolonDead;
 	}
 	else if(m_BotType == TYPE_BOT_QUEST || m_BotType == TYPE_BOT_NPC)
 	{
@@ -175,9 +179,6 @@ void CPlayerBot::PrepareRespawnTick()
 		m_DisabledBotDamage = true;
 		m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() * 3;
 	}
-
-	// Set the want spawn variable to true
-	m_WantSpawn = true;
 }
 
 int CPlayerBot::CalculateAttribute(AttributeIdentifier ID, int PowerLevel, bool Boss) const
@@ -268,9 +269,10 @@ void CPlayerBot::TryRespawn()
 		if(!pOwner || !pOwner->GetCharacter())
 			return;
 
-		if(auto EquippedItemIdOpt = pOwner->GetEquippedSlotItemID(ItemType::EquipEidolon))
+		if(auto EquippedItemIdOpt = pOwner->GetEquippedSlotItemID(ItemType::EquipEidolon);
+			EquippedItemIdOpt && *EquippedItemIdOpt == m_EidolonItemID)
 		{
-			auto* pOwnerItem = pOwner->GetItem(pOwner->GetEquippedSlotItemID(ItemType::EquipEidolon).value());
+			auto* pOwnerItem = pOwner->GetItem(*EquippedItemIdOpt);
 			if(pOwnerItem->GetDurability() <= 0)
 				return;
 
@@ -495,8 +497,9 @@ int CPlayerBot::GetLevel() const
 
 void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
 {
-	if((m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_QUEST_MOB || (m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN))
-		&& GetHealth() < GetMaxHealth())
+	const bool ShowWhenDamaged = m_BotType == TYPE_BOT_EIDOLON || m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_QUEST_MOB ||
+		(m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN);
+	if(ShowWhenDamaged && GetHealth() < GetMaxHealth())
 	{
 		const int PercentHP = translate_to_percent(GetMaxHealth(), GetHealth());
 		str_format(aBuffer, BufferSize, "%s:%d%%", DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot, clamp(PercentHP, 1, 100));

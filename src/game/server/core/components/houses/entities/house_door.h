@@ -8,33 +8,6 @@
 class CHouse;
 class CGuildHouse;
 
-class CDoorDurability
-{
-	int m_Health {};
-	int m_LastDamageTick {};
-	IHouse* m_pHouse {};
-
-public:
-	CDoorDurability() = default;
-
-	void Init(IHouse* pHouse);
-	bool IncreaseHealth(int Health);
-	bool TakeDamage(int Damage);
-	void Restore();
-	void Tick();
-
-	int GetHealth() const { return m_Health; }
-	int GetMaxHealth() const;
-	int GetTickShift() const
-	{
-		const int MaxHealth = GetMaxHealth();
-		if(MaxHealth == 0)
-			return 0;
-		return ((MaxHealth - m_Health) * 6) / MaxHealth;
-	}
-	constexpr bool IsDestroyed() const { return m_Health <= 0; }
-};
-
 class CEntityHouseDoor : public CEntity
 {
 	enum class State
@@ -48,8 +21,6 @@ class CEntityHouseDoor : public CEntity
 	vec2 m_PosControll {};
 	State m_State {};
 
-	CDoorDurability m_DurabilityManager {};
-
 public:
 	CEntityHouseDoor(CGameWorld* pGameWorld, IHouse* pHouse, const std::string& Name, vec2 Pos);
 
@@ -59,11 +30,8 @@ public:
 	void Open();
 	void Close();
 	void Reverse();
-	void Restore();
-	bool TryDamage(int Damage);
 
 	constexpr bool IsClosed() const { return m_State == State::Closed; }
-	bool IsDestroyed() const { return m_DurabilityManager.IsDestroyed(); }
 	const std::string& GetName() const { return m_Name; }
 
 private:

@@ -372,12 +372,6 @@ H: Darkmoon armor
 Rename (by reason field)
 == 重命名（按原因字段）
 
-You can't declare war on your own guild.
-== 你不能向自己的公会宣战。
-
-List of guilds to declare war
-== 宣战公会列表
-
 $quest_name58
 Jail | Correctional
 == 监狱 | 惩戒
@@ -497,9 +491,6 @@ You must be at least level {} to move!
 $dialog_quest282
 Having done so, you are to deliver them to Monranguin at Gilbert's Spire. He will answer any queries you might have. Now, I have other business to attend to.
 == 完成后，你要把它们送到吉尔伯特尖塔的蒙兰金那里。他会回答你可能有的任何问题。现在，我还有别的事要处理。
-
-♆ Declare war on another guild
-== ♆ 向另一个公会宣战
 
 $quest_name39
 Wizard | Zombie killer
@@ -702,9 +693,6 @@ Durability
 $item_description403
 Chance to imbue attacks with lightning
 == 有几率为攻击注入闪电
-
-Guild wars
-== 公会战
 
 $dialog_quest770
 Hi. There's an orc settlement on the left in the steppe. You know what scares me? There's an ogre that just showed up and he's got dynamite in his head, you know? Okay, one, but they keep coming. You should visit them like this. I hope you come back with some ogre trophies.
@@ -2000,9 +1988,6 @@ You don't have a laser equipped.
 Price for upgrading additional guild features
 == 升级额外公会功能的价格
 
-To do this, select the guild from the list below
-== 为此，请从下面的列表中选择公会
-
 Here you can set the title.
 == 你可以在这里设置称号。
 
@@ -2356,9 +2341,6 @@ You canceled your slot!
 
 Refuse
 == 拒绝
-
-Score: {}(your) / {}(enemy)
-== 分数：{}(你的) / {}(敌人)
 
 The exp multiplier in the '{}' zone is 100%.
 == '{}' 区域的经验倍率为100%。
@@ -3118,9 +3100,6 @@ T: Sunbronze armor
 $item_name228
 M: Small bag
 == 模块：小袋子
-
-war not created
-== 未创建战争
 
 $item_description287
 Moonsteal armor
@@ -4381,9 +4360,6 @@ $skill_boost6
 
 You have left the guild!
 == 您已离开公会！
-
-You can declare war on another guild
-== 你可以向另一个公会宣战
 
 You have reached the maximum number of slots in the auction!
 == 您已达到拍卖行的最大栏位数！
@@ -6286,9 +6262,6 @@ Properties
 Call off the summoned
 == 取消召唤
 
-This guild cannot be declared war at this time.
-== 目前不能向此公会宣战。
-
 Upgrade {} - {} (cost 1 point)
 == 升级 {} - {} (花费 1 点)
 
@@ -6594,9 +6567,6 @@ Titanium armor
 
 Request from {}
 == 来自 {} 的请求
-
-war created
-== 战争已创建
 
 Press fire for attacks by skill: {} attacks!
 == 按开火键使用技能攻击：{}次攻击！
@@ -6966,9 +6936,6 @@ I would assign you a mission of considerable import, yet the need for secrecy pr
 
 Increase restored ammo
 == 增加弹药恢复量
-
-Duration of a guild war in minutes
-== 公会战持续时间（分钟）
 
 Safe
 == 保险箱
@@ -7685,9 +7652,6 @@ Left apartments 1
 
 Class: {}
 == 职业：{}
-
-War with the guild: {}
-== 与公会开战：{}
 
 $quest_name38
 Wizard | Puppeteer?
@@ -9108,9 +9072,6 @@ Enchantment level is maximum
 $aether5
 Dungeon (Right)
 == 地牢（右）
-
-Time until the end of the war: {}
-== 战争结束倒计时：{}
 
 buying
 == 购买中

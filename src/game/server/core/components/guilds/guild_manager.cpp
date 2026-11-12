@@ -18,8 +18,6 @@ void CGuildManager::OnPreInit()
 		const GuildIdentifier ID = pRes->getInt("ID");
 		CGuild::CreateElement(ID)->InitFromRow(pRes);
 	}
-
-	InitWars();
 }
 
 void CGuildManager::OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID)
@@ -33,9 +31,9 @@ void CGuildManager::OnInitLink(const std::string& Type, int64_t OwnerID, int64_t
 
 		pHouse->UpdateGuild(pGuild);
 
-		// the doors were created before the owner was known
-		for (auto& [Number, pDoor] : pHouse->GetDoorManager()->GetContainer())
-			pDoor->Restore();
+		// Doors may have opened while the house had no owner.
+		for(auto& [Number, pDoor] : pHouse->GetDoorManager()->GetContainer())
+			pDoor->Close();
 	}
 }
 
@@ -68,13 +66,6 @@ void CGuildManager::OnTick()
 	// update guilds only from main world its will call on guilds world
 	if(GS()->GetWorldID() == INITIALIZER_WORLD_ID)
 	{
-		// update guild wars
-		if(Server()->Tick() % Server()->TickSpeed() == 0)
-		{
-			for(auto& pWarHandler : CGuildWarHandler::Data())
-				pWarHandler->Handle();
-		}
-
 		// update guild houses rent expiration each 15 minutes
 		if(Server()->Tick() % (Server()->TickSpeed() * 900) == 0)
 		{
@@ -680,60 +671,6 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		return true;
 	}
 
-	// declare guild war
-	if(PPSTR(pCmd, "GUILD_DECLARE_WAR") == 0)
-	{
-		// check guild valid and access rights
-		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !IsGuildLeader(pPlayer))
-		{
-			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
-			return true;
-		}
-
-        const GuildIdentifier& GuildID = GetIfExists<int>(Extras, 0, NOPE);
-
-		// check if war and self it's same guild
-		if(pGuild->GetID() == GuildID)
-		{
-			GS()->Chat(ClientID, "You can't declare war on your own guild.");
-			return true;
-		}
-
-		// check war guild valid
-		CGuild* pWarGuild = GetGuildByID(GuildID);
-		if(!pWarGuild)
-		{
-			GS()->Chat(ClientID, "This guild cannot be declared war at this time.");
-			return true;
-		}
-
-		if(pGuild->GetMembers()->GetOnlineCount() < 1)
-		{
-			GS()->Chat(ClientID, "At least 1 online member from your guild is required to start a war.");
-			return true;
-		}
-
-		if(pWarGuild->GetMembers()->GetOnlineCount() < 1)
-		{
-			GS()->Chat(ClientID, "The target guild must have at least 1 online member to start a war.");
-			return true;
-		}
-
-		// result
-		if(pGuild->StartWar(pWarGuild))
-		{
-			dbg_msg("guild", "war created");
-		}
-		else
-		{
-			dbg_msg("guild", "war not created");
-		}
-
-		GS()->UpdateVotesIfForAll(MENU_GUILD_WARS);
-		return true;
-	}
-
 	// remove plant
 	if(PPSTR(pCmd, "GUILD_HOUSE_FARM_ZONE_REMOVE_PLANT") == 0)
 	{
@@ -1057,14 +994,6 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	// menu guild war
-	if(Menulist == MENU_GUILD_WARS)
-	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
-		ShowDeclareWarMenu(ClientID);
-		return true;
-	}
-
 	// menu guild invites
 	if(Menulist == MENU_GUILD_INVITATIONS)
 	{
@@ -1225,34 +1154,6 @@ void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SReque
 	}
 }
 
-void CGuildManager::InitWars() const
-{
-	/*ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_WARS_TABLE);
-	if(pRes->next())
-	{
-		// Get the ID of the guild that is not the current guild
-		const int GuildID1 = pRes->getInt("GuildID1");
-		const int GuildID2 = pRes->getInt("GuildID2");
-
-		// Get scores
-		const int Score1 = pRes->getInt("Score1");
-		const int Score2 = pRes->getInt("Score2");
-
-		// Get time until
-		const time_t TimeUntilEnd = pRes->getInt64("TimeUntilEnd");
-
-		// Get the pointer to the guild data
-		CGuild* pGuild1 = GetGuildByID(GuildID1);
-		CGuild* pGuild2 = GetGuildByID(GuildID2);
-		dbg_assert(pGuild1 != nullptr, "GUILD_WAR - guild data is empty");
-		dbg_assert(pGuild2 != nullptr, "GUILD_WAR - guild data is empty");
-
-		// Create instance
-		CGuildWarHandler* pWarHandler = CGuildWarHandler::CreateElement();
-		pWarHandler->Init({ pGuild1, pGuild2, Score1 }, { pGuild2, pGuild1, Score2 }, TimeUntilEnd);
-	}*/
-}
-
 void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 {
 	// check validity
@@ -1306,10 +1207,6 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	auto pGuild = GetGuildByID(ID);
 	if(!pGuild)
 		return;
-
-	// End guild wars for disbanded guild
-	if(pGuild->GetWar() && pGuild->GetWar()->GetHandler())
-		pGuild->GetWar()->GetHandler()->End();
 
 	// if guild has house then sell it
 	if(pGuild->HasHouse())
@@ -1380,7 +1277,6 @@ void CGuildManager::ShowMenu(int ClientID) const
 	if(HasAccess(pPlayer, RANKFLAG_RIGHT_ACCEPT_DENY_MEMBERS))
 		VManagement.AddMenu(MENU_GUILD_INVITATIONS, "Membership requests");
 	VManagement.AddMenu(MENU_GUILD_LOGS, "Logs of activity");
-	VManagement.AddMenu(MENU_GUILD_WARS, "Guild wars");
 	if(IsGuildLeader(pPlayer))
 	{
 		VManagement.AddMenu(MENU_GUILD_RANK_LIST, "Rank management");
@@ -1460,9 +1356,10 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 	if(pGuild->HasHouse())
 	{
 		VoteWrapper VUpgrHouse(ClientID, VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u2725 House-related upgrades");
-		for(int i = (int)GuildUpgrade::ChairLevel; i < (int)GuildUpgrade::NumGuildHouseUpgr; i++)
+		for(const auto Upgrade : {GuildUpgrade::ChairLevel, GuildUpgrade::DecorationSlots})
 		{
-			const auto Price = pGuild->GetUpgradePrice(static_cast<GuildUpgrade>(i));
+			const int i = static_cast<int>(Upgrade);
+			const auto Price = pGuild->GetUpgradePrice(Upgrade);
 			const auto* pUpgrade = &pGuild->GetUpgrades().getField<int>(i);
 
 			VUpgrHouse.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {$} gold",
@@ -1922,59 +1819,6 @@ void CGuildManager::ShowDetail(CPlayer* pPlayer, CGuildHouse* pHouse) const
 	MHouseDetail.Send(MOTD_MENU_GUILD_HOUSE_DETAIL);
 }
 
-void CGuildManager::ShowDeclareWarMenu(int ClientID) const
-{
-	// If player does not exist or does not have a guild, return
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
-	if(!pPlayer)
-		return;
-
-	// Check some guild data
-	CGuild* pGuild = pPlayer->Account()->GetGuild();
-	if(!pGuild)
-	{
-		VoteWrapper::AddBackpage(ClientID);
-		return;
-	}
-
-	// TODO
-	VoteWrapper VWar(ClientID);
-	VWar.Add("\u2646 Declare war on another guild");
-	VWar.Add("Preparation: {# (minute|minutes)}", g_Config.m_SvGuildWarPreparationMinutes);
-	VWar.Add("Siege window: {# (minute|minutes)}", g_Config.m_SvGuildWarDurationMinutes);
-	VWar.Add("House cooldown: {# (minute|minutes)}", g_Config.m_SvGuildWarHouseCooldownMinutes);
-	VWar.AddLine();
-
-	if(pGuild->GetWar())
-	{
-		CGuildWarData* pWar = pGuild->GetWar();
-		CGuild* pTargetGuild = pWar->GetTargetGuild();
-
-		char aBufTimeLeft[64];
-		pWar->GetHandler()->FormatTimeLeft(aBufTimeLeft, sizeof(aBufTimeLeft));
-
-		VWar.Add("War with the guild: {~}", pTargetGuild->GetName());
-		VWar.Add("Time until the end of the war: {}", aBufTimeLeft);
-		VWar.Add("Score: {}(your) / {}(enemy)", pWar->GetScore(), pTargetGuild->GetWar()->GetScore());
-	}
-	else
-	{
-		VWar.Add("You can declare war on another guild");
-		VWar.Add("To do this, select the guild from the list below");
-		VWar.AddLine();
-
-		VoteWrapper VWarList(ClientID, "List of guilds to declare war");
-		for(auto& p : CGuild::Data())
-		{
-			if(p->GetID() != pGuild->GetID())
-				VWarList.AddOption("GUILD_DECLARE_WAR", p->GetID(), "{~} (online {# (player|players)})", p->GetName(), p->GetMembers()->GetOnlineCount());
-		}
-	}
-
-	// Add the votes backpage for the player
-	VoteWrapper::AddBackpage(ClientID);
-}
-
 // Function to show guild logs for a specific player
 void CGuildManager::ShowLogsMenu(CPlayer* pPlayer) const
 {
@@ -2099,12 +1943,7 @@ CGuildHouse* CGuildManager::GetHouseByPos(vec2 Pos) const
 	if(!switchNumber)
 		return nullptr;
 
-	auto pHouse = std::ranges::find_if(CGuildHouse::Data(), [&](auto& p)
-	{
-		return *switchNumber == p->GetID();
-	});
-
-	return pHouse != CGuildHouse::Data().end() ? *pHouse : nullptr;
+	return GetHouseByID(*switchNumber);
 }
 
 CFarmzone* CGuildManager::GetHouseFarmzoneByPos(vec2 Pos) const
