@@ -204,7 +204,7 @@ server actually has binary logging (binlog-less replicas run a plain
 
 The SSH snapshot download prints progress every 15 seconds (`… downloaded N MB
 so far`) — a multi-GB dump is a long silent transfer otherwise. If the local
-dump import fails (e.g. `ERROR 1050 (42S01): Table 'tw_auction_slots' already
+dump import fails (e.g. `ERROR 1050 (42S01): Table 'tw_groups' already
 exists` in a `mrpg_local_<location>` that already has tables), the script
 offers to **drop and recreate** the database and re-import it — you must
 type `yes` to confirm; declining keeps the database untouched. The same

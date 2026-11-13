@@ -1,125 +1,58 @@
-MRPG server transfer version from 0.7 to 0.6 (ddnet) with ex protocol and features
-[![CircleCI](https://circleci.com/gh/teeworlds/teeworlds.svg?style=svg)](https://circleci.com/gh/teeworlds/teeworlds) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/teeworlds/teeworlds?branch=master&svg=true)](https://ci.appveyor.com/project/heinrich5991/teeworlds)
-=========
-Wiki about maintaining mod: https://github.com/kurosio/Teeworlds-MRPG-0.6/wiki
+# Teeworlds MRPG 0.6
 
-`readme will be changed over time`
+This repository contains the **server-only** MRPG modification based on Teeworlds 0.6/DDNet. It is not the upstream `teeworlds/teeworlds` repository: use this repository URL when cloning and use the `mmoteeworlds_srv` executable for the game server. Cross-server synchronization is provided by the separate `mmoteeworlds_relay` executable.
 
-# Not frozen but extremely rare development due to a lot of things to do besides MRPG
+Development is currently infrequent. The project is not frozen, but this repository does not promise compatibility with every current Teeworlds client or operating-system release. The build configuration currently supports Linux and Windows; macOS configuration is explicitly rejected by CMake. The old upstream client, CircleCI/AppVeyor badges, and instructions for building the client have been removed because they do not describe this fork.
 
-A retro multiplayer shooter
---------------------------- 
+## Clone
 
-Teeworlds is a free online multiplayer game, available for all major
-operating systems. Battle with up to 16 players in a variety of game
-modes, including Team Deathmatch and Capture The Flag. You can even
-design your own maps!
+The `libraries` submodule is required. Initialize it when cloning, or update submodules after an existing clone:
 
-This software is provided 'as-is', without any express or implied
-warranty. In no event will the authors be held liable for any damages
-arising from the use of this software. See license.txt for full license
-text including copyright information.
+```sh
+git clone --recurse-submodules https://github.com/kurosio/Teeworlds-MRPG-0.6.git
+cd Teeworlds-MRPG-0.6
 
-Please visit https://www.teeworlds.com/ for up-to-date information about
-the game, including new versions, custom maps and much more.
+# For an existing checkout:
+git submodule update --init --recursive
+```
 
-Originally written by Magnus Auvinen.
+## Build on Linux
 
-Building on Linux or macOS
-==========================
+Requirements: CMake 3.16 or newer, a C/C++ compiler and build tools, Git, Python 3, MariaDB Connector/C development files, SQLite development files, and libcurl development files. OpenSSL development files are optional (they enable TLS support where configured). On Debian/Ubuntu:
 
-Installing dependencies
------------------------
+```sh
+sudo apt update
+sudo apt install build-essential cmake git python3 libmariadb-dev libsqlite3-dev libcurl4-openssl-dev libssl-dev
+```
 
-    # Debian/Ubuntu
-    sudo apt install build-essential cmake git libfreetype6-dev libsdl2-dev libpnglite-dev libwavpack-dev python3 python3-uvloop libssl-dev libmariadb-dev
+Configure and build the server:
 
-    # Fedora
-    sudo dnf install @development-tools cmake gcc-c++ git freetype-devel mesa-libGLU-devel pnglite-devel python3 SDL2-devel wavpack-devel
+```sh
+cmake -S . -B build -DSERVER_COMPILE=ON
+cmake --build build --target mmoteeworlds_srv --parallel
+```
 
-    # Arch Linux (doesn't have pnglite in its repositories)
-    sudo pacman -S --needed base-devel cmake freetype2 git glu python sdl2 wavpack
+The executable is `build/mmoteeworlds_srv` (or `build/mmoteeworlds_srv.exe` on Windows). The build does not start the server. To build the optional relay separately, use `cmake --build build --target mmoteeworlds_relay --parallel`.
 
-    # macOS
-    brew install cmake freetype sdl2
+On Windows, install Visual Studio with the C++ desktop workload, CMake, Python 3, MariaDB Connector/C, SQLite, and libcurl, then configure with CMake and build the `mmoteeworlds_srv` target. See the project CMake configuration for dependency detection and available build targets.
 
+## Server setup
 
-Downloading repository
-----------------------
+1. Install MariaDB and import `mrpg_shared.sql` and `mrpg_local.sql` as described in [docs/mariadb.md](docs/mariadb.md). A single-database setup is supported by leaving `sv_sql_local_database` empty; multi-server deployments should read the [SQL bridge guide](other/sql_bridge/README.md).
+2. Review `autoexec_server.cfg`. It is an example configuration, **not a production-ready secure configuration**: change the RCON passwords, database credentials, server name, map, and other values for your deployment. Do not expose database or RCON passwords in public repositories or logs.
+3. Place the required game data and map files in the paths expected by `storage.cfg`. The default server configuration uses `maps/main.map`.
+4. Start the server from its deployment directory so that it can find its configuration, data, and maps. The server reads `autoexec_server.cfg` and accepts console command lines as command-line arguments; it does not use the relay's `-f <config>` option.
 
-    git clone https://github.com/teeworlds/teeworlds --recurse-submodules
-    cd teeworlds
+For optional cross-server event synchronization, build and configure `mmoteeworlds_relay` and set the `sv_sync_*` options on each game server. Read [docs/server_sync.md](docs/server_sync.md) before enabling it. Synchronization is disabled by default.
 
-    # If you already cloned the repository before, use:
-    # git submodule update --init
+## Project documentation
 
+- [MariaDB setup and schema layout](docs/mariadb.md)
+- [Cross-server synchronization relay](docs/server_sync.md)
+- [SQL bridge and replicated shared database](other/sql_bridge/README.md)
+- [Multiworld map notes](maps/README.md)
+- [Translations](server_lang/README.txt)
 
-Building
---------
+## License and history
 
-    mkdir -p build
-    cd build
-    cmake ..
-    make
-
-On subsequent builds, you only have to repeat the `make` step.
-
-You can then run the client with `./teeworlds` and the server with `./teeworlds_srv`.
-
-
-Build options
--------------
-
-The following options can be passed to the `cmake ..` command line (between the
-`cmake` and `..`) in the "Building" step above.
-
-`-GNinja`: Use the Ninja build system instead of Make. This automatically
-parallizes the build and is generally **faster**. (Needs `sudo apt install
-ninja-build` on Debian, `sudo dnf install ninja-build` on Fedora, and `sudo
-pacman -S --needed ninja` on Arch Linux.)
-
-`-DDEV=ON`: Enable debug mode and disable some release mechanics. This leads to
-**faster** builds.
-
-Building on Windows with Visual Studio
-======================================
-
-Download and install some version of [Microsoft Visual
-Studio](https://www.visualstudio.com/) (as of writing, MSVS Community 2017)
-with the following components:
-
-* Desktop development with C++ (on the main page)
-* Python development (on the main page)
-* Git for Windows (in Individual Components → Code tools)
-
-Run Visual Studio. Open the Team Explorer (View → Team Explorer, Ctrl+^,
-Ctrl+M). Click Clone (in the Team Explorer, Connect → Local Git Repositories).
-Enter `https://github.com/teeworlds/teeworlds` into the first input box. Wait
-for the download to complete (terminals might pop up).
-
-Wait until the CMake configuration is done (watch the Output windows at the
-bottom).
-
-
-Building on Windows with MinGW
-==============================
-
-Download and install MinGW with at least the following components:
-
-- mingw-developer-toolkit-bin
-- mingw32-base-bin
-- mingw32-gcc-g++-bin
-- msys-base-bin
-
-Also install [Git](https://git-scm.com/downloads) (for downloading the source
-code), [Python](https://www.python.org/downloads/) and
-[CMake](https://cmake.org/download/).
-
-Open CMake ("CMake (cmake-gui)" in the start menu). Click "Browse Source"
-(first line) and select the directory with the Teeworlds source code. Next,
-click "Browse Build" and create a subdirectory for the build (e.g. called
-"build"). Then click "Configure". Select "MinGW Makefiles" as the generator and
-click "Finish". Wait a bit (until the progress bar is full). Then click
-"Generate".
-
-You can now build Teeworlds by executing `mingw32-make` in the build directory.
+This project is distributed under the terms in [license.txt](license.txt). The code is derived from Teeworlds; see the license file for the applicable copyright and license notices.
