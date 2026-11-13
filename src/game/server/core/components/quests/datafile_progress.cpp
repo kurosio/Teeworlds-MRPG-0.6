@@ -55,8 +55,17 @@ void QuestDatafile::Create() const
 void QuestDatafile::Load() const
 {
 	// only for accept state
-	if(!m_pQuest || m_pQuest->m_State != QuestState::Accepted)
+	if(!m_pQuest)
 		return;
+
+	// quest save files exist only for accepted quests.
+	// a completed or refused quest must not leave an orphan save file behind -
+	// remove it and skip loading so the state stays consistent on disk.
+	if(m_pQuest->m_State != QuestState::Accepted)
+	{
+		Delete();
+		return;
+	}
 
 	// loading file is not open pereinitilized steps
 	ByteArray RawData;
@@ -81,6 +90,16 @@ void QuestDatafile::Load() const
 
 	// prepare steps
 	m_pQuest->m_Step = JsonQuestData.value("current_step", 1);
+
+	// validate the step stored in the save file - a missing, corrupted or
+	// out-of-range step means the save is inconsistent, fully reinitialize it
+	if(m_pQuest->m_Step < 1 || !m_pQuest->Info()->HasObjectives(m_pQuest->m_Step))
+	{
+		dbg_msg(PRINT_QUEST_PREFIX, "Reinitialization... invalid current_step in save file!");
+		Create();
+		return;
+	}
+
 	m_pQuest->Info()->PreparePlayerObjectives(m_pQuest->m_Step, m_pQuest->m_ClientID, m_pQuest->m_vObjectives);
 
 	// Check defferent size of steps

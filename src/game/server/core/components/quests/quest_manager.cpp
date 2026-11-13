@@ -96,6 +96,16 @@ void CQuestManager::OnPlayerLogin(CPlayer* pPlayer)
 		QuestIdentifier ID = pRes->getInt("QuestID");
 		QuestState State = (QuestState)pRes->getInt("Type");
 
+		// the quest must exist in the current game data, otherwise the saved
+		// reference is orphaned (quest removed from server data) - drop it so
+		// login does not fail on an invalid quest
+		if(CQuestDescription::Data().find(ID) == CQuestDescription::Data().end())
+		{
+			dbg_msg(PRINT_QUEST_PREFIX, "removing orphaned quest %d for account %d (quest not found in game data)", ID, pPlayer->Account()->GetID());
+			Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '{}' AND UserID = '{}'", ID, pPlayer->Account()->GetID());
+			continue;
+		}
+
 		// create new element
 		CPlayerQuest::CreateElement(ID, pPlayer->GetCID())->Init(State);
 	}
