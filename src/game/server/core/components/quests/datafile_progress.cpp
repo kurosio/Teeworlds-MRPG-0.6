@@ -135,6 +135,13 @@ void QuestDatafile::Load() const
 			for(int p = 0; p < (int)Step["move_to"].size(); p++)
 				WorkedNode->m_aMoveActionProgress[p] = Step["move_to"][p].value("complete", false);
 		}
+		else
+		{
+			// The save file does not contain move-to progress for this step (e.g. an old save created
+			// before this data was tracked). Keep the progress array in sync with the required actions
+			// so that Update()/UpdateObjectives() do not access it out of bounds and crash the server.
+			WorkedNode->m_aMoveActionProgress.resize(WorkedNode->m_Bot.m_vRequiredMoveAction.size(), false);
+		}
 
 		// Set marked for destroy
 		WorkedNode->m_MarkedForDestroy = false;
