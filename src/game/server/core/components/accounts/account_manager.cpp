@@ -68,6 +68,24 @@ namespace
 		return s_Clause;
 	}
 
+	// Gives a claim back: the previous owner again, or no row at all. Both writes
+	// only match our own reservation (token and Heartbeat = 0), so repeating this
+	// call or losing the connection does nothing.
+	void ReleaseSessionClaim(int AccountID, const std::string& Token, int PreviousServerID, int PreviousClientID,
+		const std::string& PreviousToken, int PreviousHeartbeat)
+	{
+		if(PreviousServerID <= 0 || PreviousToken.empty())
+		{
+			Database->Execute<DB::REMOVE>(ACCOUNT_SESSIONS_TABLE,
+				"WHERE AccountID = '{}' AND SessionToken = '{}' AND Heartbeat = 0", AccountID, Token);
+			return;
+		}
+
+		Database->Execute<DB::UPDATE>(ACCOUNT_SESSIONS_TABLE,
+			"ServerID = '{}', ClientID = '{}', SessionToken = '{}', Heartbeat = '{}', UpdatedAt = NOW() WHERE AccountID = '{}' AND ServerID = '{}' AND SessionToken = '{}' AND Heartbeat = 0",
+			PreviousServerID, PreviousClientID, PreviousToken, PreviousHeartbeat, AccountID, g_Config.m_SvSyncServerID, Token);
+	}
+
 	bool CheckLoginPasswordLength(CGS* pGS, int ClientID, const char* pLogin, const char* pPassword)
 	{
 		const int LengthLogin = str_length(pLogin);
@@ -172,7 +190,7 @@ class DbAuthorization
 		}
 
 		auto& Data = pContext->Data();
-		auto pPrevious = Database->Prepare<DB::SELECT>("ServerID, ClientID, SessionToken, Heartbeat, UNIX_TIMESTAMP() AS CurrentUnixTime, TIMESTAMPDIFF(SECOND, UpdatedAt, NOW()) AS ClaimAge", ACCOUNT_SESSIONS_TABLE,
+		auto pPrevious = Database->Prepare<DB::SELECT>("ServerID, ClientID, SessionToken, Heartbeat, UNIX_TIMESTAMP() AS CurrentUnixTime", ACCOUNT_SESSIONS_TABLE,
 			"WHERE AccountID = '{}'", Data.m_AccountID);
 		pPrevious->AtExecute([pContext](ResultPtr pPreviousRes) { OnReadSessionOwner(pContext, pPreviousRes); });
 	}
@@ -196,17 +214,10 @@ class DbAuthorization
 				Data.m_PreviousHeartbeatAge = CurrentUnixTime - Data.m_PreviousHeartbeat;
 		}
 
-		// Heartbeat=0 means a login is still running; only a stale row is free.
-		// The write below enforces the same rule, this is just the quicker answer.
+		// Heartbeat=0 means the previous login never finished; it counts as stale
+		// for the relay fallback below. The upsert decides whether it may be claimed.
 		if(HasPrevious && Data.m_PreviousHeartbeat == 0)
-		{
-			if(pRes->getInt("ClaimAge") < ACCOUNT_SESSION_HEARTBEAT_STALE_SECONDS)
-			{
-				pContext->GS()->Chat(pContext->GetClientID(), "Login failed: another login is in progress.");
-				return;
-			}
 			Data.m_PreviousHeartbeatAge = ACCOUNT_SESSION_HEARTBEAT_STALE_SECONDS;
-		}
 		Data.m_ClaimDeadline = time_get() + ACCOUNT_SESSION_CLAIM_SECONDS * time_freq();
 		auto Callback = [pContext](bool Success) { OnClaimSession(pContext, Success); };
 		// One atomic upsert instead of INSERT or UPDATE chosen by the read above:
@@ -221,13 +232,8 @@ class DbAuthorization
 	static void ReleaseClaim(const CAuthorizationContextPtr& pContext)
 	{
 		const auto& Data = pContext->Data();
-		if(Data.m_PreviousToken.empty())
-			Database->Execute<DB::REMOVE>(ACCOUNT_SESSIONS_TABLE,
-				"WHERE AccountID = '{}' AND SessionToken = '{}' AND Heartbeat = 0", Data.m_AccountID, Data.m_SessionToken);
-		else
-			Database->Execute<DB::UPDATE>(ACCOUNT_SESSIONS_TABLE,
-				"ServerID = '{}', ClientID = '{}', SessionToken = '{}', Heartbeat = '{}', UpdatedAt = NOW() WHERE AccountID = '{}' AND SessionToken = '{}' AND Heartbeat = 0",
-				Data.m_PreviousServerID, Data.m_PreviousClientID, Data.m_PreviousToken, Data.m_PreviousHeartbeat, Data.m_AccountID, Data.m_SessionToken);
+		ReleaseSessionClaim(Data.m_AccountID, Data.m_SessionToken, Data.m_PreviousServerID, Data.m_PreviousClientID,
+			Data.m_PreviousToken, Data.m_PreviousHeartbeat);
 	}
 
 	static void OnClaimSession(const CAuthorizationContextPtr& pContext, bool Success)
@@ -242,9 +248,10 @@ class DbAuthorization
 		}
 		if(!Success)
 		{
-			// A lost connection may have committed the write before reporting failure.
+			// The claim was refused (a login is in progress) or lost, possibly with
+			// the write committed: give it back, which only matches our own row.
 			ReleaseClaim(pContext);
-			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: another login took over this account.");
+			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: another login is in progress.");
 			return;
 		}
 		const auto& Data = pContext->Data();
@@ -503,9 +510,7 @@ void CAccountManager::OnClientReset(int ClientID)
 		for(const auto& Pending : m_vPendingLogins)
 			if(Pending.m_ClientID == ClientID)
 				RestorePreviousSession(Pending);
-		m_vPendingLogins.erase(std::remove_if(m_vPendingLogins.begin(), m_vPendingLogins.end(),
-			[ClientID](const SPendingLogin& Pending) { return Pending.m_ClientID == ClientID; }), m_vPendingLogins.end());
-		m_vSessionEvents.erase(std::remove(m_vSessionEvents.begin(), m_vSessionEvents.end(), ClientID), m_vSessionEvents.end());
+		std::erase_if(m_vPendingLogins, [ClientID](const SPendingLogin& Pending) { return Pending.m_ClientID == ClientID; });
 	}
 
 	int AccountID = 0;
@@ -552,12 +557,16 @@ void CAccountManager::BeginSessionTakeover(CPlayer* pPlayer, const std::string& 
 	Pending.m_StartTick = Server()->Tick();
 	Pending.m_ClaimDeadline = ClaimDeadline;
 	Pending.m_RecommendPin = RecommendPin;
+	if(PreviousServerID > 0 && PreviousServerID != g_Config.m_SvSyncServerID)
+	{
+		// Ask the other server to end the old session; it answers with an ack.
+		Pending.m_EventID = Sync->Push(syncevents::ACCOUNT_SESSION_TAKEOVER, GS()->GetWorldID(), AccountID);
+		Pending.m_RelayFailed = Pending.m_EventID <= 0;
+	}
 
 	{
 		std::lock_guard<std::mutex> Lock(m_SessionMutex);
 		m_vPendingLogins.push_back(Pending);
-		if(PreviousServerID > 0 && PreviousServerID != g_Config.m_SvSyncServerID)
-			m_vSessionEvents.push_back(ClientID);
 	}
 
 	GS()->Chat(ClientID, "Verifying account session...");
@@ -578,27 +587,6 @@ void CAccountManager::QueueLocalSessionKicks(int AccountID, const std::string& T
 	std::lock_guard<std::mutex> Lock(m_SessionMutex);
 	for(auto& Kick : vKicks)
 		m_vPendingKicks.push_back(std::move(Kick));
-}
-
-void CAccountManager::SendSessionEvents()
-{
-	std::vector<int> vClients;
-	std::lock_guard<std::mutex> Lock(m_SessionMutex);
-	vClients.swap(m_vSessionEvents);
-
-	for(const int ClientID : vClients)
-	{
-		auto It = std::find_if(m_vPendingLogins.begin(), m_vPendingLogins.end(),
-			[ClientID](const SPendingLogin& Pending) { return Pending.m_ClientID == ClientID; });
-		if(It == m_vPendingLogins.end())
-			continue;
-
-		const int EventID = Sync->Push(syncevents::ACCOUNT_SESSION_TAKEOVER, GS()->GetWorldID(), It->m_AccountID);
-		if(EventID > 0)
-			It->m_EventID = EventID;
-		else
-			It->m_RelayFailed = true;
-	}
 }
 
 bool CAccountManager::HasAnyLocalSession(int AccountID) const
@@ -668,16 +656,13 @@ bool CAccountManager::CompleteLogin(int ClientID, int AccountID, const std::stri
 void CAccountManager::ProcessPendingLogins()
 {
 	const int TimeoutTicks = Server()->TickSpeed() * ACCOUNT_SESSION_TAKEOVER_TIMEOUT_SECONDS;
-	std::vector<SPendingLogin> vTimedOut;
-	std::vector<SPendingLogin> vRelayFailed;
+	std::vector<SPendingLogin> vFailed;
 	std::vector<SPendingLogin> vCompleted;
 
-	auto QueueFailure = [&](const SPendingLogin& Pending, bool RelayFailure)
+	auto QueueFailure = [&](SPendingLogin Pending, bool RelayFailure)
 	{
-		if(RelayFailure)
-			vRelayFailed.push_back(Pending);
-		else
-			vTimedOut.push_back(Pending);
+		Pending.m_RelayFailed = RelayFailure;
+		vFailed.push_back(std::move(Pending));
 	};
 
 	{
@@ -753,26 +738,22 @@ void CAccountManager::ProcessPendingLogins()
 		}
 	}
 
-	for(const auto& Pending : vTimedOut)
+	for(const auto& Pending : vFailed)
 	{
 		RestorePreviousSession(Pending);
 		auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(Pending.m_ClientID));
 		if(!pGS)
 			continue;
+
+		if(Pending.m_RelayFailed)
+		{
+			pGS->Chat(Pending.m_ClientID, "Login failed: session takeover relay is unavailable.");
+			pGS->Server()->Kick(Pending.m_ClientID, "Session takeover relay unavailable");
+			continue;
+		}
 
 		pGS->Chat(Pending.m_ClientID, "Login failed: session takeover was not confirmed.");
 		pGS->Server()->Kick(Pending.m_ClientID, "Session takeover was not confirmed");
-	}
-
-	for(const auto& Pending : vRelayFailed)
-	{
-		RestorePreviousSession(Pending);
-		auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(Pending.m_ClientID));
-		if(!pGS)
-			continue;
-
-		pGS->Chat(Pending.m_ClientID, "Login failed: session takeover relay is unavailable.");
-		pGS->Server()->Kick(Pending.m_ClientID, "Session takeover relay unavailable");
 	}
 
 	for(const auto& Pending : vCompleted)
@@ -787,17 +768,8 @@ void CAccountManager::ProcessPendingLogins()
 
 void CAccountManager::RestorePreviousSession(const SPendingLogin& Pending)
 {
-	if(Pending.m_PreviousServerID <= 0 || Pending.m_PreviousToken.empty())
-	{
-		Database->Execute<DB::REMOVE>(ACCOUNT_SESSIONS_TABLE,
-			"WHERE AccountID = '{}' AND SessionToken = '{}' AND Heartbeat = 0", Pending.m_AccountID, Pending.m_Token);
-		return;
-	}
-
-	Database->Execute<DB::UPDATE>(ACCOUNT_SESSIONS_TABLE,
-		"ServerID = '{}', ClientID = '{}', SessionToken = '{}', Heartbeat = '{}', UpdatedAt = NOW() WHERE AccountID = '{}' AND ServerID = '{}' AND SessionToken = '{}' AND Heartbeat = 0",
-		Pending.m_PreviousServerID, Pending.m_PreviousClientID, Pending.m_PreviousToken, Pending.m_PreviousHeartbeat,
-		Pending.m_AccountID, g_Config.m_SvSyncServerID, Pending.m_Token);
+	ReleaseSessionClaim(Pending.m_AccountID, Pending.m_Token, Pending.m_PreviousServerID,
+		Pending.m_PreviousClientID, Pending.m_PreviousToken, Pending.m_PreviousHeartbeat);
 }
 
 void CAccountManager::UpdateLocalSessionHeartbeats()
@@ -938,7 +910,6 @@ void CAccountManager::OnSyncEvent(std::string EventName, const CServerSync::SReq
 void CAccountManager::OnTick()
 {
 	ProcessPendingKicks();
-	SendSessionEvents();
 	ProcessPendingLogins();
 
 	if(GS()->GetWorldID() != INITIALIZER_WORLD_ID)
@@ -971,12 +942,13 @@ void CAccountManager::OnTick()
 void CAccountManager::ProcessPendingKicks()
 {
 	std::vector<SSessionValidation> vValidations;
+	std::vector<SPendingKick> vKicks;
 	{
 		std::lock_guard<std::mutex> Lock(m_SessionMutex);
 		vValidations.swap(m_vSessionValidations);
+		vKicks.swap(m_vPendingKicks);
 	}
 
-	std::vector<SPendingKick> vKicks;
 	for(const auto& Validation : vValidations)
 	{
 		for(const auto& [ClientID, Data] : CAccountData::ms_aData)
@@ -989,19 +961,7 @@ void CAccountManager::ProcessPendingKicks()
 		}
 	}
 
-	{
-		std::lock_guard<std::mutex> Lock(m_SessionMutex);
-		for(auto& Kick : vKicks)
-			m_vPendingKicks.push_back(std::move(Kick));
-	}
-
-	std::vector<SPendingKick> vPendingKicks;
-	{
-		std::lock_guard<std::mutex> Lock(m_SessionMutex);
-		vPendingKicks.swap(m_vPendingKicks);
-	}
-
-	for(const auto& Kick : vPendingKicks)
+	for(const auto& Kick : vKicks)
 	{
 		auto It = CAccountData::ms_aData.find(Kick.m_ClientID);
 		if(It == CAccountData::ms_aData.end() || It->second.GetID() != Kick.m_AccountID
@@ -1021,11 +981,11 @@ void CAccountManager::ProcessPendingKicks()
 
 	for(const auto& Validation : vValidations)
 	{
-		if(Validation.m_AckEventID > 0)
-		{
-			const std::string AckTarget = std::string(syncevents::ACCOUNT_SESSION_TAKEOVER_ACK_PREFIX) + std::to_string(Validation.m_AckTargetServerID);
-			Sync->Push(AckTarget.c_str(), Validation.m_AckWorldID, Validation.m_AckEventID);
-		}
+		if(Validation.m_AckEventID <= 0)
+			continue;
+
+		const std::string AckTarget = std::string(syncevents::ACCOUNT_SESSION_TAKEOVER_ACK_PREFIX) + std::to_string(Validation.m_AckTargetServerID);
+		Sync->Push(AckTarget.c_str(), Validation.m_AckWorldID, Validation.m_AckEventID);
 	}
 }
 
