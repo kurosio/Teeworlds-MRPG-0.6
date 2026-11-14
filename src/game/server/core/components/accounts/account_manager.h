@@ -5,7 +5,6 @@
 #include <game/server/core/mmo_component.h>
 #include <base/timeperiod.h>
 
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -38,13 +37,28 @@ class CAccountManager : public MmoComponent
 	};
 
 public:
+	// Reservation of an account session row plus the owner it replaced.
+	// The row (tw_account_sessions) is the single source of truth: the session
+	// whose token is stored there is the only one allowed to play.
+	struct SSessionClaim
+	{
+		int m_AccountID {};
+		std::string m_Token {};
+		int m_PreviousServerID {}; // 0: there was no previous owner
+		int m_PreviousClientID {};
+		std::string m_PreviousToken {};
+		int m_PreviousHeartbeat {}; // 0: the previous login never finished
+		int m_PreviousHeartbeatAge { -1 }; // seconds since its last heartbeat, -1 if unknown
+		int64_t m_ClaimDeadline {}; // time_get() limit for the whole login
+	};
+
 	AccountCodeResult RegisterAccount(int ClientID, const char *pLogin, const char *pPassword);
 	AccountCodeResult RegisterAccountRaw(int ClientID, const char* pLogin, const char* pPassword);
 	AccountCodeResult RegisterGuestAccount(int ClientID, const char* pNickname);
 	AccountCodeResult LoginAccount(int ClientID, const char *pLogin, const char *pPassword);
 	AccountCodeResult LoginAccountRaw(int ClientID, const char* pLogin, const char* pPassword);
 
-	void BeginSessionTakeover(CPlayer* pPlayer, const std::string& Token, int PreviousServerID, int PreviousClientID, const std::string& PreviousToken, int PreviousHeartbeat, int PreviousHeartbeatAge, bool RecommendPin, int64_t ClaimDeadline);
+	void BeginSessionTakeover(CPlayer* pPlayer, const SSessionClaim& Claim, bool RecommendPin);
 	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false, int64_t ClaimDeadline = 0);
 	void SetPinCode(int ClientID, const char* pCurrentPasswordOrPin, const char* pNewPin, bool IsChangingPin);
 	void ChangePassword(int ClientID, const char* pOldPassword, const char* pNewPassword, const char* pPinCode);
@@ -69,57 +83,48 @@ public:
 	void ShowPlayerAttributesByGroup(CPlayer* pPlayer, std::string_view Title, AttributeGroup Group) const;
 
 private:
-	struct SPendingKick
+	// A session of this server's client slots, captured when a check is issued.
+	struct SLocalSession
 	{
 		int m_ClientID {};
 		int m_AccountID {};
 		std::string m_Token {};
 	};
 
-	struct SSessionValidation
+	// Acknowledgement of a takeover: sent once the local sessions were checked.
+	struct SSessionAck
 	{
-		int m_AccountID {};
-		std::string m_Token {};
-		int m_AckEventID {};
-		int m_AckWorldID {};
-		int m_AckTargetServerID {};
+		int m_EventID {};
+		int m_WorldID {};
+		int m_TargetServerID {};
 	};
 
 	struct SPendingLogin
 	{
 		int m_ClientID {};
-		int m_AccountID {};
-		std::string m_Token {};
-		int m_PreviousServerID {};
-		int m_PreviousClientID {};
-		std::string m_PreviousToken {};
-		int m_PreviousHeartbeat {};
-		int m_PreviousHeartbeatAge{ -1 };
-		int m_EventID {};
-		int m_StartTick {};
-		int64_t m_ClaimDeadline {};
-		bool m_RemoteAck {};
-		bool m_RelayFailed {};
+		SSessionClaim m_Claim {};
 		bool m_RecommendPin {};
+		int m_EventID {}; // takeover request sent to the previous owner's server, 0 if none
+		bool m_RelayFailed {};
+		bool m_RemoteAck {};
+		int64_t m_StartTime {};
+		int64_t m_TakeoverDeadline {};
 	};
 
-	void ProcessPendingKicks();
-	void ValidateLocalSessions(int AccountID, int AckEventID = 0, int AckWorldID = 0, int AckTargetServerID = 0);
-	void ValidateLocalSessions(const std::vector<int>& vAccountIDs);
-	void UpdateLocalSessionHeartbeats();
 	void ProcessPendingLogins();
-	bool CompleteLogin(int ClientID, int AccountID, const std::string& Token, bool RecommendPin, int PreviousServerID, int64_t ClaimDeadline);
-	void RestorePreviousSession(const SPendingLogin& Pending);
-	void QueueLocalSessionKicks(int AccountID, const std::string& Token);
-	bool HasAnyLocalSession(int AccountID) const;
+	bool CompleteLogin(int ClientID, const SSessionClaim& Claim, bool RecommendPin);
+	void FailPendingLogin(const SPendingLogin& Pending, bool RelayFailed);
+	void UpdateLocalSessionHeartbeats();
+
+	std::vector<SLocalSession> CollectLocalSessions(int AccountID = 0) const;
+	void KickLocalSession(const SLocalSession& Session);
+	void KickOtherLocalSessions(int AccountID, const std::string& Token);
+	void VerifyLocalSessions(std::vector<SLocalSession> vSessions, const SSessionAck* pAck = nullptr);
 	bool HasOtherLocalSession(int AccountID, const std::string& Token) const;
 	void AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* pProf) const;
 
-	std::vector<SPendingKick> m_vPendingKicks {};
-	std::vector<SSessionValidation> m_vSessionValidations {};
 	std::vector<SPendingLogin> m_vPendingLogins {};
-	std::mutex m_SessionMutex {};
-	int m_LastSessionCheck = 0;
+	int64_t m_NextSessionCheck = 0;
 };
 
 #endif
