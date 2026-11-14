@@ -651,6 +651,8 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection(DbKind Kind)
 
 		// connection_properties["OPT_CHARSET_NAME"] = "utf8mb4"; // didn't find this one https://mariadb.com/docs/connectors/mariadb-connectorcpp/connect-with-mariadb-connectorcpp#optional-connection-parameters
 		connection_properties["autoReconnect"] = "true";
+		// Keep useAffectedRows=true: the account-session claim recognises a
+		// refused reservation by a row count of 0.
 		// MariaDB Connector/C++ expects milliseconds, not seconds. The previous
 		// values (30/60) became roughly one second in Connector/C, so a bridge
 		// waiting for a remote primary could time out during the handshake.

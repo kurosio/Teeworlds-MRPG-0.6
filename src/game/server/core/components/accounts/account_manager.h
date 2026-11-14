@@ -44,7 +44,6 @@ public:
 	AccountCodeResult LoginAccount(int ClientID, const char *pLogin, const char *pPassword);
 	AccountCodeResult LoginAccountRaw(int ClientID, const char* pLogin, const char* pPassword);
 
-	void ValidateLocalSessions(int AccountID, int AckEventID = 0, int AckWorldID = 0, int AckTargetServerID = 0);
 	void BeginSessionTakeover(CPlayer* pPlayer, const std::string& Token, int PreviousServerID, int PreviousClientID, const std::string& PreviousToken, int PreviousHeartbeat, int PreviousHeartbeatAge, bool RecommendPin, int64_t ClaimDeadline);
 	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false, int64_t ClaimDeadline = 0);
 	void SetPinCode(int ClientID, const char* pCurrentPasswordOrPin, const char* pNewPin, bool IsChangingPin);
@@ -105,8 +104,9 @@ private:
 	};
 
 	void ProcessPendingKicks();
+	void ValidateLocalSessions(int AccountID, int AckEventID = 0, int AckWorldID = 0, int AckTargetServerID = 0);
+	void ValidateLocalSessions(const std::vector<int>& vAccountIDs);
 	void UpdateLocalSessionHeartbeats();
-	void SendSessionEvents();
 	void ProcessPendingLogins();
 	bool CompleteLogin(int ClientID, int AccountID, const std::string& Token, bool RecommendPin, int PreviousServerID, int64_t ClaimDeadline);
 	void RestorePreviousSession(const SPendingLogin& Pending);
@@ -118,7 +118,6 @@ private:
 	std::vector<SPendingKick> m_vPendingKicks {};
 	std::vector<SSessionValidation> m_vSessionValidations {};
 	std::vector<SPendingLogin> m_vPendingLogins {};
-	std::vector<int> m_vSessionEvents {};
 	std::mutex m_SessionMutex {};
 	int m_LastSessionCheck = 0;
 };
