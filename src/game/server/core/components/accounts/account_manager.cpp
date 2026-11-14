@@ -30,65 +30,14 @@ constexpr int AUTH_FIELD_PASSWORD = 1;
 
 namespace
 {
-	constexpr const char* ACCOUNT_SESSIONS_TABLE = "tw_account_sessions";
 	constexpr const char* ACCOUNT_SESSION_TAKEOVER_REASON = "Account session was taken over";
-	constexpr int ACCOUNT_SESSION_TOKEN_LENGTH = 48;
 	constexpr int ACCOUNT_SESSION_TAKEOVER_TIMEOUT_SECONDS = 10;
-	constexpr int ACCOUNT_SESSION_HEARTBEAT_STALE_SECONDS = 45;
-	constexpr int ACCOUNT_SESSION_CLAIM_SECONDS = 30;
-	constexpr int ACCOUNT_SESSION_BATCH_SIZE = 100;
-
-	std::string GenerateSessionToken()
-	{
-		char aToken[65] {};
-		secure_random_password(aToken, sizeof(aToken), ACCOUNT_SESSION_TOKEN_LENGTH);
-		return std::string(aToken);
-	}
-
-	// SET clause of the reservation upsert (see OnReadSessionOwner): claim a row
-	// that is missing, active (Heartbeat <> 0) or stale, never a fresh
-	// reservation. SessionToken = VALUES(SessionToken) keeps the IF()s true after
-	// the token is written, so all columns change or none. A refused claim leaves
-	// the row untouched and reports a row count of 0.
-	const std::string& ClaimSessionSetClause()
-	{
-		static const std::string s_CanClaim = fmt_default(
-			"Heartbeat <> 0 OR UpdatedAt < NOW() - INTERVAL {} SECOND OR SessionToken = VALUES(SessionToken)",
-			ACCOUNT_SESSION_HEARTBEAT_STALE_SECONDS);
-
-		static const std::string s_Clause = []()
-		{
-			std::string Clause;
-			for(const char* pColumn : { "ServerID", "ClientID", "SessionToken" })
-				Clause += fmt_default("{} = IF({}, VALUES({}), {}), ", pColumn, s_CanClaim, pColumn, pColumn);
-
-			Clause += fmt_default("Heartbeat = IF({}, 0, Heartbeat), UpdatedAt = IF({}, NOW(), UpdatedAt)", s_CanClaim, s_CanClaim);
-			return Clause;
-		}();
-		return s_Clause;
-	}
+	constexpr int ACCOUNT_SESSION_CLAIM_ATTEMPTS = 3;
 
 	// A previous owner on another server has to end its session before we play.
-	bool NeedsRemoteTakeover(const CAccountManager::SSessionClaim& Claim)
+	bool NeedsRemoteTakeover(const AccountSession::SClaim& Claim)
 	{
-		return Claim.m_PreviousServerID > 0 && Claim.m_PreviousServerID != g_Config.m_SvSyncServerID;
-	}
-
-	// Gives a claim back: the previous owner again, or no row at all. Both writes
-	// only match our own reservation (token and Heartbeat = 0), so repeating this
-	// call or losing the connection does nothing.
-	void ReleaseSessionClaim(const CAccountManager::SSessionClaim& Claim)
-	{
-		if(Claim.m_PreviousServerID <= 0 || Claim.m_PreviousToken.empty())
-		{
-			Database->Execute<DB::REMOVE>(ACCOUNT_SESSIONS_TABLE,
-				"WHERE AccountID = '{}' AND SessionToken = '{}' AND Heartbeat = 0", Claim.m_AccountID, Claim.m_Token);
-			return;
-		}
-
-		Database->Execute<DB::UPDATE>(ACCOUNT_SESSIONS_TABLE,
-			"ServerID = '{}', ClientID = '{}', SessionToken = '{}', Heartbeat = '{}', UpdatedAt = NOW() WHERE AccountID = '{}' AND ServerID = '{}' AND SessionToken = '{}' AND Heartbeat = 0",
-			Claim.m_PreviousServerID, Claim.m_PreviousClientID, Claim.m_PreviousToken, Claim.m_PreviousHeartbeat, Claim.m_AccountID, g_Config.m_SvSyncServerID, Claim.m_Token);
+		return Claim.m_Previous.m_ServerID > 0 && Claim.m_Previous.m_ServerID != g_Config.m_SvSyncServerID;
 	}
 
 	bool CheckLoginPasswordLength(CGS* pGS, int ClientID, const char* pLogin, const char* pPassword)
@@ -111,11 +60,11 @@ class DbAuthorization
 		CAccountManager* m_pAccountManager{};
 		std::string m_Login{};
 		std::string m_Password{};
-		int m_AccountID{};
 		std::string m_Language{};
 		std::string m_LoginDate{};
 		std::string m_PinCode{};
-		CAccountManager::SSessionClaim m_Claim{};
+		AccountSession::SClaim m_Claim{};
+		int m_Attempts{};
 	};
 	using CAuthorizationContextPtr = std::shared_ptr<DbAsync::CContext<CAuthorizationPayload>>;
 
@@ -140,8 +89,7 @@ class DbAuthorization
 			return;
 		}
 
-		auto& Data = pContext->Data();
-		Data.m_AccountID = pRes->getInt("ID");
+		pContext->Data().m_Claim.m_AccountID = pRes->getInt("ID");
 		OnCheckCredentials(pContext, pRes);
 	}
 
@@ -188,20 +136,24 @@ class DbAuthorization
 			return;
 		}
 
-		auto& Data = pContext->Data();
-		auto pPrevious = Database->Prepare<DB::SELECT>("ServerID, ClientID, SessionToken, Heartbeat, UNIX_TIMESTAMP() AS CurrentUnixTime", ACCOUNT_SESSIONS_TABLE,
-			"WHERE AccountID = '{}'", Data.m_AccountID);
-		pPrevious->AtExecute([pContext](ResultPtr pPreviousRes) { OnReadSessionOwner(pContext, pPreviousRes); });
+		ReadOwnerAndClaim(pContext);
 	}
 
-	static void OnReadSessionOwner(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
+	// Reads the owner and tries to take the account. Repeated if a claim is refused.
+	static void ReadOwnerAndClaim(const CAuthorizationContextPtr& pContext)
+	{
+		AccountSession::ReadRecord(pContext->Data().m_Claim.m_AccountID,
+			[pContext](std::optional<AccountSession::SRecord> Owner) { OnReadOwner(pContext, Owner); });
+	}
+
+	static void OnReadOwner(const CAuthorizationContextPtr& pContext, std::optional<AccountSession::SRecord> Owner)
 	{
 		auto* pPlayer = GetPlayer(pContext);
 		if(!pPlayer)
 			return;
 
-		// A failed read says nothing about the previous owner: do not claim blind.
-		if(!pRes || !*pRes)
+		// Without a successful read the previous owner is unknown: do not claim blind.
+		if(!Owner)
 		{
 			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: session state could not be read.");
 			pContext->GS()->Chat(pContext->GetClientID(), "Please try again a bit later.");
@@ -209,84 +161,78 @@ class DbAuthorization
 		}
 
 		auto& Claim = pContext->Data().m_Claim;
-		Claim.m_AccountID = pContext->Data().m_AccountID;
-		if(pRes->next())
-		{
-			Claim.m_PreviousServerID = pRes->getInt("ServerID");
-			Claim.m_PreviousClientID = pRes->getInt("ClientID");
-			Claim.m_PreviousToken = pRes->getString("SessionToken");
-			Claim.m_PreviousHeartbeat = pRes->getInt("Heartbeat");
-			const int CurrentUnixTime = pRes->getInt("CurrentUnixTime");
-			if(Claim.m_PreviousHeartbeat > 1 && CurrentUnixTime >= Claim.m_PreviousHeartbeat)
-				Claim.m_PreviousHeartbeatAge = CurrentUnixTime - Claim.m_PreviousHeartbeat;
-			// Heartbeat=0 means the previous login never finished: it counts as stale.
-			// The upsert decides whether the row may actually be claimed.
-			if(Claim.m_PreviousHeartbeat == 0)
-				Claim.m_PreviousHeartbeatAge = ACCOUNT_SESSION_HEARTBEAT_STALE_SECONDS;
-		}
-
-		Claim.m_ClaimDeadline = time_get() + ACCOUNT_SESSION_CLAIM_SECONDS * time_freq();
-		auto Callback = [pContext](bool Success) { OnClaimSession(pContext, Success); };
-		// One atomic upsert instead of INSERT or UPDATE chosen by the read above:
-		// the read uses another connection and may come from a lagging replica, so
-		// the primary row decides. A lost race leaves the row unchanged (count 0)
-		// instead of raising "Duplicate entry".
-		Database->Execute<DB::INSERT>(Callback, ACCOUNT_SESSIONS_TABLE,
-			"(AccountID, ServerID, ClientID, SessionToken, Heartbeat, UpdatedAt) VALUES ('{}', '{}', '{}', '{}', 0, NOW()) ON DUPLICATE KEY UPDATE {}",
-			Claim.m_AccountID, g_Config.m_SvSyncServerID, pContext->GetClientID(), Claim.m_Token, ClaimSessionSetClause());
+		Claim.m_Previous = *Owner;
+		AccountSession::TryClaim(Claim, [pContext](bool Claimed) { OnClaimed(pContext, Claimed); });
 	}
 
-	static void OnClaimSession(const CAuthorizationContextPtr& pContext, bool Success)
+	static void OnClaimed(const CAuthorizationContextPtr& pContext, bool Claimed)
 	{
-		auto* pPlayer = GetPlayer(pContext);
 		const auto& Claim = pContext->Data().m_Claim;
-		if(!pPlayer || time_get() >= Claim.m_ClaimDeadline)
+		if(Claimed && GetPlayer(pContext) && time_get() < Claim.m_Deadline)
 		{
-			ReleaseSessionClaim(Claim);
-			if(pPlayer)
-				pContext->GS()->Chat(pContext->GetClientID(), "Login failed: session reservation expired. Please try again.");
-			return;
-		}
-		if(!Success)
-		{
-			// The claim was refused (a login is in progress) or lost, possibly with
-			// the write committed: give it back, which only matches our own row.
-			ReleaseSessionClaim(Claim);
-			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: another login is in progress.");
+			LoadAccountData(pContext);
 			return;
 		}
 
-		auto pData = Database->Prepare<DB::SELECT>("*", "tw_accounts_data", "WHERE ID = '{}'", Claim.m_AccountID);
+		// Refused, lost or too late. Give back whatever the write did (a no-op unless
+		// our token is stored), then decide whether to try again.
+		AccountSession::Release(Claim, [pContext](bool) { OnReleased(pContext); });
+	}
+
+	static void OnReleased(const CAuthorizationContextPtr& pContext)
+	{
+		auto* pPlayer = GetPlayer(pContext);
+		if(!pPlayer)
+			return;
+
+		auto& Data = pContext->Data();
+		if(time_get() >= Data.m_Claim.m_Deadline)
+		{
+			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: session reservation expired. Please try again.");
+			return;
+		}
+
+		if(++Data.m_Attempts < ACCOUNT_SESSION_CLAIM_ATTEMPTS)
+		{
+			ReadOwnerAndClaim(pContext);
+			return;
+		}
+		pContext->GS()->Chat(pContext->GetClientID(), "Login failed: another login is in progress.");
+	}
+
+	static void LoadAccountData(const CAuthorizationContextPtr& pContext)
+	{
+		auto pData = Database->Prepare<DB::SELECT>("*", "tw_accounts_data", "WHERE ID = '{}'", pContext->Data().m_Claim.m_AccountID);
 		pData->AtExecute([pContext](ResultPtr pDataRes) { OnLoadAccountData(pContext, pDataRes); });
 	}
 
 	static void OnLoadAccountData(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
 	{
 		auto* pPlayer = GetPlayer(pContext);
-		const auto& Claim = pContext->Data().m_Claim;
-		if(!pPlayer || time_get() >= Claim.m_ClaimDeadline)
+		auto& Data = pContext->Data();
+		const auto& Claim = Data.m_Claim;
+		if(!pPlayer || time_get() >= Claim.m_Deadline)
 		{
-			ReleaseSessionClaim(Claim);
+			AccountSession::Release(Claim);
 			return;
 		}
 
 		if(!pRes->next())
 		{
-			ReleaseSessionClaim(Claim);
+			AccountSession::Release(Claim);
 			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: account data could not be loaded.");
 			pContext->GS()->Chat(pContext->GetClientID(), "Please reconnect and try again.");
 			return;
 		}
 
-		const auto& Data = pContext->Data();
 		if(!pPlayer->GetSharedData().m_GuestLogin.empty() && Data.m_Login != pPlayer->GetSharedData().m_GuestLogin)
 			pPlayer->GetSharedData().m_GuestLogin.clear();
 
 		pPlayer->Account()->Init(Claim.m_AccountID, pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Language, Data.m_LoginDate, std::move(pRes));
 		pPlayer->Account()->SetSessionToken(Claim.m_Token);
-		if(time_get() >= Claim.m_ClaimDeadline)
+		if(time_get() >= Claim.m_Deadline)
 		{
-			ReleaseSessionClaim(Claim);
+			AccountSession::Release(Claim);
 			pContext->Server()->Kick(pContext->GetClientID(), "Account session reservation expired");
 			return;
 		}
@@ -301,9 +247,15 @@ public:
 		if(!pPlayer || !pPlayer->GetSharedData().m_pAuthorizationAttempt.expired() || pPlayer->Account()->GetID() > 0)
 			return;
 
-		CAuthorizationPayload Payload { pMgr, Login, Pass };
-		Payload.m_Claim.m_Token = GenerateSessionToken();
+		CAuthorizationPayload Payload {};
+		Payload.m_pAccountManager = pMgr;
+		Payload.m_Login = Login;
+		Payload.m_Password = Pass;
+		Payload.m_Claim.m_ClientID = ClientID;
+		Payload.m_Claim.m_Token = AccountSession::GenerateToken();
+		Payload.m_Claim.m_Deadline = time_get() + AccountSession::CLAIM_SECONDS * time_freq();
 		auto pContext = DbAsync::MakeContext<DbAuthorization::CAuthorizationPayload>(ClientID, std::move(Payload));
+
 		// Preserve the nickname/credentials error distinction with a LEFT JOIN.
 		pPlayer->GetSharedData().m_pAuthorizationAttempt = pContext;
 		const auto Columns = fmt_default("d.ID, d.Nick AS AccountNickname, (a.ID IS NOT NULL AND a.Username = '{}') AS CredentialsFound, a.Username, a.TimeoutCode, a.LoginDate, a.Language, a.PinCode, a.Password, a.PasswordSalt, (b.AccountId IS NOT NULL) AS HasBan, b.BannedUntil, b.Reason", Login);
@@ -511,7 +463,7 @@ void CAccountManager::OnClientReset(int ClientID)
 	for(const auto& Pending : m_vPendingLogins)
 	{
 		if(Pending.m_ClientID == ClientID)
-			ReleaseSessionClaim(Pending.m_Claim);
+			AccountSession::Release(Pending.m_Claim);
 	}
 	std::erase_if(m_vPendingLogins, [ClientID](const SPendingLogin& Pending) { return Pending.m_ClientID == ClientID; });
 
@@ -527,41 +479,35 @@ void CAccountManager::OnClientReset(int ClientID)
 
 	// Only the row that still carries our token is removed; a newer owner's row stays.
 	if(AccountID > 0 && !SessionToken.empty() && Ready)
-	{
-		Database->Execute<DB::REMOVE>(ACCOUNT_SESSIONS_TABLE,
-			"WHERE AccountID = '{}' AND SessionToken = '{}'", AccountID, SessionToken);
-	}
+		AccountSession::Remove({ AccountID, SessionToken });
 
 	CAccountSharedData::ms_aPlayerSharedData.erase(ClientID);
 	CAccountData::ms_aData.erase(ClientID);
 }
 
-void CAccountManager::BeginSessionTakeover(CPlayer* pPlayer, const SSessionClaim& Claim, bool RecommendPin)
+void CAccountManager::BeginSessionTakeover(CPlayer* pPlayer, const AccountSession::SClaim& Claim, bool RecommendPin)
 {
 	if(!pPlayer || Claim.m_Token.empty() || pPlayer->Account()->GetID() != Claim.m_AccountID)
 		return;
 
-	const int ClientID = pPlayer->GetCID();
-
-	// Sessions of this account on this server end right away; their slots are
-	// released in OnClientReset, and the login waits for that below.
+	// Sessions of this account on this server end now. The login completes only
+	// after their slots are released (OnClientReset).
 	KickOtherLocalSessions(Claim.m_AccountID, Claim.m_Token);
 
 	SPendingLogin Pending {};
-	Pending.m_ClientID = ClientID;
+	Pending.m_ClientID = pPlayer->GetCID();
 	Pending.m_Claim = Claim;
 	Pending.m_RecommendPin = RecommendPin;
 	Pending.m_StartTime = time_get();
-	Pending.m_TakeoverDeadline = Pending.m_StartTime + ACCOUNT_SESSION_TAKEOVER_TIMEOUT_SECONDS * time_freq();
 	if(NeedsRemoteTakeover(Claim))
 	{
-		// Ask the other server to end its session; it answers with an ack carrying this event ID.
+		// The other server ends its session and answers with an ack carrying this event ID.
 		Pending.m_EventID = Sync->Push(syncevents::ACCOUNT_SESSION_TAKEOVER, GS()->GetWorldID(), Claim.m_AccountID);
 		Pending.m_RelayFailed = Pending.m_EventID <= 0;
 	}
 	m_vPendingLogins.push_back(Pending);
 
-	GS()->Chat(ClientID, "Verifying account session...");
+	GS()->Chat(Pending.m_ClientID, "Verifying account session...");
 }
 
 std::vector<CAccountManager::SLocalSession> CAccountManager::CollectLocalSessions(int AccountID) const
@@ -574,16 +520,26 @@ std::vector<CAccountManager::SLocalSession> CAccountManager::CollectLocalSession
 		if(AccountID > 0 && Data.GetID() != AccountID)
 			continue;
 
-		vSessions.push_back({ ClientID, Data.GetID(), Data.GetSessionToken() });
+		vSessions.push_back({ ClientID, { Data.GetID(), Data.GetSessionToken() } });
 	}
 	return vSessions;
 }
 
+bool CAccountManager::HasOtherLocalSession(int AccountID, const std::string& Token) const
+{
+	for(const auto& [ClientID, Data] : CAccountData::ms_aData)
+	{
+		if(Data.GetID() == AccountID && !Data.GetSessionToken().empty() && Data.GetSessionToken() != Token)
+			return true;
+	}
+	return false;
+}
+
 void CAccountManager::KickLocalSession(const SLocalSession& Session)
 {
-	// Kicking can release slots synchronously, so act on a fresh lookup only.
+	// Re-check: an earlier kick may already have changed this slot.
 	const auto It = CAccountData::ms_aData.find(Session.m_ClientID);
-	if(It == CAccountData::ms_aData.end() || It->second.GetID() != Session.m_AccountID || It->second.GetSessionToken() != Session.m_Token)
+	if(It == CAccountData::ms_aData.end() || It->second.GetID() != Session.m_Key.m_AccountID || It->second.GetSessionToken() != Session.m_Key.m_Token)
 		return;
 
 	auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(Session.m_ClientID));
@@ -599,87 +555,42 @@ void CAccountManager::KickOtherLocalSessions(int AccountID, const std::string& T
 {
 	for(const auto& Session : CollectLocalSessions(AccountID))
 	{
-		if(Session.m_Token != Token)
+		if(Session.m_Key.m_Token != Token)
 			KickLocalSession(Session);
 	}
 }
 
-bool CAccountManager::HasOtherLocalSession(int AccountID, const std::string& Token) const
+void CAccountManager::VerifySessions(std::vector<SLocalSession> vSessions, std::function<void()> OnVerified)
 {
-	for(const auto& [ClientID, Data] : CAccountData::ms_aData)
-	{
-		if(Data.GetID() == AccountID && !Data.GetSessionToken().empty() && Data.GetSessionToken() != Token)
-			return true;
-	}
-	return false;
-}
-
-void CAccountManager::VerifyLocalSessions(std::vector<SLocalSession> vSessions, const SSessionAck* pAck)
-{
-	if(vSessions.empty())
-		return;
-
-	// One select for all accounts involved. The row is the truth: a session whose
-	// token is no longer stored there has been taken over and must end.
 	std::vector<int> vAccountIDs;
 	for(const auto& Session : vSessions)
+		vAccountIDs.push_back(Session.m_Key.m_AccountID);
+
+	AccountSession::FetchTokens(vAccountIDs, [this, vSessions = std::move(vSessions), OnVerified](const std::vector<AccountSession::SKey>& vRows)
 	{
-		if(std::find(vAccountIDs.begin(), vAccountIDs.end(), Session.m_AccountID) == vAccountIDs.end())
-			vAccountIDs.push_back(Session.m_AccountID);
-	}
-
-	std::string List;
-	for(const int AccountID : vAccountIDs)
-	{
-		if(!List.empty())
-			List += ", ";
-		List += std::to_string(AccountID);
-	}
-
-	std::optional<SSessionAck> Ack;
-	if(pAck)
-		Ack = *pAck;
-
-	auto pCheck = Database->Prepare<DB::SELECT>("AccountID, SessionToken", ACCOUNT_SESSIONS_TABLE, "WHERE AccountID IN ({})", List);
-	pCheck->AtExecute([this, vSessions = std::move(vSessions), Ack](ResultPtr pRes)
-	{
-		// A failed query says nothing about ownership: keep everything, send no ack.
-		// The next refresh checks again.
-		if(!pRes || !*pRes)
-			return;
-
-		std::vector<std::pair<int, std::string>> vRows;
-		while(pRes->next())
-			vRows.emplace_back(pRes->getInt("AccountID"), pRes->getString("SessionToken"));
-
-		// Only sessions that existed when the check was issued are judged here;
-		// a login that completed meanwhile is verified by the next refresh.
+		// The row is the truth: a session whose token is no longer stored there was taken over.
 		for(const auto& Session : vSessions)
 		{
-			const auto It = std::find_if(vRows.begin(), vRows.end(), [&Session](const auto& Row) { return Row.first == Session.m_AccountID; });
-			if(It == vRows.end() || It->second.empty() || It->second == Session.m_Token)
-				continue;
-
-			KickLocalSession(Session);
+			const auto It = std::find_if(vRows.begin(), vRows.end(),
+				[&Session](const AccountSession::SKey& Row) { return Row.m_AccountID == Session.m_Key.m_AccountID; });
+			if(It != vRows.end() && !It->m_Token.empty() && It->m_Token != Session.m_Key.m_Token)
+				KickLocalSession(Session);
 		}
 
-		if(Ack)
-		{
-			const std::string AckTarget = std::string(syncevents::ACCOUNT_SESSION_TAKEOVER_ACK_PREFIX) + std::to_string(Ack->m_TargetServerID);
-			Sync->Push(AckTarget.c_str(), Ack->m_WorldID, Ack->m_EventID);
-		}
+		if(OnVerified)
+			OnVerified();
 	});
 }
 
-void CAccountManager::FailPendingLogin(const SPendingLogin& Pending, bool RelayFailed)
+void CAccountManager::FailPendingLogin(const SPendingLogin& Pending)
 {
-	ReleaseSessionClaim(Pending.m_Claim);
+	AccountSession::Release(Pending.m_Claim);
 
 	auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(Pending.m_ClientID));
 	if(!pGS)
 		return;
 
-	if(RelayFailed)
+	if(Pending.m_RelayFailed)
 	{
 		pGS->Chat(Pending.m_ClientID, "Login failed: session takeover relay is unavailable.");
 		pGS->Server()->Kick(Pending.m_ClientID, "Session takeover relay unavailable");
@@ -690,7 +601,7 @@ void CAccountManager::FailPendingLogin(const SPendingLogin& Pending, bool RelayF
 	pGS->Server()->Kick(Pending.m_ClientID, "Session takeover was not confirmed");
 }
 
-bool CAccountManager::CompleteLogin(int ClientID, const SSessionClaim& Claim, bool RecommendPin)
+bool CAccountManager::CompleteLogin(int ClientID, const AccountSession::SClaim& Claim, bool RecommendPin)
 {
 	auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(ClientID));
 	auto* pPlayer = pGS ? pGS->GetPlayer(ClientID, false) : nullptr;
@@ -701,11 +612,11 @@ bool CAccountManager::CompleteLogin(int ClientID, const SSessionClaim& Claim, bo
 	if(It == CAccountData::ms_aData.end() || It->second.GetID() != Claim.m_AccountID || It->second.GetSessionToken() != Claim.m_Token)
 		return false;
 
-	if(time_get() >= Claim.m_ClaimDeadline)
+	if(time_get() >= Claim.m_Deadline)
 		return false;
 
 	pGS->Chat(ClientID, "Login successful. Welcome back!");
-	if(Claim.m_PreviousServerID > 0 && Claim.m_PreviousServerID != g_Config.m_SvSyncServerID)
+	if(NeedsRemoteTakeover(Claim))
 		pGS->Chat(ClientID, "Warning: The previous account session on another server was terminated.");
 	if(RecommendPin)
 	{
@@ -716,124 +627,97 @@ bool CAccountManager::CompleteLogin(int ClientID, const SSessionClaim& Claim, bo
 	if(pPlayer->m_pMotdMenu)
 		pPlayer->CloseMotdMenu();
 	pGS->m_pController->DoTeamChange(pPlayer);
-	pGS->Core()->AccountManager()->LoadAccount(pPlayer, true, Claim.m_ClaimDeadline);
+	pGS->Core()->AccountManager()->LoadAccount(pPlayer, true, Claim.m_Deadline);
 
 	// LoadAccount may have moved the player to another world: re-fetch before use.
 	pGS = static_cast<CGS*>(Instance::GameServerPlayer(ClientID));
 	pPlayer = pGS ? pGS->GetPlayer(ClientID, false) : nullptr;
-	if(!pPlayer || pPlayer->Account()->GetSessionToken() != Claim.m_Token || !pPlayer->Account()->IsReadyToPlay() || time_get() >= Claim.m_ClaimDeadline)
+	if(!pPlayer || pPlayer->Account()->GetSessionToken() != Claim.m_Token || !pPlayer->Account()->IsReadyToPlay() || time_get() >= Claim.m_Deadline)
 		return false;
 
-	// Activate the row (Heartbeat > 0). Until this write lands the reservation
-	// stays, so no other login can start a takeover in the meantime.
+	// The reservation stays until the row is active, so no other login can take
+	// over in the meantime. A failed write ends this session.
 	auto pContext = DbAsync::MakeContext(ClientID);
-	Database->Execute<DB::UPDATE>([pContext, Token = Claim.m_Token](bool Success)
+	AccountSession::Activate(Claim, [pContext, Token = Claim.m_Token](bool Success)
 	{
 		auto* pCurrentPlayer = pContext->GetPlayer();
 		if(!Success && pCurrentPlayer && pCurrentPlayer->Account()->GetSessionToken() == Token)
 			pContext->Server()->Kick(pContext->GetClientID(), "Account session activation failed");
-	}, ACCOUNT_SESSIONS_TABLE,
-		"Heartbeat = UNIX_TIMESTAMP(), UpdatedAt = NOW() WHERE AccountID = '{}' AND SessionToken = '{}' AND Heartbeat = 0", Claim.m_AccountID, Claim.m_Token);
+	});
 	g_EventListenerManager.Notify<IEventListener::PlayerLogin>(pPlayer, pPlayer->Account());
 	return true;
 }
 
+CAccountManager::EPendingState CAccountManager::EvaluatePendingLogin(const SPendingLogin& Pending, int64_t Now) const
+{
+	auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(Pending.m_ClientID));
+	auto* pPlayer = pGS ? pGS->GetPlayer(Pending.m_ClientID, false) : nullptr;
+	if(!pPlayer || !pPlayer->IsAuthed())
+		return EPendingState::Abandoned;
+
+	if(Now >= Pending.m_Claim.m_Deadline)
+		return EPendingState::Failed;
+
+	if(NeedsRemoteTakeover(Pending.m_Claim) && !Pending.m_RemoteAck)
+	{
+		if(!Pending.m_RelayFailed && Now < Pending.m_StartTime + ACCOUNT_SESSION_TAKEOVER_TIMEOUT_SECONDS * time_freq())
+			return EPendingState::Wait;
+
+		// No answer from the previous server: only a stale heartbeat proves its session is gone.
+		const int ElapsedSeconds = static_cast<int>((Now - Pending.m_StartTime) / time_freq());
+		const int Age = Pending.m_Claim.m_Previous.m_HeartbeatAge;
+		const bool Stale = Age >= 0 && Age + ElapsedSeconds >= AccountSession::HEARTBEAT_STALE_SECONDS;
+		if(!Stale)
+			return EPendingState::Failed;
+	}
+
+	// Wait until the old session on this server has disconnected (OnClientReset).
+	if(HasOtherLocalSession(Pending.m_Claim.m_AccountID, Pending.m_Claim.m_Token))
+		return EPendingState::Wait;
+
+	return EPendingState::Ready;
+}
+
 void CAccountManager::ProcessPendingLogins()
 {
-	if(m_vPendingLogins.empty())
-		return;
-
 	const int64_t Now = time_get();
 	std::vector<SPendingLogin> vReady;
+	std::vector<SPendingLogin> vFailed;
 	for(auto It = m_vPendingLogins.begin(); It != m_vPendingLogins.end();)
 	{
-		auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(It->m_ClientID));
-		auto* pPlayer = pGS ? pGS->GetPlayer(It->m_ClientID, false) : nullptr;
-		if(!pPlayer || !pPlayer->IsAuthed())
+		switch(EvaluatePendingLogin(*It, Now))
 		{
-			// The player is gone without OnClientReset: give the reservation back.
-			ReleaseSessionClaim(It->m_Claim);
-			It = m_vPendingLogins.erase(It);
-			continue;
-		}
-
-		if(Now >= It->m_Claim.m_ClaimDeadline)
-		{
-			FailPendingLogin(*It, false);
-			It = m_vPendingLogins.erase(It);
-			continue;
-		}
-
-		if(NeedsRemoteTakeover(It->m_Claim) && !It->m_RemoteAck)
-		{
-			if(!It->m_RelayFailed && Now < It->m_TakeoverDeadline)
-			{
-				++It;
-				continue;
-			}
-
-			// No answer from the previous server: only a stale heartbeat proves its session is gone.
-			const int ElapsedSeconds = static_cast<int>((Now - It->m_StartTime) / time_freq());
-			const int Age = It->m_Claim.m_PreviousHeartbeatAge;
-			const bool Stale = Age >= 0 && Age + ElapsedSeconds >= ACCOUNT_SESSION_HEARTBEAT_STALE_SECONDS;
-			if(!Stale)
-			{
-				FailPendingLogin(*It, It->m_RelayFailed);
-				It = m_vPendingLogins.erase(It);
-				continue;
-			}
-		}
-
-		// Wait until the old session on this server has disconnected (OnClientReset).
-		if(HasOtherLocalSession(It->m_Claim.m_AccountID, It->m_Claim.m_Token))
-		{
+		case EPendingState::Wait:
 			++It;
 			continue;
+		case EPendingState::Ready:
+			vReady.push_back(*It);
+			break;
+		case EPendingState::Failed:
+			vFailed.push_back(*It);
+			break;
+		case EPendingState::Abandoned:
+			// The player is gone without OnClientReset: give the reservation back.
+			AccountSession::Release(It->m_Claim);
+			break;
 		}
-
-		vReady.push_back(*It);
 		It = m_vPendingLogins.erase(It);
 	}
+
+	// Act only after the list is final: these calls may disconnect players.
+	for(const auto& Pending : vFailed)
+		FailPendingLogin(Pending);
 
 	for(const auto& Pending : vReady)
 	{
 		if(CompleteLogin(Pending.m_ClientID, Pending.m_Claim, Pending.m_RecommendPin))
 			continue;
 
-		ReleaseSessionClaim(Pending.m_Claim);
+		AccountSession::Release(Pending.m_Claim);
 		const auto It = CAccountData::ms_aData.find(Pending.m_ClientID);
 		if(It != CAccountData::ms_aData.end() && It->second.GetSessionToken() == Pending.m_Claim.m_Token)
 			Server()->Kick(Pending.m_ClientID, "Account session reservation expired");
 	}
-}
-
-void CAccountManager::UpdateLocalSessionHeartbeats()
-{
-	// One update per batch instead of one per player: these writes go to the
-	// primary, over the bridge and the WAN in a multi-location setup.
-	std::string Conditions;
-	int Count = 0;
-	auto Flush = [&Conditions, &Count]()
-	{
-		if(Conditions.empty())
-			return;
-
-		Database->Execute<DB::UPDATE>(ACCOUNT_SESSIONS_TABLE,
-			"Heartbeat = UNIX_TIMESTAMP(), UpdatedAt = NOW() WHERE Heartbeat <> 0 AND ({})", Conditions);
-		Conditions.clear();
-		Count = 0;
-	};
-
-	for(const auto& Session : CollectLocalSessions())
-	{
-		if(!Conditions.empty())
-			Conditions += " OR ";
-		Conditions += fmt_default("(AccountID = '{}' AND SessionToken = '{}')", Session.m_AccountID, Session.m_Token);
-
-		if(++Count >= ACCOUNT_SESSION_BATCH_SIZE)
-			Flush();
-	}
-	Flush();
 }
 
 void CAccountManager::OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req)
@@ -846,7 +730,7 @@ void CAccountManager::OnSyncEvent(std::string EventName, const CServerSync::SReq
 
 		for(auto& Pending : m_vPendingLogins)
 		{
-			if(Pending.m_EventID == Req.Value && Pending.m_Claim.m_PreviousServerID == Req.ServerID)
+			if(Pending.m_EventID == Req.Value && Pending.m_Claim.m_Previous.m_ServerID == Req.ServerID)
 			{
 				Pending.m_RemoteAck = true;
 				break;
@@ -858,18 +742,13 @@ void CAccountManager::OnSyncEvent(std::string EventName, const CServerSync::SReq
 	if(EventName != syncevents::ACCOUNT_SESSION_TAKEOVER || Req.Value <= 0)
 		return;
 
-	// Another server claimed this account: end our sessions that lost the row,
-	// then acknowledge so that it can continue.
-	const SSessionAck Ack { Req.ID, Req.WorldID, Req.ServerID };
-	const auto vSessions = CollectLocalSessions(Req.Value);
-	if(vSessions.empty())
+	// Another server claimed this account: end the local sessions that lost the row,
+	// then acknowledge. The ack is sent only if the check succeeded.
+	const std::string AckTarget = std::string(syncevents::ACCOUNT_SESSION_TAKEOVER_ACK_PREFIX) + std::to_string(Req.ServerID);
+	VerifySessions(CollectLocalSessions(Req.Value), [AckTarget, WorldID = Req.WorldID, EventID = Req.ID]()
 	{
-		const std::string AckTarget = std::string(syncevents::ACCOUNT_SESSION_TAKEOVER_ACK_PREFIX) + std::to_string(Ack.m_TargetServerID);
-		Sync->Push(AckTarget.c_str(), Ack.m_WorldID, Ack.m_EventID);
-		return;
-	}
-
-	VerifyLocalSessions(vSessions, &Ack);
+		Sync->Push(AckTarget.c_str(), WorldID, EventID);
+	});
 }
 
 void CAccountManager::OnTick()
@@ -888,8 +767,14 @@ void CAccountManager::OnTick()
 		return;
 	m_NextSessionCheck = Now + RefreshSeconds * time_freq();
 
-	UpdateLocalSessionHeartbeats();
-	VerifyLocalSessions(CollectLocalSessions());
+	const auto vSessions = CollectLocalSessions();
+	std::vector<AccountSession::SKey> vKeys;
+	vKeys.reserve(vSessions.size());
+	for(const auto& Session : vSessions)
+		vKeys.push_back(Session.m_Key);
+
+	AccountSession::RefreshHeartbeats(vKeys);
+	VerifySessions(vSessions);
 }
 
 void CAccountManager::AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* pProf) const
