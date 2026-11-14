@@ -5,11 +5,12 @@
 #include <game/server/core/mmo_component.h>
 #include <base/timeperiod.h>
 
-#include <mutex>
+#include <functional>
 #include <string>
 #include <vector>
 
 #include "account_data.h"
+#include "account_session.h"
 
 class CAccountManager : public MmoComponent
 {
@@ -44,7 +45,8 @@ public:
 	AccountCodeResult LoginAccount(int ClientID, const char *pLogin, const char *pPassword);
 	AccountCodeResult LoginAccountRaw(int ClientID, const char* pLogin, const char* pPassword);
 
-	void BeginSessionTakeover(CPlayer* pPlayer, const std::string& Token, int PreviousServerID, int PreviousClientID, const std::string& PreviousToken, int PreviousHeartbeat, int PreviousHeartbeatAge, bool RecommendPin, int64_t ClaimDeadline);
+	// Starts a login whose claim on the account has been written.
+	void BeginSessionTakeover(CPlayer* pPlayer, const AccountSession::SClaim& Claim, bool RecommendPin);
 	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false, int64_t ClaimDeadline = 0);
 	void SetPinCode(int ClientID, const char* pCurrentPasswordOrPin, const char* pNewPin, bool IsChangingPin);
 	void ChangePassword(int ClientID, const char* pOldPassword, const char* pNewPassword, const char* pPinCode);
@@ -69,57 +71,47 @@ public:
 	void ShowPlayerAttributesByGroup(CPlayer* pPlayer, std::string_view Title, AttributeGroup Group) const;
 
 private:
-	struct SPendingKick
+	// A session logged in on this server.
+	struct SLocalSession
 	{
 		int m_ClientID {};
-		int m_AccountID {};
-		std::string m_Token {};
-	};
-
-	struct SSessionValidation
-	{
-		int m_AccountID {};
-		std::string m_Token {};
-		int m_AckEventID {};
-		int m_AckWorldID {};
-		int m_AckTargetServerID {};
+		AccountSession::SKey m_Key {};
 	};
 
 	struct SPendingLogin
 	{
 		int m_ClientID {};
-		int m_AccountID {};
-		std::string m_Token {};
-		int m_PreviousServerID {};
-		int m_PreviousClientID {};
-		std::string m_PreviousToken {};
-		int m_PreviousHeartbeat {};
-		int m_PreviousHeartbeatAge{ -1 };
-		int m_EventID {};
-		int m_StartTick {};
-		int64_t m_ClaimDeadline {};
-		bool m_RemoteAck {};
-		bool m_RelayFailed {};
+		AccountSession::SClaim m_Claim {};
 		bool m_RecommendPin {};
+		int m_EventID {}; // takeover request to the previous owner's server, 0 if none
+		bool m_RelayFailed {};
+		bool m_RemoteAck {};
+		int64_t m_StartTime {};
 	};
 
-	void ProcessPendingKicks();
-	void ValidateLocalSessions(int AccountID, int AckEventID = 0, int AckWorldID = 0, int AckTargetServerID = 0);
-	void ValidateLocalSessions(const std::vector<int>& vAccountIDs);
-	void UpdateLocalSessionHeartbeats();
+	enum class EPendingState
+	{
+		Wait, // keep waiting
+		Ready, // complete the login
+		Failed, // reject the login, keep the previous owner
+		Abandoned, // the player is gone without OnClientReset
+	};
+
+	EPendingState EvaluatePendingLogin(const SPendingLogin& Pending, int64_t Now) const;
 	void ProcessPendingLogins();
-	bool CompleteLogin(int ClientID, int AccountID, const std::string& Token, bool RecommendPin, int PreviousServerID, int64_t ClaimDeadline);
-	void RestorePreviousSession(const SPendingLogin& Pending);
-	void QueueLocalSessionKicks(int AccountID, const std::string& Token);
-	bool HasAnyLocalSession(int AccountID) const;
+	bool CompleteLogin(int ClientID, const AccountSession::SClaim& Claim, bool RecommendPin);
+	void FailPendingLogin(const SPendingLogin& Pending);
+
+	std::vector<SLocalSession> CollectLocalSessions(int AccountID = 0) const;
 	bool HasOtherLocalSession(int AccountID, const std::string& Token) const;
+	void KickLocalSession(const SLocalSession& Session);
+	void KickOtherLocalSessions(int AccountID, const std::string& Token);
+	void VerifySessions(std::vector<SLocalSession> vSessions, std::function<void()> OnVerified = {});
+
 	void AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* pProf) const;
 
-	std::vector<SPendingKick> m_vPendingKicks {};
-	std::vector<SSessionValidation> m_vSessionValidations {};
 	std::vector<SPendingLogin> m_vPendingLogins {};
-	std::mutex m_SessionMutex {};
-	int m_LastSessionCheck = 0;
+	int64_t m_NextSessionCheck = 0;
 };
 
 #endif
