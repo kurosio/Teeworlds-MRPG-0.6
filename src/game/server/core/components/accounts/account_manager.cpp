@@ -44,6 +44,33 @@ namespace
 		return std::string(aToken);
 	}
 
+	// SET clause of the reservation write (see OnReadSessionOwner). One IF() per
+	// column decides whether the row may be claimed: an active session
+	// (Heartbeat <> 0) can be taken over, a reservation younger than the stale
+	// timeout cannot. `SessionToken = VALUES(SessionToken)` keeps the condition
+	// true for the assignments after SessionToken was written, so the statement
+	// changes either all columns or none. Without it Heartbeat = 0 would make
+	// the later IF()s false and leave a half claimed row behind. Only a changed
+	// row counts as success (Connector/C++ reports affected rows, not matched
+	// rows), so a refused claim is recognisable without another read.
+	const std::string& ClaimSessionSetClause()
+	{
+		static const std::string s_CanClaim = fmt_default(
+			"Heartbeat <> 0 OR UpdatedAt < NOW() - INTERVAL {} SECOND OR SessionToken = VALUES(SessionToken)",
+			ACCOUNT_SESSION_HEARTBEAT_STALE_SECONDS);
+
+		static const std::string s_Clause = []()
+		{
+			std::string Clause;
+			for(const char* pColumn : { "ServerID", "ClientID", "SessionToken" })
+				Clause += fmt_default("{} = IF({}, VALUES({}), {}), ", pColumn, s_CanClaim, pColumn, pColumn);
+
+			Clause += fmt_default("Heartbeat = IF({}, 0, Heartbeat), UpdatedAt = IF({}, NOW(), UpdatedAt)", s_CanClaim, s_CanClaim);
+			return Clause;
+		}();
+		return s_Clause;
+	}
+
 	bool CheckLoginPasswordLength(CGS* pGS, int ClientID, const char* pLogin, const char* pPassword)
 	{
 		const int LengthLogin = str_length(pLogin);
@@ -172,8 +199,10 @@ class DbAuthorization
 				Data.m_PreviousHeartbeatAge = CurrentUnixTime - Data.m_PreviousHeartbeat;
 		}
 
-		// Heartbeat=0 reserves the account while takeover is pending. Compare the
-		// observed token in the same atomic write: only one contender can win.
+		// Heartbeat=0 reserves the account while a takeover is pending, so a fresh
+		// reservation belongs to a login that is still running. Only a stale one
+		// (that login died) may be claimed; the write below enforces the same
+		// rule, this is just the faster answer for the player.
 		if(HasPrevious && Data.m_PreviousHeartbeat == 0)
 		{
 			if(pRes->getInt("ClaimAge") < ACCOUNT_SESSION_HEARTBEAT_STALE_SECONDS)
@@ -185,14 +214,19 @@ class DbAuthorization
 		}
 		Data.m_ClaimDeadline = time_get() + ACCOUNT_SESSION_CLAIM_SECONDS * time_freq();
 		auto Callback = [pContext](bool Success) { OnClaimSession(pContext, Success); };
-		if(HasPrevious)
-			Database->Execute<DB::UPDATE>(Callback, ACCOUNT_SESSIONS_TABLE,
-				"ServerID = '{}', ClientID = '{}', SessionToken = '{}', Heartbeat = 0, UpdatedAt = NOW() WHERE AccountID = '{}' AND SessionToken = '{}' AND (Heartbeat <> 0 OR UpdatedAt < NOW() - INTERVAL 45 SECOND)",
-				g_Config.m_SvSyncServerID, pContext->GetClientID(), Data.m_SessionToken, Data.m_AccountID, Data.m_PreviousToken);
-		else
-			Database->Execute<DB::INSERT>(Callback, ACCOUNT_SESSIONS_TABLE,
-				"(AccountID, ServerID, ClientID, SessionToken, Heartbeat, UpdatedAt) VALUES ('{}', '{}', '{}', '{}', 0, NOW())",
-				Data.m_AccountID, g_Config.m_SvSyncServerID, pContext->GetClientID(), Data.m_SessionToken);
+		// Reserve the account in one statement instead of INSERT or UPDATE chosen
+		// by the read above. The read runs on another pooled connection and the
+		// shared database can be a replica that lags behind, so a session row may
+		// exist on the primary while the read returned nothing: a plain INSERT
+		// then failed with "Duplicate entry" and a login that is allowed to take
+		// the session over was rejected. A row can also appear between the read
+		// and the write when two logins race for the same account. The upsert is
+		// atomic: it inserts the row when there is none, takes over an active
+		// session, refuses a reservation that is still in progress, and reports a
+		// lost race as an unchanged row instead of a SQL error.
+		Database->Execute<DB::INSERT>(Callback, ACCOUNT_SESSIONS_TABLE,
+			"(AccountID, ServerID, ClientID, SessionToken, Heartbeat, UpdatedAt) VALUES ('{}', '{}', '{}', '{}', 0, NOW()) ON DUPLICATE KEY UPDATE {}",
+			Data.m_AccountID, g_Config.m_SvSyncServerID, pContext->GetClientID(), Data.m_SessionToken, ClaimSessionSetClause());
 	}
 
 	static void ReleaseClaim(const CAuthorizationContextPtr& pContext)

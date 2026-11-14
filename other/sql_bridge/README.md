@@ -809,6 +809,12 @@ byte-safe.
 * A transaction stays on the primary from `BEGIN` to `COMMIT`/`ROLLBACK`.
 * Not covered: writes through another location's bridge appear when
   replication catches up; keep the grace above the lag.
+* Because of that, a read and the write that depends on it must not be split
+  when the outcome matters. The account-session reservation
+  (`tw_account_sessions`, `CAccountManager`) is therefore a single
+  `INSERT ... ON DUPLICATE KEY UPDATE`: the takeover decision is made by the
+  primary row itself, so a session written by another location cannot turn a
+  valid login into `Duplicate entry ... for key 'PRIMARY'`.
 
 ## Testing
 
