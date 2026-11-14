@@ -105,6 +105,7 @@ private:
 	};
 
 	void ProcessPendingKicks();
+	void ValidateLocalSessions(const std::vector<int>& vAccountIDs);
 	void UpdateLocalSessionHeartbeats();
 	void SendSessionEvents();
 	void ProcessPendingLogins();

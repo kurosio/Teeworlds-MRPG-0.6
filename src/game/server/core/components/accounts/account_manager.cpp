@@ -36,6 +36,7 @@ namespace
 	constexpr int ACCOUNT_SESSION_TAKEOVER_TIMEOUT_SECONDS = 10;
 	constexpr int ACCOUNT_SESSION_HEARTBEAT_STALE_SECONDS = 45;
 	constexpr int ACCOUNT_SESSION_CLAIM_SECONDS = 30;
+	constexpr int ACCOUNT_SESSION_BATCH_SIZE = 100;
 
 	std::string GenerateSessionToken()
 	{
@@ -687,6 +688,9 @@ void CAccountManager::ProcessPendingLogins()
 			auto* pPlayer = pGS ? pGS->GetPlayer(It->m_ClientID, false) : nullptr;
 			if(!pGS || !pPlayer || !pPlayer->IsAuthed())
 			{
+				// Player is gone without OnClientReset: give the reservation back
+				// instead of blocking the account until it goes stale.
+				RestorePreviousSession(*It);
 				It = m_vPendingLogins.erase(It);
 				continue;
 			}
@@ -798,15 +802,34 @@ void CAccountManager::RestorePreviousSession(const SPendingLogin& Pending)
 
 void CAccountManager::UpdateLocalSessionHeartbeats()
 {
+	// One update per batch instead of one per player: these writes go to the
+	// primary, over the bridge and the WAN in a multi-location setup.
+	std::string Conditions;
+	int Count = 0;
+	auto Flush = [&Conditions, &Count]()
+	{
+		if(Conditions.empty())
+			return;
+
+		Database->Execute<DB::UPDATE>(ACCOUNT_SESSIONS_TABLE,
+			"Heartbeat = UNIX_TIMESTAMP(), UpdatedAt = NOW() WHERE Heartbeat <> 0 AND ({})", Conditions);
+		Conditions.clear();
+		Count = 0;
+	};
+
 	for(const auto& [ClientID, Data] : CAccountData::ms_aData)
 	{
 		if(Data.GetID() <= 0 || Data.GetSessionToken().empty())
 			continue;
 
-		Database->Execute<DB::UPDATE>(ACCOUNT_SESSIONS_TABLE,
-			"Heartbeat = UNIX_TIMESTAMP(), UpdatedAt = NOW() WHERE AccountID = '{}' AND SessionToken = '{}' AND Heartbeat <> 0",
-			Data.GetID(), Data.GetSessionToken());
+		if(!Conditions.empty())
+			Conditions += " OR ";
+		Conditions += fmt_default("(AccountID = '{}' AND SessionToken = '{}')", Data.GetID(), Data.GetSessionToken());
+
+		if(++Count >= ACCOUNT_SESSION_BATCH_SIZE)
+			Flush();
 	}
+	Flush();
 }
 
 void CAccountManager::ValidateLocalSessions(int AccountID, int AckEventID, int AckWorldID, int AckTargetServerID)
@@ -828,6 +851,55 @@ void CAccountManager::ValidateLocalSessions(int AccountID, int AckEventID, int A
 		std::lock_guard<std::mutex> Lock(m_SessionMutex);
 		m_vSessionValidations.push_back({AccountID, SessionToken, AckEventID, AckWorldID, AckTargetServerID});
 	});
+}
+
+void CAccountManager::ValidateLocalSessions(const std::vector<int>& vAccountIDs)
+{
+	// Same check for the periodic refresh, but one select per batch instead of
+	// one per account.
+	std::string List;
+	int Count = 0;
+	auto Flush = [this, &List, &Count]()
+	{
+		if(List.empty())
+			return;
+
+		auto pCheck = Database->Prepare<DB::SELECT>("AccountID, SessionToken", ACCOUNT_SESSIONS_TABLE,
+			"WHERE AccountID IN ({})", List);
+		pCheck->AtExecute([this](ResultPtr pRes)
+		{
+			std::vector<SSessionValidation> vValidations;
+			while(pRes->next())
+			{
+				const auto SessionToken = pRes->getString("SessionToken");
+				if(!SessionToken.empty())
+					vValidations.push_back({pRes->getInt("AccountID"), SessionToken});
+			}
+
+			if(vValidations.empty())
+				return;
+
+			std::lock_guard<std::mutex> Lock(m_SessionMutex);
+			m_vSessionValidations.insert(m_vSessionValidations.end(), vValidations.begin(), vValidations.end());
+		});
+
+		List.clear();
+		Count = 0;
+	};
+
+	for(const int AccountID : vAccountIDs)
+	{
+		if(AccountID <= 0)
+			continue;
+
+		if(!List.empty())
+			List += ", ";
+		List += std::to_string(AccountID);
+
+		if(++Count >= ACCOUNT_SESSION_BATCH_SIZE)
+			Flush();
+	}
+	Flush();
 }
 
 void CAccountManager::OnSyncEvent(std::string EventName, const CServerSync::SRequest& Req)
@@ -893,8 +965,7 @@ void CAccountManager::OnTick()
 			vAccounts.push_back(Data.GetID());
 	}
 
-	for(const int AccountID : vAccounts)
-		ValidateLocalSessions(AccountID);
+	ValidateLocalSessions(vAccounts);
 }
 
 void CAccountManager::ProcessPendingKicks()
