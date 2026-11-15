@@ -5,6 +5,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 cat > "$tmp/mariadb" <<'MOCK'
 #!/bin/sh
+case " $* " in *' --protocol=socket '*) ;; *) echo 'socket protocol required' >&2; exit 3 ;; esac
 case "$*" in
  *SHOW*) printf '%s\n' "${STATUS:-}" ;;
  *log_bin*) echo "${BINLOG:-1}" ;;

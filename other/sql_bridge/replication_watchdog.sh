@@ -2,6 +2,8 @@
 # Read-only health check for a single MariaDB replication channel.
 # Exit 0 healthy, 1 unhealthy, 2 check/configuration error.
 set -u
+LC_ALL=C
+export LC_ALL
 ROLE=${ROLE:-replica}
 MARIADB=${MARIADB:-mariadb}
 LAG_WARN_SEC=${LAG_WARN_SEC:-300}
@@ -11,7 +13,7 @@ case "$ROLE" in primary|replica) ;; *) echo 'Invalid ROLE' >&2; exit 2 ;; esac
 case "$LAG_WARN_SEC" in ''|*[!0-9]*|0|0*) echo 'Invalid LAG_WARN_SEC' >&2; exit 2 ;; esac
 [ ${#LAG_WARN_SEC} -le 7 ] || { echo 'Invalid LAG_WARN_SEC' >&2; exit 2; }
 command -v timeout >/dev/null 2>&1 || { echo 'timeout command required' >&2; exit 2; }
-query() { timeout 10 "$MARIADB" --connect-timeout=5 "$@"; }
+query() { timeout -k 2 10 "$MARIADB" --protocol=socket --connect-timeout=5 "$@"; }
 fail() { echo "CRITICAL: $*" >&2; command -v logger >/dev/null 2>&1 && logger -t mrpg-replication "CRITICAL: $*" || :; exit 1; }
 if [ "$ROLE" = primary ]; then
     value=$(query -N -e 'SELECT @@global.log_bin') || fail 'Cannot query primary MariaDB'

@@ -5,6 +5,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 cat > "$tmp/client" <<'MOCK'
 #!/bin/sh
+case " $* " in *' --protocol=socket '*) ;; *) echo 'socket protocol required' >&2; exit 3 ;; esac
 case "$*" in
  *'SHOW ALL SLAVES STATUS'*) printf '%s\n' "${STATUS:-}" ;;
  *'START SLAVE'*) printf 'start\n' >> "$CALLS" ;;

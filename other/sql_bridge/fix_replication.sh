@@ -1,13 +1,15 @@
 #!/bin/sh
 # Bounded, read-only diagnostics and explicitly confirmed single-channel restart.
 set -u
+LC_ALL=C
+export LC_ALL
 MARIADB=${MARIADB:-mariadb}
 usage() { echo "Usage: $0 auto|primary|replica|restart-replica" >&2; exit 2; }
 [ "$#" -eq 1 ] || usage
 case $1 in auto|primary|replica|restart-replica) ;; *) usage ;; esac
 command -v "$MARIADB" >/dev/null 2>&1 || { echo 'MariaDB client not found' >&2; exit 2; }
 command -v timeout >/dev/null 2>&1 || { echo 'timeout is required' >&2; exit 2; }
-query() { timeout 10 "$MARIADB" --connect-timeout=5 "$@"; }
+query() { timeout -k 2 10 "$MARIADB" --protocol=socket --connect-timeout=5 "$@"; }
 status=$(query -e 'SHOW ALL SLAVES STATUS\G') || { echo 'Cannot query replication status' >&2; exit 2; }
 count=$(printf '%s\n' "$status" | grep -c '^[[:space:]]*Slave_SQL_Running:' || :)
 if [ "$1" = restart-replica ]; then

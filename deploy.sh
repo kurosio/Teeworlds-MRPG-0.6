@@ -632,7 +632,7 @@ EOF2
         local primary_ids="" replica_ids="" local_id=""
         case "${GUARD_ROLE:-}" in
             primary|replica)
-                local_id="$(run_sudo timeout 10 mariadb --connect-timeout=5 -N -e 'SELECT @@global.server_id' 2>/dev/null)" || die "Cannot read local MariaDB server_id for GUARD_ROLE"
+                local_id="$(run_sudo timeout -k 2 10 mariadb --protocol=socket --connect-timeout=5 -N -e 'SELECT @@global.server_id' 2>/dev/null)" || die "Cannot read local MariaDB server_id for GUARD_ROLE"
                 [[ "$local_id" =~ ^[1-9][0-9]*$ ]] || die "Invalid local MariaDB server_id"
                 if [[ "$GUARD_ROLE" == primary ]]; then primary_ids="$local_id"; else replica_ids="$local_id"; fi
                 ;;

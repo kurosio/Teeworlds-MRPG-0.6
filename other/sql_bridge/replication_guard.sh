@@ -1,6 +1,8 @@
 #!/bin/sh
 # MariaDB single-channel guard. No event skipping, GTID changes or resnapshot.
 set -u
+LC_ALL=C
+export LC_ALL
 CONF=${GUARD_CONF:-/etc/mrpg/replication-guard.conf}
 PRIMARY_IDS=${PRIMARY_IDS:-}
 REPLICA_IDS=${REPLICA_IDS:-}
@@ -9,15 +11,18 @@ MAX_LAG=${MAX_LAG:-300}
 IO_RETRY_SECONDS=${IO_RETRY_SECONDS:-120}
 REPORT_REPEAT_SECONDS=${REPORT_REPEAT_SECONDS:-300}
 AUTO_START_IO=${AUTO_START_IO:-1}
+MAX_IO_RETRIES=${MAX_IO_RETRIES:-5}
 MARIADB=${MARIADB:-mariadb}
 [ ! -r "$CONF" ] || . "$CONF"
-for val in "$INTERVAL" "$MAX_LAG" "$IO_RETRY_SECONDS" "$REPORT_REPEAT_SECONDS"; do
+for val in "$INTERVAL" "$MAX_LAG" "$IO_RETRY_SECONDS" "$REPORT_REPEAT_SECONDS" "$MAX_IO_RETRIES"; do
     case $val in ''|*[!0-9]*|0|0*) echo 'Invalid guard interval/threshold' >&2; exit 2 ;; esac
     [ ${#val} -le 7 ] || { echo 'Guard interval/threshold too large' >&2; exit 2; }
 done
 case $AUTO_START_IO in 0|1) ;; *) echo 'Invalid AUTO_START_IO' >&2; exit 2 ;; esac
 # Limit execution so an unreachable server cannot block monitoring forever.
-query() { timeout 10 "$MARIADB" --connect-timeout=5 "$@"; }
+# Never issue control statements to a server selected by a client config's host.
+# Root's client configuration may still provide credentials and a local socket.
+query() { timeout -k 2 10 "$MARIADB" --protocol=socket --connect-timeout=5 "$@"; }
 contains_id() { case ",$1," in *",$2,"*) return 0 ;; *) return 1 ;; esac; }
 field() { printf '%s\n' "$status" | sed -n "s/^[[:space:]]*$1:[[:space:]]*//p"; }
 last_message=''
@@ -33,6 +38,7 @@ report() {
     fi
 }
 last_retry=0
+retry_count=0
 check() {
     id=$(query -N -e 'SELECT @@global.server_id' 2>/dev/null) || { report 'CRITICAL: MariaDB unavailable or access denied'; return 1; }
     case $id in ''|*[!0-9]*) report 'CRITICAL: invalid server_id'; return 1 ;; esac
@@ -47,6 +53,7 @@ check() {
     count=$(printf '%s\n' "$status" | grep -c '^[[:space:]]*Slave_SQL_Running:' || :)
     if [ "$role" = primary ]; then
         [ "$count" = 0 ] || { report "CRITICAL: primary server_id=$id has a replication channel; topology requires manual review"; return 1; }
+        [ -z "$status" ] || { report "CRITICAL: unrecognized replication status on primary server_id=$id"; return 1; }
         binlog=$(query -N -e 'SELECT @@global.log_bin' 2>/dev/null) || { report 'CRITICAL: cannot check primary binlog'; return 1; }
         [ "$binlog" = 1 ] || { report 'CRITICAL: primary binlog disabled'; return 1; }
         report "OK: primary server_id=$id binlog enabled"
@@ -83,12 +90,17 @@ check() {
                 now=$(date +%s)
                 case $now in ''|*[!0-9]*) now=0 ;; esac
                 if [ "$channel_fields" = 1 ] && [ -z "$channel" ] && [ "${CHECK_ONLY:-0}" != 1 ] && [ "$AUTO_START_IO" = 1 ] &&
+                   [ "$now" -gt 0 ] && [ "$retry_count" -lt "$MAX_IO_RETRIES" ] &&
                    { [ "$last_retry" -eq 0 ] || [ "$now" -lt "$last_retry" ] || [ $((now - last_retry)) -ge "$IO_RETRY_SECONDS" ]; }; then
                     last_retry=$now
+                    retry_count=$((retry_count + 1))
                     if query -e 'START SLAVE IO_THREAD' >/dev/null 2>&1; then
-                        echo 'Attempted START SLAVE IO_THREAD; success is checked on next poll' >&2
+                        echo "Attempted START SLAVE IO_THREAD ($retry_count/$MAX_IO_RETRIES); verifying on next poll" >&2
                     else
-                        echo 'START SLAVE IO_THREAD failed; check privileges and error log' >&2
+                        echo "START SLAVE IO_THREAD failed ($retry_count/$MAX_IO_RETRIES); check privileges and error log" >&2
+                    fi
+                    if [ "$retry_count" -ge "$MAX_IO_RETRIES" ]; then
+                        echo 'IO retry budget exhausted; investigate. Reset after a healthy check or service restart.' >&2
                     fi
                 fi ;;
         esac
@@ -97,6 +109,8 @@ check() {
     case $lag in ''|*[!0-9]*) report "CRITICAL: replica server_id=$id lag unknown"; return 1 ;; esac
     [ ${#lag} -le 9 ] || { report "CRITICAL: replica server_id=$id lag exceeds supported range"; return 1; }
     [ "$lag" -lt "$MAX_LAG" ] || { report "CRITICAL: replica server_id=$id lag=${lag}s (limit ${MAX_LAG}s)"; return 1; }
+    retry_count=0
+    last_retry=0
     report "OK: replica server_id=$id IO=Yes SQL=Yes lag below ${MAX_LAG}s"
 }
 command -v timeout >/dev/null 2>&1 || { echo 'timeout command required' >&2; exit 2; }

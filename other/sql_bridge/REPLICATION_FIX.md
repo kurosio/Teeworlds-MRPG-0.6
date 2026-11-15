@@ -66,6 +66,8 @@ The supplied root `deploy.sh` is based on the provided deployment script.
 `service install` **stops/recreates services** and its bootstrap can kill game
 processes. Review it and schedule downtime first. It writes systemd units and
 requires a working local root MariaDB socket login, `mariadb`, and GNU `timeout`.
+All database commands explicitly use a local Unix socket; configure the local
+socket and credentials in root's MariaDB client settings.
 For an initial installation on each machine, specify the *actual* role:
 
 ```sh
@@ -91,6 +93,7 @@ REPLICA_IDS=2,3
 INTERVAL=15
 MAX_LAG=300
 IO_RETRY_SECONDS=120
+MAX_IO_RETRIES=5
 REPORT_REPEAT_SECONDS=300
 AUTO_START_IO=1
 ```
@@ -102,8 +105,9 @@ reports changes and repeats persistent status every five minutes in the journal.
 It suggests likely causes from error numbers without logging SQL error text.
 When SQL is running and the **default** channel's IO thread is stopped with a
 network error 2003, 2006, 2013 or 2055, it retries `START SLAVE IO_THREAD`, no
-more often than every 120 seconds. `Connecting` already retries itself. The
-next poll checks the result. It never skips events, edits GTIDs or changes
+more often than every 120 seconds, up to five attempts per unhealthy period.
+A healthy check or guard restart resets this in-memory budget. `Connecting`
+already retries itself. The next poll checks the result. It never skips events, edits GTIDs or changes
 replication settings. Unknown errors, named/multiple channels, SQL errors,
 authentication errors and missing binlogs require investigation. Automatic
 recovery cannot resolve all causes or guarantee consistent data.
