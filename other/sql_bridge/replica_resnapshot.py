@@ -61,6 +61,22 @@ def secure_directory(path):
     return not path.is_symlink() and path.stat().st_uid == 0 and not path.stat().st_mode & 0o077
 
 
+def ssh_credentials():
+    """Use the provisioned dedicated key and verified host list when configured."""
+    key = os.environ.get('RESYNC_SSH_IDENTITY', '')
+    known = os.environ.get('RESYNC_SSH_KNOWN_HOSTS', '')
+    if not key and not known:
+        return []  # Backwards-compatible operator-managed root SSH configuration.
+    if not key or not known:
+        raise ValueError('both SSH identity and known-hosts paths are required')
+    for path in (Path(key), Path(known)):
+        if (not path.is_absolute() or path.is_symlink() or not path.is_file()
+                or path.stat().st_uid != 0 or path.stat().st_mode & 0o077):
+            raise ValueError('SSH key and known-hosts must be root-owned mode 0600 files')
+    return ['-i', key, '-o', 'IdentitiesOnly=yes', '-o', 'UserKnownHostsFile=' + known,
+            '-o', 'GlobalKnownHostsFile=/dev/null']
+
+
 def main():
     if os.geteuid() != 0:
         raise ValueError('must run as root')
@@ -88,7 +104,7 @@ def main():
             if not marker.exists():
                 raise ValueError('replication is running; refusing resnapshot')
         ssh = ['ssh', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes', '-o', 'ConnectTimeout=15',
-               '-o', 'ServerAliveInterval=15', '-o', 'ServerAliveCountMax=4', target]
+               '-o', 'ServerAliveInterval=15', '-o', 'ServerAliveCountMax=4'] + ssh_credentials() + [target]
         probe = "mariadb --protocol=socket -N -e \"SELECT @@global.server_id, @@global.log_bin, (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='mrpg_shared' AND table_type='BASE TABLE' AND (ENGINE IS NULL OR ENGINE <> 'InnoDB')), (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='mrpg_shared' AND table_type='BASE TABLE'), (SELECT DEFAULT_CHARACTER_SET_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='mrpg_shared'), (SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='mrpg_shared')\""
         actual = run(ssh + [probe], timeout=30).stdout.decode().strip().split('\t')
         if len(actual) != 6 or actual[0] != pid or actual[1:3] != ['1', '0'] or not actual[3].isdigit() or int(actual[3]) == 0:

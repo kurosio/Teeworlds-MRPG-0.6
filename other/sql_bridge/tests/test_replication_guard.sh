@@ -75,17 +75,19 @@ run_once 1
 cat > "$tmp/python3" <<'MOCKPY'
 #!/bin/sh
 echo "$*" >> "$RESYNC_CALLS"
+printf '%s %s\n' "$RESYNC_SSH_IDENTITY" "$RESYNC_SSH_KNOWN_HOSTS" >> "$RESYNC_AUTH"
 MOCKPY
 chmod +x "$tmp/python3"
-RESYNC_CALLS="$tmp/resync"; AUTO_RESNAPSHOT=1; PATH="$tmp:$PATH"
-export RESYNC_CALLS AUTO_RESNAPSHOT PATH
+RESYNC_CALLS="$tmp/resync"; RESYNC_AUTH="$tmp/auth"; AUTO_RESNAPSHOT=1; PATH="$tmp:$PATH"
+RESYNC_SSH_IDENTITY=/etc/mrpg/key; RESYNC_SSH_KNOWN_HOSTS=/etc/mrpg/known
+export RESYNC_CALLS RESYNC_AUTH AUTO_RESNAPSHOT PATH RESYNC_SSH_IDENTITY RESYNC_SSH_KNOWN_HOSTS
 STATUS='Connection_name:
 Slave_IO_Running: No
 Slave_SQL_Running: No
 Last_IO_Errno: 1236
 Last_SQL_Errno: 0'; export STATUS
 run_once 1; [ ! -e "$RESYNC_CALLS" ]
-run_loop; grep -q 'replica_resnapshot.py' "$RESYNC_CALLS"
+run_loop; grep -q 'replica_resnapshot.py' "$RESYNC_CALLS"; grep -q '/etc/mrpg/key /etc/mrpg/known' "$RESYNC_AUTH"
 unset AUTO_RESNAPSHOT
 ID=5; export ID; run_once 1; grep -q 'not mapped' "$tmp/out"
 ID=1; STATUS='unrecognized output'; export ID STATUS; run_once 1; grep -q 'unrecognized replication status' "$tmp/out"

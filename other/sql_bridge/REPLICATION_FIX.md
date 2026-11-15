@@ -165,6 +165,38 @@ or operations affecting other databases during snapshots. Ensure adequate disk
 space for both dumps and imported data; the 1 GiB check is only a floor, not a
 size estimate. Review triggers, routines and events before using this procedure.
 
+### Guided one-time authorization
+
+After meeting the topology and safety requirements above, run on each **replica**:
+
+```sh
+cd /path/to/Teeworlds-MRPG-0.6/other/sql_bridge
+sudo ./setup_resnapshot.sh
+```
+
+The script detects the local replica ID and `Master_Host`, checks replica
+preconditions, generates a dedicated key if needed, and asks for a restricted
+primary SSH account. It displays the scanned ED25519 host-key fingerprint: enter
+the fingerprint obtained independently from the primary administrator. A scan
+alone is not proof of identity. If the key is not yet authorized, you may opt
+to run `ssh-copy-id`; this **changes the primary account's authorized_keys** and
+may prompt for an SSH password locally. It does not save the password or modify
+primary database contents. Prefer a restricted backup account with only the
+needed MariaDB read/dump privileges; an unrestricted root SSH key is high risk.
+The dedicated private key is unencrypted so an unattended service can use it;
+protect the replica host and `/etc/mrpg` accordingly.
+
+After SSH login and basic source checks, the script shows the destructive
+recovery warning and requires the explicit word `ENABLE`. It backs up and
+atomically updates the root-only guard configuration and restarts an active
+guard. It does **not** create database accounts, change MariaDB configuration,
+prove that full dump privileges are present, test a full restore, or guarantee
+recovery. Those still require one-time setup and a staging drill. It currently
+supports SSH port 22, an ED25519 host key, and an SSH hostname identical to
+`Master_Host`; use the manual configuration below for other deployments.
+
+### Manual configuration (alternative)
+
 One-time setup on each replica (example values only):
 
 1. Configure the above replication filter and server settings using your normal

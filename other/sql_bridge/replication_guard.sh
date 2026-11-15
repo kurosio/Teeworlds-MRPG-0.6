@@ -1,5 +1,5 @@
 #!/bin/sh
-# MariaDB single-channel guard. No event skipping, GTID changes or resnapshot.
+# MariaDB single-channel guard. No event skipping; resnapshot requires explicit opt-in.
 set -u
 LC_ALL=C
 export LC_ALL
@@ -18,6 +18,8 @@ RESYNC_REPLICA_ID=${RESYNC_REPLICA_ID:-}
 RESYNC_PRIMARY_ID=${RESYNC_PRIMARY_ID:-}
 RESYNC_MASTER_HOST=${RESYNC_MASTER_HOST:-}
 RESYNC_SSH_TARGET=${RESYNC_SSH_TARGET:-}
+RESYNC_SSH_IDENTITY=${RESYNC_SSH_IDENTITY:-}
+RESYNC_SSH_KNOWN_HOSTS=${RESYNC_SSH_KNOWN_HOSTS:-}
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 MARIADB=${MARIADB:-mariadb}
 [ ! -r "$CONF" ] || . "$CONF"
@@ -56,6 +58,7 @@ resnapshot() {
     echo 'Attempting opt-in replica resnapshot; preconditions must all pass' >&2
     RESYNC_REPLICA_ID="$RESYNC_REPLICA_ID" RESYNC_PRIMARY_ID="$RESYNC_PRIMARY_ID" \
       RESYNC_MASTER_HOST="$RESYNC_MASTER_HOST" RESYNC_SSH_TARGET="$RESYNC_SSH_TARGET" \
+      RESYNC_SSH_IDENTITY="$RESYNC_SSH_IDENTITY" RESYNC_SSH_KNOWN_HOSTS="$RESYNC_SSH_KNOWN_HOSTS" \
       timeout -k 10 7200 python3 "$SCRIPT_DIR/replica_resnapshot.py" || echo 'Resnapshot failed; will retry after cooldown' >&2
 }
 check() {

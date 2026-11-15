@@ -64,6 +64,26 @@ class ResnapshotTests(unittest.TestCase):
             self.assertNotIn('DROP', cmd[-1])
             self.assertIn('StrictHostKeyChecking=yes', cmd)
 
+    def test_configured_ssh_files_require_secure_ownership_and_modes(self):
+        env = {'RESYNC_SSH_IDENTITY': '/etc/mrpg/key',
+               'RESYNC_SSH_KNOWN_HOSTS': '/etc/mrpg/known_hosts'}
+        path = mock.Mock()
+        path.is_absolute.return_value = True
+        path.is_symlink.return_value = False
+        path.is_file.return_value = True
+        path.stat.return_value = SimpleNamespace(st_uid=0, st_mode=0o600)
+        with mock.patch.dict(os.environ, env), mock.patch.object(r, 'Path', return_value=path):
+            options = r.ssh_credentials()
+            self.assertIn('IdentitiesOnly=yes', options)
+            self.assertIn('UserKnownHostsFile=/etc/mrpg/known_hosts', options)
+            path.stat.return_value = SimpleNamespace(st_uid=0, st_mode=0o644)
+            with self.assertRaises(ValueError):
+                r.ssh_credentials()
+        with mock.patch.dict(os.environ, {'RESYNC_SSH_IDENTITY': '/etc/key',
+                                         'RESYNC_SSH_KNOWN_HOSTS': ''}):
+            with self.assertRaises(ValueError):
+                r.ssh_credentials()
+
     def test_bad_gtid_does_not_modify_replica(self):
         self.gtid = "bad';DROP DATABASE x;--"
         with self.assertRaises(ValueError):
