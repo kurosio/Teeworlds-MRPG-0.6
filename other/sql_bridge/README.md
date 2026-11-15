@@ -1,3 +1,11 @@
+> **Consistency-first change:** the bridge now sends reads to the primary by
+> default, including configurations that only have `route_selects_to_replica = true`.
+> Asynchronous replica reads can be stale even with zero reported lag. They
+> require explicit `allow_stale_replica_reads = true`; never enable it for
+> read-modify-write player data unless stale writes are independently prevented.
+> Restart every bridge after updating. Direct database connections bypass this
+> protection. See [recovery and monitoring](REPLICATION_FIX.md).
+
 # mysql_bridge.py — central database + replica guide
 
 One central MariaDB, game servers in several locations. Each location runs a
@@ -529,8 +537,8 @@ database = mrpg_shared
 ```
 
 `[primary]` has no user/password on purpose: the game server's login is
-relayed and checked there. The bridge routes by statement only — plain
-`SELECT`s to the replica, everything else to the primary. It serves
+relayed and checked there. By default the bridge sends all queries to the primary.
+With the explicit stale-read opt-in, it can route eligible reads to the replica. It serves
 `mrpg_shared`; the local database does not go through it.
 
 Key settings (defaults in brackets; the rest is commented in
@@ -541,7 +549,9 @@ Key settings (defaults in brackets; the rest is commented in
 | `[bridge] max_clients` | 256 | max simultaneous game-server connections |
 | `[bridge] allowed_clients` | all | source IP/CIDR allowlist; set it if `listen_host` is not loopback |
 | `[bridge] replica_pool_size` | 16 | persistent replica connections; keep above the sum of all `sv_sql_pool_size` |
-| `[bridge] route_selects_to_replica` | true | `false` = send everything to the primary (incident mode) |
+| `[bridge] route_selects_to_replica` | false | `false` = send reads to primary; `true` also requires explicit stale-read opt-in |
+| `[bridge] allow_stale_replica_reads` | false | `true` accepts the risk of stale reads and stale overwrites |
+| `[bridge] max_replica_lag_sec` | 1 | lag monitor threshold when replica reads are enabled; 0 disables monitoring |
 | `[bridge] read_your_writes_grace_sec` | 2.0 | reads use the primary this long after any write; set above the lag, `0` = off (warned at startup) |
 | `[bridge] log_level` | `INFO` | `DEBUG` logs every routing decision |
 | `[primary] use_tls` | false | TLS to the primary; with `tls_ca_file` the certificate is verified |
@@ -762,7 +772,7 @@ move out. In this guide it is called `mrpg_shared`.
 * **`Local tables found in the shared database`** — the split is incomplete;
   remove them from `mrpg_shared` and wait for the replicas (step 2.6).
 * **Replication broken** — `SHOW SLAVE STATUS\G` shows `Last_IO_Error` /
-  `Last_SQL_Error`; fix, then `START SLAVE;`.
+  `Last_SQL_Error`; fix, then `START SLAVE;`. See [recovery and monitoring](REPLICATION_FIX.md) before making changes.
 * **Debugging** — `route_selects_to_replica = false` sends everything to the
   primary; `BRIDGE_LOG_LEVEL=DEBUG` logs every route.
 

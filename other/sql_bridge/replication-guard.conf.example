@@ -1,0 +1,9 @@
+# Root-owned shell config, mode 0600. IDs MUST match your actual topology.
+# Comma-separated, no spaces. A server_id by itself does not imply its role.
+PRIMARY_IDS=1
+REPLICA_IDS=2,3
+INTERVAL=15
+MAX_LAG=300
+IO_RETRY_SECONDS=120
+REPORT_REPEAT_SECONDS=300
+AUTO_START_IO=1

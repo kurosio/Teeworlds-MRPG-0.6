@@ -2,10 +2,9 @@
 """
 MySQL/MariaDB read/write-splitting bridge for Teeworlds-MRPG servers.
 
-Routes read-only queries (SELECT/SHOW/DESCRIBE/EXPLAIN) to a local MariaDB
-replica and everything else to the central primary over the WAN, so a single
-central database can serve game servers in several locations with minimal
-added latency:
+Routes queries to the central primary by default. Optionally routes eligible
+reads to a local MariaDB replica when the operator explicitly accepts stale
+reads. Asynchronous replication cannot guarantee fresh reads:
 
     game server (location A) --\\
     game server (location B) ---+--> local bridge --> [local replica] --\\
@@ -17,8 +16,9 @@ Design notes
 * Every game-server connection gets its own connection to the primary; the
   login is relayed to (and verified by) the primary.  Nothing is ever sent to
   the replica before the primary has accepted the login.
-* A read is only served by the replica when that is provably equivalent to
-  running it on the primary session: not inside a transaction, no session
+* When replica reads are explicitly enabled, the bridge checks session
+  compatibility, but cannot guarantee fresh data. It avoids reads inside a
+  transaction, with session
   state the replica cannot see (user variables, temporary tables, LOCK
   TABLES, LAST_INSERT_ID(), SHOW WARNINGS, ...), a single statement, no
   locking clause, and no recent write to a table it references (configurable
@@ -42,6 +42,7 @@ import configparser
 import hashlib
 import ipaddress
 import logging
+import math
 import os
 import re
 import signal
@@ -1264,6 +1265,7 @@ class ReplicaPool:
         self._bad_dbs = {}
         self.lag = None
         self.lag_ok = max_lag <= 0
+        self.lag_checked_at = 0.0
         self._closed = False
 
     # -- health --------------------------------------------------------------
@@ -1272,7 +1274,8 @@ class ReplicaPool:
         return monotonic() < self._down_until
 
     def usable(self):
-        return not self._closed and self.lag_ok and monotonic() >= self._down_until
+        fresh = self.max_lag <= 0 or monotonic() - self.lag_checked_at <= max(3 * self.lag_interval, 12.0)
+        return not self._closed and self.lag_ok and fresh and monotonic() >= self._down_until
 
     def _mark_down(self, exc):
         self._fails += 1
@@ -1541,6 +1544,7 @@ class ReplicaPool:
                     log.warning("replica lag %s exceeds limit (%.0fs); reads use the primary",
                                 "unknown" if lag is None else "%.0fs" % lag, self.max_lag)
             self.lag, self.lag_ok = lag, ok
+            self.lag_checked_at = monotonic()
             try:
                 await asyncio.sleep(self.lag_interval)
             except asyncio.CancelledError:
@@ -1567,23 +1571,27 @@ def _first_packet_payload(chunks):
 
 
 def _replication_lag(names, rows):
-    """Max Seconds_Behind_Master over all replication channels.
-    0 if the server is not a replica; None if replication is broken."""
+    """Return maximum lag only if every channel has both threads running."""
     if not rows:
-        return 0.0
-    idx = None
-    for key in ("Seconds_Behind_Master", "Seconds_Behind_Source"):
-        if key in names:
-            idx = names.index(key)
-            break
-    if idx is None:
+        return None
+    def index(*keys):
+        return next((names.index(key) for key in keys if key in names), None)
+    lag_idx = index("Seconds_Behind_Master", "Seconds_Behind_Source")
+    io_idx = index("Slave_IO_Running", "Replica_IO_Running")
+    sql_idx = index("Slave_SQL_Running", "Replica_SQL_Running")
+    if any(i is None for i in (lag_idx, io_idx, sql_idx)):
         return None
     worst = 0.0
     for row in rows:
-        val = row[idx]
-        if val is None:
+        try:
+            if row[io_idx] != "Yes" or row[sql_idx] != "Yes":
+                return None
+            lag = float(row[lag_idx])
+            if not math.isfinite(lag) or lag < 0:
+                return None
+            worst = max(worst, lag)
+        except (IndexError, TypeError, ValueError):
             return None
-        worst = max(worst, float(val))
     return worst
 
 
@@ -2236,7 +2244,12 @@ def build_config(cfg):
         c.listen_port = int(_env("BRIDGE_LISTEN_PORT", g("listen_port", "33060")))
         c.max_clients = cfg.getint("bridge", "max_clients", fallback=256)
         c.pool_size = cfg.getint("bridge", "replica_pool_size", fallback=16)
-        c.route_replica = cfg.getboolean("bridge", "route_selects_to_replica", fallback=True)
+        requested_replica = cfg.getboolean("bridge", "route_selects_to_replica", fallback=False)
+        allow_stale = cfg.getboolean("bridge", "allow_stale_replica_reads", fallback=False)
+        c.route_replica = requested_replica and allow_stale
+        if requested_replica and not allow_stale:
+            log.warning("replica reads disabled: asynchronous replication can return stale data; "
+                        "set allow_stale_replica_reads = true only if this risk is acceptable")
         c.grace = cfg.getfloat("bridge", "read_your_writes_grace_sec",
                                fallback=DEFAULT_RYW_GRACE_SEC)
         c.ryw_scope = g("read_your_writes_scope", "table").strip().lower()
@@ -2245,7 +2258,7 @@ def build_config(cfg):
         c.acquire_timeout = cfg.getfloat("bridge", "replica_acquire_timeout_sec", fallback=0.25)
         c.replica_query_timeout = cfg.getfloat("bridge", "replica_query_timeout_sec", fallback=30.0)
         c.replica_buffer = int(cfg.getfloat("bridge", "replica_buffer_kb", fallback=1024) * 1024)
-        c.max_lag = cfg.getfloat("bridge", "max_replica_lag_sec", fallback=0.0)
+        c.max_lag = cfg.getfloat("bridge", "max_replica_lag_sec", fallback=1.0)
         c.lag_interval = cfg.getfloat("bridge", "replica_lag_check_interval_sec", fallback=2.0)
         c.stats_interval = cfg.getfloat("bridge", "stats_interval_sec", fallback=30.0)
         c.max_packet = int(cfg.getfloat("bridge", "max_packet_mb", fallback=64) * 1024 * 1024)

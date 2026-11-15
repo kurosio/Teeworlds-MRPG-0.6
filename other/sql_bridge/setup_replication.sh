@@ -1747,7 +1747,8 @@ listen_host = $_listen_host
 listen_port = $_listen_port
 max_clients = 64
 replica_pool_size = 16
-route_selects_to_replica = true
+route_selects_to_replica = false
+allow_stale_replica_reads = false
 read_your_writes_grace_sec = $_grace
 stats_interval_sec = 30
 
