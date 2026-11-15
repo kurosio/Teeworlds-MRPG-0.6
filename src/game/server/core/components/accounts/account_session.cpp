@@ -22,6 +22,22 @@ namespace AccountSession
 		}
 	}
 
+	SRecord DecodeRecord(int ServerID, int ClientID, const std::string& Token, int64_t Heartbeat, int64_t NowUnix)
+	{
+		SRecord Record;
+		Record.m_Exists = true;
+		Record.m_ServerID = ServerID;
+		Record.m_ClientID = ClientID;
+		Record.m_Token = Token;
+		Record.m_Heartbeat = static_cast<int>(Heartbeat);
+
+		if(Heartbeat == 0)
+			Record.m_HeartbeatAge = HEARTBEAT_STALE_SECONDS; // the owning login never finished
+		else if(Heartbeat > 1 && NowUnix >= Heartbeat)
+			Record.m_HeartbeatAge = static_cast<int>(NowUnix - Heartbeat);
+		return Record;
+	}
+
 	std::string GenerateToken()
 	{
 		char aToken[TOKEN_LENGTH + 1] {};
@@ -44,22 +60,13 @@ namespace AccountSession
 				return;
 			}
 
-			SRecord Record;
 			if(pRes->next())
 			{
-				Record.m_Exists = true;
-				Record.m_ServerID = pRes->getInt("ServerID");
-				Record.m_ClientID = pRes->getInt("ClientID");
-				Record.m_Token = pRes->getString("SessionToken");
-				Record.m_Heartbeat = pRes->getInt("Heartbeat");
-
-				const int Now = pRes->getInt("CurrentUnixTime");
-				if(Record.m_Heartbeat == 0)
-					Record.m_HeartbeatAge = HEARTBEAT_STALE_SECONDS; // the owning login never finished
-				else if(Record.m_Heartbeat > 1 && Now >= Record.m_Heartbeat)
-					Record.m_HeartbeatAge = Now - Record.m_Heartbeat;
+				Done(DecodeRecord(pRes->getInt("ServerID"), pRes->getInt("ClientID"), pRes->getString("SessionToken"),
+					pRes->getInt64("Heartbeat"), pRes->getInt64("CurrentUnixTime")));
+				return;
 			}
-			Done(Record);
+			Done(SRecord {});
 		});
 	}
 

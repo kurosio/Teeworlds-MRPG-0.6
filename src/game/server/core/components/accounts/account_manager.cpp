@@ -1,6 +1,8 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "account_manager.h"
+#include "account_auth.h"
+#include "account_registration.h"
 
 #include <base/hash_ctxt.h>
 #include <base/system.h>
@@ -19,7 +21,6 @@
 #include <teeother/components/localization.h>
 
 #include <algorithm>
-#include <optional>
 
 constexpr int LENGTH_LOGPASS_MAX = 12;
 constexpr int LENGTH_LOGPASS_MIN = 4;
@@ -34,42 +35,6 @@ namespace
 	constexpr int ACCOUNT_SESSION_TAKEOVER_TIMEOUT_SECONDS = 10;
 	constexpr int ACCOUNT_SESSION_CLAIM_ATTEMPTS = 3;
 
-	// The primary can be remote (SQL bridge over the WAN), so a login waits seconds.
-	constexpr int64_t AUTH_PROGRESS_FIRST_SECONDS = 5;
-	constexpr int64_t AUTH_PROGRESS_REPEAT_SECONDS = 15;
-
-	void StartAuthProgress(CAccountSharedData& Shared, const std::shared_ptr<void>& pAttempt, bool Registration)
-	{
-		Shared.m_pAuthorizationAttempt = pAttempt;
-		Shared.m_AuthIsRegistration = Registration;
-		Shared.m_AuthProgressTick = time_get() + AUTH_PROGRESS_FIRST_SECONDS * time_freq();
-	}
-
-	void TickAuthProgress()
-	{
-		static int64_t s_NextCheck = 0; // notices are seconds apart: scan at 1 Hz, not per tick
-		const int64_t Now = time_get();
-		if(Now < s_NextCheck)
-			return;
-		s_NextCheck = Now + time_freq();
-
-		std::vector<std::pair<int, bool>> vNotices;
-		for(auto& [ClientID, Shared] : CAccountSharedData::ms_aPlayerSharedData)
-		{
-			if(Shared.m_pAuthorizationAttempt.expired() || Now < Shared.m_AuthProgressTick)
-				continue;
-
-			Shared.m_AuthProgressTick = Now + AUTH_PROGRESS_REPEAT_SECONDS * time_freq();
-			vNotices.emplace_back(ClientID, Shared.m_AuthIsRegistration);
-		}
-
-		// Sent after the loop: Chat can add entries to the map we iterate.
-		for(const auto& [ClientID, Registration] : vNotices)
-			if(auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(ClientID)))
-				pGS->Chat(ClientID, Registration ? "Registration is still in progress. Please wait..." : "Login is still in progress. Please wait...");
-	}
-
-	// A previous owner on another server has to end its session before we play.
 	bool NeedsRemoteTakeover(const AccountSession::SClaim& Claim)
 	{
 		return Claim.m_Previous.m_ServerID > 0 && Claim.m_Previous.m_ServerID != g_Config.m_SvSyncServerID;
@@ -87,381 +52,6 @@ namespace
 		return false;
 	}
 }
-
-class DbAuthorization
-{
-	struct CAuthorizationPayload
-	{
-		CAccountManager* m_pAccountManager{};
-		std::string m_Login{};
-		std::string m_Password{};
-		std::string m_Language{};
-		std::string m_LoginDate{};
-		std::string m_PinCode{};
-		AccountSession::SClaim m_Claim{};
-		int m_Attempts{};
-	};
-	using CAuthorizationContextPtr = std::shared_ptr<DbAsync::CContext<CAuthorizationPayload>>;
-
-	static CPlayer* GetPlayer(const CAuthorizationContextPtr& pContext)
-	{
-		auto* pPlayer = pContext->GetPlayer(false);
-		if(!pPlayer || pPlayer->GetSharedData().m_pAuthorizationAttempt.lock().get() != pContext.get()
-			|| pPlayer->Account()->GetID() > 0)
-			return nullptr;
-		return pPlayer;
-	}
-
-	static void OnCheckNickname(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
-	{
-		auto* pPlayer = GetPlayer(pContext);
-		if(!pPlayer)
-			return;
-
-		if(!pRes->next())
-		{
-			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: account with this nickname was not found.");
-			return;
-		}
-
-		pContext->Data().m_Claim.m_AccountID = pRes->getInt("ID");
-		OnCheckCredentials(pContext, pRes);
-	}
-
-	static void OnCheckCredentials(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
-	{
-		auto* pPlayer = GetPlayer(pContext);
-		if(!pPlayer)
-			return;
-
-		if(!pRes->getBoolean("CredentialsFound") || (pRes->getString("Password") != CAccountManager::HashPassword(pContext->Data().m_Password, pRes->getString("PasswordSalt"))))
-		{
-			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: incorrect login or password.");
-			return;
-		}
-
-		// All entry points, including /login, must enforce guest protection.
-		const auto TimeoutCode = pRes->getString("TimeoutCode");
-		if(CAccountManager::IsGuestCredentialForNickname(pRes->getString("Username"), pRes->getString("AccountNickname").c_str()) &&
-			!TimeoutCode.empty() && TimeoutCode != pPlayer->GetSharedData().m_TimeoutCode)
-		{
-			pContext->GS()->Chat(pContext->GetClientID(), "Invalid timeout code. Please try /timeout <code> again.");
-			return;
-		}
-
-		auto& Data = pContext->Data();
-		Data.m_Language = pRes->getString("Language");
-		Data.m_LoginDate = pRes->getString("LoginDate");
-		Data.m_PinCode = pRes->getString("PinCode");
-		OnCheckBans(pContext, pRes);
-	}
-
-	static void OnCheckBans(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
-	{
-		auto* pPlayer = GetPlayer(pContext);
-		if(!pPlayer)
-			return;
-
-		if(pRes->getBoolean("HasBan"))
-		{
-			const auto BannedUntil = pRes->getString("BannedUntil");
-			const auto Reason = pRes->getString("Reason");
-			pContext->GS()->Chat(pContext->GetClientID(), "Account is temporarily blocked.");
-			pContext->GS()->Chat(pContext->GetClientID(), "Until: '{}'. Reason: '{}'.", BannedUntil, Reason);
-			return;
-		}
-
-		ReadOwnerAndClaim(pContext);
-	}
-
-	// Reads the owner and tries to take the account. Repeated if a claim is refused.
-	static void ReadOwnerAndClaim(const CAuthorizationContextPtr& pContext)
-	{
-		AccountSession::ReadRecord(pContext->Data().m_Claim.m_AccountID,
-			[pContext](std::optional<AccountSession::SRecord> Owner) { OnReadOwner(pContext, Owner); });
-	}
-
-	static void OnReadOwner(const CAuthorizationContextPtr& pContext, std::optional<AccountSession::SRecord> Owner)
-	{
-		auto* pPlayer = GetPlayer(pContext);
-		if(!pPlayer)
-			return;
-
-		// Without a successful read the previous owner is unknown: do not claim blind.
-		if(!Owner)
-		{
-			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: session state could not be read.");
-			pContext->GS()->Chat(pContext->GetClientID(), "Please try again a bit later.");
-			return;
-		}
-
-		auto& Claim = pContext->Data().m_Claim;
-		Claim.m_Previous = *Owner;
-		AccountSession::TryClaim(Claim, [pContext](bool Claimed) { OnClaimed(pContext, Claimed); });
-	}
-
-	static void OnClaimed(const CAuthorizationContextPtr& pContext, bool Claimed)
-	{
-		const auto& Claim = pContext->Data().m_Claim;
-		if(Claimed && GetPlayer(pContext) && time_get() < Claim.m_Deadline)
-		{
-			LoadAccountData(pContext);
-			return;
-		}
-
-		// Refused, lost or too late. Give back whatever the write did (a no-op unless
-		// our token is stored), then decide whether to try again.
-		AccountSession::Release(Claim, [pContext](bool) { OnReleased(pContext); });
-	}
-
-	static void OnReleased(const CAuthorizationContextPtr& pContext)
-	{
-		auto* pPlayer = GetPlayer(pContext);
-		if(!pPlayer)
-			return;
-
-		auto& Data = pContext->Data();
-		if(time_get() >= Data.m_Claim.m_Deadline)
-		{
-			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: session reservation expired. Please try again.");
-			return;
-		}
-
-		if(++Data.m_Attempts < ACCOUNT_SESSION_CLAIM_ATTEMPTS)
-		{
-			ReadOwnerAndClaim(pContext);
-			return;
-		}
-		pContext->GS()->Chat(pContext->GetClientID(), "Login failed: another login is in progress.");
-	}
-
-	static void LoadAccountData(const CAuthorizationContextPtr& pContext)
-	{
-		auto pData = Database->Prepare<DB::SELECT>("*", "tw_accounts_data", "WHERE ID = '{}'", pContext->Data().m_Claim.m_AccountID);
-		pData->PrimaryRead(); // the account can be newer than the replica: registered moments ago, possibly elsewhere
-		pData->AtExecute([pContext](ResultPtr pDataRes) { OnLoadAccountData(pContext, pDataRes); });
-	}
-
-	static void OnLoadAccountData(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
-	{
-		auto* pPlayer = GetPlayer(pContext);
-		auto& Data = pContext->Data();
-		const auto& Claim = Data.m_Claim;
-		if(!pPlayer || time_get() >= Claim.m_Deadline)
-		{
-			AccountSession::Release(Claim);
-			return;
-		}
-
-		if(!pRes->next())
-		{
-			AccountSession::Release(Claim);
-			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: account data could not be loaded.");
-			pContext->GS()->Chat(pContext->GetClientID(), "Please reconnect and try again.");
-			return;
-		}
-
-		if(!pPlayer->GetSharedData().m_GuestLogin.empty() && Data.m_Login != pPlayer->GetSharedData().m_GuestLogin)
-			pPlayer->GetSharedData().m_GuestLogin.clear();
-
-		pPlayer->Account()->Init(Claim.m_AccountID, pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Language, Data.m_LoginDate, std::move(pRes));
-		pPlayer->Account()->SetSessionToken(Claim.m_Token);
-		if(time_get() >= Claim.m_Deadline)
-		{
-			AccountSession::Release(Claim);
-			pContext->Server()->Kick(pContext->GetClientID(), "Account session reservation expired");
-			return;
-		}
-		Data.m_pAccountManager->BeginSessionTakeover(pPlayer, Claim, Data.m_PinCode.empty() && !pPlayer->IsGuestLogin());
-	}
-
-public:
-	static void StartAuthorization(CAccountManager* pMgr, int ClientID, std::string Login, std::string Pass, std::string Nick)
-	{
-		auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(ClientID));
-		auto* pPlayer = pGS ? pGS->GetPlayer(ClientID, false) : nullptr;
-		if(!pPlayer || !pPlayer->GetSharedData().m_pAuthorizationAttempt.expired() || pPlayer->Account()->GetID() > 0)
-			return;
-
-		CAuthorizationPayload Payload {};
-		Payload.m_pAccountManager = pMgr;
-		Payload.m_Login = Login;
-		Payload.m_Password = Pass;
-		Payload.m_Claim.m_ClientID = ClientID;
-		Payload.m_Claim.m_Token = AccountSession::GenerateToken();
-		Payload.m_Claim.m_Deadline = time_get() + AccountSession::CLAIM_SECONDS * time_freq();
-		auto pContext = DbAsync::MakeContext<DbAuthorization::CAuthorizationPayload>(ClientID, std::move(Payload));
-
-		StartAuthProgress(pPlayer->GetSharedData(), pContext, false);
-
-		// LEFT JOIN keeps the nickname/credentials error distinction.
-		const auto Columns = fmt_default("d.ID, d.Nick AS AccountNickname, (a.ID IS NOT NULL AND a.Username = '{}') AS CredentialsFound, a.Username, a.TimeoutCode, a.LoginDate, a.Language, a.PinCode, a.Password, a.PasswordSalt, (b.AccountId IS NOT NULL) AS HasBan, b.BannedUntil, b.Reason", Login);
-		auto pAuth = Database->Prepare<DB::SELECT>(Columns.c_str(),
-			"tw_accounts_data d LEFT JOIN tw_accounts a ON a.ID = d.ID LEFT JOIN tw_accounts_bans b ON b.AccountId = a.ID AND CURRENT_TIMESTAMP() < b.BannedUntil",
-			"WHERE d.Nick = '{}' LIMIT 1", Nick);
-		pAuth->PrimaryRead(); // credentials can be newer than the replica, and a stale answer means a wrong error
-		pAuth->AtExecute([pContext](ResultPtr pRes) { DbAuthorization::OnCheckNickname(pContext, pRes); });
-	}
-};
-
-class DbRegistration
-{
-	struct CRegistrationPayload
-	{
-		CAccountManager* m_pAccountManager{};
-		int m_InitID{};
-		std::string m_Login{};
-		std::string m_Password{};
-		std::string m_PasswordHash{};
-		std::string m_PasswordSalt{};
-		std::string m_Nickname{};
-		std::string m_RegisteredIP{};
-		std::string m_Language{};
-	};
-	using CRegistrationContextPtr = std::shared_ptr<DbAsync::CContext<CRegistrationPayload>>;
-
-	static void CleanupAccountOnError(const CRegistrationContextPtr& pContext, const char* pStage)
-	{
-		const auto& Data = pContext->Data();
-		dbg_msg("Account", "Registration of '%s' failed at '%s' (client %d, account id %d).",
-			Data.m_Nickname.c_str(), pStage, pContext->GetClientID(), Data.m_InitID);
-
-		if(Data.m_InitID > 0)
-			Database->Execute<DB::REMOVE>("tw_accounts", "WHERE ID = '{}'", Data.m_InitID);
-		else
-		{
-			const auto cClearLogin = CSqlString<64>(Data.m_Login.c_str());
-			Database->Execute<DB::REMOVE>("tw_accounts", "WHERE Username = '{}' AND Password = '{}' AND PasswordSalt = '{}' ORDER BY ID DESC LIMIT 1",
-				cClearLogin.cstr(), Data.m_PasswordHash.c_str(), Data.m_PasswordSalt.c_str());
-		}
-
-		if(!pContext->GetPlayer())
-			return;
-		pContext->GS()->Chat(pContext->GetClientID(), "Registration failed due to server error.");
-		pContext->GS()->Chat(pContext->GetClientID(), "Please try again a bit later.");
-	}
-
-	static void OnLookup(const CRegistrationContextPtr& pContext, ResultPtr pRes)
-	{
-		auto* pGS = pContext->GS();
-		const auto& Data = pContext->Data();
-		const int ClientID = pContext->GetClientID();
-		const auto pPlayer = pContext->GetPlayer();
-
-		if(!pPlayer)
-			return;
-
-		if(pRes->next())
-		{
-			const auto AccountID = pRes->getInt("ID");
-			const auto CurrentLogin = pRes->getString("Username");
-			const auto TimeoutCode = pRes->getString("TimeoutCode");
-			if(!CAccountManager::IsGuestCredentialForNickname(CurrentLogin, Data.m_Nickname.c_str()))
-			{
-				pGS->Chat(ClientID, "This nickname is already linked to another account.");
-				pGS->Chat(ClientID, "Change nickname or contact support for recovery.");
-				pGS->Chat(ClientID, "Discord: \"{~}\".", g_Config.m_SvDiscordInviteLink);
-				return;
-			}
-
-			if(!TimeoutCode.empty() && (!pPlayer->IsAuthed() || pPlayer->Account()->GetID() != AccountID || !pPlayer->Account()->IsReadyToPlay()))
-			{
-				pGS->Chat(ClientID, "This nickname is protected by timeout code.");
-				pGS->Chat(ClientID, "First complete authorization of the previous account.");
-				return;
-			}
-
-			Database->Execute<DB::UPDATE>([pContext](bool Updated)
-			{
-				if(!pContext->GetPlayer())
-					return;
-				if(!Updated)
-				{
-					dbg_msg("Account", "Registration of '%s' could not update the existing account (client %d).", pContext->Data().m_Nickname.c_str(), pContext->GetClientID());
-					pContext->GS()->Chat(pContext->GetClientID(), "Registration update failed.");
-					pContext->GS()->Chat(pContext->GetClientID(), "Please try again later.");
-					return;
-				}
-
-				pContext->GS()->Chat(pContext->GetClientID(), "Registration completed successfully.");
-				pContext->GS()->Chat(pContext->GetClientID(), "Remember your login and password.");
-				pContext->GS()->Chat(pContext->GetClientID(), "Your nickname is your unique game identifier.");
-			}, "tw_accounts", "Username = '{}', Password = '{}', PasswordSalt = '{}' WHERE ID = '{}'", Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt, AccountID);
-			return;
-		}
-
-		// The LEFT JOIN above also finds orphaned data rows, which reserve the nickname.
-		CreateAccount(pContext);
-	}
-
-	static void CreateAccount(const CRegistrationContextPtr& pContext)
-	{
-		const auto& Data = pContext->Data();
-		// The id comes from the INSERT: selecting the row back can hit a stale replica.
-		Database->ExecuteInsertId<DB::INSERT>([pContext](int64_t InsertID) { OnInsertAccount(pContext, InsertID); },
-			"tw_accounts", "(Username, Password, PasswordSalt, RegisterDate, RegisteredIP, Language) VALUES ('{}', '{}', '{}', UTC_TIMESTAMP(), '{}', '{}')",
-			Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt, Data.m_RegisteredIP, Data.m_Language);
-	}
-
-	static void OnInsertAccount(const CRegistrationContextPtr& pContext, int64_t InsertID)
-	{
-		auto& Data = pContext->Data();
-		Data.m_InitID = static_cast<int>(InsertID); // kept even when the player is gone: the cleanup removes exactly this row
-
-		if(InsertID <= 0)
-			CleanupAccountOnError(pContext, "insert tw_accounts");
-		else if(!pContext->GetPlayer())
-			CleanupAccountOnError(pContext, "player gone after insert tw_accounts");
-		else
-			Database->Execute<DB::INSERT>([pContext](bool Updated) { OnInsertAccountData(pContext, Updated); },
-				"tw_accounts_data", "(ID, Nick) VALUES ('{}', '{}')", Data.m_InitID, Data.m_Nickname);
-	}
-
-	static void OnInsertAccountData(const CRegistrationContextPtr& pContext, bool Success)
-	{
-		if(!Success)
-		{
-			CleanupAccountOnError(pContext, "insert tw_accounts_data");
-			return;
-		}
-
-		AuthorizeAfterSuccess(pContext);
-	}
-
-	static void AuthorizeAfterSuccess(const CRegistrationContextPtr& pContext)
-	{
-		auto* pPlayer = pContext->GetPlayer();
-		if(!pPlayer)
-			return;
-		pPlayer->GetSharedData().m_pAuthorizationAttempt.reset();
-		const auto& Data = pContext->Data();
-		dbg_msg("Account", "Registration of '%s' stored the account (client %d, account id %d).", Data.m_Nickname.c_str(), pContext->GetClientID(), Data.m_InitID);
-		pContext->Server()->UpdateAccountBase(Data.m_InitID, Data.m_Nickname, g_Config.m_SvMinRating);
-		DbAuthorization::StartAuthorization(Data.m_pAccountManager, pContext->GetClientID(), Data.m_Login, Data.m_Password, Data.m_Nickname);
-	}
-
-public:
-	static void StartRegistration(CAccountManager* pMgr, int ClientID, std::string Login, std::string Pass, std::string Nick, std::string RegisterIP)
-	{
-		auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(ClientID));
-		auto* pPlayer = pGS ? pGS->GetPlayer(ClientID, false) : nullptr;
-		if(!pPlayer || !pPlayer->GetSharedData().m_pAuthorizationAttempt.expired())
-			return;
-		char aSalt[32] = { 0 };
-		secure_random_password(aSalt, sizeof(aSalt), 24);
-		const auto AccountPasswordHash = CAccountManager::HashPassword(Pass, aSalt);
-		const std::string Language = pPlayer->GetLanguage();
-		auto pContext = DbAsync::MakeContext<DbRegistration::CRegistrationPayload>(ClientID,
-			DbRegistration::CRegistrationPayload { pMgr, 0, Login, Pass, AccountPasswordHash, aSalt, Nick, RegisterIP, Language });
-		StartAuthProgress(pPlayer->GetSharedData(), pContext, true);
-
-		// The nickname must be free on the primary: a lagging replica hides taken ones.
-		auto pLookup = Database->Prepare<DB::SELECT>("d.ID, a.Username, a.TimeoutCode", "tw_accounts_data d LEFT JOIN tw_accounts a ON a.ID = d.ID", "WHERE d.Nick = '{}' LIMIT 1", Nick);
-		pLookup->PrimaryRead();
-		pLookup->AtExecute([pContext](ResultPtr pRes) { OnLookup(pContext, pRes); });
-	}
-};
-
 
 void CAccountManager::OnPlayerLogin(CPlayer* pPlayer)
 {
@@ -784,7 +374,7 @@ void CAccountManager::OnTick()
 	if(GS()->GetWorldID() != INITIALIZER_WORLD_ID)
 		return;
 
-	TickAuthProgress(); // server wide data, driven by this world only
+	AccountAuth::TickProgress(); // server wide data, driven by this world only
 
 	const int RefreshSeconds = g_Config.m_SvAccountSessionRefresh;
 	if(RefreshSeconds <= 0)
@@ -1738,7 +1328,7 @@ AccountCodeResult CAccountManager::RegisterAccountRaw(int ClientID, const char* 
 
 	char aAddrStr[64] {};
 	Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
-	DbRegistration::StartRegistration(this, ClientID, cClearLogin.cstr(), cClearPass.cstr(), cClearNick.cstr(), aAddrStr);
+	AccountRegistration::Start(this, ClientID, cClearLogin.cstr(), cClearPass.cstr(), cClearNick.cstr(), aAddrStr);
 	return AccountCodeResult::AOP_REGISTER_OK;
 }
 
@@ -1762,7 +1352,7 @@ AccountCodeResult CAccountManager::LoginAccountRaw(int ClientID, const char* pLo
 	const auto sqlStrLogin = CSqlString<64>(pLogin);
 	const auto sqlStrPass = CSqlString<64>(pPassword);
 	const auto sqlStrNick = CSqlString<32>(Server()->ClientName(ClientID));
-	DbAuthorization::StartAuthorization(this, ClientID, sqlStrLogin.cstr(), sqlStrPass.cstr(), sqlStrNick.cstr());
+	AccountAuth::Start(this, ClientID, sqlStrLogin.cstr(), sqlStrPass.cstr(), sqlStrNick.cstr());
 	return AccountCodeResult::AOP_LOGIN_OK;
 }
 

@@ -109,7 +109,22 @@ public:
 	/*
 	 * Group functions: initialize or uniques from function
 	 */
-	void Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult);
+
+	// The part of tw_accounts_data a session needs, read once with the login.
+	struct SAccountSnapshot
+	{
+		int m_CrimeScore {};
+		int m_WorldID {};
+		int m_ProfessionID {};
+		int64_t m_DailyStamp {};
+		int64_t m_WeekStamp {};
+		int64_t m_MonthStamp {};
+		std::string m_Bank {};
+		std::string m_EquippedSlots {};
+		std::string m_EquipmentPresets {};
+	};
+
+	void Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, const SAccountSnapshot& Snapshot);
 	void InitProfessions();
 	void InitSharedEquipments(const std::string& EquippedSlots);
 	void SaveSharedEquipments();

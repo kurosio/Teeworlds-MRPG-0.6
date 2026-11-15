@@ -817,6 +817,11 @@ byte-safe.
   (`AccountSession::ReadRecord` / `FetchTokens`): that row arbitrates between
   servers, and a snapshot one replication lag behind makes a valid claim fail
   ("another login is in progress") or kicks a valid session ("taken over").
+  The same holds for the login query itself (`account_auth.cpp`): it reads the
+  credentials, the ban, the session row and the account data in one statement
+  on the primary, so one WAN round trip decides a login and a lagging replica
+  can neither reject a fresh account nor hand out account data the previous
+  session already overwrote.
 * A transaction stays on the primary from `BEGIN` to `COMMIT`/`ROLLBACK`.
 * Not covered: writes through another location's bridge appear when
   replication catches up; keep the grace above the lag.

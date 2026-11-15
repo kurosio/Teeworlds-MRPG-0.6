@@ -52,6 +52,9 @@ namespace AccountSession
 	using DoneCallback = std::function<void(bool)>; // true: the write matched a row
 	using RowsCallback = std::function<void(const std::vector<SKey>&)>; // only on success
 
+	// A row read by another query (the login selects it together with the account).
+	SRecord DecodeRecord(int ServerID, int ClientID, const std::string& Token, int64_t Heartbeat, int64_t NowUnix);
+
 	std::string GenerateToken();
 
 	// Reads the current owner (primary: the row arbitrates between servers). Only a

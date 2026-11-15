@@ -73,10 +73,10 @@ const CTeeInfo& CAccountData::GetTeeInfo() const
 	return m_TeeInfos;
 }
 
-void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult)
+void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, const SAccountSnapshot& Snapshot)
 {
 	// asserts
-	dbg_assert(m_ID <= 0 || !pResult, "Unique AccountID cannot change the value more than 1 time");
+	dbg_assert(m_ID <= 0, "Unique AccountID cannot change the value more than 1 time");
 
 	// initialize
 	IServer* pServer = Instance::Server();
@@ -85,12 +85,12 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	m_ID = ID;
 	m_ClientID = ClientID;
 	m_ReadyToPlay = false;
-	m_CrimeScore = pResult->getInt("CrimeScore");
-	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
-	m_Bank = pResult->getString("Bank");
-	m_Periods.m_DailyStamp = pResult->getInt64("DailyStamp");
-	m_Periods.m_WeekStamp = pResult->getInt64("WeekStamp");
-	m_Periods.m_MonthStamp = pResult->getInt64("MonthStamp");
+	m_CrimeScore = Snapshot.m_CrimeScore;
+	m_aHistoryWorld.push_front(Snapshot.m_WorldID);
+	m_Bank = Snapshot.m_Bank;
+	m_Periods.m_DailyStamp = Snapshot.m_DailyStamp;
+	m_Periods.m_WeekStamp = Snapshot.m_WeekStamp;
+	m_Periods.m_MonthStamp = Snapshot.m_MonthStamp;
 	m_LastTickCrimeScoreChanges = pServer->Tick();
 	pServer->SetClientLanguage(m_ClientID, Language.c_str());
 
@@ -105,10 +105,10 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 
 	// initialize sub account data.
 	InitProfessions();
-	InitSharedEquipments(pResult->getString("EquippedSlots"));
-	InitEquipmentPresets(pResult->getString("EquipmentPresets"));
+	InitSharedEquipments(Snapshot.m_EquippedSlots);
+	InitEquipmentPresets(Snapshot.m_EquipmentPresets);
 	InitAchievements();
-	m_pActiveProfession = GetProfession((ProfessionIdentifier)pResult->getInt("ProfessionID"));
+	m_pActiveProfession = GetProfession((ProfessionIdentifier)Snapshot.m_ProfessionID);
 	m_BonusManager.Init(m_ClientID);
 	m_PrisonManager.Init(m_ClientID);
 	m_RatingSystem.Init(this);
