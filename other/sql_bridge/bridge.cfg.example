@@ -21,8 +21,13 @@ max_clients = 64
 # SQL connections of all game servers (sv_sql_pool_size each + synchronous);
 # exhaustion means a wait, then a fallback to the primary.
 replica_pool_size = 16
-# false = send everything to the primary (incident mode, plain relay).
-route_selects_to_replica = true
+# Consistency first: all reads go to primary. Replica reads can be stale even
+# when lag is reported as zero. Opt in only if this risk is acceptable.
+route_selects_to_replica = false
+allow_stale_replica_reads = false
+# If explicitly opting in, grant REPLICA MONITOR to the replica bridge account.
+max_replica_lag_sec = 1
+replica_lag_check_interval_sec = 2
 # After a write, reads use the primary this long (0 = off + startup warning,
 # missing key = 2.0). Keep it above the replication lag, so a SELECT right
 # after an INSERT still sees the new row.

@@ -1,0 +1,4 @@
+# Trusted shell file: root-owned, mode 0600. Choose explicitly for each host.
+ROLE=replica
+LAG_WARN_SEC=300
+# MARIADB=mariadb

@@ -39,6 +39,7 @@ def make_conf(primary_port, replica_port, primary_opts=None, replica_opts=None, 
     cfg = configparser.ConfigParser(interpolation=None)
     b = {"listen_host": "127.0.0.1", "listen_port": "0", "max_clients": "64",
          "replica_pool_size": "4", "route_selects_to_replica": "true",
+         "allow_stale_replica_reads": "true", "max_replica_lag_sec": "0",
          "read_your_writes_grace_sec": "0", "stats_interval_sec": "0",
          "replica_acquire_timeout_sec": "0.5", "replica_query_timeout_sec": "5"}
     b.update({k: str(v) for k, v in bridge.items()})
@@ -93,7 +94,38 @@ class BridgeTestCase(unittest.IsolatedAsyncioTestCase):
         return rows[0][0]
 
 
+class TestPrimaryOnlySafety(BridgeTestCase):
+    async def test_existing_replica_config_without_opt_in_routes_to_primary(self):
+        b = await self.bridge(allow_stale_replica_reads="false")
+        c = await self.client(b)
+        self.assertEqual(await self.served_by(c, "SELECT * FROM tw_accounts"), "primary")
+
+
 # --- unit tests --------------------------------------------------------------------
+class TestReplicationSafety(unittest.TestCase):
+    def test_primary_by_default_and_requires_explicit_opt_in(self):
+        conf = make_conf(1, 2, allow_stale_replica_reads="false")
+        self.assertFalse(conf.route_replica)
+        self.assertTrue(make_conf(1, 2).route_replica)
+
+    def test_lag_requires_running_threads_and_real_channel(self):
+        names = ["Slave_IO_Running", "Slave_SQL_Running", "Seconds_Behind_Master"]
+        self.assertEqual(mb._replication_lag(names, [["Yes", "Yes", "0"]]), 0)
+        for rows in ([], [["Yes", "No", "0"]], [["No", "Yes", "0"]],
+                     [["Yes", "Yes", None]], [["Yes", "Yes", "nan"]],
+                     [["Yes", "Yes", "-1"]], [["Yes", "Yes", "0"], ["Yes", "No", "0"]]):
+            self.assertIsNone(mb._replication_lag(names, rows))
+        self.assertIsNone(mb._replication_lag(["Seconds_Behind_Master"], [["0"]]))
+
+    def test_expired_health_is_unusable(self):
+        pool = mb.ReplicaPool(None, max_lag=1, lag_interval=2)
+        pool.lag_ok = True
+        pool.lag_checked_at = mb.monotonic() - 20
+        self.assertFalse(pool.usable())
+        pool.lag_checked_at = mb.monotonic()
+        self.assertTrue(pool.usable())
+
+
 class TestClassifier(unittest.TestCase):
     def test_plain_selects_go_to_replica(self):
         for q in ["SELECT * FROM tw_accounts WHERE ID = '5';",

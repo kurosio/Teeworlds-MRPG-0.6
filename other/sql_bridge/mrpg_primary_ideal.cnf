@@ -1,0 +1,10 @@
+# Example only: check version, existing settings, capacity and unique server_id.
+# Back up configuration and test in staging before restarting MariaDB.
+[mysqld]
+server_id = 1
+log_bin = mariadb-bin
+binlog_format = ROW
+binlog_row_image = FULL
+sync_binlog = 1
+# Adjust to the longest expected outage AND available disk space.
+expire_logs_days = 10

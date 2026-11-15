@@ -1,0 +1,21 @@
+# Root-owned shell config, mode 0600. IDs MUST match your actual topology.
+# Comma-separated, no spaces. A server_id by itself does not imply its role.
+PRIMARY_IDS=1
+REPLICA_IDS=2,3
+INTERVAL=15
+MAX_LAG=300
+IO_RETRY_SECONDS=120
+MAX_IO_RETRIES=5
+REPORT_REPEAT_SECONDS=300
+AUTO_START_IO=1
+
+# Destructive replica-only resnapshot; one-time setup and integration tests required.
+AUTO_RESNAPSHOT=0
+RESYNC_REPLICA_ID=
+RESYNC_PRIMARY_ID=
+RESYNC_MASTER_HOST=
+RESYNC_SSH_TARGET=
+# Optional dedicated key + pinned host file (both must be supplied).
+RESYNC_SSH_IDENTITY=
+RESYNC_SSH_KNOWN_HOSTS=
+RESYNC_RETRY_SECONDS=3600

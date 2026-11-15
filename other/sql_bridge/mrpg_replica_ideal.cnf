@@ -1,0 +1,8 @@
+# Example only: choose a unique server_id per host; check existing config.
+# read_only does not constrain privileged accounts. Local game writes require
+# the appropriately scoped privilege described in docs/mariadb.md.
+[mysqld]
+server_id = 2
+read_only = 1
+replicate_wild_ignore_table = mrpg_local%.%
+replicate_wild_ignore_table = phpmyadmin.%
