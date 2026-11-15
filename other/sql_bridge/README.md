@@ -542,7 +542,7 @@ Key settings (defaults in brackets; the rest is commented in
 | `[bridge] allowed_clients` | all | source IP/CIDR allowlist; set it if `listen_host` is not loopback |
 | `[bridge] replica_pool_size` | 16 | persistent replica connections; keep above the sum of all `sv_sql_pool_size` |
 | `[bridge] route_selects_to_replica` | true | `false` = send everything to the primary (incident mode) |
-| `[bridge] read_your_writes_grace_sec` | 0 | reads use the primary this long after any write; set above the lag, e.g. 2 |
+| `[bridge] read_your_writes_grace_sec` | 2.0 | reads use the primary this long after any write; set above the lag, `0` = off (warned at startup) |
 | `[bridge] log_level` | `INFO` | `DEBUG` logs every routing decision |
 | `[primary] use_tls` | false | TLS to the primary; with `tls_ca_file` the certificate is verified |
 
@@ -746,7 +746,8 @@ move out. In this guide it is called `mrpg_shared`.
   `sv_sql_use_tls 0`; the bridge does not terminate TLS. If the primary lacks
   TLS, configure `ssl` there or disable `[primary] use_tls` behind a VPN.
 * **Stale reads right after a write** — raise
-  `read_your_writes_grace_sec`; see [Consistency](#consistency).
+  `read_your_writes_grace_sec` (`0` disables it); reads prefixed with
+  `/*mrpg:primary*/` always use the primary. See [Consistency](#consistency).
 * **`replica cannot use database '...'`** — the replica is missing
   `mrpg_shared`, or `mrpg_bridge` lacks `SELECT` on it. A local database name
   here means `sv_sql_local_host` still points at the bridge.
@@ -777,6 +778,7 @@ to the replica:
 | a single plain `SELECT ...` / `(SELECT ...)` | everything else: writes, DDL, `SHOW`, `DESCRIBE`, `EXPLAIN`, `CALL` |
 | | `SELECT ... FOR UPDATE / LOCK IN SHARE MODE / FOR SHARE`, `SELECT ... INTO` |
 | | `LAST_INSERT_ID()`, `FOUND_ROWS()`, `ROW_COUNT()`, `GET_LOCK()`, `@variables`, `DATABASE()`, `LOAD_FILE()` |
+| | a statement the client prefixes with `/*mrpg:primary*/` — the game server marks the reads that must see its own writes that way |
 | | multi-statements and anything after a `SET` / `USE` / `BEGIN` / `LOCK TABLES` / `CREATE TEMPORARY TABLE` on that session — the Connector/C++ connect-time bootstrap (`set autocommit=1, session_track_schema=1[, sql_mode = concat(@@sql_mode,',STRICT_TRANS_TABLES')]`) is the one exemption |
 | | multi-result prepared statements (`COM_STMT_*` are relayed, never split) |
 
@@ -803,9 +805,18 @@ byte-safe.
 ### Consistency
 
 * After any write, **all** reads use the primary for
-  `read_your_writes_grace_sec` (one timestamp for the whole bridge) — the
-  game writes and reads back on different pooled connections, so a per-table
-  or per-connection rule would miss it. Set it above the replication lag.
+  `read_your_writes_grace_sec` (one timestamp for the whole bridge, **2.0 s**
+  when the key is missing) — the game writes and reads back on different
+  pooled connections, so a per-table or per-connection rule would miss it. Set
+  it above the replication lag; `0` switches it off, with a startup warning.
+* A statement prefixed with `/*mrpg:primary*/` (`SQL_PRIMARY_READ_HINT`) always
+  runs on the primary, whatever the window says: the game server marks the
+  reads that must see its own writes, e.g. the login right after a
+  registration. MariaDB ignores the comment, so it is harmless without a bridge.
+* `tw_account_sessions` is never read from the replica
+  (`AccountSession::ReadRecord` / `FetchTokens`): that row arbitrates between
+  servers, and a snapshot one replication lag behind makes a valid claim fail
+  ("another login is in progress") or kicks a valid session ("taken over").
 * A transaction stays on the primary from `BEGIN` to `COMMIT`/`ROLLBACK`.
 * Not covered: writes through another location's bridge appear when
   replication catches up; keep the grace above the lag.
@@ -814,7 +825,10 @@ byte-safe.
   (`tw_account_sessions`, `CAccountManager`) is therefore a single
   `INSERT ... ON DUPLICATE KEY UPDATE`: the takeover decision is made by the
   primary row itself, so a session written by another location cannot turn a
-  valid login into `Duplicate entry ... for key 'PRIMARY'`.
+  valid login into `Duplicate entry ... for key 'PRIMARY'`. For the same reason
+  the id of a new account comes from its INSERT
+  (`CConectionPool::ExecuteInsertId`, `LAST_INSERT_ID()` on the same
+  connection) and not from a second SELECT that could reach a stale replica.
 
 ## Testing
 

@@ -23,8 +23,9 @@ max_clients = 64
 replica_pool_size = 16
 # false = send everything to the primary (incident mode, plain relay).
 route_selects_to_replica = true
-# After a write, reads use the primary this long (0 = off); keep it above the
-# replication lag, so a SELECT right after an INSERT sees the new row.
+# After a write, reads use the primary this long (0 = off + startup warning,
+# missing key = 2.0). Keep it above the replication lag, so a SELECT right
+# after an INSERT still sees the new row.
 read_your_writes_grace_sec = 2.0
 # 0 disables; keep above the game server's 60 s idle reuse.
 #client_idle_timeout_sec = 600

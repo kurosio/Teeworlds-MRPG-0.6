@@ -185,6 +185,26 @@ namespace
 		return false;
 	}
 
+	// Log form of a query: quoted literals become '?', so credentials, nicknames and
+	// IPs never reach the console. The lost-query file keeps the raw text.
+	std::string MaskedQuery(const std::string& Query)
+	{
+		std::string Out;
+		Out.reserve(Query.size());
+		for(size_t i = 0; i < Query.size(); ++i)
+		{
+			if(Query[i] == '\'')
+			{
+				Out += '?';
+				for(++i; i < Query.size() && Query[i] != '\''; ++i)
+					i += Query[i] == '\\';
+			}
+			else
+				Out += Query[i];
+		}
+		return Out;
+	}
+
 	template<typename TCallback>
 	class CAsyncQueryContext
 	{
@@ -224,7 +244,45 @@ namespace
 	}
 
 	using CAsyncSelectContext = CAsyncQueryContext<CallbackResultPtr>;
-	using CAsyncDmlContext = CAsyncQueryContext<CallbackUpdatePtr>;
+
+	// DML context; an INSERT that wants its generated id is answered with the id, or 0.
+	class CAsyncDmlContext : public CAsyncQueryContext<CallbackUpdatePtr>
+	{
+		CallbackInsertIdPtr m_InsertId;
+
+	public:
+		using CAsyncQueryContext<CallbackUpdatePtr>::CAsyncQueryContext;
+
+		void UseInsertId(CallbackInsertIdPtr Callback) { m_InsertId = std::move(Callback); }
+		bool WantsInsertId() const { return static_cast<bool>(m_InsertId); }
+
+		void Notify(bool Updated, int64_t InsertID) const
+		{
+			if(m_InsertId)
+				CConectionPool::PostCallback([Callback = m_InsertId, InsertID] { Callback(InsertID); });
+			else
+				NotifyDml(Callback(), Updated);
+		}
+	};
+
+	// LAST_INSERT_ID() belongs to the inserting connection: read it in the same task.
+	int64_t ReadLastInsertId(Connection* pConnection)
+	{
+		try
+		{
+			std::unique_ptr<Statement> pStmt(pConnection->createStatement());
+			std::unique_ptr<ResultSet> pResult(pStmt->executeQuery("SELECT LAST_INSERT_ID();"));
+			if(pResult && pResult->next())
+				return pResult->getInt64(1);
+		}
+		catch(SQLException& e)
+		{
+			if(is_connection_lost(e))
+				CloseConnectionOnError(pConnection, "generated id read");
+			dbg_msg("SQL Error", "Failed to read the generated id: %s", e.what());
+		}
+		return 0;
+	}
 
 	std::function<void(Connection*, int)> CreateAsyncSelectTask(const std::shared_ptr<CAsyncSelectContext>& pContext, CThreadPool* pThreadPool)
 	{
@@ -234,14 +292,14 @@ namespace
 			{
 				if(RetryCount < g_Config.m_SvSqlSelectMaxRetries)
 				{
-					dbg_msg("SQL Worker", "Async SELECT connection unavailable. Retrying (attempt %d/%d). Query: %s", RetryCount + 1, g_Config.m_SvSqlSelectMaxRetries, pContext->Query().c_str());
+					dbg_msg("SQL Worker", "Async SELECT connection unavailable. Retrying (attempt %d/%d). Query: %s", RetryCount + 1, g_Config.m_SvSqlSelectMaxRetries, MaskedQuery(pContext->Query()).c_str());
 					if(pThreadPool)
-						pThreadPool->EnqueueWithRetry(CreateAsyncSelectTask(pContext, pThreadPool), pContext->Type(), pContext->Query(), RetryCount + 1);
+						pThreadPool->EnqueueWithRetry(CreateAsyncSelectTask(pContext, pThreadPool), pContext->Type(), MaskedQuery(pContext->Query()), RetryCount + 1);
 					return;
 				}
 
 				LogLostQuery("async select connection unavailable", pContext->Type(), pContext->Query());
-				dbg_msg("SQL Error", "Async SELECT failed to create a connection. Query: %s", pContext->Query().c_str());
+				dbg_msg("SQL Error", "Async SELECT failed to create a connection. Query: %s", MaskedQuery(pContext->Query()).c_str());
 				NotifySelect(pContext->Callback(), EmptyResult());
 				return;
 			}
@@ -262,7 +320,7 @@ namespace
 						throw;
 				}
 
-				dbg_msg("SQL Error", "Async SELECT failed (code=%d, SQLSTATE=%s): %s. Query: %s", e.getErrorCode(), e.getSQLStateCStr() ? e.getSQLStateCStr() : "unknown", e.what(), pContext->Query().c_str());
+				dbg_msg("SQL Error", "Async SELECT failed (code=%d, SQLSTATE=%s): %s. Query: %s", e.getErrorCode(), e.getSQLStateCStr() ? e.getSQLStateCStr() : "unknown", e.what(), MaskedQuery(pContext->Query()).c_str());
 				LogLostQuery("async select failed", pContext->Type(), pContext->Query());
 				NotifySelect(pContext->Callback(), EmptyResult());
 			}
@@ -280,15 +338,15 @@ namespace
 			{
 				if(RetryCount < g_Config.m_SvSqlDmlMaxRetries)
 				{
-					dbg_msg("SQL Worker", "Async DML connection unavailable. Retrying (attempt %d/%d). Query: %s", RetryCount + 1, g_Config.m_SvSqlDmlMaxRetries, pContext->Query().c_str());
+					dbg_msg("SQL Worker", "Async DML connection unavailable. Retrying (attempt %d/%d). Query: %s", RetryCount + 1, g_Config.m_SvSqlDmlMaxRetries, MaskedQuery(pContext->Query()).c_str());
 					if(pThreadPool)
-						pThreadPool->EnqueueWithRetry(CreateAsyncDmlTask(pContext, pThreadPool), pContext->Type(), pContext->Query(), RetryCount + 1);
+						pThreadPool->EnqueueWithRetry(CreateAsyncDmlTask(pContext, pThreadPool), pContext->Type(), MaskedQuery(pContext->Query()), RetryCount + 1);
 					return;
 				}
 
 				LogLostQuery("async dml connection unavailable", pContext->Type(), pContext->Query());
-				dbg_msg("SQL Error", "Async DML failed to create a connection. Query: %s", pContext->Query().c_str());
-				NotifyDml(pContext->Callback(), false);
+				dbg_msg("SQL Error", "Async DML failed to create a connection. Query: %s", MaskedQuery(pContext->Query()).c_str());
+				pContext->Notify(false, 0);
 				return;
 			}
 
@@ -299,8 +357,10 @@ namespace
 				const bool hasUpdated = !hasResultSet && pStmt->getUpdateCount() > 0;
 				if(hasResultSet)
 					DrainStatementResults(pStmt.get());
+				pStmt.reset();
 
-				NotifyDml(pContext->Callback(), hasUpdated);
+				const int64_t InsertID = hasUpdated && pContext->WantsInsertId() ? ReadLastInsertId(pConnection) : 0;
+				pContext->Notify(hasUpdated, InsertID);
 			}
 			catch(SQLException& e)
 			{
@@ -310,7 +370,7 @@ namespace
 					if(RetryCount < g_Config.m_SvSqlDmlMaxRetries)
 					{
 						if(pThreadPool)
-							pThreadPool->EnqueueWithRetry(CreateAsyncDmlTask(pContext, pThreadPool), pContext->Type(), pContext->Query(), RetryCount + 1);
+							pThreadPool->EnqueueWithRetry(CreateAsyncDmlTask(pContext, pThreadPool), pContext->Type(), MaskedQuery(pContext->Query()), RetryCount + 1);
 						return;
 					}
 					LogLostQuery("async dml retries exhausted", pContext->Type(), pContext->Query());
@@ -320,10 +380,21 @@ namespace
 					LogLostQuery("async dml failed", pContext->Type(), pContext->Query());
 				}
 
-				dbg_msg("SQL Error", "Async DML failed: %s. Query: %s", e.what(), pContext->Query().c_str());
-				NotifyDml(pContext->Callback(), false);
+				dbg_msg("SQL Error", "Async DML failed: %s. Query: %s", e.what(), MaskedQuery(pContext->Query()).c_str());
+				pContext->Notify(false, 0);
 			}
 		};
+	}
+
+	void EnqueueDml(CThreadPool* pThreadPool, const std::shared_ptr<CAsyncDmlContext>& pContext)
+	{
+		if(!pThreadPool)
+		{
+			dbg_msg("SQL Error", "Async DML failed to enqueue: thread pool unavailable. Query: %s", MaskedQuery(pContext->Query()).c_str());
+			pContext->Notify(false, 0);
+			return;
+		}
+		pThreadPool->Enqueue(CreateAsyncDmlTask(pContext, pThreadPool), pContext->Type(), MaskedQuery(pContext->Query()));
 	}
 }
 
@@ -779,7 +850,7 @@ bool CConectionPool::InitDatabases()
 		const double durationMs = DurationMs(start, time_get());
 		if(durationMs > static_cast<double>(g_Config.m_SvSqlSyncSelectWarnMs))
 		{
-			dbg_msg("SQL Warning", "Slow sync SELECT (%.2fms). Query: %s", durationMs, m_Query.c_str());
+			dbg_msg("SQL Warning", "Slow sync SELECT (%.2fms). Query: %s", durationMs, MaskedQuery(m_Query).c_str());
 		}
 		return result ? result : EmptyResult();
 	}
@@ -788,9 +859,9 @@ bool CConectionPool::InitDatabases()
 		const double durationMs = DurationMs(start, time_get());
 		if(durationMs > static_cast<double>(g_Config.m_SvSqlSyncSelectWarnMs))
 		{
-			dbg_msg("SQL Warning", "Slow sync SELECT failed (%.2fms). Query: %s", durationMs, m_Query.c_str());
+			dbg_msg("SQL Warning", "Slow sync SELECT failed (%.2fms). Query: %s", durationMs, MaskedQuery(m_Query).c_str());
 		}
-		dbg_msg("SQL Error", "Sync SELECT failed (code=%d, SQLSTATE=%s): %s. Query: %s", e.getErrorCode(), e.getSQLStateCStr() ? e.getSQLStateCStr() : "unknown", e.what(), m_Query.c_str());
+		dbg_msg("SQL Error", "Sync SELECT failed (code=%d, SQLSTATE=%s): %s. Query: %s", e.getErrorCode(), e.getSQLStateCStr() ? e.getSQLStateCStr() : "unknown", e.what(), MaskedQuery(m_Query).c_str());
 		if(is_connection_lost(e))
 		{
 			CloseConnectionOnError(pConnection.get(), "Sync SELECT");
@@ -808,7 +879,7 @@ bool CConectionPool::InitDatabases()
 				}
 				catch(SQLException& retryError)
 				{
-					dbg_msg("SQL Error", "Sync SELECT retry failed (code=%d, SQLSTATE=%s): %s. Query: %s", retryError.getErrorCode(), retryError.getSQLStateCStr() ? retryError.getSQLStateCStr() : "unknown", retryError.what(), m_Query.c_str());
+					dbg_msg("SQL Error", "Sync SELECT retry failed (code=%d, SQLSTATE=%s): %s. Query: %s", retryError.getErrorCode(), retryError.getSQLStateCStr() ? retryError.getSQLStateCStr() : "unknown", retryError.what(), MaskedQuery(m_Query).c_str());
 					if(!is_connection_lost(retryError))
 						break;
 					CloseConnectionOnError(retryConnection.get(), "Sync SELECT retry");
@@ -828,11 +899,11 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 	CThreadPool* pThreadPool = Database->GetThreadPool(m_Kind);
 	if(!pThreadPool)
 	{
-		dbg_msg("SQL Error", "Async SELECT failed to enqueue: thread pool unavailable. Query: %s", pContext->Query().c_str());
+		dbg_msg("SQL Error", "Async SELECT failed to enqueue: thread pool unavailable. Query: %s", MaskedQuery(pContext->Query()).c_str());
 		NotifySelect(pContext->Callback(), EmptyResult());
 		return;
 	}
-	pThreadPool->Enqueue(CreateAsyncSelectTask(pContext, pThreadPool), pContext->Type(), pContext->Query());
+	pThreadPool->Enqueue(CreateAsyncSelectTask(pContext, pThreadPool), pContext->Type(), MaskedQuery(pContext->Query()));
 }
 
 
@@ -840,12 +911,20 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, int DelayMilliseconds)
 {
 	auto pContext = std::make_shared<CAsyncDmlContext>(m_Query, m_TypeQuery, std::move(pCallbackResult), DelayMilliseconds);
-	CThreadPool* pThreadPool = Database->GetThreadPool(m_Kind);
-	if(!pThreadPool)
+	EnqueueDml(Database->GetThreadPool(m_Kind), pContext);
+}
+
+void CConectionPool::CResultQuery::AtExecuteInsertId(CallbackInsertIdPtr pCallbackResult, int DelayMilliseconds)
+{
+	if(m_TypeQuery != DB::INSERT) // ExecuteInsertId<> already restricts this; guard the public entry
 	{
-		dbg_msg("SQL Error", "Async DML failed to enqueue: thread pool unavailable. Query: %s", pContext->Query().c_str());
-		NotifyDml(pContext->Callback(), false);
+		dbg_msg("SQL Error", "A generated id was requested for a non-INSERT statement. Query: %s", MaskedQuery(m_Query).c_str());
+		if(pCallbackResult)
+			pCallbackResult(0);
 		return;
 	}
-	pThreadPool->Enqueue(CreateAsyncDmlTask(pContext, pThreadPool), pContext->Type(), pContext->Query());
+
+	auto pContext = std::make_shared<CAsyncDmlContext>(m_Query, m_TypeQuery, CallbackUpdatePtr(), DelayMilliseconds);
+	pContext->UseInsertId(std::move(pCallbackResult));
+	EnqueueDml(Database->GetThreadPool(m_Kind), pContext);
 }

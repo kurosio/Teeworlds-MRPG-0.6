@@ -53,6 +53,15 @@ ST_AUTOCOMMIT = 0x2
 ST_MORE = 0x8
 
 
+_LEADING_COMMENT_RE = re.compile(r"^(?:\s|/\*.*?\*/)+", re.S)
+
+
+def strip_leading_comments(text):
+    """MariaDB ignores comments in front of a statement, and so does the fake: a
+    routing hint such as /*mrpg:primary*/ must not change the answer."""
+    return _LEADING_COMMENT_RE.sub("", text, count=1)
+
+
 def lenenc_int(n):
     if n < 0xFB:
         return bytes([n])
@@ -394,7 +403,7 @@ class Session:
 
     async def statement(self, st, more, seq):
         srv = self.server
-        low = st.lower()
+        low = strip_leading_comments(st.lower())
         if srv.delay:
             await asyncio.sleep(srv.delay)
         if low in ("begin", "start transaction"):
@@ -478,7 +487,7 @@ class Session:
         sid = self.next_stmt
         self.next_stmt += 1
         nparams = sql.count("?")
-        ncols = 1 if sql.lower().lstrip().startswith("select") else 0
+        ncols = 1 if strip_leading_comments(sql.lower()).startswith("select") else 0
         self.stmts[sid] = (sql, nparams, ncols)
         out = [b"\x00" + struct.pack("<IHHBH", sid, ncols, nparams, 0, 0)]
         if nparams:
