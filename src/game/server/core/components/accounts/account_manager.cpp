@@ -34,6 +34,41 @@ namespace
 	constexpr int ACCOUNT_SESSION_TAKEOVER_TIMEOUT_SECONDS = 10;
 	constexpr int ACCOUNT_SESSION_CLAIM_ATTEMPTS = 3;
 
+	// The primary can be remote (SQL bridge over the WAN), so a login waits seconds.
+	constexpr int64_t AUTH_PROGRESS_FIRST_SECONDS = 5;
+	constexpr int64_t AUTH_PROGRESS_REPEAT_SECONDS = 15;
+
+	void StartAuthProgress(CAccountSharedData& Shared, const std::shared_ptr<void>& pAttempt, bool Registration)
+	{
+		Shared.m_pAuthorizationAttempt = pAttempt;
+		Shared.m_AuthIsRegistration = Registration;
+		Shared.m_AuthProgressTick = time_get() + AUTH_PROGRESS_FIRST_SECONDS * time_freq();
+	}
+
+	void TickAuthProgress()
+	{
+		static int64_t s_NextCheck = 0; // notices are seconds apart: scan at 1 Hz, not per tick
+		const int64_t Now = time_get();
+		if(Now < s_NextCheck)
+			return;
+		s_NextCheck = Now + time_freq();
+
+		std::vector<std::pair<int, bool>> vNotices;
+		for(auto& [ClientID, Shared] : CAccountSharedData::ms_aPlayerSharedData)
+		{
+			if(Shared.m_pAuthorizationAttempt.expired() || Now < Shared.m_AuthProgressTick)
+				continue;
+
+			Shared.m_AuthProgressTick = Now + AUTH_PROGRESS_REPEAT_SECONDS * time_freq();
+			vNotices.emplace_back(ClientID, Shared.m_AuthIsRegistration);
+		}
+
+		// Sent after the loop: Chat can add entries to the map we iterate.
+		for(const auto& [ClientID, Registration] : vNotices)
+			if(auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(ClientID)))
+				pGS->Chat(ClientID, Registration ? "Registration is still in progress. Please wait..." : "Login is still in progress. Please wait...");
+	}
+
 	// A previous owner on another server has to end its session before we play.
 	bool NeedsRemoteTakeover(const AccountSession::SClaim& Claim)
 	{
@@ -203,6 +238,7 @@ class DbAuthorization
 	static void LoadAccountData(const CAuthorizationContextPtr& pContext)
 	{
 		auto pData = Database->Prepare<DB::SELECT>("*", "tw_accounts_data", "WHERE ID = '{}'", pContext->Data().m_Claim.m_AccountID);
+		pData->PrimaryRead(); // the account can be newer than the replica: registered moments ago, possibly elsewhere
 		pData->AtExecute([pContext](ResultPtr pDataRes) { OnLoadAccountData(pContext, pDataRes); });
 	}
 
@@ -256,12 +292,14 @@ public:
 		Payload.m_Claim.m_Deadline = time_get() + AccountSession::CLAIM_SECONDS * time_freq();
 		auto pContext = DbAsync::MakeContext<DbAuthorization::CAuthorizationPayload>(ClientID, std::move(Payload));
 
-		// Preserve the nickname/credentials error distinction with a LEFT JOIN.
-		pPlayer->GetSharedData().m_pAuthorizationAttempt = pContext;
+		StartAuthProgress(pPlayer->GetSharedData(), pContext, false);
+
+		// LEFT JOIN keeps the nickname/credentials error distinction.
 		const auto Columns = fmt_default("d.ID, d.Nick AS AccountNickname, (a.ID IS NOT NULL AND a.Username = '{}') AS CredentialsFound, a.Username, a.TimeoutCode, a.LoginDate, a.Language, a.PinCode, a.Password, a.PasswordSalt, (b.AccountId IS NOT NULL) AS HasBan, b.BannedUntil, b.Reason", Login);
 		auto pAuth = Database->Prepare<DB::SELECT>(Columns.c_str(),
 			"tw_accounts_data d LEFT JOIN tw_accounts a ON a.ID = d.ID LEFT JOIN tw_accounts_bans b ON b.AccountId = a.ID AND CURRENT_TIMESTAMP() < b.BannedUntil",
 			"WHERE d.Nick = '{}' LIMIT 1", Nick);
+		pAuth->PrimaryRead(); // credentials can be newer than the replica, and a stale answer means a wrong error
 		pAuth->AtExecute([pContext](ResultPtr pRes) { DbAuthorization::OnCheckNickname(pContext, pRes); });
 	}
 };
@@ -282,9 +320,12 @@ class DbRegistration
 	};
 	using CRegistrationContextPtr = std::shared_ptr<DbAsync::CContext<CRegistrationPayload>>;
 
-	static void CleanupAccountOnError(const CRegistrationContextPtr& pContext)
+	static void CleanupAccountOnError(const CRegistrationContextPtr& pContext, const char* pStage)
 	{
 		const auto& Data = pContext->Data();
+		dbg_msg("Account", "Registration of '%s' failed at '%s' (client %d, account id %d).",
+			Data.m_Nickname.c_str(), pStage, pContext->GetClientID(), Data.m_InitID);
+
 		if(Data.m_InitID > 0)
 			Database->Execute<DB::REMOVE>("tw_accounts", "WHERE ID = '{}'", Data.m_InitID);
 		else
@@ -336,6 +377,7 @@ class DbRegistration
 					return;
 				if(!Updated)
 				{
+					dbg_msg("Account", "Registration of '%s' could not update the existing account (client %d).", pContext->Data().m_Nickname.c_str(), pContext->GetClientID());
 					pContext->GS()->Chat(pContext->GetClientID(), "Registration update failed.");
 					pContext->GS()->Chat(pContext->GetClientID(), "Please try again later.");
 					return;
@@ -348,58 +390,38 @@ class DbRegistration
 			return;
 		}
 
-		// LEFT JOIN also finds orphaned data rows, which still reserve the nickname.
-		// An empty lookup is sufficient; do not query the same nickname again.
+		// The LEFT JOIN above also finds orphaned data rows, which reserve the nickname.
 		CreateAccount(pContext);
 	}
 
 	static void CreateAccount(const CRegistrationContextPtr& pContext)
 	{
 		const auto& Data = pContext->Data();
-		Database->Execute<DB::INSERT>([pContext](bool Updated) { OnInsertAccount(pContext, Updated); },
+		// The id comes from the INSERT: selecting the row back can hit a stale replica.
+		Database->ExecuteInsertId<DB::INSERT>([pContext](int64_t InsertID) { OnInsertAccount(pContext, InsertID); },
 			"tw_accounts", "(Username, Password, PasswordSalt, RegisterDate, RegisteredIP, Language) VALUES ('{}', '{}', '{}', UTC_TIMESTAMP(), '{}', '{}')",
 			Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt, Data.m_RegisteredIP, Data.m_Language);
-
 	}
 
-	static void OnInsertAccount(const CRegistrationContextPtr& pContext, bool Updated)
+	static void OnInsertAccount(const CRegistrationContextPtr& pContext, int64_t InsertID)
 	{
-		if(!Updated || !pContext->GetPlayer())
-		{
-			CleanupAccountOnError(pContext);
-			return;
-		}
+		auto& Data = pContext->Data();
+		Data.m_InitID = static_cast<int>(InsertID); // kept even when the player is gone: the cleanup removes exactly this row
 
-		const auto& Data = pContext->Data();
-		auto pInitID = Database->Prepare<DB::SELECT>("ID", "tw_accounts",
-			"WHERE Username = '{}' AND Password = '{}' AND PasswordSalt = '{}' ORDER BY ID DESC LIMIT 1",
-			Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt);
-		pInitID->AtExecute([pContext](ResultPtr pRes) { OnResolveAccountID(pContext, pRes); });
-	}
-
-	static void OnResolveAccountID(const CRegistrationContextPtr& pContext, ResultPtr pRes)
-	{
-		if(!pRes->next())
-		{
-			CleanupAccountOnError(pContext);
-			return;
-		}
-
-		pContext->Data().m_InitID = pRes->getInt("ID");
-		if(!pContext->GetPlayer())
-		{
-			CleanupAccountOnError(pContext);
-			return;
-		}
-		Database->Execute<DB::INSERT>([pContext](bool Updated) { OnInsertAccountData(pContext, Updated); },
-			"tw_accounts_data", "(ID, Nick) VALUES ('{}', '{}')", pContext->Data().m_InitID, pContext->Data().m_Nickname);
+		if(InsertID <= 0)
+			CleanupAccountOnError(pContext, "insert tw_accounts");
+		else if(!pContext->GetPlayer())
+			CleanupAccountOnError(pContext, "player gone after insert tw_accounts");
+		else
+			Database->Execute<DB::INSERT>([pContext](bool Updated) { OnInsertAccountData(pContext, Updated); },
+				"tw_accounts_data", "(ID, Nick) VALUES ('{}', '{}')", Data.m_InitID, Data.m_Nickname);
 	}
 
 	static void OnInsertAccountData(const CRegistrationContextPtr& pContext, bool Success)
 	{
 		if(!Success)
 		{
-			CleanupAccountOnError(pContext);
+			CleanupAccountOnError(pContext, "insert tw_accounts_data");
 			return;
 		}
 
@@ -413,6 +435,7 @@ class DbRegistration
 			return;
 		pPlayer->GetSharedData().m_pAuthorizationAttempt.reset();
 		const auto& Data = pContext->Data();
+		dbg_msg("Account", "Registration of '%s' stored the account (client %d, account id %d).", Data.m_Nickname.c_str(), pContext->GetClientID(), Data.m_InitID);
 		pContext->Server()->UpdateAccountBase(Data.m_InitID, Data.m_Nickname, g_Config.m_SvMinRating);
 		DbAuthorization::StartAuthorization(Data.m_pAccountManager, pContext->GetClientID(), Data.m_Login, Data.m_Password, Data.m_Nickname);
 	}
@@ -430,8 +453,11 @@ public:
 		const std::string Language = pPlayer->GetLanguage();
 		auto pContext = DbAsync::MakeContext<DbRegistration::CRegistrationPayload>(ClientID,
 			DbRegistration::CRegistrationPayload { pMgr, 0, Login, Pass, AccountPasswordHash, aSalt, Nick, RegisterIP, Language });
-		pPlayer->GetSharedData().m_pAuthorizationAttempt = pContext;
+		StartAuthProgress(pPlayer->GetSharedData(), pContext, true);
+
+		// The nickname must be free on the primary: a lagging replica hides taken ones.
 		auto pLookup = Database->Prepare<DB::SELECT>("d.ID, a.Username, a.TimeoutCode", "tw_accounts_data d LEFT JOIN tw_accounts a ON a.ID = d.ID", "WHERE d.Nick = '{}' LIMIT 1", Nick);
+		pLookup->PrimaryRead();
 		pLookup->AtExecute([pContext](ResultPtr pRes) { OnLookup(pContext, pRes); });
 	}
 };
@@ -757,6 +783,8 @@ void CAccountManager::OnTick()
 
 	if(GS()->GetWorldID() != INITIALIZER_WORLD_ID)
 		return;
+
+	TickAuthProgress(); // server wide data, driven by this world only
 
 	const int RefreshSeconds = g_Config.m_SvAccountSessionRefresh;
 	if(RefreshSeconds <= 0)
@@ -1698,6 +1726,7 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* pLo
 	if(!CheckLoginPasswordLength(GS(), ClientID, pLogin, pPassword))
 		return AccountCodeResult::AOP_MISMATCH_LENGTH_SYMBOLS;
 
+	GS()->Chat(ClientID, "Registration in progress. Please wait..."); // the queries can take seconds
 	return RegisterAccountRaw(ClientID, pLogin, pPassword);
 }
 

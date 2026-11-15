@@ -150,6 +150,19 @@ class TestClassifier(unittest.TestCase):
                   "CREATE TABLE x (a int)"]:
             self.assertFalse(mb.pins_session(q.encode()), q)
 
+    def test_primary_hint_forces_primary(self):
+        hint = mb.PRIMARY_HINT.decode()
+        for q in [hint + " SELECT ID FROM tw_accounts WHERE ID = 5",
+                  hint + "SELECT * FROM tw_accounts_data d LEFT JOIN tw_accounts a ON a.ID = d.ID",
+                  "  " + hint + " SELECT 1"]:
+            self.assertTrue(mb.has_primary_hint(q.encode()), q)
+            self.assertEqual(mb.classify_query(q.encode())[0], mb.K_PRIMARY_READ, q)
+            self.assertEqual(mb.classify_query(memoryview(q.encode()))[0], mb.K_PRIMARY_READ, q)
+        # only a leading hint counts; writes and multi-statements keep their own kind
+        self.assertFalse(mb.has_primary_hint(b"SELECT " + mb.PRIMARY_HINT + b" ID FROM t"))
+        self.assertEqual(mb.classify_query((hint + " INSERT INTO t VALUES (1)").encode())[0], mb.K_WRITE)
+        self.assertEqual(mb.classify_query((hint + "SELECT 1; DELETE FROM t").encode())[0], mb.K_UNKNOWN)
+
     def test_log_sql_masks_passwords(self):
         self.assertNotIn("hunter2", mb.log_sql("CREATE USER x IDENTIFIED BY 'hunter2'"))
         self.assertNotIn("hunter2", mb.log_sql("SET PASSWORD = PASSWORD('hunter2')"))
@@ -420,6 +433,10 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(c.max_clients, 256)
         self.assertEqual(c.pool_size, 16)
         self.assertEqual(c.acquire_timeout, 0.25)
+        # A missing key keeps the read-your-writes protection; an explicit 0 does not.
+        self.assertEqual(c.grace, mb.DEFAULT_RYW_GRACE_SEC)
+        c = self.load("[bridge]\nread_your_writes_grace_sec=0\n[primary]\nhost=db\nport=3306\n"
+                      "[replica]\nhost=127.0.0.1\nport=3306\nuser=u\npassword=p\ndatabase=mrpg_shared\n")
         self.assertEqual(c.grace, 0.0)
 
     def test_env_overrides_and_password_file(self):
@@ -548,6 +565,20 @@ class TestRouting(BridgeTestCase):
         self.assertEqual(await self.served_by(w, "SELECT * FROM tw_guilds"), "primary")
         await asyncio.sleep(0.5)
         self.assertEqual(await self.served_by(a, "SELECT ID FROM tw_accounts"), "replica")
+
+    async def test_primary_hint_bypasses_the_replica(self):
+        # grace 0 (the harness default): the hint alone keeps the read on the
+        # primary, so a login right after a registration cannot hit a stale replica.
+        b = await self.bridge()
+        w = await self.client(b)      # the pooled worker that ran the INSERT
+        r = await self.client(b)      # another pooled worker of the same server
+        hint = mb.PRIMARY_HINT.decode()
+        await w.query("INSERT INTO tw_accounts (Username) VALUES ('kuro')")
+        self.assertEqual(await self.served_by(r, "SELECT ID FROM tw_accounts"), "replica")
+        self.assertEqual(await self.served_by(r, hint + " SELECT ID FROM tw_accounts"), "primary")
+        self.assertEqual(await self.served_by(r, "SELECT LAST_INSERT_ID()"), "primary")
+        self.assertTrue(self.primary.queries_matching("mrpg:primary"))   # forwarded unchanged
+        self.assertFalse(self.replica.queries_matching("mrpg:primary"))
 
     async def test_use_pins_to_primary(self):
         b = await self.bridge()

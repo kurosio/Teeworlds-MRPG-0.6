@@ -733,6 +733,16 @@ def _strip_literals(sql):
     return code
 
 
+# Client hint (SQL_PRIMARY_READ_HINT in src/engine/server/sql_connect_pool.h): run
+# this read on the primary.  MariaDB ignores the comment, so it is forwarded as is.
+PRIMARY_HINT = b"/*mrpg:primary*/"
+
+
+def has_primary_hint(sql):
+    """True when a leading hint comment asks for the primary."""
+    return bytes(sql).lstrip()[:len(PRIMARY_HINT)].lower() == PRIMARY_HINT
+
+
 def classify_query(sql):
     """Classify a COM_QUERY text (bytes).
 
@@ -753,7 +763,7 @@ def classify_query(sql):
     low = code.lower()
     word = m.group(1).lower()
     if word == b"select" or word == b"with":
-        if _UNSAFE_SELECT_RE.search(low):
+        if _UNSAFE_SELECT_RE.search(low) or has_primary_hint(sql):
             return K_PRIMARY_READ, code, low
         if word == b"with" and _DML_WORD_RE.search(low):
             return K_WRITE, code, low
@@ -2078,6 +2088,14 @@ class Bridge:
                  conf.uvloop_active, conf.max_clients, conf.pool_size, conf.route_replica,
                  conf.ryw_scope, conf.grace, self.primary.host, self.primary.port,
                  self.primary.use_tls and self.primary.tls_mode)
+        if conf.route_replica and conf.grace <= 0:
+            log.warning("read_your_writes_grace_sec = 0: a SELECT that follows an INSERT can "
+                        "be answered by the replica before it has the row. Only reads marked "
+                        "with %s are safe then; set it above the lag (for example %.1f).",
+                        PRIMARY_HINT.decode(), DEFAULT_RYW_GRACE_SEC)
+        if conf.route_replica and conf.max_lag <= 0:
+            log.warning("max_replica_lag_sec = 0: replica lag is not monitored, so a replica "
+                        "that falls behind keeps serving reads.")
 
     async def _housekeeping(self):
         tick = 0
@@ -2135,6 +2153,11 @@ class Bridge:
 
 
 # --- configuration -----------------------------------------------------------------
+# Fallback of [bridge] read_your_writes_grace_sec; 0 would let a SELECT that
+# follows an INSERT miss the row (the game server pools its connections).
+DEFAULT_RYW_GRACE_SEC = 2.0
+
+
 class ConfigError(Exception):
     pass
 
@@ -2214,7 +2237,8 @@ def build_config(cfg):
         c.max_clients = cfg.getint("bridge", "max_clients", fallback=256)
         c.pool_size = cfg.getint("bridge", "replica_pool_size", fallback=16)
         c.route_replica = cfg.getboolean("bridge", "route_selects_to_replica", fallback=True)
-        c.grace = cfg.getfloat("bridge", "read_your_writes_grace_sec", fallback=0.0)
+        c.grace = cfg.getfloat("bridge", "read_your_writes_grace_sec",
+                               fallback=DEFAULT_RYW_GRACE_SEC)
         c.ryw_scope = g("read_your_writes_scope", "table").strip().lower()
         c.idle_timeout = cfg.getfloat("bridge", "client_idle_timeout_sec", fallback=600.0)
         c.auth_timeout = cfg.getfloat("bridge", "auth_timeout_sec", fallback=10.0)

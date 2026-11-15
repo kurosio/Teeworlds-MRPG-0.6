@@ -33,6 +33,7 @@ namespace AccountSession
 	{
 		auto pRead = Database->Prepare<DB::SELECT>("ServerID, ClientID, SessionToken, Heartbeat, UNIX_TIMESTAMP() AS CurrentUnixTime", TABLE,
 			"WHERE AccountID = '{}'", AccountID);
+		pRead->PrimaryRead(); // the row arbitrates between servers: a stale snapshot fails the claim below
 		pRead->AtExecute([Done](ResultPtr pRes)
 		{
 			// "No row" is a valid answer; a failed query is not. Only the former may
@@ -141,6 +142,7 @@ namespace AccountSession
 		}
 
 		auto pFetch = Database->Prepare<DB::SELECT>("AccountID, SessionToken", TABLE, "WHERE AccountID IN ({})", List);
+		pFetch->PrimaryRead(); // a stale token here would kick a session that has just claimed its row
 		pFetch->AtExecute([Done](ResultPtr pRes)
 		{
 			// A failed query says nothing about ownership: deliver nothing.

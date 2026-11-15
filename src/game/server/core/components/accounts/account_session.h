@@ -54,7 +54,8 @@ namespace AccountSession
 
 	std::string GenerateToken();
 
-	// Reads the current owner. The result is only a snapshot: TryClaim checks it again.
+	// Reads the current owner (primary: the row arbitrates between servers). Only a
+	// snapshot; TryClaim checks it again.
 	void ReadRecord(int AccountID, ReadCallback Done);
 
 	// Takes the account if the row still holds the token we read and it may be taken
@@ -74,7 +75,8 @@ namespace AccountSession
 	// Refreshes the heartbeat of the given active sessions, in batches.
 	void RefreshHeartbeats(const std::vector<SKey>& vKeys);
 
-	// Tokens currently stored for the given accounts. Nothing is delivered if the query fails.
+	// Tokens currently stored for the given accounts (primary read); nothing is
+	// delivered if the query fails.
 	void FetchTokens(const std::vector<int>& vAccountIDs, RowsCallback Done);
 }
 
