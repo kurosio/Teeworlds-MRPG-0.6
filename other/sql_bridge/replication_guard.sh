@@ -12,13 +12,20 @@ IO_RETRY_SECONDS=${IO_RETRY_SECONDS:-120}
 REPORT_REPEAT_SECONDS=${REPORT_REPEAT_SECONDS:-300}
 AUTO_START_IO=${AUTO_START_IO:-1}
 MAX_IO_RETRIES=${MAX_IO_RETRIES:-5}
+AUTO_RESNAPSHOT=${AUTO_RESNAPSHOT:-0}
+RESYNC_RETRY_SECONDS=${RESYNC_RETRY_SECONDS:-3600}
+RESYNC_REPLICA_ID=${RESYNC_REPLICA_ID:-}
+RESYNC_PRIMARY_ID=${RESYNC_PRIMARY_ID:-}
+RESYNC_MASTER_HOST=${RESYNC_MASTER_HOST:-}
+RESYNC_SSH_TARGET=${RESYNC_SSH_TARGET:-}
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 MARIADB=${MARIADB:-mariadb}
 [ ! -r "$CONF" ] || . "$CONF"
-for val in "$INTERVAL" "$MAX_LAG" "$IO_RETRY_SECONDS" "$REPORT_REPEAT_SECONDS" "$MAX_IO_RETRIES"; do
+for val in "$INTERVAL" "$MAX_LAG" "$IO_RETRY_SECONDS" "$REPORT_REPEAT_SECONDS" "$MAX_IO_RETRIES" "$RESYNC_RETRY_SECONDS"; do
     case $val in ''|*[!0-9]*|0|0*) echo 'Invalid guard interval/threshold' >&2; exit 2 ;; esac
     [ ${#val} -le 7 ] || { echo 'Guard interval/threshold too large' >&2; exit 2; }
 done
-case $AUTO_START_IO in 0|1) ;; *) echo 'Invalid AUTO_START_IO' >&2; exit 2 ;; esac
+case $AUTO_START_IO:$AUTO_RESNAPSHOT in [01]:[01]) ;; *) echo 'Invalid automatic recovery setting' >&2; exit 2 ;; esac
 # Limit execution so an unreachable server cannot block monitoring forever.
 # Never issue control statements to a server selected by a client config's host.
 # Root's client configuration may still provide credentials and a local socket.
@@ -39,6 +46,18 @@ report() {
 }
 last_retry=0
 retry_count=0
+last_resync=0
+resnapshot() {
+    [ "$AUTO_RESNAPSHOT" = 1 ] && [ "${CHECK_ONLY:-0}" != 1 ] || return 0
+    now=$(date +%s)
+    case $now in ''|*[!0-9]*|0) return 0 ;; esac
+    if [ "$last_resync" -ne 0 ] && [ "$now" -ge "$last_resync" ] && [ $((now - last_resync)) -lt "$RESYNC_RETRY_SECONDS" ]; then return 0; fi
+    last_resync=$now
+    echo 'Attempting opt-in replica resnapshot; preconditions must all pass' >&2
+    RESYNC_REPLICA_ID="$RESYNC_REPLICA_ID" RESYNC_PRIMARY_ID="$RESYNC_PRIMARY_ID" \
+      RESYNC_MASTER_HOST="$RESYNC_MASTER_HOST" RESYNC_SSH_TARGET="$RESYNC_SSH_TARGET" \
+      timeout -k 10 7200 python3 "$SCRIPT_DIR/replica_resnapshot.py" || echo 'Resnapshot failed; will retry after cooldown' >&2
+}
 check() {
     id=$(query -N -e 'SELECT @@global.server_id' 2>/dev/null) || { report 'CRITICAL: MariaDB unavailable or access denied'; return 1; }
     case $id in ''|*[!0-9]*) report 'CRITICAL: invalid server_id'; return 1 ;; esac
@@ -65,6 +84,11 @@ check() {
     io=$(field Slave_IO_Running); sql=$(field Slave_SQL_Running)
     lag=$(field Seconds_Behind_Master); io_errno=$(field Last_IO_Errno)
     sql_errno=$(field Last_SQL_Errno)
+    if [ -f /var/lib/mrpg-recovery/resnapshot-pending ]; then
+        report "CRITICAL: interrupted replica resnapshot; retrying after preflight"
+        resnapshot
+        return 1
+    fi
     if [ "$sql" != Yes ]; then
         case $sql_errno in
             1062|1032) hint='data mismatch; preserve replica and resnapshot after review' ;;
@@ -73,6 +97,9 @@ check() {
             *) hint='inspect Last_SQL_Error; no events will be skipped' ;;
         esac
         report "CRITICAL: replica server_id=$id SQL=$sql errno=$sql_errno; $hint"
+        case $sql_errno:$io_errno in
+            1062:*|1032:*|1146:*|*:1236) resnapshot ;;
+        esac
         return 1
     fi
     if [ "$io" != Yes ]; then
@@ -85,6 +112,7 @@ check() {
         report "CRITICAL: replica server_id=$id IO=$io errno=$io_errno; $hint"
         # Connecting already retries by itself. Only retry documented network
         # failures, never authentication, GTID, or SQL/data errors.
+        case $io_errno in 1236) resnapshot ;; esac
         case $io:$io_errno in
             No:2003|No:2006|No:2013|No:2055)
                 now=$(date +%s)

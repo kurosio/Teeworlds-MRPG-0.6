@@ -58,7 +58,7 @@ primary. If other databases share GTID domains, there are multiple channels, or
 the replica feeds downstream servers, arrange a topology-specific recovery
 first. Preserve `mrpg_local*`. Validate both threads, lag, schema, critical
 rows, local databases, permissions and application behavior after recovery.
-There is no automatic full resnapshot or merge of divergent data.
+An opt-in automatic resnapshot is described below. It does not merge divergent data.
 
 ## Install the guard with the game service
 
@@ -107,8 +107,7 @@ When SQL is running and the **default** channel's IO thread is stopped with a
 network error 2003, 2006, 2013 or 2055, it retries `START SLAVE IO_THREAD`, no
 more often than every 120 seconds, up to five attempts per unhealthy period.
 A healthy check or guard restart resets this in-memory budget. `Connecting`
-already retries itself. The next poll checks the result. It never skips events, edits GTIDs or changes
-replication settings. Unknown errors, named/multiple channels, SQL errors,
+already retries itself. The next poll checks the result. It never skips events. When opt-in resnapshot is disabled, it does not edit GTIDs or change replication settings. Unknown errors, named/multiple channels, SQL errors,
 authentication errors and missing binlogs require investigation. Automatic
 recovery cannot resolve all causes or guarantee consistent data.
 
@@ -142,3 +141,72 @@ monitor and grace period do not provide linearizability. Do not opt in for
 player read-modify-write flows unless a separate concurrency control mechanism
 protects them. A replica monitor account needs `REPLICA MONITOR` (or the
 version-appropriate equivalent) if lag monitoring is enabled.
+
+## Experimental automatic replica resnapshot (opt-in)
+
+**Do not enable in production until a restore drill with your exact MariaDB
+versions, topology, bridge, dataset, and service setup has passed.** This is a
+new implementation tested with mocks, not a guarantee of unattended recovery.
+It destroys the replica's `mrpg_shared` and resets its global `gtid_slave_pos`.
+It never runs modifying SQL on the primary, but `mariadb-dump --master-data`
+briefly takes a global read lock there. Backups consume disk and contain player
+data. No replica-only shared writes are merged. The bridge must use primary
+reads, including during recovery, and stale game caches must be handled separately.
+
+Supported topology: one primary, one default replica channel, no downstream
+replicas or other replicated databases/domains (the snapshot and existing replica position
+may contain only one matching GTID domain), local `log_bin=0`, `read_only=1`,
+`event_scheduler=OFF` or `DISABLED`, and exactly
+`replicate_wild_do_table=mrpg_shared.%`. Other do/ignore database or exact-table
+filters are rejected (wild-ignore filters may remain). This restriction matters
+because `gtid_slave_pos` applies to the entire replica, not just one database.
+The primary's shared base tables must all be InnoDB. Do not run concurrent DDL
+or operations affecting other databases during snapshots. Ensure adequate disk
+space for both dumps and imported data; the 1 GiB check is only a floor, not a
+size estimate. Review triggers, routines and events before using this procedure.
+
+One-time setup on each replica (example values only):
+
+1. Configure the above replication filter and server settings using your normal
+   MariaDB maintenance process; restart if required. Ensure local databases are
+   separately backed up and verify all services read shared data from primary.
+2. Create a dedicated SSH key for root on the replica, and a restricted backup
+   account on primary. Install the public key according to your security policy.
+   Verify the primary SSH host-key fingerprint out of band and add it to root's
+   `known_hosts` on the replica. Batch mode and strict host-key checking are
+   required; no password is stored in the guard. SSH target must reach the same
+   server as replication `Master_Host`. Allow only read/dump permissions on its
+   local MariaDB client account (including permissions required by your MariaDB
+   version for `--master-data`, table data, views, routines, triggers and events).
+   Test a snapshot and lock impact on a staging primary first.
+3. In root-owned mode-0600 `/etc/mrpg/replication-guard.conf`, add:
+
+```sh
+AUTO_RESNAPSHOT=1
+RESYNC_REPLICA_ID=2
+RESYNC_PRIMARY_ID=1
+RESYNC_MASTER_HOST=db-primary
+RESYNC_SSH_TARGET=backup@db-primary
+RESYNC_RETRY_SECONDS=3600
+```
+
+`RESYNC_MASTER_HOST` must exactly match `Master_Host` from `SHOW ALL SLAVES
+STATUS`; IDs must match actual MariaDB IDs and be distinct. The host must use
+the same socket-authenticated account for the non-interactive SSH `mariadb` and
+`mariadb-dump` commands. Restart the guard by restarting the game service.
+
+On `1062`, `1032`, `1146`, IO error `1236`, or an interrupted import marker, the
+guard attempts a resnapshot, at most once per cooldown in a running guard
+process. A service restart resets that in-memory cooldown. The script checks
+server IDs, local-only connection, source identity, channel, filters, read-only,
+binlog and table engines. It first saves a local replica dump under
+`/var/lib/mrpg-recovery` and downloads an SSH snapshot with GTID; only then does
+it stop replication, replace `mrpg_shared`, restore GTID and start the existing
+channel. It never issues `RESET MASTER`. The root-only pending marker enables
+retry after an interrupted import, using the original saved replica backup.
+Backups are retained, not automatically deleted; monitor capacity and protect
+and rotate them under your backup policy. If any precondition, SSH, backup,
+import or restart fails, the guard logs the failure and retries after cooldown;
+it does not claim success. `--once` remains read-only and never resnapshots.
+Primary unavailability, privilege errors, DDL races and exhausted disk cannot
+be fixed automatically. Monitor the guard externally and perform recovery drills.
