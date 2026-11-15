@@ -40,7 +40,7 @@ test('collecting editor boots on shared UI, filters world zero and previews unsa
   const previews = [];
   const core = { CollectingProperties:codec, UI:{toast(){}},
     bootstrapEditor: () => ({fieldRenderOptions:{}}),
-    Dirty:{create: () => { let flag = false; return {markDirty(){ flag = true; }, setClean(){ flag = false; }, isDirty:() => flag}; }},
+    Dirty:{createPage: () => { let flag = false; return {markDirty(){ flag = true; }, setClean(){ flag = false; }, isDirty:() => flag}; }},
     PointMap:{preview: options => previews.push(options)},
     DbEditor:{ mount: (_, options) => { cfg = options; return {getModel:()=>model,refresh(){}}; } } };
   const window = {addEventListener(){}, removeEventListener(){}};

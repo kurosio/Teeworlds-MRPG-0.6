@@ -746,7 +746,7 @@
                 <input type="text" id="qp-id" class="form-input w-full text-sm" autocomplete="off">
             </div>
             <div>
-                <label>Delay (ms)</label>
+                <label>Delay (ticks)</label>
                 <input type="number" id="qp-delay" class="form-input w-full text-sm" placeholder="0">
             </div>
         </div>
@@ -831,7 +831,7 @@
                         <input type="text" class="step-id-input editor-input form-input">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium editor-text mb-1">Delay (ms)</label>
+                        <label class="block text-sm font-medium editor-text mb-1">Delay (ticks)</label>
                         <input type="number" class="step-delay-input editor-input form-input" placeholder="0">
                     </div>
                 </div>
@@ -2293,7 +2293,7 @@
             updateStepDelayDisplay(stepCard, delay) {
                 const display = stepCard.querySelector('.step-delay-display');
                 if (delay > 0) {
-                    display.innerHTML = `<i class="fa-solid fa-stopwatch"></i> ${delay} ms`;
+                    display.innerHTML = `<i class="fa-solid fa-stopwatch"></i> ${delay} ticks`;
                     display.classList.remove('hidden');
                     display.classList.add('flex');
                 } else {
@@ -2336,10 +2336,10 @@
                     item.querySelector('.component-info').prepend(orderSpan);
                 }
 
-                if (this.executionTimeComponentTypes.has(component.type)) {
+                if (this.executionTimeComponentTypes.has(component.type) || component.execution_time != null) {
                     const delayWrapper = document.createElement('div');
                     delayWrapper.className = 'mt-2 flex items-center gap-2';
-                    delayWrapper.innerHTML = `<label class="text-xs font-medium editor-muted-text">Run time (ms):</label>
+                    delayWrapper.innerHTML = `<label class="text-xs font-medium editor-muted-text">Run time (ticks):</label>
                                             <input type="number" class="component-delay-input editor-input form-input w-24 text-sm" value="${component.execution_time || 0}">`;
                     item.querySelector('.component-text-wrapper').appendChild(delayWrapper);
                 }
@@ -3110,7 +3110,7 @@
                 pushNavRow('next_step_id', 'Go to step (if needed)', data.next_step_id);
 
                 // Show execution time only for components where it is used by gameplay logic.
-                const shouldShowExecutionTime = this.executionTimeComponentTypes.has(data.type);
+                const shouldShowExecutionTime = this.executionTimeComponentTypes.has(data.type) || data.execution_time != null;
                 const componentSchema = this.componentTypes[data.type] || {};
                 const componentFields = componentSchema.fields || {};
                 const componentLinkFields = Array.isArray(componentSchema.linkTargets) ? componentSchema.linkTargets : [];
@@ -3122,7 +3122,7 @@
                 });
 
                 if (shouldShowExecutionTime && !filteredFields.execution_time) {
-                    const executionTimeField = { type: 'number', label: 'Run time (ms)', ui: { min: 0, max: 600000 } };
+                    const executionTimeField = { type: 'number', label: 'Run time (ticks)', ui: { min: 0, max: 600000 } };
                     pushField(window.EditorCore.FieldRenderer.renderField({ path: 'execution_time', field: executionTimeField, data, options: renderOptions }), 'narrow');
                 }
 
@@ -3335,7 +3335,7 @@
                                 delete c.timeout;
                                 // Keep fail_step_id even without a timeout: it may be used after editing the mode.
                             }
-                            if (!this.executionTimeComponentTypes.has(c.type) || !c.execution_time) {
+                            if (!c.execution_time) {
                                 delete c.execution_time;
                             }
                             delete c.delay;
@@ -4417,7 +4417,7 @@
                     ['Logic & conditions', ['branch_random', 'dynamic_condition', 'quest_condition', 'condition_movement', 'defeat_mobs', 'use_chat_code', 'universal_condition_item', 'universal_pick_item_task', 'universal_shootmarkers']],
                     ['Messages & presentation', ['message', 'wait', 'follow_camera', 'emote']],
                     ['Player & quests', ['teleport', 'moving_disable', 'quest_action', 'restore_resources']],
-                    ['World & dungeon', ['set_group_flags', 'set_group_lives', 'set_group_spawn', 'dungeon_door_control', 'dungeon_activate_point', 'dungeon_complete', 'universal_door_control', 'world_complete']]
+                    ['World & dungeon', ['set_group_flags', 'set_group_lives', 'set_group_spawn', 'dungeon_door_control', 'dungeon_activate_point', 'dungeon_complete', 'universal_door_control', 'world_group_lives', 'world_complete']]
                 ];
                 const assigned = new Set(categories.flatMap(([, types]) => types));
                 categories.push(['Other', entries.map(([type]) => type).filter(type => !assigned.has(type))]);

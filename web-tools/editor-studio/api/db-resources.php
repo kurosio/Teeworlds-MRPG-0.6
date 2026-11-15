@@ -275,7 +275,7 @@ function editor_reverse_refs(string $table): array
     static $map = [
         'tw_items_list' => [
             ['table' => 'tw_accounts_items',     'column' => 'ItemID',      'action' => 'cascade'],
-            ['table' => 'tw_auction_slots',      'column' => 'ItemID',      'action' => 'cascade'],
+            ['table' => 'tw_auction_slots',      'column' => 'ItemID',      'action' => 'none'],
             ['table' => 'tw_bots_info',          'column' => 'SlotHammer',  'action' => 'cascade'],
             ['table' => 'tw_bots_info',          'column' => 'SlotGun',     'action' => 'cascade'],
             ['table' => 'tw_bots_info',          'column' => 'SlotShotgun', 'action' => 'cascade'],
@@ -294,6 +294,7 @@ function editor_reverse_refs(string $table): array
         'tw_worlds' => [
             ['table' => 'tw_accounts_data',      'column' => 'WorldID',        'action' => 'set_null'],
             ['table' => 'tw_nodes_collecting',   'column' => 'WorldID', 'action' => 'none'],
+            ['table' => 'tw_quest_boards',       'column' => 'WorldID',        'action' => 'none'],
             ['table' => 'tw_aethers',            'column' => 'WorldID',        'action' => 'cascade'],
             ['table' => 'tw_bots_mobs',          'column' => 'WorldID',        'action' => 'set_null'],
             ['table' => 'tw_bots_npc',           'column' => 'WorldID',        'action' => 'set_null'],
@@ -317,11 +318,11 @@ function editor_reverse_refs(string $table): array
             ['table' => 'tw_accounts_quests', 'column' => 'QuestID',     'action' => 'cascade'],
             ['table' => 'tw_bots_npc',        'column' => 'GiveQuestID', 'action' => 'cascade'],
             ['table' => 'tw_bots_quest',      'column' => 'QuestID',     'action' => 'cascade'],
-            ['table' => 'tw_quests_board_list', 'column' => 'QuestID',  'action' => 'cascade'],
+            ['table' => 'tw_quests_board_list', 'column' => 'QuestID',  'action' => 'none'],
             ['table' => 'tw_quests_list',     'column' => 'NextQuestID', 'action' => 'none'],
         ],
         'tw_quest_boards' => [
-            ['table' => 'tw_quests_board_list', 'column' => 'DailyBoardID', 'action' => 'cascade'],
+            ['table' => 'tw_quests_board_list', 'column' => 'DailyBoardID', 'action' => 'none'],
         ],
         'tw_aethers' => [
             ['table' => 'tw_accounts_aethers', 'column' => 'AetherID', 'action' => 'cascade'],

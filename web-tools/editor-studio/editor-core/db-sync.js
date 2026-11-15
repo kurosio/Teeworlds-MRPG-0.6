@@ -48,53 +48,38 @@
     return '';
   };
 
+  const validEntry = (entry) => entry && typeof entry === 'object'
+    && entry.id && entry.resource && entry.action;
+
   const loadHistory = () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      const arr = JSON.parse(raw);
+      const arr = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       if (!Array.isArray(arr)) return [];
-      
-      // Migration: add record_name field if missing
-      let needsSave = false;
-      for (const entry of arr) {
+      const history = arr.filter(validEntry);
+      let needsSave = history.length !== arr.length;
+      for (const entry of history) {
         if (!entry.record_name && entry.data) {
           entry.record_name = extractRecordName(entry.data, entry.resource);
           if (entry.record_name) needsSave = true;
         }
       }
-      
-      // Save migrated data if needed
       if (needsSave) {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
-        } catch {}
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(history)); } catch { /* storage unavailable */ }
       }
-      
-      return arr;
-    } catch {
-      return [];
-    }
+      return history;
+    } catch { return []; }
   };
 
   const saveHistory = (history) => {
+    const validated = history.slice(-MAX_HISTORY).filter(validEntry);
     try {
-      // Keep only last MAX_HISTORY entries
-      const trimmed = history.slice(-MAX_HISTORY);
-      
-      // Validate entries before saving
-      const validated = trimmed.filter(entry => {
-        return entry && typeof entry === 'object' && entry.id && entry.resource && entry.action;
-      });
-      
       localStorage.setItem(STORAGE_KEY, JSON.stringify(validated));
       return true;
     } catch (err) {
-      // Storage full or unavailable — trim more aggressively
+      // Storage full or unavailable — retry with the last 50 valid entries.
       console.warn('[Sync] Failed to save history, trimming aggressively:', err.message);
       try {
-        const smaller = history.slice(-50);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(smaller));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(validated.slice(-50)));
         return true;
       } catch (err2) {
         console.error('[Sync] Failed to save history even after aggressive trim:', err2.message);
@@ -127,13 +112,17 @@
     };
   };
 
-  const recordOperation = (resource, action, details = {}) => {
-    const entry = createOperationEntry(resource, action, details);
-    if (!entry) return null;
+  const appendEntries = (entries) => {
+    if (!entries.length) return;
     const history = getHistory();
-    history.push(entry);
+    history.push(...entries);
     if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
     saveHistory(history);
+  };
+
+  const recordOperation = (resource, action, details = {}) => {
+    const entry = createOperationEntry(resource, action, details);
+    if (entry) appendEntries([entry]);
     return entry;
   };
 
@@ -141,12 +130,7 @@
     const entries = (Array.isArray(operations) ? operations : [])
       .map(details => createOperationEntry(resource, action, details || {}))
       .filter(Boolean);
-    if (entries.length) {
-      const history = getHistory();
-      history.push(...entries);
-      if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
-      saveHistory(history);
-    }
+    appendEntries(entries);
     return entries.length;
   };
 
@@ -189,86 +173,41 @@
 
   // ── API calls ─────────────────────────────────────────────────────────────
 
+  const get = (action) => jsonFetch(`${API}?${qs({ action })}`);
+  const post = (action, body, { api = API, timeoutMs = FETCH_TIMEOUT_MS } = {}) =>
+    jsonFetch(`${api}?${qs({ action })}`, { method: 'POST', timeoutMs, body: JSON.stringify(body) });
+
   const listProfiles = async () => {
-    try {
-      return await jsonFetch(`${API}?${qs({ action: 'list_profiles' })}`);
-    } catch (err) {
+    try { return await get('list_profiles'); }
+    catch (err) {
       console.warn('[Sync] Failed to list profiles:', err.message);
       return { ok: false, error: err.message, profiles: [] };
     }
   };
 
   const getTarget = async () => {
-    try {
-      return await jsonFetch(`${API}?${qs({ action: 'get_target' })}`);
-    } catch (err) {
+    try { return await get('get_target'); }
+    catch (err) {
       console.warn('[Sync] Failed to get target:', err.message);
       return { ok: false, error: err.message, target: null };
     }
   };
 
-  const saveTarget = async (payload) => {
-    return jsonFetch(`${API}?${qs({ action: 'save_target' })}`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-  };
+  const saveTarget = async (payload) => post('save_target', payload);
+  const setAsTarget = async (profileId) => post('set_as_target', { profile_id: profileId });
+  const compareSchema = async ({ targetProfileId = '' } = {}) =>
+    post('compare_schema', { target_profile_id: targetProfileId });
+  const applyOperations = async ({ operations, targetProfileId = '', confirmPhrase = '' }) =>
+    post('apply_operations', { operations, target_profile_id: targetProfileId, confirm_phrase: confirmPhrase });
+  const syncMap = async () => get('sync_map');
 
-  const setAsTarget = async (profileId) => {
-    return jsonFetch(`${API}?${qs({ action: 'set_as_target' })}`, {
-      method: 'POST',
-      body: JSON.stringify({ profile_id: profileId }),
-    });
-  };
-
-  const compareSchema = async ({ targetProfileId = '' } = {}) => {
-    return jsonFetch(`${API}?${qs({ action: 'compare_schema' })}`, {
-      method: 'POST',
-      body: JSON.stringify({ target_profile_id: targetProfileId }),
-    });
-  };
-
-  const applyOperations = async ({ operations, targetProfileId = '', confirmPhrase = '' }) => {
-    return jsonFetch(`${API}?${qs({ action: 'apply_operations' })}`, {
-      method: 'POST',
-      body: JSON.stringify({
-        operations,
-        target_profile_id: targetProfileId,
-        confirm_phrase: confirmPhrase,
-      }),
-    });
-  };
-
-  // Table map: which tables are synced in which direction (for the settings table).
-  const syncMap = async () => {
-    return jsonFetch(`${API}?${qs({ action: 'sync_map' })}`);
-  };
-
-  // Reverse sync (target → current DB): dry-run and apply.
-  const pullPreview = async ({ targetProfileId = '' } = {}) => {
-    return jsonFetch(`${API}?${qs({ action: 'pull_preview' })}`, {
-      method: 'POST',
-      timeoutMs: PULL_PREVIEW_TIMEOUT_MS,
-      body: JSON.stringify({ target_profile_id: targetProfileId }),
-    });
-  };
-
-  // Full dump of the current DB (db-maintenance.php), with a longer timeout than db.js uses.
-  const createBackup = async ({ confirmDb, label = '' }) => {
-    return jsonFetch(`${MAINT_API}?${qs({ action: 'create_dump' })}`, {
-      method: 'POST',
-      timeoutMs: BACKUP_TIMEOUT_MS,
-      body: JSON.stringify({ confirm_db: confirmDb, label }),
-    });
-  };
-
-  const pullFromTarget = async ({ targetProfileId = '', confirmPhrase = '' } = {}) => {
-    return jsonFetch(`${API}?${qs({ action: 'pull_from_target' })}`, {
-      method: 'POST',
-      timeoutMs: PULL_APPLY_TIMEOUT_MS,
-      body: JSON.stringify({ target_profile_id: targetProfileId, confirm_phrase: confirmPhrase }),
-    });
-  };
+  // Reverse sync and backups can take much longer than ordinary requests.
+  const pullPreview = async ({ targetProfileId = '' } = {}) =>
+    post('pull_preview', { target_profile_id: targetProfileId }, { timeoutMs: PULL_PREVIEW_TIMEOUT_MS });
+  const createBackup = async ({ confirmDb, label = '' }) =>
+    post('create_dump', { confirm_db: confirmDb, label }, { api: MAINT_API, timeoutMs: BACKUP_TIMEOUT_MS });
+  const pullFromTarget = async ({ targetProfileId = '', confirmPhrase = '' } = {}) =>
+    post('pull_from_target', { target_profile_id: targetProfileId, confirm_phrase: confirmPhrase }, { timeoutMs: PULL_APPLY_TIMEOUT_MS });
 
   // ── Build operations from history ─────────────────────────────────────────
 

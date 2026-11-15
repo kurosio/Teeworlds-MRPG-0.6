@@ -170,3 +170,116 @@ test('bootstrapEditor идемпотентна: общая обвязка под
   assert.equal(uiMounts, 1, 'общий UI поднят один раз');
   assert.equal(syncMounts, 1, 'кнопка синхронизации добавлена однажды');
 });
+
+test('page dirty tracker uses editor defaults and accepts overrides', t => {
+  const d = dom('<div class="editor-main"><input></div><span id="dirty-pill" class="hidden"></span><div id="other"><input></div>');
+  t.after(() => d.window.close());
+  const w = d.window;
+  w.eval(source('utils.js'));
+  const tracker = w.EditorCore.Dirty.createPage();
+  w.document.querySelector('.editor-main input').dispatchEvent(new w.Event('input', { bubbles: true }));
+  assert.equal(tracker.isDirty(), true);
+  assert.equal(w.document.getElementById('dirty-pill').classList.contains('hidden'), false);
+  tracker.destroy();
+  tracker.setClean();
+  w.document.querySelector('.editor-main input').dispatchEvent(new w.Event('input', { bubbles: true }));
+  assert.equal(tracker.isDirty(), false);
+
+  const other = w.EditorCore.Dirty.createPage({ root: w.document.getElementById('other'), pill: null, beforeUnload: false });
+  w.document.querySelector('#other input').dispatchEvent(new w.Event('change', { bubbles: true }));
+  assert.equal(other.isDirty(), true);
+  other.destroy();
+});
+
+test('world labels share lookup, retain world zero and tolerate failed requests', async t => {
+  const d = dom();
+  t.after(() => d.window.close());
+  const w = d.window;
+  const calls = [];
+  w.EditorCore = { DB: { list: async (...args) => {
+    calls.push(args);
+    return { ok: true, items: [{ value: 0, label: 'Tutorial' }, { value: 2, label: 'Town' }] };
+  } } };
+  w.eval(source('map-worlds.js'));
+  const labels = w.EditorCore.MapWorlds.createLabels();
+  assert.equal(labels.format(null), 'World #0');
+  assert.equal(labels.format(-1), '—');
+  assert.equal(labels.format('bad'), '—');
+  assert.equal(await labels.load(), true);
+  assert.equal(calls[0][0], 'worlds');
+  assert.equal(calls[0][1].limit, 1000);
+  assert.equal(labels.names.get('2'), 'Town');
+  assert.equal(labels.format(0), 'Tutorial (#0)');
+  assert.equal(labels.format('2'), 'Town (#2)');
+  assert.equal(labels.format(3), 'World #3');
+  w.EditorCore.DB.list = async () => { throw new Error('offline'); };
+  assert.equal(await labels.load(), false);
+  assert.equal(labels.format(0), 'Tutorial (#0)');
+  w.EditorCore.DB.list = async () => ({ ok: false, items: [] });
+  assert.equal(await labels.load(), false);
+});
+
+test('aether and dungeon editors refresh their labels after loading worlds', async t => {
+  for (const page of ['aethers', 'dungeons']) {
+    const html = fs.readFileSync(path.join(root, `${page}-editor.html`), 'utf8');
+    const d = new JSDOM(html, { url: `https://studio.test/${page}-editor.html`, runScripts: 'outside-only' });
+    t.after(() => d.window.close());
+    const w = d.window;
+    let config, refreshes = 0, resolveWorlds;
+    w.EditorCore = {
+      bootstrapEditor: () => ({ fieldRenderOptions: {} }),
+      utils: { toNullableInt: (v, fallback) => v == null || v === '' ? fallback : Number(v) },
+      Dirty: { createPage: () => ({}) },
+      DB: { list: () => new Promise(resolve => { resolveWorlds = resolve; }) },
+      DbEditor: { mount: (_, cfg) => { config = cfg; return { refresh: () => { refreshes++; } }; } },
+    };
+    w.eval(source('map-worlds.js'));
+    w.eval([...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1]);
+    assert.match(config.listItem({ ID: 7, WorldID: 0 }).subtitle, /World #0/);
+    resolveWorlds({ ok: true, items: [{ value: 0, label: 'Tutorial' }] });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(refreshes, 1);
+    assert.match(config.listItem({ ID: 7, WorldID: 0 }).subtitle, /Tutorial \(#0\)/);
+    if (page === 'aethers') {
+      const expected = { Name: 'Gate', WorldID: 0, TeleX: 32, TeleY: -64 };
+      const row = { Name: 'Gate', WorldID: '0', TeleX: '32', TeleY: '-64', ID: 7 };
+      assert.deepEqual(plain(config.rowToModel(row)), expected);
+      assert.deepEqual(plain(config.modelToPayload(row)), expected);
+    }
+  }
+});
+
+test('map world list deduplicates requests and retries errors without caching them', async t => {
+  const d = dom();
+  t.after(() => d.window.close());
+  const w = d.window;
+  let calls = 0, reject;
+  w.EditorCore = { DBCrud: { list: () => {
+    calls++;
+    return new Promise((resolve, fail) => { reject = fail; });
+  } } };
+  w.eval(source('map-worlds.js'));
+  const first = w.EditorCore.MapWorlds.list();
+  const second = w.EditorCore.MapWorlds.list();
+  assert.equal(first, second);
+  assert.equal(calls, 1);
+  reject(new Error('offline'));
+  assert.deepEqual(plain(await first), []);
+  w.EditorCore.DBCrud.list = async () => { calls++; return { rows: [{ ID: 0, Name: 'Zero' }, { ID: 2, Name: 'Town' }] }; };
+  assert.deepEqual(plain(await w.EditorCore.MapWorlds.list()), [{ id: 0, name: 'Zero' }, { id: 2, name: 'Town' }]);
+  assert.deepEqual(plain(await w.EditorCore.MapWorlds.list()), [{ id: 0, name: 'Zero' }, { id: 2, name: 'Town' }]);
+  assert.equal(calls, 2, 'successful response is cached');
+});
+
+test('map world list retries malformed responses but caches a valid empty list', async t => {
+  const d = dom();
+  t.after(() => d.window.close());
+  const w = d.window;
+  let calls = 0;
+  w.EditorCore = { DBCrud: { list: async () => (++calls === 1 ? { ok: false, rows: [] } : { rows: [] }) } };
+  w.eval(source('map-worlds.js'));
+  assert.deepEqual(plain(await w.EditorCore.MapWorlds.list()), []);
+  assert.deepEqual(plain(await w.EditorCore.MapWorlds.list()), []);
+  assert.deepEqual(plain(await w.EditorCore.MapWorlds.list()), []);
+  assert.equal(calls, 2);
+});

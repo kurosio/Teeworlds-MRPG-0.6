@@ -34,21 +34,20 @@
 
   let cache = null;
   let pending = null;
-  /** Один запрос на страницу: `[{ id, name }]`, отсортированный как в БД. */
+  /** Share concurrent requests and cache successful lists, including empty ones. */
   const list = () => {
     if (cache) return Promise.resolve(cache);
     if (!pending) {
       pending = (async () => {
-        let rows = [];
         try {
           const res = await window.EditorCore?.DBCrud?.list?.('worlds', { limit: 1000, offset: 0 });
-          rows = Array.isArray(res?.rows) ? res.rows : [];
-        } catch { rows = []; }
-        cache = rows
-          .map((row) => ({ id: parseWorldId(row?.ID ?? row?.id), name: String(row?.Name ?? row?.name ?? '') }))
-          .filter((row) => row.id !== null);
-        return cache;
-      })().catch(() => { cache = []; return cache; });
+          if (res?.ok === false || !Array.isArray(res?.rows)) return [];
+          cache = res.rows
+            .map((row) => ({ id: parseWorldId(row?.ID ?? row?.id), name: String(row?.Name ?? row?.name ?? '') }))
+            .filter((row) => row.id !== null);
+          return cache;
+        } catch { return []; }
+      })().finally(() => { pending = null; });
     }
     return pending;
   };
@@ -59,5 +58,26 @@
     return String((Array.isArray(worlds) ? worlds.find((w) => w.id === worldId) : null)?.name || '');
   };
 
-  namespace.MapWorlds = { STORAGE_KEY, parseWorldId, rememberedWorld, rememberWorld, list, name };
+  // DB lookup labels used by list editors. Keep the lookup endpoint and its
+  // failure behaviour separate from the map picker’s CRUD world list.
+  const createLabels = () => {
+    const names = new Map();
+    const format = (value) => {
+      const id = Number(value ?? 0);
+      if (!Number.isFinite(id) || id < 0) return '—';
+      const label = names.get(String(id));
+      return label ? `${label} (#${id})` : `World #${id}`;
+    };
+    const load = async () => {
+      try {
+        const res = await namespace.DB?.list?.('worlds', { limit: 1000 });
+        if (!res?.ok || !Array.isArray(res.items)) return false;
+        res.items.forEach((item) => names.set(String(item.value), String(item.label || '')));
+        return true;
+      } catch { return false; }
+    };
+    return { names, format, load };
+  };
+
+  namespace.MapWorlds = { STORAGE_KEY, parseWorldId, rememberedWorld, rememberWorld, list, name, createLabels };
 })();

@@ -182,7 +182,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       icon: 'fa-solid fa-comment-dots',
       desc: 'Show text to the player',
       fields: {
-        execution_time: createField('number', 'Run time (ms)', 0, { ui: { min: 0, max: 600000 } }),
+        execution_time: createField('number', 'Run time (ticks)', 0, { ui: { min: 0, max: 600000 } }),
         text: createField('text', 'Text', 'New message', { ui: { placeholder: 'Enter the message text', format: 'textarea' } }),
         mode: createField('text', 'Mode', 'full', {
           ui: { type: 'select', options: ['full', 'broadcast', 'chat'] }
@@ -533,7 +533,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       desc: 'Move the camera to a point',
       fields: {
         position: createField('vec2', 'Position', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
-        execution_time: createField('number', 'Run time (ms)', 300, { ui: { min: 0, max: 600000 } }),
+        execution_time: createField('number', 'Run time (ticks)', 300, { ui: { min: 0, max: 600000 } }),
         smooth: createField('boolean', 'Smooth', true)
       }
     },
@@ -655,7 +655,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       icon: 'fa-solid fa-face-smile',
       desc: 'Show an emote and icon',
       fields: {
-        execution_time: createField('number', 'Run time (ms)', 0, { ui: { min: 0, max: 600000 } }),
+        execution_time: createField('number', 'Run time (ticks)', 0, { ui: { min: 0, max: 600000 } }),
         emote_type: createField('number', 'Emote type', 0, { ui: { min: 0, max: 6 } }),
         emoticon_type: createField('number', 'Icon type', -1, { ui: { min: -1, max: 999 } })
       }
@@ -682,6 +682,13 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
   };
 
 
+
+  // The world-specific server component is a legacy alias with identical fields.
+  componentSchemas.world_group_lives = {
+    ...componentSchemas.set_group_lives,
+    name: 'World: group lives control',
+    desc: 'Set / add / remove group lives in a world scenario'
+  };
 
   const defaultScenarioComponentTypes = [
     'branch_random',
@@ -738,6 +745,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         'set_group_flags',
         'set_group_lives',
         'set_group_spawn',
+        'world_group_lives',
         'world_complete'
       ]
     }

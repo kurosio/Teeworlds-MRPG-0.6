@@ -939,6 +939,11 @@
   // Общий помощник «несохранённые правки»: трекер состояния и ответ оболочке.
   window.EditorCore.Dirty = {
     create: createDirtyTracker,
+    createPage: (options = {}) => createDirtyTracker({
+      root: document.querySelector('.editor-main') || document.body,
+      pill: document.getElementById('dirty-pill'),
+      ...options,
+    }),
     bindShellStatus: bindShellDirtyStatus,
   };
 

@@ -845,7 +845,6 @@ const DATA_STRINGS = new Set([
   'Equip potion HP', 'Equip potion MP', 'Equip potion Miner', "Can't droppable", "Can't tradeable",
   'Tiny heal', 'Type main', 'Type side', 'Type daily', 'Type weekly', 'Type repeatable', "Can't refuse",
   'Tutorial', 'Partial', 'Slowdown', 'Poison', 'Fire', 'Happy', 'Angry', 'Misc', 'Path', 'Unnamed',
-  'Без точки активности',
   // имена собственные и технические токены
   'Editor Studio', 'English', 'Liberation Mono', 'Backspace', 'use strict', 'unhandled rejection',
   // технические значения, которые не переводятся

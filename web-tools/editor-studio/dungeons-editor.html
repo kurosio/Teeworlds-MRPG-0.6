@@ -90,14 +90,7 @@
 
     const toNullableInt = (value, fallback = 0) => EditorCore.utils.toNullableInt(value, fallback);
 
-    const worldsMap = new Map();
-    const formatWorldLabel = (worldId) => {
-      const id = Number(worldId ?? 0);
-      if (!Number.isFinite(id) || id < 0) return '—';
-      const name = worldsMap.get(String(id));
-      if (name) return `${name} (#${id})`;
-      return id ? `World #${id}` : 'World #0';
-    };
+    const { names: worldsMap, format: formatWorldLabel, load: loadWorldLabels } = EditorCore.MapWorlds.createLabels();
 
     const fields = {
       WorldID: { type: 'db_select', label: 'Dungeon world', validate: { required: true }, ui: { dbKey: 'world', placeholder: '— world —', searchPlaceholder: 'Search a world…' } },
@@ -112,11 +105,7 @@
       Scenario: { type: 'scenario', label: 'Dungeon scenario', ui: { scenarioMode: 'dungeon', mapWorldPath: 'WorldID', spanAll: true } },
     };
 
-    const dirty = EditorCore.Dirty.create({
-      root: document.querySelector('.editor-main') || document.body,
-      pill: document.getElementById('dirty-pill'),
-      beforeUnload: true,
-    });
+    const dirty = EditorCore.Dirty.createPage();
 
     const filterWorld = document.getElementById('filterWorld');
 
@@ -178,11 +167,7 @@
       editor.refresh();
     });
 
-    EditorCore.DB?.list?.('worlds', { limit: 1000 })?.then((res) => {
-      if (!res?.ok || !Array.isArray(res.items)) return;
-      res.items.forEach((it) => worldsMap.set(String(it.value), String(it.label || '')));
-      editor.refresh();
-    }).catch(() => {});
+    loadWorldLabels().then((loaded) => { if (loaded) editor.refresh(); }).catch(() => {});
   </script>
 </body>
 </html>

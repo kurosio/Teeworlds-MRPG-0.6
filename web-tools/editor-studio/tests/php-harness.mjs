@@ -66,6 +66,50 @@ for (const file of phpFiles) {
 }
 console.log(`php syntax: ${checked}/${phpFiles.length} files`);
 
+// Check the live PHP resource map against the bundled shared game schema.
+{
+  const { output } = await run(`<?php require '${VFS_ROOT}/api/db-resources.php'; echo json_encode(['resources' => editor_resources(), 'reverse' => array_map(fn($r) => editor_reverse_refs($r['table']), editor_resources())]);`);
+  const { resources, reverse } = JSON.parse(output);
+  const sql = fs.readFileSync(path.resolve(ROOT, '../../mrpg_shared.sql'), 'utf8');
+  const tables = new Map();
+  for (const match of sql.matchAll(/CREATE TABLE(?: IF NOT EXISTS)? `([^`]+)` \(([\s\S]*?)\) ENGINE=/g)) {
+    tables.set(match[1], new Set(Array.from(match[2].matchAll(/^\s*`([^`]+)`\s+/gm), col => col[1])));
+  }
+  const foreignKeys = new Map();
+  for (const statement of sql.matchAll(/ALTER TABLE `([^`]+)`([\s\S]*?);/g)) {
+    for (const fk of statement[2].matchAll(/FOREIGN KEY \(`([^`]+)`\) REFERENCES `([^`]+)` \(`[^`]+`\)(?: ON DELETE (CASCADE|SET NULL|RESTRICT|NO ACTION))?/g)) {
+      foreignKeys.set(`${statement[1]}:${fk[1]}:${fk[2]}`, (fk[3] || 'RESTRICT').toLowerCase().replace(' ', '_'));
+    }
+  }
+  const referenceSchema = JSON.parse(fs.readFileSync(path.join(ROOT, 'editor-core/reference-schema.json'), 'utf8'));
+  for (const [key, resource] of Object.entries(resources)) {
+    const columns = tables.get(resource.table);
+    if (!columns) { errors.push(`schema: ${key} references missing table ${resource.table}`); continue; }
+    const used = [resource.pk, resource.label, ...(resource.columns || []), ...(resource.search || []),
+      ...Object.keys(resource.refs || {}), ...String(resource.order || '').split(',').map(part => part.trim().split(/\s+/)[0])].filter(Boolean);
+    for (const column of used) if (!columns.has(column)) errors.push(`schema: ${resource.table}.${column} is missing`);
+    for (const column of resource.json || []) if (!resource.columns.includes(column)) errors.push(`schema: ${key}.${column} is not writable`);
+    for (const [column, target] of Object.entries(resource.refs || {})) {
+      if (!tables.has(target)) errors.push(`schema: ${key}.${column} references missing table ${target}`);
+    }
+    for (const ref of reverse[key] || []) {
+      if (!tables.has(ref.table)) continue; // local schema is deployed separately
+      if (!tables.get(ref.table).has(ref.column)) errors.push(`schema: reverse reference ${ref.table}.${ref.column} is missing`);
+      const actual = foreignKeys.get(`${ref.table}:${ref.column}:${resource.table}`) || 'none';
+      if (actual !== ref.action) errors.push(`schema: reverse reference ${ref.table}.${ref.column} to ${resource.table}: ${ref.action} != ${actual}`);
+    }
+    for (const [fk, action] of foreignKeys) {
+      const [table, column, target] = fk.split(':');
+      if (target !== resource.table) continue;
+      if (!(reverse[key] || []).some(ref => ref.table === table && ref.column === column)) {
+        errors.push(`schema: unreported ${action} reference ${table}.${column} to ${target}`);
+      }
+    }
+    if (!Array.isArray(referenceSchema[key])) errors.push(`schema: ${key} is missing from reference-schema.json`);
+  }
+  console.log(`game schema: ${Object.keys(resources).length} resource maps checked`);
+}
+
 // ── Value comparison (NULL / '' / 0) ────────────────────────────────────────
 const cases = [
   // a, b, json, expected — «нет значения» с обеих сторон считается равенством
@@ -88,7 +132,7 @@ const cases = [
 
 const phpCaseList = JSON.stringify(cases);
 const { output: valueOutput } = await run(`<?php
-require '${VFS_ROOT}/api/db-resources.php';
+require_once '${VFS_ROOT}/api/db-resources.php';
 $cases = json_decode(${JSON.stringify(phpCaseList)}, true);
 $failed = 0;
 foreach ($cases as [$a, $b, $isJson, $expected]) {
