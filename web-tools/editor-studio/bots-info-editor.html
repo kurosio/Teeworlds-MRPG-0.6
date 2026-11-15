@@ -144,11 +144,7 @@
       skinPreviewMeta: document.getElementById('skinPreviewMeta')
     };
 
-    const dirty = EditorCore.Dirty.create({
-      root: document.querySelector('.editor-main') || document.body,
-      pill: document.getElementById('dirty-pill'),
-      beforeUnload: true,
-    });
+    const dirty = EditorCore.Dirty.createPage();
 
     const STATE = {
       rows: [],

@@ -60,7 +60,7 @@ const form = EditorCore.FormRuntime.mount(root, {
 Для стандартных таблиц (list + форма + сохранение) используйте `EditorCore.DbEditor`:
 
 ```js
-const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor();
+const { fieldRenderOptions } = EditorCore.bootstrapEditor();
 
 const editor = EditorCore.DbEditor.mount(document.body, {
   resource: 'worlds',
@@ -108,11 +108,7 @@ const editor = EditorCore.DbEditor.mount(document.body, {
 ```js
 // 1. Плашка «Data not saved» + предупреждение браузера при закрытии вкладки.
 //    Автопрослушка ввода/кликов внутри root помечает правки сама.
-const dirty = EditorCore.Dirty.create({
-  root: document.querySelector('.editor-main') || document.body,
-  pill: document.getElementById('dirty-pill'),
-  beforeUnload: true,
-});
+const dirty = EditorCore.Dirty.createPage(); // root/pill можно переопределить в options
 dirty.markDirty();
 dirty.setClean();
 

@@ -358,11 +358,7 @@
       forms: { basic: null, dialog: null },
     };
 
-    const dirty = EditorCore.Dirty.create({
-      root: document.querySelector('.editor-main') || document.body,
-      pill: DOM.dirtyPill,
-      beforeUnload: true,
-    });
+    const dirty = EditorCore.Dirty.createPage({ pill: DOM.dirtyPill });
 
     /* ═══════════════════════════════════════════════════
        UI RENDERING (pure functions, no side effects

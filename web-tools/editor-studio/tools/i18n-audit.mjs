@@ -57,7 +57,6 @@ const DATA_TERMS = new Set([
   'Equip eidolon', 'Equip title', 'Equip potion HP', 'Equip potion MP', 'Equip potion Miner',
   'Resource harvestable', 'Resource mineable', 'Resource fishes',
   'Single use x1', 'Multiple use x99',
-  'Без точки активности',
   // заголовок страницы с названием студии
   'NPC • Editor Studio',
   // название продукта не переводится

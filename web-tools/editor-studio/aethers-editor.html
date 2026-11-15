@@ -90,14 +90,14 @@
   <script>
     const { fieldRenderOptions } = EditorCore.bootstrapEditor();
 
-    const worldsMap = new Map();
-    const formatWorldLabel = (worldId) => {
-      const id = Number(worldId ?? 0);
-      if (!Number.isFinite(id) || id < 0) return '—';
-      const name = worldsMap.get(String(id));
-      if (name) return `${name} (#${id})`;
-      return id ? `World #${id}` : 'World #0';
-    };
+    const { format: formatWorldLabel, load: loadWorldLabels } = EditorCore.MapWorlds.createLabels();
+
+    const normalizeAether = (value) => ({
+      Name: String(value?.Name || ''),
+      WorldID: Number(value?.WorldID || 0),
+      TeleX: Number(value?.TeleX || 0),
+      TeleY: Number(value?.TeleY || 0),
+    });
 
     const aetherFields = {
       Name: { type: 'text', label: 'Name', validate: { required: true }, ui: { placeholder: 'e.g. Gridania (Center)' } },
@@ -126,11 +126,7 @@
       },
     };
 
-    const dirty = EditorCore.Dirty.create({
-      root: document.querySelector('.editor-main') || document.body,
-      pill: document.getElementById('dirty-pill'),
-      beforeUnload: true,
-    });
+    const dirty = EditorCore.Dirty.createPage();
 
     const filterWorld = document.getElementById('filterWorld');
 
@@ -150,18 +146,8 @@
         TeleX: 0,
         TeleY: 0,
       }),
-      rowToModel: (row) => ({
-        Name: String(row?.Name || ''),
-        WorldID: Number(row?.WorldID || 0),
-        TeleX: Number(row?.TeleX || 0),
-        TeleY: Number(row?.TeleY || 0),
-      }),
-      modelToPayload: (model) => ({
-        Name: String(model?.Name || ''),
-        WorldID: Number(model?.WorldID || 0),
-        TeleX: Number(model?.TeleX || 0),
-        TeleY: Number(model?.TeleY || 0),
-      }),
+      rowToModel: normalizeAether,
+      modelToPayload: normalizeAether,
       listItem: (row) => ({
         title: row?.Name || `Teleport #${row?.ID || 0}`,
         subtitle: `ID ${row?.ID ?? '—'} · ${formatWorldLabel(row?.WorldID)} · X ${row?.TeleX ?? '—'}, Y ${row?.TeleY ?? '—'}`
@@ -177,11 +163,7 @@
       emptySubtitle: 'or create a new one',
     });
 
-    EditorCore.DB?.list?.('worlds', { limit: 1000 })?.then((res) => {
-      if (!res?.ok || !Array.isArray(res.items)) return;
-      res.items.forEach((it) => worldsMap.set(String(it.value), String(it.label || '')));
-      editor.refresh();
-    }).catch(() => {});
+    loadWorldLabels().then((loaded) => { if (loaded) editor.refresh(); }).catch(() => {});
 
     filterWorld?.addEventListener('change', () => {
       editor.refresh();

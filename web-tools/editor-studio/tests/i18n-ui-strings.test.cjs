@@ -30,12 +30,8 @@ const LOCALIZATION_DIR = path.join(ROOT, 'localization');
 
 const CYRILLIC = /[А-Яа-яЁё]/;
 
-/**
- * Значения из базы: остаются английскими в обоих режимах и не переводятся
- * (перечисления предметов, флаги квестов, эффекты мобов). Единственная русская
- * строка — значение поля, которое приходит из данных карты.
- */
-const DATA_STRINGS = new Set(['Без точки активности']);
+// Значения из базы остаются на языке источника.
+const DATA_STRINGS = new Set();
 
 const read = (file) => fs.readFileSync(file, 'utf8');
 const normalize = (text) => String(text).replace(/\s+/g, ' ').trim();
