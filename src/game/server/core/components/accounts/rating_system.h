@@ -17,6 +17,7 @@ public:
 	RatingSystem() = default;
 
 	void Init(CAccountData* pAccount);
+	void RegisterLoadStage();
 	void DecreaseRating(int Rating);
 	void UpdateRating(CGS* pGS, bool Won, CAccountData* pOpponentAccount);
 	void UpdateRating(CGS* pGS, bool won, int OpponentRating, int OpponentLevel);
@@ -41,7 +42,6 @@ private:
 	std::vector<RankInfo> BuildRanks() const;
 	int GetCurrentRankIndex(const std::vector<RankInfo>& vRanks) const;
 	void Create();
-	void Load();
 	void Save();
 	void UpdateClient() const;
 };

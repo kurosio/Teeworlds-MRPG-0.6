@@ -1,4 +1,4 @@
-﻿#include "tune_zone_manager.h"
+#include "tune_zone_manager.h"
 
 #include <base/format.h>
 #include <base/hash.h>

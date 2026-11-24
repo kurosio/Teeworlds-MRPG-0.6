@@ -8,7 +8,7 @@
 #include "entities/character_bot.h"
 #include "worldmodes/dungeon/dungeon.h"
 
-#include "core/components/Bots/BotManager.h"
+#include "core/components/bots/bot_manager.h"
 #include "core/scenarios/managers/scenario_player_manager.h"
 #include "core/tools/path_finder.h"
 

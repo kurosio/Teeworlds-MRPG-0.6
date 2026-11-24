@@ -140,7 +140,7 @@ std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End)
 	if(Start.x < 0 || Start.x >= m_Width || Start.y < 0 || Start.y >= m_Height ||
 		End.x < 0 || End.x >= m_Width || End.y < 0 || End.y >= m_Height)
 	{
-		dbg_msg("path_finder", "invalid start/end coordinates.");
+		//dbg_msg("path_finder", "invalid start/end coordinates.");
 		return vPath;
 	}
 

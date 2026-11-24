@@ -1,4 +1,6 @@
 #include "decoration_manager.h"
+
+#include <components/houses/house_db.h>
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/entities/tools/draw_board.h>
@@ -99,11 +101,11 @@ void CDecorationManager::Init()
 
 
 	// load points from database
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", m_DecorationTableName.c_str(), "WHERE WorldID = '{}' AND HouseID = '{}'", GS()->GetWorldID(), m_pHouse->GetID());
-	while(pRes->next())
+	auto Points = HouseDb::Shared::ListDecorations(m_DecorationTableName, GS()->GetWorldID(), m_pHouse->GetID());
+	while(Points.Next())
 	{
-		const auto ItemID = pRes->getInt("ItemID");
-		const auto Pos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
+		const auto ItemID = Points.GetInt("ItemID");
+		const auto Pos = vec2(Points.GetInt("PosX"), Points.GetInt("PosY"));
 		m_pDrawBoard->AddPoint(Pos, ItemID);
 	}
 }
@@ -155,9 +157,7 @@ bool CDecorationManager::Add(const EntityPoint* pPoint) const
 	const auto Pos = pEntity->GetPos();
 
 	// Execute a database insert query with the values
-	Database->Execute<DB::INSERT>(m_DecorationTableName.c_str(),
-		"(ItemID, HouseID, PosX, PosY, WorldID) VALUES ('{}', '{}', '{}', '{}', '{}')",
-		ItemID, m_pHouse->GetID(), round_to_int(Pos.x), round_to_int(Pos.y), GS()->GetWorldID());
+	HouseDb::Shared::CreateDecoration(m_DecorationTableName, ItemID, m_pHouse->GetID(), round_to_int(Pos.x), round_to_int(Pos.y), GS()->GetWorldID());
 	return true;
 }
 
@@ -175,8 +175,6 @@ bool CDecorationManager::Remove(const EntityPoint* pPoint) const
 	const auto Pos = pEntity->GetPos();
 
 	// Remove the decoration from the database
-	Database->Execute<DB::REMOVE>(m_DecorationTableName.c_str(),
-		"WHERE HouseID = '{}' AND ItemID = '{}' AND PosX = '{}' AND PosY = '{}'",
-		m_pHouse->GetID(), ItemID, round_to_int(Pos.x), round_to_int(Pos.y));
+	HouseDb::Shared::DeleteDecoration(m_DecorationTableName, m_pHouse->GetID(), ItemID, round_to_int(Pos.x), round_to_int(Pos.y));
 	return true;
 }

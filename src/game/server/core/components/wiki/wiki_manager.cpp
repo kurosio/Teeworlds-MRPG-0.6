@@ -1,6 +1,7 @@
 #include "wiki_manager.h"
 
 #include <base/system.h>
+#include <engine/server/async_file.h>
 #include <engine/shared/linereader.h>
 #include <game/server/gamecontext.h>
 
@@ -27,10 +28,19 @@ namespace
 
 void CWikiManager::OnPreInit()
 {
-	CLineReader Reader;
-	if(!Reader.OpenFile(GS()->Storage()->OpenFile("server_data/wiki_content.txt", IOFLAG_READ, IStorageEngine::TYPE_ABSOLUTE)))
+	// startup: the content is part of the initialization and is read directly
+	void* pData = nullptr;
+	unsigned Size = 0;
+	if(!GS()->Storage()->ReadFile("server_data/wiki_content.txt", IStorageEngine::TYPE_ABSOLUTE, &pData, &Size) || !pData)
 		return;
 
+	std::string Content(static_cast<const char*>(pData), Size);
+	free(pData);
+	ParseContent(Content);
+}
+
+void CWikiManager::ParseContent(const std::string& Content)
+{
 	// initialize variables
 	std::string CurrentContent;
 	int incrementWikiID = 1;
@@ -92,9 +102,13 @@ void CWikiManager::OnPreInit()
 	};
 
 	// parse wiki information
-	for(const char* pLine = Reader.Get(); pLine; pLine = Reader.Get())
+	const char* pPosition = Content.c_str();
+	while(pPosition && *pPosition)
 	{
-		std::string Line = pLine;
+		const char* pLineEnd = str_find(pPosition, "\n");
+		std::string Line = pLineEnd ? std::string(pPosition, pLineEnd - pPosition) : std::string(pPosition);
+		pPosition = pLineEnd ? pLineEnd + 1 : nullptr;
+
 		const auto TrimmedLine = mystd::string::trim(Line);
 		std::string_view HeadingPath;
 
@@ -184,9 +198,28 @@ CWikiData* CWikiManager::GetWikiData(int ID) const
 
 void CWikiManager::ConReloadWiki(IConsole::IResult*, void* pUserData)
 {
-	const auto pSelf = static_cast<CWikiManager*>(pUserData);
+	static_cast<CWikiManager*>(pUserData)->Reload();
+}
 
-	mystd::freeContainer(CWikiData::Data());
-	pSelf->OnPreInit();
-	dbg_msg("wiki", "Wiki information reloaded");
+void CWikiManager::Reload()
+{
+	// the file is read in the background, the tree is rebuilt on the game thread
+	AsyncFile::Read(GS()->Storage(), "server_data/wiki_content.txt", IStorageEngine::TYPE_ABSOLUTE,
+		[this](AsyncFile::SReadResult&& Read)
+	{
+		if(!Read.Ok())
+		{
+			dbg_msg("wiki", "Wiki information is not available: %s", Read.m_Error.c_str());
+			return;
+		}
+		if(Read.m_Content.empty())
+		{
+			dbg_msg("wiki", "Wiki information is not available");
+			return;
+		}
+
+		mystd::freeContainer(CWikiData::Data());
+		ParseContent(Read.m_Content);
+		dbg_msg("wiki", "Wiki information reloaded");
+	});
 }

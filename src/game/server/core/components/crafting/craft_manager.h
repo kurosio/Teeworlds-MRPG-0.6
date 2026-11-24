@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_CRAFT_CORE_H
-#define GAME_SERVER_COMPONENT_CRAFT_CORE_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_CRAFTING_CRAFT_MANAGER_H
+#define GAME_SERVER_CORE_COMPONENTS_CRAFTING_CRAFT_MANAGER_H
 #include <teeother/tools/grouped_container.h>
 #include <game/server/core/mmo_component.h>
 
@@ -17,7 +17,7 @@ class CCraftManager : public MmoComponent
 		mystd::freeContainer(CCraftItem::Data());
 	};
 
-	void OnInitWorld(const std::string& Where) override;
+	void OnInitWorld(int WorldID) override;
 	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;

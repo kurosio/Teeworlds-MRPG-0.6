@@ -1,8 +1,9 @@
 #include "warehouse_data.h"
+#include "warehouse_db.h"
 
 #include <game/server/gamecontext.h>
 #include <game/server/entity_manager.h>
-#include <game/server/core/components/inventory/inventory_manager.h>
+#include <game/server/core/components/inventory/item_info_data.h>
 #include <sstream>
 
 const std::string CWarehouse::s_DefaultSubgroupKey = "Uncategorized";
@@ -58,7 +59,7 @@ void CWarehouse::ParseCollectionBlock(const std::string& block_content, const st
 	const auto typePrep = GetItemTypeFromDBSet(DBSet(typeNameStr));
 	const auto typeOpt = (typePrep != ItemType::Unknown ? std::make_optional<ItemType>(typePrep) : std::nullopt);
 
-	auto vItemIDs = CInventoryManager::GetItemsCollection(groupOpt, typeOpt);
+	auto vItemIDs = CItemDescription::CollectIDs(groupOpt, typeOpt);
 	for(const int ItemId : vItemIDs)
 	{
 		CItem item(ItemId, 1, 0);
@@ -206,7 +207,7 @@ void CWarehouse::SaveData()
 		nlohmann::json storageJson;
 		storageJson["value"] = m_Storage.GetValue().to_string();
 		storageJson["position"] = m_Storage.GetTextPos();
-		Database->Execute<DB::UPDATE>(TW_WAREHOUSE_TABLE, "StorageData = '{}' WHERE ID = {}", storageJson.dump(), m_ID);
+		WarehouseDb::SaveStorage(m_ID, storageJson.dump());
 	}
 }
 

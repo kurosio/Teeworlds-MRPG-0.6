@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "account_data.h"
+#include "account_db.h"
 
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
@@ -33,6 +34,26 @@ namespace
 
 		return FreeSlots;
 	}
+}
+
+namespace
+{
+	struct SAchievementKey
+	{
+		int m_Type {};
+		int m_Criteria {};
+
+		bool operator<(const SAchievementKey& Other) const
+		{
+			return std::tie(m_Type, m_Criteria) < std::tie(Other.m_Type, Other.m_Criteria);
+		}
+	};
+
+	struct SAchievementProgress
+	{
+		int m_Progress {};
+		int m_CompletedLevel {};
+	};
 }
 
 CGS* CAccountData::GS() const
@@ -73,10 +94,10 @@ const CTeeInfo& CAccountData::GetTeeInfo() const
 	return m_TeeInfos;
 }
 
-void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult)
+void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, const Db::CResultSet& Result)
 {
 	// asserts
-	dbg_assert(m_ID <= 0 || !pResult, "Unique AccountID cannot change the value more than 1 time");
+	dbg_assert(m_ID <= 0 || !Result.HasRows(), "Unique AccountID cannot change the value more than 1 time");
 
 	// initialize
 	IServer* pServer = Instance::Server();
@@ -85,39 +106,36 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	m_ID = ID;
 	m_ClientID = ClientID;
 	m_ReadyToPlay = false;
-	m_CrimeScore = pResult->getInt("CrimeScore");
-	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
-	m_Bank = pResult->getString("Bank");
-	m_Periods.m_DailyStamp = pResult->getInt64("DailyStamp");
-	m_Periods.m_WeekStamp = pResult->getInt64("WeekStamp");
-	m_Periods.m_MonthStamp = pResult->getInt64("MonthStamp");
+	m_CrimeScore = Result.GetInt("CrimeScore");
+	m_aHistoryWorld.push_front(Result.GetInt("WorldID"));
+	m_Bank = Result.GetString("Bank");
+	m_Periods.m_DailyStamp = Result.GetInt64("DailyStamp");
+	m_Periods.m_WeekStamp = Result.GetInt64("WeekStamp");
+	m_Periods.m_MonthStamp = Result.GetInt64("MonthStamp");
 	m_LastTickCrimeScoreChanges = pServer->Tick();
 	pServer->SetClientLanguage(m_ClientID, Language.c_str());
 
 
-	// update login ip, date, country
+	// update login ip, date, country (fire and forget: the login does not wait for it)
 	char aAddrStr[NETADDR_MAXSTRSIZE]{};
 	pServer->GetClientAddr(m_ClientID, aAddrStr, sizeof(aAddrStr));
-	Database->Execute<DB::UPDATE>("tw_accounts",
-		"LoginDate = CURRENT_TIMESTAMP, LoginIP = '{}', CountryISO = '{}' WHERE ID = '{}'",
-		aAddrStr, Instance::Server()->ClientCountryIsoCode(m_ClientID), ID);
+	AccountDb::UpdateLoginStamp(ID, aAddrStr, Instance::Server()->ClientCountryIsoCode(m_ClientID));
 
 
-	// initialize sub account data.
+	// initialize sub account data. What needs a statement is loaded afterwards.
+	m_LoadPlan.Cancel();
+	m_LoadPlan = CAccountLoadPlan {};
+	m_SessionToken.clear();
 	InitProfessions();
-	InitSharedEquipments(pResult->getString("EquippedSlots"));
-	InitEquipmentPresets(pResult->getString("EquipmentPresets"));
+	InitSharedEquipments(Result.GetString("EquippedSlots"));
+	InitEquipmentPresets(Result.GetString("EquipmentPresets"));
 	InitAchievements();
-	m_pActiveProfession = GetProfession((ProfessionIdentifier)pResult->getInt("ProfessionID"));
+	m_pActiveProfession = GetProfession((ProfessionIdentifier)Result.GetInt("ProfessionID"));
 	m_BonusManager.Init(m_ClientID);
 	m_PrisonManager.Init(m_ClientID);
 	m_RatingSystem.Init(this);
 	ReinitializeHouse();
 	ReinitializeGuild();
-
-
-	// update account base
-	pServer->UpdateAccountBase(m_ID, pServer->ClientName(m_ClientID), m_RatingSystem.GetRating());
 }
 
 void CAccountData::InitProfessions()
@@ -132,23 +150,74 @@ void CAccountData::InitProfessions()
 	m_vProfessions.push_back(CMinerProfession());
 	m_vProfessions.push_back(CFishermanProfession());
 	m_vProfessions.push_back(CLoaderProfession());
+}
 
-	// load professions data
-	std::map<ProfessionIdentifier, std::string> vmProfessionsData {};
-	const auto pResult = Database->Execute<DB::SELECT>("*", "tw_accounts_professions", "WHERE UserID = '{}'", m_ID);
-	while(pResult->next())
-	{
-		const auto ProfessionID = (ProfessionIdentifier)pResult->getInt("ProfessionID");
-		vmProfessionsData[ProfessionID] = pResult->getString("Data");
-	}
+void CAccountData::RegisterLoadStages()
+{
+	LoadProfessionsData();
+	LoadAchievementsProgress();
+	m_BonusManager.RegisterLoadStage();
+	m_PrisonManager.RegisterLoadStage();
+	m_RatingSystem.RegisterLoadStage();
+}
 
-	for(auto& Profession : m_vProfessions)
+void CAccountData::AddLoadStage(std::string Name, CAccountLoadPlan::CStage Start, std::vector<std::string> Dependencies)
+{
+	m_LoadPlan.Add(std::move(Name), std::move(Dependencies), std::move(Start));
+}
+
+void CAccountData::RunLoadStages(std::function<void(bool)> OnComplete)
+{
+	m_LoadPlan.Start(std::move(OnComplete));
+}
+
+void CAccountData::CancelLoad()
+{
+	m_LoadPlan.Cancel();
+}
+
+void CAccountData::LoadProfessionsData()
+{
+	const int ClientID = m_ClientID;
+	const int AccountID = m_ID;
+	AddLoadStage("professions", [ClientID, AccountID](CLoadDone Done)
 	{
-		const auto& ProfessionID = Profession.GetProfessionID();
-		const auto it = vmProfessionsData.find(ProfessionID);
-		const auto optData = it != vmProfessionsData.end() ? std::make_optional<std::string>(it->second) : std::nullopt;
-		Profession.Init(m_ClientID, optData);
-	}
+		auto pContext = DbAsync::MakeContext(ClientID);
+		AccountDb::LoadProfessions(AccountID).Then([pContext, AccountID, Done = std::move(Done)](Db::CResultSet&& Rows) mutable
+		{
+			auto* pPlayer = pContext->GetPlayer();
+			if(!pPlayer || !Rows.Ok())
+			{
+				Done(false);
+				return;
+			}
+
+			auto* pAccount = pPlayer->Account();
+			std::map<ProfessionIdentifier, std::string> vData {};
+			while(Rows.Next())
+				vData[(ProfessionIdentifier)Rows.GetInt("ProfessionID")] = Rows.GetString("Data");
+
+			std::vector<AccountDb::SProfessionData> vMissing;
+			for(auto& Profession : pAccount->m_vProfessions)
+			{
+				const auto it = vData.find(Profession.GetProfessionID());
+				const auto optData = it != vData.end() ? std::make_optional<std::string>(it->second) : std::nullopt;
+				Profession.Init(pAccount->m_ClientID, optData);
+				if(!optData)
+					vMissing.push_back({ (int)Profession.GetProfessionID(), Profession.GetPreparedJsonString() });
+			}
+			if(vMissing.empty())
+			{
+				Done(true);
+				return;
+			}
+
+			AccountDb::CreateProfessions(AccountID, vMissing).Then([Done = std::move(Done)](Db::CResultSet&& Created) mutable
+			{
+				Done(Created.Ok());
+			});
+		});
+	});
 }
 
 void CAccountData::InitSharedEquipments(const std::string& EquippedSlots)
@@ -168,7 +237,7 @@ void CAccountData::InitSharedEquipments(const std::string& EquippedSlots)
 
 void CAccountData::SaveSharedEquipments()
 {
-	Database->Execute<DB::UPDATE>("tw_accounts_data", "EquippedSlots = '{}' WHERE ID = '{}'", m_EquippedSlots.dumpJson().dump(), m_ID);
+	AccountDb::SaveEquippedSlots(m_ID, m_EquippedSlots.dumpJson().dump());
 }
 
 void CAccountData::InitEquipmentPresets(const std::string& PresetsJson)
@@ -179,78 +248,67 @@ void CAccountData::InitEquipmentPresets(const std::string& PresetsJson)
 
 void CAccountData::SaveEquipmentPresets()
 {
-	Database->Execute<DB::UPDATE>("tw_accounts_data", "EquipmentPresets = '{}' WHERE ID = '{}'", m_EquipmentPresets.dumpJson().dump(), m_ID);
+	AccountDb::SaveEquipmentPresets(m_ID, m_EquipmentPresets.dumpJson().dump());
 }
 
 void CAccountData::InitAchievements()
 {
-	struct SAchievementKey
-	{
-		int m_Type {};
-		int m_Criteria {};
-
-		bool operator<(const SAchievementKey& Other) const
-		{
-			return std::tie(m_Type, m_Criteria) < std::tie(Other.m_Type, Other.m_Criteria);
-		}
-	};
-
-	struct SAchievementProgress
-	{
-		int m_Progress {};
-		int m_CompletedLevel {};
-	};
-
-	// initialize player base
-	const auto* pPlayer = GetPlayer();
-	std::map<int, CAchievement*> m_apReferenceMap {};
-	std::map<SAchievementKey, SAchievementProgress> m_apProgressMap {};
+	// The elements exist as soon as the client is there; their progress is the
+	// statement of LoadAchievementsProgress().
+	m_apAchievements.clear();
+	auto* pPlayer = GetPlayer();
 	for(const auto& pAchievement : CAchievementInfo::Data())
 	{
 		const int AchievementID = pAchievement->GetID();
-		m_apReferenceMap[AchievementID] = CAchievement::CreateElement(pAchievement, pPlayer->GetCID());
+		m_apAchievements[AchievementID] = CAchievement::CreateElement(pAchievement, pPlayer->GetCID());
 	}
+}
 
-	// initialize player achievements
-	const auto pResult = Database->Execute<DB::SELECT>("AchievementType, Criteria, Progress, CompletedLevel", "tw_accounts_achievements", "WHERE AccountID = '{}'", m_ID);
-	while(pResult->next())
+void CAccountData::LoadAchievementsProgress()
+{
+	const int ClientID = m_ClientID;
+	const int AccountID = m_ID;
+	AddLoadStage("achievements", [ClientID, AccountID](CLoadDone Done)
 	{
-		const SAchievementKey Key
+		auto pContext = DbAsync::MakeContext(ClientID);
+		AccountDb::LoadAchievements(AccountID).Then([pContext, Done = std::move(Done)](Db::CResultSet&& Rows) mutable
 		{
-			pResult->getInt("AchievementType"),
-			pResult->getInt("Criteria"),
-		};
-		const SAchievementProgress Progress
-		{
-			pResult->getInt("Progress"),
-			pResult->getInt("CompletedLevel"),
-		};
-		m_apProgressMap[Key] = Progress;
-	}
+			auto* pPlayer = pContext->GetPlayer();
+			if(!pPlayer || !Rows.Ok())
+			{
+				Done(false);
+				return;
+			}
 
-	for(const auto& pAchievement : CAchievementInfo::Data())
-	{
-		const int AchievementID = pAchievement->GetID();
-		const SAchievementKey Key
-		{
-			(int)pAchievement->GetType(),
-			pAchievement->GetCriteria(),
-		};
-		const auto it = m_apProgressMap.find(Key);
-		if(it == m_apProgressMap.end())
-			continue;
+			auto* pAccount = pPlayer->Account();
+			std::map<SAchievementKey, SAchievementProgress> vProgress {};
+			while(Rows.Next())
+			{
+				const SAchievementKey Key { Rows.GetInt("AchievementType"), Rows.GetInt("Criteria") };
+				const SAchievementProgress Progress { Rows.GetInt("Progress"), Rows.GetInt("CompletedLevel") };
+				vProgress[Key] = Progress;
+			}
 
-		const SAchievementProgress& ProgressData = it->second;
-		const int Required = pAchievement->GetRequired();
-		const int ClampedProgress = clamp(ProgressData.m_Progress, 0, Required);
-		const bool Completed = ProgressData.m_CompletedLevel >= AchievementID || ClampedProgress >= Required;
+			for(const auto& pAchievement : CAchievementInfo::Data())
+			{
+				const int AchievementID = pAchievement->GetID();
+				const SAchievementKey Key { (int)pAchievement->GetType(), pAchievement->GetCriteria() };
+				const auto it = vProgress.find(Key);
+				if(it == vProgress.end())
+					continue;
 
-		if(m_apReferenceMap.contains(AchievementID))
-			m_apReferenceMap[AchievementID]->Init(ClampedProgress, Completed);
-	}
+				const SAchievementProgress& ProgressData = it->second;
+				const int Required = pAchievement->GetRequired();
+				const int ClampedProgress = clamp(ProgressData.m_Progress, 0, Required);
+				const bool Completed = ProgressData.m_CompletedLevel >= AchievementID || ClampedProgress >= Required;
+				if(pAccount->m_apAchievements.contains(AchievementID))
+					pAccount->m_apAchievements[AchievementID]->Init(ClampedProgress, Completed);
+			}
 
-	// clear reference map
-	m_apReferenceMap.clear();
+			pAccount->m_apAchievements.clear();
+			Done(true);
+		});
+	});
 }
 
 // This function initializes the house data for the account
@@ -598,16 +656,7 @@ void CAccountData::UpdateAchievementProgress(const CAchievementInfo* pInfo, int 
 	const int Criteria = pInfo->GetCriteria();
 	const int CompletedLevel = Completed ? pInfo->GetID() : 0;
 
-	const char* pQuery =
-		"(AccountID, AchievementType, Criteria, Progress, CompletedLevel, UpdatedAt) "
-		"VALUES ('{}', '{}', '{}', '{}', '{}', CURRENT_TIMESTAMP) "
-		"ON DUPLICATE KEY UPDATE "
-		"Progress = '{}', "
-		"CompletedLevel = GREATEST(CompletedLevel, '{}'), "
-		"UpdatedAt = CURRENT_TIMESTAMP";
-
-	Database->Execute<DB::INSERT>("tw_accounts_achievements", pQuery,
-		m_ID, AchievementType, Criteria, Progress, CompletedLevel, Progress, CompletedLevel);
+	AccountDb::SaveAchievement(m_ID, AchievementType, Criteria, Progress, CompletedLevel);
 }
 
 
@@ -634,20 +683,24 @@ void CAccountData::AutoEquipSlots(bool OnlyEmptySlots)
 		ItemType::EquipEidolon,
 	};
 
-	// lambda tool
+	// the items of this account, as they were loaded
+	const auto& PlayerItems = CPlayerItem::Data()[pPlayer->GetCID()];
+
 	auto autoEquipSlotsImpl = [&](const auto& equippedSlots)
 	{
 		for(const auto& [Type, EquippedItemIdOpt] : equippedSlots.getSlots())
 		{
-			// skip disabled slots
 			if(std::ranges::find(DisabledAutoEquipTypes, Type) != DisabledAutoEquipTypes.end())
 				continue;
 
-			// skip only empty slots with non empty
-			if(EquippedItemIdOpt && (OnlyEmptySlots || std::ranges::find(OnlyEmptySlotTypes, Type) != OnlyEmptySlotTypes.end()))
+			const auto ItemIt = EquippedItemIdOpt ? PlayerItems.find(*EquippedItemIdOpt) : PlayerItems.end();
+			const bool HasOwnedItem = ItemIt != PlayerItems.end() && ItemIt->second.HasItem();
+
+			// A slot that names an item the account does not own equips nothing and
+			// would stay busy for good, so it is treated like an empty one.
+			if(HasOwnedItem && (OnlyEmptySlots || std::ranges::find(OnlyEmptySlotTypes, Type) != OnlyEmptySlotTypes.end()))
 				continue;
 
-			// try equip best item
 			auto* pBestItem = GS()->Core()->InventoryManager()->GetBestEquipmentSlotItem(pPlayer, Type);
 			if(pBestItem && pBestItem->Equip())
 			{
@@ -659,7 +712,6 @@ void CAccountData::AutoEquipSlots(bool OnlyEmptySlots)
 		}
 	};
 
-	// process all relevant equipment slots
 	autoEquipSlotsImpl(m_EquippedSlots);
 
 	if(m_pActiveProfession)
@@ -793,18 +845,17 @@ void CAccountData::UpdateAuthTimeoutCodeIfNeeded()
 	auto* pPlayer = GetPlayer();
 	if(pPlayer && pPlayer->IsAuthed() && !pPlayer->GetSharedData().m_TimeoutCode.empty())
 	{
-		const auto cNick = CSqlString<32>(Instance::Server()->ClientName(pPlayer->GetCID()));
-		const auto cCode = CSqlString<64>(pPlayer->GetSharedData().m_TimeoutCode.c_str());
+		const std::string TimeoutCode = pPlayer->GetSharedData().m_TimeoutCode;
 		auto pContext = DbAsync::MakeContext(pPlayer->GetCID());
-		Database->Execute<DB::UPDATE>([pContext](bool Updated)
+		AccountDb::SaveTimeoutCode(TimeoutCode, Instance::Server()->ClientName(pPlayer->GetCID()))
+			.Then([pContext](Db::CResultSet&& Result)
 		{
-			if(Updated && pContext->GetPlayer())
+			if(Result.Changed() && pContext->GetPlayer())
 			{
 				pContext->GS()->Chat(pContext->GetClientID(), "Timeout code has been updated!");
 				pContext->GS()->Chat(pContext->GetClientID(), "You will now use it to authorize your account.");
 			}
-		},
-		"tw_accounts a JOIN tw_accounts_data d ON d.ID = a.ID", "a.TimeoutCode = '{}' WHERE d.Nick = '{}' AND a.TimeoutCode != '{}'", cCode.cstr(), cNick.cstr(), cCode.cstr());
+		});
 		pPlayer->GetSharedData().m_TimeoutCode.clear();
 	}
 }

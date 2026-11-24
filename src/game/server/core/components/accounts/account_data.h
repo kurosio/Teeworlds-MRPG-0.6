@@ -1,8 +1,9 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_ACCOUNT_DATA_H
-#define GAME_SERVER_COMPONENT_ACCOUNT_DATA_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_ACCOUNT_DATA_H
+#define GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_ACCOUNT_DATA_H
 
+#include "account_load_plan.h"
 #include "bonus_manager.h"
 #include "prison_manager.h"
 #include "profession.h"
@@ -12,12 +13,19 @@
 #include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/auction/auction_data.h>
 
+#include <functional>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
 class CGS;
 class CPlayer;
 class CHouse;
 class GroupData;
 class CGuild;
 class CGuildMemberData;
+class CAchievement;
 class CAchievementInfo;
 
 class CAccountData
@@ -28,6 +36,8 @@ class CAccountData
 
 	int m_ID {};
 	bool m_ReadyToPlay {};
+	CAccountLoadPlan m_LoadPlan;
+	std::map<int, CAchievement*> m_apAchievements {};
 	std::string m_Login{};
 	std::string m_LastLoginDate{};
 	std::string m_SessionToken{};
@@ -109,8 +119,10 @@ public:
 	/*
 	 * Group functions: initialize or uniques from function
 	 */
-	void Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult);
+	void Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, const Db::CResultSet& Result);
 	void InitProfessions();
+	void LoadProfessionsData();
+	void LoadAchievementsProgress();
 	void InitSharedEquipments(const std::string& EquippedSlots);
 	void SaveSharedEquipments();
 	void InitEquipmentPresets(const std::string& PresetsJson);
@@ -120,6 +132,15 @@ public:
 	void SetSessionToken(const std::string& Token) { m_SessionToken = Token; }
 	void SetReadyToPlay(bool State) { m_ReadyToPlay = State; }
 	bool IsReadyToPlay() const { return m_ReadyToPlay; }
+
+	// Register named asynchronous stages before RunLoadStages(). Dependencies
+	// gate their start; independent stages run concurrently. Completion is called
+	// once, on the game thread, and a failed stage fails the entire account load.
+	using CLoadDone = CAccountLoadPlan::CCompletion;
+	void AddLoadStage(std::string Name, CAccountLoadPlan::CStage Start, std::vector<std::string> Dependencies = {});
+	void RunLoadStages(std::function<void(bool)> OnComplete);
+	void CancelLoad();
+	void RegisterLoadStages();
 
 	/*
 	 * Group functions: house system
@@ -227,6 +248,7 @@ struct CAccountSharedData
 	std::unordered_set<int> m_PendingEidolonItemBreaks{};
 	std::weak_ptr<void> m_pAuthorizationAttempt{};
 	int64_t m_AuthProgressTick {}; // next "still in progress" notice of that attempt
+	int64_t m_AuthStartedAt {};    // when the attempt began, for the login timing line
 	bool m_AuthIsRegistration {};
 	std::shared_ptr<void> m_pConnectionLifetime = std::make_shared<int>(0);
 

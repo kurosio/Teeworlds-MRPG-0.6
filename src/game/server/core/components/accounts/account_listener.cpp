@@ -1,4 +1,7 @@
 #include "account_listener.h"
+
+#include "account_db.h"
+#include <engine/server/async_file.h>
 #include <game/server/gamecontext.h>
 
 CAccountListener g_AccountListener;
@@ -75,6 +78,11 @@ void CAccountListener::OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession*
 // leveling tracker
 void CLevelingTracker::LoadTrackingData()
 {
+	if(m_Loaded)
+		return;
+
+	m_Loaded = true;
+
 	//  try load datafile
 	ByteArray RawData;
 	if(!mystd::file::load(LEVELING_TRACKING_FILE_NAME, &RawData))
@@ -108,17 +116,17 @@ void CLevelingTracker::LoadTrackingData()
 	}
 
 	// sync by database
-	auto pRes = Database->Execute<DB::SELECT>("UserID, ProfessionID, Data", "tw_accounts_professions", "");
+	auto Rows = AccountDb::ListAllProfessions();
 	std::unordered_map<int, TrackingLevelingData> vFreshTracking {};
-	while(pRes->next())
+	while(Rows.Next())
 	{
-		const int ProfessionID = pRes->getInt("ProfessionID");
-		const int AccountID = pRes->getInt("UserID");
+		const int ProfessionID = Rows.GetInt("ProfessionID");
+		const int AccountID = Rows.GetInt("UserID");
 		if(ProfessionID < 0 || AccountID <= 0)
 			continue;
 
 		int Level = 1;
-		const auto Data = pRes->getString("Data");
+		const auto Data = Rows.GetString("Data");
 		const bool ParseError = mystd::json::parse(Data, [&Level](nlohmann::json& jsonData)
 		{
 			Level = maximum(1, jsonData.value("level", 1));
@@ -152,15 +160,7 @@ void CLevelingTracker::SaveTrackingData()
 		});
 	}
 
-	std::string Data = j.dump(4);
-	auto Result = mystd::file::save(LEVELING_TRACKING_FILE_NAME, Data.data(), static_cast<unsigned>(Data.size()));
-	if(Result != mystd::file::result::SUCCESSFUL)
-	{
-		dbg_msg("leveling_tracking", "Failed to save the leveling. Re-creating file.");
-		mystd::file::remove(LEVELING_TRACKING_FILE_NAME);
-		m_vTrackingData.clear();
-		SaveTrackingData();
-	}
+	AsyncFile::Write(LEVELING_TRACKING_FILE_NAME, j.dump(4));
 }
 
 

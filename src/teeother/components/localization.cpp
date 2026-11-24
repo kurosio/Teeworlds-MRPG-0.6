@@ -128,11 +128,9 @@ const char* CLocalization::LocalizeWithDepth(const char* pLanguageFile, const ch
 		return pText;
 	}
 
-	// load and initilize language if is not loaded
-	if(!pLanguage->IsLoaded())
-	{
-		pLanguage->Load();
-	}
+	// A language that is not loaded failed to load when it was created (Init
+	// loads every language, at start-up); looking it up again must not read the
+	// file from the disk on every single message that is translated.
 
 	// found result in hash map
 	if(const char* pResult = pLanguage->Localize(pText))

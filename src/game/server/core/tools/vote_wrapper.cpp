@@ -1,4 +1,6 @@
-﻿#include "vote_wrapper.h"
+#include "vote_wrapper.h"
+
+#include <base/system.h>
 
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
@@ -59,6 +61,107 @@ namespace
 		else
 			pDest[0] = '\0';
 	}
+
+	// Background loads that are running (with the moment they were started) and
+	// the menus that show them. The answers arrive on the game thread, so nothing
+	// here needs a lock.
+	std::unordered_map<std::string, int64_t> s_mRunningLoads;
+	std::unordered_map<std::string, std::vector<std::pair<int, int>>> s_vLoadWaiters;
+
+	// A load that never reports back must not leave a menu waiting forever, so a
+	// wait that is older than this is dropped and the menu is drawn again (and
+	// may ask for the data another time). A statement that hangs, a callback that
+	// forgot Finish() or a request the database answered late all end up here.
+	constexpr int64_t VOTE_LOAD_TIMEOUT_SEC = 10;
+
+	// The option list the client is showing right now, so a rebuild that renders
+	// the same list again sends nothing. Every vote click rebuilds the menu, and
+	// sending the client a second copy of what it already shows is what a
+	// "duplicated menu" looks like on screen. The menu id is part of the key: a
+	// rebuild of another menu is always sent, even if it reads the same.
+	struct SSentList
+	{
+		int m_MenuID = -1;
+		std::vector<std::string> m_vOptions;
+	};
+	std::unordered_map<int, SSentList> s_mSentOptions;
+
+	void SendClearOptions(int ClientID)
+	{
+		CNetMsg_Sv_VoteClearOptions ClearMsg;
+		Instance::Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
+	}
+}
+
+// =====================================================================
+// CVoteLoad
+// =====================================================================
+
+bool CVoteLoad::IsRunning() const
+{
+	if (m_LoadID.empty())
+		return false;
+
+	const auto It = s_mRunningLoads.find(m_LoadID);
+	if (It == s_mRunningLoads.end())
+		return false;
+
+	if (time_timestamp() - It->second < VOTE_LOAD_TIMEOUT_SEC)
+		return true;
+
+	// The answer never came. The wait is dropped and the menus that showed it are
+	// drawn again instead of staying on "Loading ..." for the rest of the round;
+	// the next build starts the load over.
+	dbg_msg("VoteWrapper", "load '%s' did not answer in %lld seconds, the wait is dropped",
+		m_LoadID.c_str(), (long long)VOTE_LOAD_TIMEOUT_SEC);
+	Finish();
+	return false;
+}
+
+bool CVoteLoad::Begin() const
+{
+	if (m_LoadID.empty())
+		return false;
+
+	// an expired load is not an answer that is still coming: it is dropped, so
+	// this request is started instead of waiting forever behind it
+	if (IsRunning())
+		return false;
+
+	s_mRunningLoads[m_LoadID] = time_timestamp();
+	return true;
+}
+
+void CVoteLoad::Wait(int ClientID, int MenuID) const
+{
+	// The waiter is registered whether the answer is already on its way or not:
+	// a menu that is built before the request is started still has to be drawn
+	// again when the answer comes, otherwise it keeps showing the loading line.
+	if (m_LoadID.empty())
+		return;
+
+	auto& vWaiters = s_vLoadWaiters[m_LoadID];
+	const std::pair<int, int> Waiter(ClientID, MenuID);
+	if (std::ranges::find(vWaiters, Waiter) == vWaiters.end())
+		vWaiters.push_back(Waiter);
+}
+
+void CVoteLoad::Finish() const
+{
+	s_mRunningLoads.erase(m_LoadID);
+
+	const auto It = s_vLoadWaiters.find(m_LoadID);
+	if (It == s_vLoadWaiters.end())
+		return;
+
+	for (const auto& [ClientID, MenuID] : It->second)
+	{
+		auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(ClientID));
+		CPlayer* pPlayer = pGS ? pGS->GetPlayer(ClientID) : nullptr;
+		if (pPlayer)
+			pPlayer->m_VotesData.UpdateVotesIf(MenuID);
+	}
+	s_vLoadWaiters.erase(It);
 }
 
 // =====================================================================
@@ -265,6 +368,26 @@ bool CVoteGroup::IsHidden() const noexcept
 // VoteWrapper
 // =====================================================================
 
+VoteWrapper& VoteWrapper::SetLoad(const CVoteLoad& Load)
+{
+	if (!m_pGroup)
+		return *this;
+
+	m_pGroup->m_LoadID = Load.ID();
+	Load.Wait(m_pGroup->m_ClientID, m_pGroup->m_pPlayer->m_VotesData.GetCurrentMenuID());
+	return *this;
+}
+
+bool VoteWrapper::WaitLoad(const CVoteLoad& Load) const
+{
+	if (!Load.IsRunning())
+		return false;
+
+	if (m_pGroup)
+		Load.Wait(m_pGroup->m_ClientID, m_pGroup->m_pPlayer->m_VotesData.GetCurrentMenuID());
+	return true;
+}
+
 void VoteWrapper::RebuildVotes(int ClientID)
 {
 	auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(ClientID));
@@ -299,9 +422,15 @@ void VoteWrapper::RebuildVotes(int ClientID)
 		if (!pGroup)
 			continue;
 
-		// is empty group with title? add placeholder
-		if (pGroup->m_HasTitle && pGroup->IsEmpty() && !pGroup->IsHidden())
-			pGroup->AddVoteImpl("null", {}, "Is empty");
+		// a group that waits for its data, or a titled empty group, gets a placeholder
+		if (pGroup->IsEmpty() && !pGroup->IsHidden())
+		{
+			const CVoteLoad Load(pGroup->m_LoadID);
+			if (Load.IsRunning())
+				pGroup->AddVoteImpl("null", {}, fmt_localize(pGroup->m_ClientID, "Loading ...").c_str());
+			else if (pGroup->m_HasTitle)
+				pGroup->AddVoteImpl("null", {}, "Is empty");
+		}
 
 		if (!(pGroup->m_Flags & VWF_SEPARATE))
 			continue;
@@ -355,7 +484,9 @@ void VoteWrapper::RebuildVotes(int ClientID)
 		}
 	}
 
-	// phase 3: send for client
+	// phase 3: render the list, then send the client what it does not show yet
+	std::vector<std::string> vOptions;
+
 	for (auto& upGroup : ClientVoteGroups)
 	{
 		CVoteGroup* pGroup = upGroup.get();
@@ -399,11 +530,29 @@ void VoteWrapper::RebuildVotes(int ClientID)
 				SafeCopy(Option.m_aDescription, Buffer.c_str(), sizeof(Option.m_aDescription));
 			}
 
-			// send the option to the client
-			CNetMsg_Sv_VoteOptionAdd OptionMsg;
-			OptionMsg.m_pDescription = Option.m_aDescription;
-			pGS->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
+			vOptions.emplace_back(Option.m_aDescription);
 		}
+	}
+
+	// The client already shows this list of this menu: a click rebuilds the menu,
+	// and sending the same options again is what becomes a duplicated list on
+	// screen. Groups that only look alike (an empty line, a separator) are not
+	// the same thing and are never folded together here.
+	const int MenuID = pPlayer->m_VotesData.GetCurrentMenuID();
+	auto& Sent = s_mSentOptions[ClientID];
+	if (Sent.m_MenuID == MenuID && Sent.m_vOptions == vOptions)
+		return;
+
+	Sent.m_MenuID = MenuID;
+	Sent.m_vOptions = vOptions;
+
+	// the client list is replaced, never appended to
+	SendClearOptions(ClientID);
+	for (const std::string& Option : vOptions)
+	{
+		CNetMsg_Sv_VoteOptionAdd OptionMsg;
+		OptionMsg.m_pDescription = Option.c_str();
+		pGS->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, ClientID);
 	}
 }
 
@@ -467,41 +616,25 @@ void CVotePlayerData::ResetHidden(int MenuID)
 	}
 }
 
-void CVotePlayerData::ThreadVoteUpdater(CVotePlayerData* pData)
-{
-	if (!pData)
-		return;
-
-	std::this_thread::sleep_for(std::chrono::milliseconds(5));
-	if (pData->m_ShuttingDown.load(std::memory_order_acquire) || !pData->m_pPlayer)
-		return;
-
-	pData->m_VoteUpdaterStatus.store(STATE_UPDATER::DONE, std::memory_order_release);
-}
-
 void CVotePlayerData::ApplyVoteUpdaterData()
 {
-	if (m_VoteUpdaterStatus.load(std::memory_order_acquire) != STATE_UPDATER::DONE)
+	if(!m_VoteUpdateRequested)
 		return;
 
-	ClearVotes();
+	m_VoteUpdateRequested = false;
+	// The data is rebuilt from scratch; the client list is replaced by
+	// RebuildVotes() only when the new list differs from what it shows.
+	mystd::freeContainer(VoteWrapper::Data()[m_pPlayer->GetCID()]);
 	m_pGS->Core()->OnSendMenuVotes(m_pPlayer, m_CurrentMenuID);
 	VoteWrapper::RebuildVotes(m_pPlayer->GetCID());
-	m_VoteUpdaterStatus.store(STATE_UPDATER::WAITING, std::memory_order_release);
 }
 
 void CVotePlayerData::UpdateVotes(int MenuID)
 {
+	// The redraw runs from the tick (ApplyVoteUpdaterData), so the caller never
+	// draws a menu while it is being built and no thread is needed to defer it.
 	m_CurrentMenuID = MenuID;
-
-	STATE_UPDATER expected = STATE_UPDATER::WAITING;
-	if (m_VoteUpdaterStatus.compare_exchange_strong(expected, STATE_UPDATER::RUNNING,
-		std::memory_order_acq_rel))
-	{
-		if (m_VoteUpdater.joinable())
-			m_VoteUpdater.join();
-		m_VoteUpdater = std::thread(&CVotePlayerData::ThreadVoteUpdater, this);
-	}
+	m_VoteUpdateRequested = true;
 }
 
 void CVotePlayerData::UpdateVotesIf(int MenuID)
@@ -517,9 +650,10 @@ void CVotePlayerData::ClearVotes() const
 
 	const int ClientID = m_pPlayer->GetCID();
 	mystd::freeContainer(VoteWrapper::Data()[ClientID]);
+	// the client list is gone, so the next rebuild has to send it again
+	s_mSentOptions.erase(ClientID);
 
-	CNetMsg_Sv_VoteClearOptions ClearMsg;
-	Instance::Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
+	SendClearOptions(ClientID);
 }
 
 void CVotePlayerData::PushExtraID(int MenuID, std::optional<int> ExtraID)

@@ -1,65 +1,118 @@
+# Locate MariaDB Connector/C and Connector/C++.
+# Prefer the repository's versioned bundle when requested, then fall back to
+# an installed copy (or the reverse when PREFER_BUNDLED_LIBS is OFF).
+
+set(MARIADB_BUNDLED_ROOT "${PROJECT_SOURCE_DIR}/libraries/mariadb")
+set(MARIADB_BUNDLED_LIBDIR "${MARIADB_BUNDLED_ROOT}/${TARGET_OS}/lib${TARGET_BITS}")
+set(MARIADB_BUNDLED_INCLUDEDIR "${MARIADB_BUNDLED_ROOT}/include")
+
+set(MARIADB_CONFIG_INCLUDE_DIRS)
+set(MARIADB_CONFIG_LIBRARY_PATH)
 if(NOT CMAKE_CROSSCOMPILING)
-  find_program(MARIADB_CONFIG
-    NAMES mariadb_config
-  )
-
+  find_program(MARIADB_CONFIG NAMES mariadb_config)
   if(MARIADB_CONFIG)
-    execute_process(COMMAND ${MARIADB_CONFIG} --include OUTPUT_VARIABLE MY_TMP)
-    string(REGEX REPLACE "-I([^ ]*)( .*)?" "\\1" MY_TMP "${MY_TMP}")
-    set(MARIADB_CONFIG_INCLUDE_DIR ${MY_TMP} CACHE FILEPATH INTERNAL)
+    execute_process(
+      COMMAND "${MARIADB_CONFIG}" --include
+      OUTPUT_VARIABLE _MARIADB_INCLUDE_FLAGS
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE _MARIADB_INCLUDE_RESULT
+    )
+    if(_MARIADB_INCLUDE_RESULT EQUAL 0)
+      string(REGEX MATCHALL "-I[^ \t]+" _MARIADB_INCLUDE_OPTIONS "${_MARIADB_INCLUDE_FLAGS}")
+      foreach(_option IN LISTS _MARIADB_INCLUDE_OPTIONS)
+        string(REGEX REPLACE "^-I" "" _directory "${_option}")
+        list(APPEND MARIADB_CONFIG_INCLUDE_DIRS "${_directory}")
+      endforeach()
+    endif()
 
-    execute_process(COMMAND ${MARIADB_CONFIG} --libs_r OUTPUT_VARIABLE MY_TMP)
-    set(MARIADB_CONFIG_LIBRARIES "")
-    string(REGEX MATCHALL "-l[^ ]*" MARIADB_LIB_LIST "${MY_TMP}")
-    foreach(LIB ${MARIADB_LIB_LIST})
-      string(REGEX REPLACE "[ ]*-l([^ ]*)" "\\1" LIB "${LIB}")
-      list(APPEND MARIADB_CONFIG_LIBRARIES "${LIB}")
-    endforeach()
-
-    set(MARIADB_CONFIG_LIBRARY_PATH "")
-    string(REGEX MATCHALL "-L[^ ]*" MARIADB_LIBDIR_LIST "${MY_TMP}")
-    foreach(LIB ${MARIADB_LIBDIR_LIST})
-      string(REGEX REPLACE "[ ]*-L([^ ]*)" "\\1" LIB "${LIB}")
-      list(APPEND MARIADB_CONFIG_LIBRARY_PATH "${LIB}")
-    endforeach()
+    execute_process(
+      COMMAND "${MARIADB_CONFIG}" --libs_r
+      OUTPUT_VARIABLE _MARIADB_LIBRARY_FLAGS
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE _MARIADB_LIBRARY_RESULT
+    )
+    if(_MARIADB_LIBRARY_RESULT EQUAL 0)
+      string(REGEX MATCHALL "-L[^ \t]+" _MARIADB_LIBRARY_OPTIONS "${_MARIADB_LIBRARY_FLAGS}")
+      foreach(_option IN LISTS _MARIADB_LIBRARY_OPTIONS)
+        string(REGEX REPLACE "^-L" "" _directory "${_option}")
+        list(APPEND MARIADB_CONFIG_LIBRARY_PATH "${_directory}")
+      endforeach()
+    endif()
   endif()
 endif()
 
-set_extra_dirs_lib(MARIADB mariadb)
+if(PREFER_BUNDLED_LIBS)
+  set(_MARIADB_LIBRARY_HINTS "${MARIADB_BUNDLED_LIBDIR}" ${MARIADB_CONFIG_LIBRARY_PATH})
+  set(_MARIADB_LIBRARY_PATHS ${MARIADB_CONFIG_LIBRARY_PATH})
+  set(_MARIADB_INCLUDE_HINTS "${MARIADB_BUNDLED_INCLUDEDIR}" ${MARIADB_CONFIG_INCLUDE_DIRS})
+  set(_MARIADB_INCLUDE_PATHS ${MARIADB_CONFIG_INCLUDE_DIRS})
+else()
+  set(_MARIADB_LIBRARY_HINTS ${MARIADB_CONFIG_LIBRARY_PATH})
+  set(_MARIADB_LIBRARY_PATHS "${MARIADB_BUNDLED_LIBDIR}" ${MARIADB_CONFIG_LIBRARY_PATH})
+  set(_MARIADB_INCLUDE_HINTS ${MARIADB_CONFIG_INCLUDE_DIRS})
+  set(_MARIADB_INCLUDE_PATHS "${MARIADB_BUNDLED_INCLUDEDIR}" ${MARIADB_CONFIG_INCLUDE_DIRS})
+endif()
+
 find_library(MARIADB_CORE_LIBRARY
-  NAMES "mariadb" "mariadbclient"
-  PATHS ${PATHS_MARIADB_LIBDIR}
-  HINTS ${HINTS_MARIADB_LIBDIR} ${MARIADB_CONFIG_LIBRARY_PATH}
+  NAMES mariadb mariadbclient libmariadb libmariadbclient
+  HINTS ${_MARIADB_LIBRARY_HINTS}
+  PATHS ${_MARIADB_LIBRARY_PATHS}
   ${CROSSCOMPILING_NO_CMAKE_SYSTEM_PATH}
 )
 find_library(MARIADB_LIBRARY
-  NAMES "mariadbcpp" "mariadbcpp-static"
-  PATHS ${PATHS_MARIADB_LIBDIR}
-  HINTS ${HINTS_MARIADB_LIBDIR}
+  NAMES mariadbcpp mariadbcpp-static libmariadbcpp libmariadbcpp-static
+  HINTS ${_MARIADB_LIBRARY_HINTS}
+  PATHS ${_MARIADB_LIBRARY_PATHS}
   ${CROSSCOMPILING_NO_CMAKE_SYSTEM_PATH}
 )
-set_extra_dirs_include(MARIADB mariadb "${MARIADB_LIBRARY}")
 find_path(MARIADB_INCLUDEDIR
-        NAMES "mariadb/conncpp.hpp"
-        PATHS ${PATHS_MARIADB_INCLUDEDIR}
-        HINTS ${HINTS_MARIADB_INCLUDEDIR}
-        ${CROSSCOMPILING_NO_CMAKE_SYSTEM_PATH}
+  NAMES mariadb/conncpp.hpp
+  HINTS ${_MARIADB_INCLUDE_HINTS}
+  PATHS ${_MARIADB_INCLUDE_PATHS}
+  ${CROSSCOMPILING_NO_CMAKE_SYSTEM_PATH}
 )
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(MariaDB DEFAULT_MSG MARIADB_CORE_LIBRARY MARIADB_LIBRARY MARIADB_INCLUDEDIR)
+find_package_handle_standard_args(MariaDB
+  REQUIRED_VARS MARIADB_CORE_LIBRARY MARIADB_LIBRARY MARIADB_INCLUDEDIR
+)
 mark_as_advanced(MARIADB_CORE_LIBRARY MARIADB_LIBRARY MARIADB_INCLUDEDIR)
 
 if(MARIADB_FOUND)
   is_bundled(MARIADB_BUNDLED "${MARIADB_LIBRARY}")
-  set(MARIADB_LIBRARIES ${MARIADB_LIBRARY} ${MARIADB_CORE_LIBRARY})
-  set(MARIADB_INCLUDE_DIRS ${MARIADB_INCLUDEDIR})
+  set(MARIADB_LIBRARIES "${MARIADB_LIBRARY}" "${MARIADB_CORE_LIBRARY}")
+  set(MARIADB_INCLUDE_DIRS "${MARIADB_INCLUDEDIR}")
 
-  if(MARIADB_BUNDLED AND TARGET_OS STREQUAL "windows")
-    set(MARIADB_COPY_FILES
-            "${EXTRA_MARIADB_LIBDIR}/mariadbcpp.dll"
+  # The bundled Connector/C++ header has a case typo in its filename:
+  # conncpp.hpp includes DatabaseMetaData.hpp, while the archive ships
+  # DatabaseMEtaData.hpp. This works on Windows' case-insensitive filesystem
+  # but fails on Linux. Add a build-tree compatibility header without touching
+  # the submodule checkout.
+  set(_MARIADB_METADATA_HEADER "${MARIADB_INCLUDEDIR}/mariadb/conncpp/DatabaseMetaData.hpp")
+  set(_MARIADB_METADATA_HEADER_TYPO "${MARIADB_INCLUDEDIR}/mariadb/conncpp/DatabaseMEtaData.hpp")
+  if(NOT EXISTS "${_MARIADB_METADATA_HEADER}" AND EXISTS "${_MARIADB_METADATA_HEADER_TYPO}")
+    set(_MARIADB_COMPAT_INCLUDE_DIR "${PROJECT_BINARY_DIR}/mariadb-include-compat")
+    file(MAKE_DIRECTORY "${_MARIADB_COMPAT_INCLUDE_DIR}/conncpp")
+    configure_file(
+      "${_MARIADB_METADATA_HEADER_TYPO}"
+      "${_MARIADB_COMPAT_INCLUDE_DIR}/conncpp/DatabaseMetaData.hpp"
+      COPYONLY
     )
-  else()
-    set(MARIADB_COPY_FILES)
+    list(APPEND MARIADB_INCLUDE_DIRS
+      "${_MARIADB_COMPAT_INCLUDE_DIR}"
+      "${MARIADB_INCLUDEDIR}/mariadb/conncpp"
+    )
+  endif()
+
+  # Connector/C++ needs Connector/C at runtime on Windows. Ship both bundled
+  # DLLs alongside the server instead of leaving the transitive DLL missing.
+  set(MARIADB_COPY_FILES)
+  if(MARIADB_BUNDLED AND TARGET_OS STREQUAL "windows")
+    foreach(_dll mariadbcpp.dll libmariadb.dll)
+      set(_path "${MARIADB_BUNDLED_LIBDIR}/${_dll}")
+      if(EXISTS "${_path}")
+        list(APPEND MARIADB_COPY_FILES "${_path}")
+      endif()
+    endforeach()
   endif()
 endif()

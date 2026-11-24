@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_CORE_COMPONENTS_MAIL_DATA_H
-#define GAME_SERVER_CORE_COMPONENTS_MAIL_DATA_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_MAILS_MAIL_WRAPPER_H
+#define GAME_SERVER_CORE_COMPONENTS_MAILS_MAIL_WRAPPER_H
 
 #include <game/server/core/components/inventory/item_data.h>
 

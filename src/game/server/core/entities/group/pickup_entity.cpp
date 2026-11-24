@@ -1,4 +1,4 @@
-﻿#include "pickup_entity.h"
+#include "pickup_entity.h"
 #include <game/server/gamecontext.h>
 
 CPickupEntity::CPickupEntity(CGameWorld* pGameWorld, const std::shared_ptr<CEntityGroup>& group, int EnttypeID, vec2 Pos, int Owner, int Type, int Subtype)

@@ -44,7 +44,8 @@ public:
 	void Init(int ClientID)
 	{
 		m_ClientID = ClientID;
-		Load();
+		m_vTemporaryBonuses.clear();
+		m_TimedMultipliers.Clear();
 	}
 
 	void SendInfoAboutActiveBonuses() const;
@@ -63,8 +64,9 @@ public:
 	const std::vector<TemporaryBonus>& GetTemporaryBonuses() const { return m_vTemporaryBonuses; }
 	const CMultiplierManager& GetTimedMultipliers() const { return m_TimedMultipliers; }
 
+	void RegisterLoadStage();
+
 private:
-	void Load();
 	void Save() const;
 	void RebuildTimedMultipliers();
 };

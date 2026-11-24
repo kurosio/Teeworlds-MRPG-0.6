@@ -1,23 +1,24 @@
 #ifndef GAME_SERVER_CORE_TOOLS_LINKS_H
 #define GAME_SERVER_CORE_TOOLS_LINKS_H
 
-#include "sql_connect_pool.h"
+#include <engine/server/db/db_async.h>
 
 #define TW_LINKS_TABLE "tw_links"
 
-/*
- * Universal links table: ID, Type, OwnerID, TargetID
- */
 namespace Links
 {
+	inline constexpr Db::EKind KIND = Db::KindOfTable(TW_LINKS_TABLE);
+
 	inline void Add(const char* pType, int64_t OwnerID, int64_t TargetID)
 	{
-		Database->Execute<DB::INSERT>(TW_LINKS_TABLE, "(Type, OwnerID, TargetID) VALUES ('{}', '{}', '{}')", pType, OwnerID, TargetID);
+		Db::Query(KIND, "INSERT INTO tw_links (Type, OwnerID, TargetID) VALUES (?, ?, ?)",
+			Db::Bind(pType, OwnerID, TargetID));
 	}
 
 	inline void Remove(const char* pType, int64_t OwnerID, int64_t TargetID)
 	{
-		Database->Execute<DB::REMOVE>(TW_LINKS_TABLE, "WHERE Type = '{}' AND OwnerID = '{}' AND TargetID = '{}'", pType, OwnerID, TargetID);
+		Db::Query(KIND, "DELETE FROM tw_links WHERE Type = ? AND OwnerID = ? AND TargetID = ?",
+			Db::Bind(pType, OwnerID, TargetID));
 	}
 }
 

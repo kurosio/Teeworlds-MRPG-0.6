@@ -2,6 +2,9 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "aethernet_manager.h"
 
+#include "aethernet_db.h"
+#include <game/server/core/tools/db_async_context.h>
+
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
 
@@ -10,14 +13,14 @@
 void CAethernetManager::OnPreInit()
 {
 	// Load aether data from the database
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AETHERS);
-	while(pRes->next())
+	auto Aethers = AethernetDb::ListAethers();
+	while(Aethers.Next())
 	{
-		std::string Name = pRes->getString("Name").c_str();
-		vec2 Pos = vec2(pRes->getInt("TeleX"), pRes->getInt("TeleY"));
-		int WorldID = pRes->getInt("WorldID");
+		std::string Name = Aethers.GetString("Name").c_str();
+		vec2 Pos = vec2(Aethers.GetInt("TeleX"), Aethers.GetInt("TeleY"));
+		int WorldID = Aethers.GetInt("WorldID");
 
-		AetherIdentifier ID = pRes->getInt("ID");
+		AetherIdentifier ID = Aethers.GetInt("ID");
 		CAetherData::CreateElement(ID)->Init(Name.c_str(), Pos, WorldID);
 	}
 
@@ -43,15 +46,27 @@ void CAethernetManager::OnPreInit()
 	}
 }
 
-void CAethernetManager::OnPlayerLogin(CPlayer* pPlayer)
+void CAethernetManager::OnRegisterAccountLoadStages(CPlayer* pPlayer)
 {
-	// Initialize the player's aether data
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_ACCOUNTS_AETHERS, "WHERE UserID = '{}'", pPlayer->Account()->GetID());
-	while(pRes->next())
+	auto* pAccount = pPlayer->Account();
+	const int ClientID = pPlayer->GetCID();
+	const int AccountID = pAccount->GetID();
+	pAccount->AddLoadStage("aethers", [ClientID, AccountID](CAccountData::CLoadDone Done)
 	{
-		AetherIdentifier ID = pRes->getInt("AetherID");
-		pPlayer->Account()->AddAether(ID);
-	}
+		auto pContext = DbAsync::MakeContext(ClientID);
+		AethernetDb::ListUnlocked(AccountID).Then([pContext, Done = std::move(Done)](Db::CResultSet&& Unlocked) mutable
+		{
+			auto* pPlayer = pContext->GetPlayer();
+			if(!pPlayer || !Unlocked.Ok())
+			{
+				Done(false);
+				return;
+			}
+			while(Unlocked.Next())
+				pPlayer->Account()->AddAether(Unlocked.GetInt("AetherID"));
+			Done(true);
+		});
+	});
 }
 
 bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
@@ -169,7 +184,7 @@ void CAethernetManager::UnlockLocationByPos(CPlayer* pPlayer, vec2 Pos) const
 	// Unlock the Aether for the player
 	if(pAether && !pPlayer->Account()->IsUnlockedAether(pAether->GetID()))
 	{
-		Database->Execute<DB::INSERT>(TW_ACCOUNTS_AETHERS, "(UserID, AetherID) VALUES ('{}', '{}')", pPlayer->Account()->GetID(), pAether->GetID());
+		AethernetDb::Unlock(pPlayer->Account()->GetID(), pAether->GetID());
 
 		pPlayer->Account()->AddAether(pAether->GetID());
 		GS()->Chat(ClientID, "You now have Aethernet access to the '{}'.", pAether->GetName());

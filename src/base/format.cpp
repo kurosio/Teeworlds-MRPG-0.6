@@ -1,4 +1,4 @@
-﻿#include "format.h"
+#include "format.h"
 #include <base/system.h>
 
 std::string pluralize(const BigInt& count, const std::vector<std::string>& forms)

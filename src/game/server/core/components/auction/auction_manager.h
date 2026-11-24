@@ -24,8 +24,10 @@ class CAuctionManager : public MmoComponent
 	void ShowCreateSlot(CPlayer* pPlayer) const;
 	void ShowAuctionSlot(CPlayer* pPlayer, int ID) const;
 
-	int GetSlotsCountByAccountID(int AccountID) const;
-	int GetTotalSlotsCount() const;
+	// slot counters only read the shared slot store, they do not need a manager
+	// instance and are therefore usable from asynchronous answers as well
+	static int GetSlotsCountByAccountID(int AccountID);
+	static int GetTotalSlotsCount();
 	CAuctionSlot* GetSlot(int ID) const;
 	void RemoveSlotByID(int ID) const;
 };

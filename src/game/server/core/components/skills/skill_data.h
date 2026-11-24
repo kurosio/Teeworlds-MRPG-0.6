@@ -69,7 +69,6 @@ class CSkill : public MultiworldIdentifiableData< std::map< int, std::map < int,
 	std::weak_ptr<CEntityGroup> m_pEntSkillPtrs {};
 
 	std::unordered_map<int, int> m_TreeSelections;
-	void LoadTreeChoicesFromDB();
 	int GetTreeNodePriceSP(int LevelIndex, int OptionIndex) const;
 
 public:
@@ -90,7 +89,7 @@ public:
 	{
 		m_Learned = Learned;
 		m_SelectedEmoticon = SelectedEmoticon;
-		LoadTreeChoicesFromDB();
+		m_TreeSelections.clear();
 	}
 
 	// getters setters

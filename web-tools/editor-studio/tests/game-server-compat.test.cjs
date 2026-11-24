@@ -57,7 +57,7 @@ test('game schema includes server-supported enum values', () => {
     ['tw_worlds', 'Type', 'social'], ['tw_bots_mobs', 'Behavior', 'ambient_chat'], ['tw_items_list', 'Type', 'Equip potion Miner'],
   ]) assert.equal(sqlValues(table, column).at(-1), value, 'new enum/set values are appended');
   assert.match(fs.readFileSync(path.join(repo, 'src/engine/shared/world_detail.h'), 'utf8'), /Type == "social"/);
-  assert.match(fs.readFileSync(path.join(repo, 'src/game/server/core/components/Bots/BotData.cpp'), 'utf8'), /hasSet\("ambient_chat"\)/);
+  assert.match(fs.readFileSync(path.join(repo, 'src/game/server/core/components/bots/bot_data.cpp'), 'utf8'), /hasSet\("ambient_chat"\)/);
   assert.match(fs.readFileSync(path.join(repo, 'src/game/server/core/mmo_context.h'), 'utf8'), /hasSet\("Equip potion Miner"\)/);
 });
 

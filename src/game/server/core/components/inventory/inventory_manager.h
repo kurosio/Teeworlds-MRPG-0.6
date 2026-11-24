@@ -15,15 +15,12 @@ class CInventoryManager : public MmoComponent
 	}
 
 	void OnPreInit() override;
-	void OnPlayerLogin(class CPlayer* pPlayer) override;
+	void OnRegisterAccountLoadStages(class CPlayer* pPlayer) override;
 	void OnClientReset(int ClientID) override;
 	bool OnPlayerVoteCommand(class CPlayer* pPlayer, const char* CMD, const std::vector<std::any> &Extras, int Get, const char* GetText) override;
 	bool OnSendMenuVotes(class CPlayer* pPlayer, int Menulist) override;
 
 public:
-	static std::vector<int> GetItemsCollection(std::optional<ItemGroup> optGroup, std::optional<ItemType> optType);
-	static std::vector<int> GetItemIDsCollectionByType(ItemType Type);
-
 	// primary
 	bool ListInventory(int ClientID, std::optional<ItemGroup> GroupOpt, std::optional<ItemType> TypeOpt);
 	void ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem);
@@ -31,6 +28,7 @@ public:
 	CPlayerItem* GetBestEquipmentSlotItem(CPlayer* pPlayer, ItemType Type);
 
 	void RepairDurabilityItems(class CPlayer *pPlayer);
+	void RemoveExpiredItems(class CPlayer* pPlayer);
 	int GetCountItemsType(CPlayer* pPlayer, std::optional<ItemGroup> GroupOpt, std::optional<ItemType> TypeOpt) const;
 
 private:

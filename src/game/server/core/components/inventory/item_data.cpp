@@ -1,13 +1,12 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "item_data.h"
+#include "inventory_db.h"
 
 #include <game/server/gamecontext.h>
-#include <engine/server/sql_string_helpers.h>
 #include <game/server/entity_manager.h>
 #include <generated/server_data.h>
 
-#include <components/Eidolons/EidolonManager.h>
 #include <components/mails/mail_wrapper.h>
 #include <game/server/core/tools/db_async_context.h>
 
@@ -79,17 +78,14 @@ namespace
 			const auto& Data = pContext->Data();
 			if(Data.m_Value <= 0)
 			{
-				Database->Execute<DB::REMOVE>([pContext](bool Updated) { OnFinalize(pContext, Updated); },
-					"tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", Data.m_ItemID, Data.m_UserID);
+				InventoryDb::DeleteAccountItem(Data.m_ItemID, Data.m_UserID)
+					.Then([pContext](Db::CResultSet&& Result) { OnFinalize(pContext, Result.Changed()); });
 				return;
 			}
 
-			Database->Execute<DB::INSERT>([pContext](bool Updated) { OnFinalize(pContext, Updated); },
-				"tw_accounts_items",
-				"(ItemID, UserID, Value, Settings, Enchant, Durability, ExpiresAt, Data) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}', NULLIF(UNHEX('{}'), '')) "
-				"ON DUPLICATE KEY UPDATE Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}', ExpiresAt = '{}', Data = NULLIF(UNHEX('{}'), '')",
-				Data.m_ItemID, Data.m_UserID, Data.m_Value, Data.m_Settings, Data.m_Enchant, Data.m_Durability, Data.m_ExpiresAt, sqlstr::HexEncode(Data.m_Data),
-				Data.m_Value, Data.m_Settings, Data.m_Enchant, Data.m_Durability, Data.m_ExpiresAt, sqlstr::HexEncode(Data.m_Data));
+			InventoryDb::SaveAccountItem(Data.m_ItemID, Data.m_UserID, Data.m_Value, Data.m_Settings, Data.m_Enchant,
+				Data.m_Durability, Data.m_ExpiresAt, Data.m_Data)
+				.Then([pContext](Db::CResultSet&& Result) { OnFinalize(pContext, Result.Changed()); });
 		}
 
 	public:

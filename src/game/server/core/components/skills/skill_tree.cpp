@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 
 #include "skill_tree.h"
+#include "skill_db.h"
 
 std::string format_skill_modifier(SkillMod Mod, int Value)
 {
@@ -61,12 +62,12 @@ void CSkillTree::LoadFromDB()
 	auto& Data = CSkillTree::Data();
 	Data.clear();
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_skills_tree");
-	while(pRes->next())
+	auto Rows = SkillDb::ListTree();
+	while(Rows.Next())
 	{
-		const int SkillID = pRes->getInt("SkillID");
-		const int LevelIndex = pRes->getInt("LevelIndex");
-		const int OptionIndex = pRes->getInt("OptionIndex");
+		const int SkillID = Rows.GetInt("SkillID");
+		const int LevelIndex = Rows.GetInt("LevelIndex");
+		const int OptionIndex = Rows.GetInt("OptionIndex");
 
 		if(SkillID <= 0)
 			continue;
@@ -78,11 +79,11 @@ void CSkillTree::LoadFromDB()
 			continue;
 
 		auto& Opt = Tree.Levels[LevelIndex].Options[OptionIndex];
-		Opt.Name = pRes->getString("Name");
-		Opt.Description = pRes->getString("Description");
-		Opt.ModType = static_cast<SkillMod>(pRes->getInt("ModType"));
-		Opt.ModValue = pRes->getInt("ModValue");
-		Opt.PriceSP = pRes->getInt("PriceSP");
+		Opt.Name = Rows.GetString("Name");
+		Opt.Description = Rows.GetString("Description");
+		Opt.ModType = static_cast<SkillMod>(Rows.GetInt("ModType"));
+		Opt.ModValue = Rows.GetInt("ModValue");
+		Opt.PriceSP = Rows.GetInt("PriceSP");
 	}
 }
 

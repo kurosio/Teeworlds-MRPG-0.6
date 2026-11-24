@@ -1,22 +1,23 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "group_manager.h"
+#include "group_db.h"
 #include "group_data.h"
 
 #include <game/server/core/tools/vote_optional.h>
+#include <game/server/core/tools/db_async_context.h>
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
 
 void CGroupManager::OnPreInit()
 {
-	// Create a pointer to store the result of the database query
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_groups");
-	while(pRes->next())
+	auto Groups = GroupDb::ListGroups();
+	while(Groups.Next())
 	{
 		// Get the values of the columns for the current row
-		GroupIdentifier ID = pRes->getInt("ID");
-		int OwnerUID = pRes->getInt("OwnerUID");
-		auto SetAccounts = DBSet(pRes->getString("AccountIDs"));
+		GroupIdentifier ID = Groups.GetInt("ID");
+		int OwnerUID = Groups.GetInt("OwnerUID");
+		auto SetAccounts = DBSet(Groups.GetString("AccountIDs"));
 
 		// Initialize a GroupData object with the retrieved values
 		auto groupData = GroupData::CreateElement(ID);
@@ -42,40 +43,48 @@ void CGroupManager::OnPlayerLogin(CPlayer* pPlayer)
 	}
 }
 
-GroupData* CGroupManager::CreateGroup(CPlayer* pPlayer) const
+void CGroupManager::CreateGroup(CPlayer* pPlayer) const
 {
 	// Check valid player
 	if(!pPlayer || !pPlayer->IsAuthed())
-		return nullptr;
+		return;
 
 	// Check if the player is already in a group
 	if(pPlayer->Account()->GetGroup())
 	{
 		GS()->Chat(pPlayer->GetCID(), "You're already in a group!");
-		return nullptr;
+		return;
 	}
 
-	// Get the highest group ID from the database
-	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", TW_GROUPS_TABLE, "ORDER BY ID DESC LIMIT 1");
-	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // Increment the highest group ID by 1, or set to 1 if no previous group exists
+	// The group id is assigned by the server: it is asked for first and the group
+	// is created in the answer, so nothing waits here.
+	auto pContext = DbAsync::MakeContext(pPlayer->GetCID());
+	GroupDb::ReadNextGroupID()
+		.Then([pContext](Db::CResultSet&& NextGroup)
+	{
+		auto* pPlayer = pContext->GetPlayer();
+		if(!pPlayer || pPlayer->Account()->GetGroup())
+			return;
 
-	// Initialize variables
-	int OwnerUID = pPlayer->Account()->GetID();
-	const auto StrAccount = std::to_string(OwnerUID);
-	const auto AccountsSet = DBSet(StrAccount);
+		// Initialize variables
+		const int InitID = NextGroup.HasRows() ? NextGroup.GetInt("NextID") : 1;
+		const int OwnerUID = pPlayer->Account()->GetID();
+		const auto StrAccount = std::to_string(OwnerUID);
+		const auto AccountsSet = DBSet(StrAccount);
 
-	// Insert to database
-	Database->Execute<DB::INSERT>(TW_GROUPS_TABLE, "(ID, OwnerUID, AccountIDs) VALUES ('{}', '{}', '{}')", InitID, OwnerUID, StrAccount.c_str());
+		// Insert to database
+		GroupDb::CreateGroup(InitID, OwnerUID, StrAccount);
 
-	// Initialize the group
-	auto groupData = GroupData::CreateElement(InitID);
-	groupData->Init(OwnerUID, AccountsSet);
-	groupData->UpdateRandomColor();
-	pPlayer->Account()->SetGroup(groupData);
+		// Initialize the group
+		auto groupData = GroupData::CreateElement(InitID);
+		groupData->Init(OwnerUID, AccountsSet);
+		groupData->UpdateRandomColor();
+		pPlayer->Account()->SetGroup(groupData);
 
-	// Send message
-	GS()->Chat(pPlayer->GetCID(), "The formation of the group took place!");
-	return groupData.get();
+		// Send message and refresh the open group menus
+		pContext->GS()->Chat(pContext->GetClientID(), "The formation of the group took place!");
+		pContext->GS()->UpdateVotesIfForAll(MENU_GROUP);
+	});
 }
 
 GroupData* CGroupManager::GetGroupByID(GroupIdentifier ID) const
@@ -169,9 +178,8 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	// create new group
 	if(PPSTR(pCmd, "GROUP_CREATE") == 0)
 	{
-		// try to create group
-		if(CreateGroup(pPlayer))
-			GS()->UpdateVotesIfForAll(MENU_GROUP);
+		// try to create group, the menu refreshes when the group exists
+		CreateGroup(pPlayer);
 		return true;
 	}
 

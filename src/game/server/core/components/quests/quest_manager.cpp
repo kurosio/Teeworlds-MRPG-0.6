@@ -1,23 +1,25 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "quest_manager.h"
+#include "quest_db.h"
 
+#include <game/server/core/tools/db_async_context.h>
 #include <game/server/gamecontext.h>
 
 void CQuestManager::OnPreInit()
 {
 	// Load quests
 	std::unordered_map<int, DBSet> vTempQuestFlags {};
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_quests_list");
-	while(pRes->next())
+	auto Quests = QuestDb::ListQuestDescriptions();
+	while(Quests.Next())
 	{
 		// initialize variables
-		const auto ID = pRes->getInt("ID");
-		const auto nextQuestID = pRes->getInt("NextQuestID");
-		const auto Name = pRes->getString("Name");
-		const auto Gold = pRes->getInt("Money");
-		const auto Exp = pRes->getInt("Exp");
-		DBSet flagSet(pRes->getString("Flags"));
+		const auto ID = Quests.GetInt("ID");
+		const auto nextQuestID = Quests.GetInt("NextQuestID");
+		const auto Name = Quests.GetString("Name");
+		const auto Gold = Quests.GetInt("Money");
+		const auto Exp = Quests.GetInt("Exp");
+		DBSet flagSet(Quests.GetString("Flags"));
 
 		// create new element
 		auto optionalNextQuestID = nextQuestID > 0 ? std::optional(nextQuestID) : std::nullopt;
@@ -35,26 +37,26 @@ void CQuestManager::OnPreInit()
 	}
 
 	// Load boards
-	ResultPtr pResBoard = Database->Execute<DB::SELECT>("*", TW_QUEST_BOARDS_TABLE);
-	while(pResBoard->next())
+	auto Boards = QuestDb::ListBoards();
+	while(Boards.Next())
 	{
 		// initialize variables
-		const auto ID = pResBoard->getInt("ID");
-		const auto Name = pResBoard->getString("Name");
-		const auto Pos = vec2((float)pResBoard->getInt("PosX"), (float)pResBoard->getInt("PosY"));
-		const auto WorldID = pResBoard->getInt("WorldID");
+		const auto ID = Boards.GetInt("ID");
+		const auto Name = Boards.GetString("Name");
+		const auto Pos = vec2((float)Boards.GetInt("PosX"), (float)Boards.GetInt("PosY"));
+		const auto WorldID = Boards.GetInt("WorldID");
 
 		// create new element
 		CQuestsBoard::CreateElement(ID)->Init(Name, Pos, WorldID);
 	}
 
 	// Load board quests
-	ResultPtr pResDailyQuest = Database->Execute<DB::SELECT>("*", TW_QUESTS_DAILY_BOARD_LIST);
-	while(pResDailyQuest->next())
+	auto BoardQuests = QuestDb::ListBoardQuests();
+	while(BoardQuests.Next())
 	{
 		// initialize variables
-		const auto QuestID = pResDailyQuest->getInt("QuestID");
-		const auto BoardID = pResDailyQuest->getInt("DailyBoardID");
+		const auto QuestID = BoardQuests.GetInt("QuestID");
+		const auto BoardID = BoardQuests.GetInt("DailyBoardID");
 
 		// Add the quest only when both referenced records exist. Keep startup safe
 		// when an administrator interrupted a database edit or imported legacy data
@@ -86,29 +88,38 @@ void CQuestManager::OnPreInit()
 	}
 }
 
-void CQuestManager::OnPlayerLogin(CPlayer* pPlayer)
+void CQuestManager::OnRegisterAccountLoadStages(CPlayer* pPlayer)
 {
-	// initialize player quests
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_quests", "WHERE UserID = '{}'", pPlayer->Account()->GetID());
-	while(pRes->next())
+	auto* pAccount = pPlayer->Account();
+	const int ClientID = pPlayer->GetCID();
+	const int AccountID = pAccount->GetID();
+	pAccount->AddLoadStage("quests", [ClientID, AccountID](CAccountData::CLoadDone Done)
 	{
-		// initialize variables
-		QuestIdentifier ID = pRes->getInt("QuestID");
-		QuestState State = (QuestState)pRes->getInt("Type");
-
-		// the quest must exist in the current game data, otherwise the saved
-		// reference is orphaned (quest removed from server data) - drop it so
-		// login does not fail on an invalid quest
-		if(CQuestDescription::Data().find(ID) == CQuestDescription::Data().end())
+		auto pContext = DbAsync::MakeContext(ClientID);
+		QuestDb::LoadAccountQuests(AccountID).Then([pContext, AccountID, Done = std::move(Done)](Db::CResultSet&& Rows) mutable
 		{
-			dbg_msg(PRINT_QUEST_PREFIX, "removing orphaned quest %d for account %d (quest not found in game data)", ID, pPlayer->Account()->GetID());
-			Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '{}' AND UserID = '{}'", ID, pPlayer->Account()->GetID());
-			continue;
-		}
+			auto* pPlayer = pContext->GetPlayer();
+			if(!pPlayer || !Rows.Ok())
+			{
+				Done(false);
+				return;
+			}
 
-		// create new element
-		CPlayerQuest::CreateElement(ID, pPlayer->GetCID())->Init(State);
-	}
+			while(Rows.Next())
+			{
+				QuestIdentifier ID = Rows.GetInt("QuestID");
+				QuestState State = (QuestState)Rows.GetInt("Type");
+				if(CQuestDescription::Data().find(ID) == CQuestDescription::Data().end())
+				{
+					dbg_msg(PRINT_QUEST_PREFIX, "removing orphaned quest %d for account %d (quest not found in game data)", ID, AccountID);
+					QuestDb::DeleteAccountQuest(ID, AccountID);
+					continue;
+				}
+				CPlayerQuest::CreateElement(ID, pPlayer->GetCID())->Init(State);
+			}
+			Done(true);
+		});
+	});
 }
 
 void CQuestManager::OnClientReset(int ClientID)
@@ -503,7 +514,7 @@ void CQuestManager::ResetPeriodQuests(CPlayer* pPlayer, ETimePeriod Period) cons
 	// initialize variables
 	const auto ClientID = pPlayer->GetCID();
 	const auto AccountID = pPlayer->Account()->GetID();
-	std::string questIDsToReset{};
+	std::vector<int> vQuestIDsToReset;
 
 	// reset period quests
 	for(auto& [QuestID, pQuest] : CPlayerQuest::Data()[ClientID])
@@ -522,7 +533,7 @@ void CQuestManager::ResetPeriodQuests(CPlayer* pPlayer, ETimePeriod Period) cons
 				auto* pCurrentQuest = pPlayer->GetQuest(pCurrentQuestInfo->GetID());
 				if(pCurrentQuest->IsAccepted() || pCurrentQuest->IsCompleted())
 				{
-					questIDsToReset += std::to_string(pCurrentQuest->GetID()) + ",";
+					vQuestIDsToReset.push_back(pCurrentQuest->GetID());
 					pCurrentQuest->Reset();
 				}
 
@@ -532,10 +543,9 @@ void CQuestManager::ResetPeriodQuests(CPlayer* pPlayer, ETimePeriod Period) cons
 	}
 
 	// is not empty try remove from database
-	if(!questIDsToReset.empty())
+	if(!vQuestIDsToReset.empty())
 	{
-		questIDsToReset.pop_back();
-		Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID IN ({}) AND UserID = '{}'", questIDsToReset.c_str(), AccountID);
+		QuestDb::DeleteAccountQuests(vQuestIDsToReset, AccountID);
 		GS()->Chat(ClientID, "The daily quests have been updated.");
 	}
 }

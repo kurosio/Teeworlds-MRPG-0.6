@@ -1,4 +1,4 @@
-﻿#include "scenario_player_manager.h"
+#include "scenario_player_manager.h"
 
 void CScenarioPlayerManager::UpdateClientScenarios(int ClientID)
 {

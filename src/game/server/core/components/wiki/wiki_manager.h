@@ -18,6 +18,9 @@ class CWikiManager : public MmoComponent
 
 	CWikiData* GetWikiData(int ID) const;
 	static void ConReloadWiki(IConsole::IResult* pResult, void* pUserData);
+
+	void ParseContent(const std::string& Content);
+	void Reload();
 };
 
 #endif

@@ -1,13 +1,16 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "house_manager.h"
+#include "house_db.h"
+#include "guild_house_data.h"
 
-#include <game/server/core/components/inventory/inventory_manager.h>
+#include <game/server/core/components/inventory/item_info_data.h>
 #include <game/server/gamecontext.h>
 
 #include "entities/house_door.h"
 
 constexpr int g_UpdateTextLifeTime = SERVER_TICK_SPEED * 2;
+constexpr float g_HouseChancePlanting = 0.025f;
 
 void CHouseManager::OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID)
 {
@@ -20,21 +23,21 @@ void CHouseManager::OnInitLink(const std::string& Type, int64_t OwnerID, int64_t
 	}
 }
 
-void CHouseManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
+void CHouseManager::OnInitWorld(int WorldID)
 {
 	// initialize houses
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_HOUSES_TABLE, SqlQueryWhereWorld.c_str());
-	while(pRes->next())
+	auto Houses = HouseDb::ListHouses(WorldID);
+	while(Houses.Next())
 	{
-		const auto ID = pRes->getInt("ID");
-		const auto ClassName = pRes->getString("Class");
-		const auto InitialFee = pRes->getInt("InitialFee");
-		const time_t RentDays = pRes->getInt64("RentDays");
-		const auto Bank = pRes->getBigInt("Bank");
-		const auto WorldID = pRes->getInt("WorldID");
-		std::string DoorsData = pRes->getString("Doors");
-		std::string FarmzonesData = pRes->getString("Farmzones");
-		std::string PropertiesData = pRes->getString("Properties");
+		const auto ID = Houses.GetInt("ID");
+		const auto ClassName = Houses.GetString("Class");
+		const auto InitialFee = Houses.GetInt("InitialFee");
+		const time_t RentDays = Houses.GetInt64("RentDays");
+		const auto Bank = Houses.GetBigInt("Bank");
+		const auto WorldID = Houses.GetInt("WorldID");
+		std::string DoorsData = Houses.GetString("Doors");
+		std::string FarmzonesData = Houses.GetString("Farmzones");
+		std::string PropertiesData = Houses.GetString("Properties");
 
 		CHouse::CreateElement(ID)->Init(ClassName, RentDays, InitialFee, Bank, WorldID, DoorsData, FarmzonesData, PropertiesData);
 	}
@@ -231,7 +234,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		if(pPlayer->Account()->SpendCurrency(Useds, ItemID))
 		{
 			bool Success = false;
-			Chance result(s_GuildChancePlanting);
+			Chance result(g_HouseChancePlanting);
 			for(int i = 0; i < Useds && !Success; i++)
 			{
 				Success = result() ? true : Success;
@@ -513,7 +516,7 @@ void CHouseManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 	// information
 	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE | VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2741 Farm {} zone", pFarmzone->GetName());
 	VInfo.Add("You can grow a plant on the property");
-	VInfo.Add("Chance: {}%", s_GuildChancePlanting);
+	VInfo.Add("Chance: {}%", g_HouseChancePlanting);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// planted list
@@ -527,7 +530,7 @@ void CHouseManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// items list availables can be planted
-	auto vItems = CInventoryManager::GetItemIDsCollectionByType(ItemType::ResourceHarvestable);
+	auto vItems = CItemDescription::CollectIDs(std::nullopt, ItemType::ResourceHarvestable);
 	VoteWrapper VPossiblePlanting(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "\u2741 Possible items for planting");
 	for(auto& ID : vItems)
 	{

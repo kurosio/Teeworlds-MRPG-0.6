@@ -25,16 +25,16 @@ public:
 	void Init(int ClientID)
 	{
 		m_ClientID = ClientID;
-		Load();
+		m_PrisonTerm = {};
 	}
 
 	void Imprison(int Seconds);
 	void Release();
 	void PostTick();
 	bool IsInPrison() const { return m_PrisonTerm.IsActive(); }
+	void RegisterLoadStage();
 
 private:
-	void Load();
 	void Save() const;
 };
 

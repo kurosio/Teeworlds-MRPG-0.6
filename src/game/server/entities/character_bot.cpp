@@ -11,7 +11,7 @@
 #include "ai_core/quest_npc_ai.h"
 
 #include <game/server/core/entities/weapons/gun_gravity.h>
-#include <game/server/core/components/Bots/BotData.h>
+#include <game/server/core/components/bots/bot_data.h>
 #include <game/server/gamecontext.h>
 #include <game/server/playerbot.h>
 #include "pickup.h"

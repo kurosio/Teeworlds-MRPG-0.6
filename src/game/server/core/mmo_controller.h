@@ -7,6 +7,7 @@
 
 #include <any>
 
+class CVoteLoad;
 class CMmoController
 {
 	CGS* m_pGameServer;
@@ -60,6 +61,7 @@ public:
 	void OnConsoleInit(IConsole* pConsole) const;
 	void OnTick() const;
 	bool OnClientMessage(int MsgID, void* pRawMsg, int ClientID) const;
+	void RegisterAccountLoadStages(CPlayer* pPlayer) const;
 	void OnPlayerLogin(CPlayer* pPlayer) const;
 	void OnCharacterTile(CCharacter* pChr) const;
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) const;
@@ -68,9 +70,11 @@ public:
 	bool OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd) const;
 	void OnResetClientData(int ClientID) const;
 	void OnHandleGlobalTimePeriod() const;
+	void ApplyGlobalTimePeriod(const std::string& Data) const;
 	void OnHandlePlayerTimePeriod(CPlayer* pPlayer) const;
 
 	static void AsyncClientEnterMsgInfo(std::string_view ClientName, int ClientID);
+	void SyncLocalizationsAsync() const;
 	void SyncLocalizations() const;
 	int SyncLocalizationFiles() const;
 	bool ReloadLocalizations() const;
@@ -78,13 +82,40 @@ public:
 
 	struct TempTopData
 	{
-		std::string Name;
-		std::map<std::string, BigInt> Data;
+		std::string m_Name;
+		BigInt m_Value {};
+		BigInt m_Extra {};
 	};
-	std::map<int, TempTopData> GetTopList(ToplistType Type, int Rows) const;
-	std::map<int, TempTopData> GetDungeonTopList(int DungeonID, int Rows) const;
-	std::map<int, TempTopData> GetRhythmTopList(int WorldID, const std::string& Difficulty, int Rows) const;
+
+	struct STopRows
+	{
+		std::map<int, TempTopData> m_Rows {};
+		int m_Stamp {};
+		bool m_Loaded {};
+	};
+
+	// The identity of a cached list. A menu hands it to VoteWrapper::SetLoad, so
+	// it shows the waiting state and is redrawn when the rows arrive.
+	static CVoteLoad TopLoad(ToplistType Type, int Rows);
+	static CVoteLoad DungeonLoad(int DungeonID, int Rows);
+	static CVoteLoad RhythmLoad(int WorldID, const std::string& Difficulty, int Rows);
+
+	const std::map<int, TempTopData>& GetTopList(ToplistType Type, int Rows) const;
+	const std::map<int, TempTopData>& GetDungeonTopList(int DungeonID, int Rows) const;
+	const std::map<int, TempTopData>& GetRhythmTopList(int WorldID, const std::string& Difficulty, int Rows) const;
 	void ShowTopList(class VoteWrapper* pWrapper, int ClientID, ToplistType Type, int Rows) const;
+
+private:
+	mutable std::map<std::string, STopRows> m_TopRows;
+	mutable bool m_TimePeriodPending = false;
+
+	// true when the entry has to be read (it is marked as running)
+	bool NeedTopRows(const std::string& Key) const;
+	const std::map<int, TempTopData>& TopRows(const std::string& Key) const
+	{
+		return m_TopRows[Key].m_Rows;
+	}
+	void SetTopRows(const std::string& Key, std::map<int, TempTopData>&& Rows) const;
 };
 
 #endif

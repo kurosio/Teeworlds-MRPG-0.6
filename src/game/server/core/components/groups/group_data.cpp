@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "group_data.h"
 
+#include "group_db.h"
 #include "game/server/gamecontext.h"
 
 bool GroupData::Add(int AccountID)
@@ -86,7 +87,7 @@ bool GroupData::Remove(int AccountID)
 void GroupData::Disband() const
 {
 	m_pData.erase(m_ID);
-	Database->Execute<DB::REMOVE>(TW_GROUPS_TABLE, "WHERE ID = '{}'", m_ID);
+	GroupDb::DeleteGroup(m_ID);
 }
 
 void GroupData::ChangeOwner(int AccountID)
@@ -163,6 +164,5 @@ void GroupData::Save() const
 		StrAccountIds.pop_back();
 
 	// update group data
-	Database->Execute<DB::UPDATE>(TW_GROUPS_TABLE, "AccountIDs = '{}', OwnerUID = '{}' WHERE ID = '{}'",
-		StrAccountIds.c_str(), m_LeaderUID, m_ID);
+	GroupDb::SaveGroup(m_ID, StrAccountIds.c_str(), m_LeaderUID);
 }

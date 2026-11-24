@@ -4,7 +4,7 @@
 #include "laser_orbit.h"
 #include <game/server/entities/pickup.h>
 
-#include <game/server/core/components/inventory/inventory_manager.h>
+#include <game/server/core/components/inventory/item_info_data.h>
 
 IServer* CBrush::Server() const { return m_pBoard->Server(); }
 CGS* CBrush::GS() const { return m_pBoard->GS(); }
@@ -47,7 +47,7 @@ CBrush::~CBrush()
 
 void CBrush::InitBrushCollection()
 {
-	m_vBrushItemsCollection = GS()->Core()->InventoryManager()->GetItemsCollection(ItemGroup::Decoration, std::nullopt);
+	m_vBrushItemsCollection = CItemDescription::CollectIDs(ItemGroup::Decoration, std::nullopt);
 	m_BrushItem = m_vBrushItemsCollection.begin();
 }
 

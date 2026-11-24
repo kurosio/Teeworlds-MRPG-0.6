@@ -3,7 +3,7 @@
 #include <game/collision.h>
 #include <game/server/gamecontext.h>
 
-#include <components/Bots/BotData.h>
+#include <components/bots/bot_data.h>
 #include <components/crafting/craft_data.h>
 #include <components/warehouse/warehouse_data.h>
 

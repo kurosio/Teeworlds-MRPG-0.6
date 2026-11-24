@@ -1,0 +1,6 @@
+# Tables the code already names but the schema dumps do not declare yet.
+#
+# scripts/check_style.py reports a table that the code queries but no SQL file
+# creates, because a fresh install built from the dumps fails on that table.
+# Every line here is a known gap, not a permission: remove the line by adding
+# the table to the dump. Format: "<table>  # reason".

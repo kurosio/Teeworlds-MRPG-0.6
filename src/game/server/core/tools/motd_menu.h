@@ -1,4 +1,4 @@
-﻿#ifndef GAME_SERVER_CORE_TOOLS_MOTD_MENU_H
+#ifndef GAME_SERVER_CORE_TOOLS_MOTD_MENU_H
 #define GAME_SERVER_CORE_TOOLS_MOTD_MENU_H
 #include "event_listener.h"
 #include "options_packer.h"

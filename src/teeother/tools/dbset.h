@@ -36,17 +36,6 @@ public:
 		std::sort(m_DataItems.begin(), m_DataItems.end(), comparator);
 	}
 
-	// dump string
-	std::string dump() const
-	{
-		if(m_DataItems.empty())
-			return "";
-
-		std::string result = m_DataItems[0];
-		for(size_t i = 1; i < m_DataItems.size(); ++i)
-			result += "," + m_DataItems[i];
-	}
-
 	bool hasSet(const std::string& pSet) const { return std::ranges::find(m_DataItems, pSet) != m_DataItems.end(); }
 	const std::vector<std::string>& getItems() const { return m_DataItems; }
 

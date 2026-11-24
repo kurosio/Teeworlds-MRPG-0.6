@@ -45,7 +45,7 @@ class CMiniEventsManager : public MmoComponent
 	MiniEventData m_Data{};
 
 public:
-	void OnInitWorld(const std::string& SqlQueryWhereWorld) override;
+	void OnInitWorld(int WorldID) override;
 	void OnTick() override;
 
 	bool IsActive() const;

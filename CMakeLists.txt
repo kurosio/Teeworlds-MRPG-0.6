@@ -163,6 +163,10 @@ set(TARGETS_OWN)
 set(TARGETS_DEP)
 set(TARGETS_LINK)
 
+# Keep generated IDE solutions (including Visual Studio's CMake Target View)
+# organized by component rather than presenting a flat target list.
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 ########################################################################
 # DEPENDENCIES
 ########################################################################
@@ -230,7 +234,6 @@ find_package(OpenSSL)
 find_package(MariaDB)
 #find_package(DiscordGameSDK)
 #find_package(GLEW)
-find_package(SQLite3)
 
 # another packages
 find_package(Git)
@@ -258,7 +261,7 @@ find_package(GTest)
 function(show_dependency_status OUTPUT_NAME NAME REQUIRED)
   if(${NAME}_FOUND)
     if(${NAME}_BUNDLED)
-      message(STATUS " * ${OUTPUT_NAME} not found (using bundled version)")
+      message(STATUS " * ${OUTPUT_NAME} found (using bundled version)")
     else()
       message(STATUS " * ${OUTPUT_NAME} found")
     endif()
@@ -287,7 +290,6 @@ endif()
 if(SERVER_COMPILE)
   show_dependency_status("MariaDB" MARIADB TRUE)
   show_dependency_status("OpenSSL" OPENSSL FALSE)
-  show_dependency_status("SQLite3" SQLite3 TRUE)
 endif()
 #if(CLIENT_COMPILE)
 #  show_dependency_status("Freetype" FREETYPE TRUE)
@@ -445,7 +447,6 @@ set(COPY_FILES_SERVER
   ${CURL_COPY_FILES}
   ${MARIADB_COPY_FILES}
   ${OPENSSL_COPY_FILES}
-  ${SQLite3_COPY_FILES}
 )
 
 file(COPY #${COPY_FILES_CLIENT}
@@ -746,6 +747,34 @@ list(APPEND TARGETS_OWN engine-shared game-shared)
 if(SERVER_COMPILE)
   # Sources
   file(GLOB_RECURSE ENGINE_SERVER "src/engine/server/*.cpp" "src/engine/server/*.h")
+  set(SERVER_DB_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_types.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_types.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_result.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_result.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_pool.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_pool.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_driver.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_async.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_async.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_mariadb.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_mariadb.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_startup.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/db/db_startup.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/sql_lost_query_logger.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/server/sql_lost_query_logger.h
+  )
+  # Keep the DB implementation out of the broad engine-server source glob. The
+  # standalone library is linked by the server and DB tests exactly once.
+  list(REMOVE_ITEM ENGINE_SERVER ${SERVER_DB_SRC})
+  add_library(mmoteeworlds_db STATIC ${SERVER_DB_SRC})
+  target_include_directories(mmoteeworlds_db
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
+    PRIVATE ${MARIADB_INCLUDE_DIRS}
+  )
+  target_link_libraries(mmoteeworlds_db PUBLIC ${MARIADB_LIBRARIES})
+  list(APPEND TARGETS_OWN mmoteeworlds_db)
+
   file(GLOB_RECURSE GAME_SERVER "src/game/server/*.cpp" "src/game/server/*.h" "src/game/server/*.hpp")
   file(GLOB LOCALIZED_SERVER "src/teeother/components/*.cpp" "src/teeother/components/*.h" "src/teeother/tools/*.cpp"
      "src/teeother/tools/geolite2pp/*.cpp" "src/teeother/tools/geolite2pp/*.hpp"
@@ -756,13 +785,7 @@ if(SERVER_COMPILE)
     src/relay/relay_json.cpp src/relay/relay_stream.cpp)
 
   set(SERVER_INCLUDES_DIRS
-    ${MARIADB_INCLUDE_DIRS}
-    ${SQLite3_INCLUDE_DIRS}
     ${LIBMAXMINDDB_INCLUDE_DIR}
-  )
-  set(SERVER_LIBRARIES
-    ${MARIADB_LIBRARIES}
-    ${SQLite3_LIBRARIES}
   )
   set(DEPS_SERVER ${DEPS})
 
@@ -784,7 +807,7 @@ if(SERVER_COMPILE)
   )
   target_precompile_headers(${TARGET_SERVER} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/src/teeother/stdafx_shared.h>" "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/src/teeother/stdafx_server.h>")
   target_include_directories(${TARGET_SERVER} PRIVATE ${SERVER_INCLUDES_DIRS})
-  target_link_libraries(${TARGET_SERVER} ${LIBS} ${SERVER_LIBRARIES})
+  target_link_libraries(${TARGET_SERVER} ${LIBS} mmoteeworlds_db)
 
   list(APPEND TARGETS_OWN ${TARGET_SERVER})
   list(APPEND TARGETS_LINK ${TARGET_SERVER})
@@ -908,15 +931,45 @@ add_custom_target(everything DEPENDS ${TARGETS_OWN})
 
 if(GTEST_FOUND OR DOWNLOAD_GTEST)
   file(GLOB TESTS "src/test/*.cpp" "src/test/*.h")
+  # The DB tests link the same standalone implementation as the server; only
+  # game-facing DB adapters are compiled into the test runner.
+  set(TESTS_DB_SRC
+    src/game/server/core/components/accounts/account_db.cpp
+  )
+  set(TESTS_DB_LIBRARIES)
+  if(NOT MARIADB_FOUND OR NOT TARGET mmoteeworlds_db)
+    # The DB tests need the driver's client library and the database target.
+    message(STATUS "MariaDB/database target unavailable: the database tests are skipped")
+    set(TESTS_DB_SRC "")
+    list(REMOVE_ITEM TESTS
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/test/db.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/test/db_account.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/test/db_fake_server.cpp
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/test/db_queue.cpp
+    )
+  else()
+    set(TESTS_DB_LIBRARIES mmoteeworlds_db)
+  endif()
+  # The background runtime of the server (files, background jobs) is part of the
+  # tested surface as well; it does not need the database client.
+  set(TESTS_RUNTIME_SRC
+    src/engine/server/async.cpp
+    src/engine/server/async_file.cpp
+    src/game/server/core/components/accounts/account_load_plan.cpp
+  )
   set(TARGET_TESTRUNNER testrunner)
   add_executable(${TARGET_TESTRUNNER} EXCLUDE_FROM_ALL
     ${TESTS}
+    ${TESTS_DB_SRC}
+    ${TESTS_RUNTIME_SRC}
     $<TARGET_OBJECTS:engine-shared>
     $<TARGET_OBJECTS:game-shared>
     ${DEPS}
   )
-  target_link_libraries(${TARGET_TESTRUNNER} ${LIBS} ${GTEST_LIBRARIES})
+  target_link_libraries(${TARGET_TESTRUNNER} ${LIBS} ${GTEST_LIBRARIES} ${TESTS_DB_LIBRARIES})
   target_include_directories(${TARGET_TESTRUNNER} PRIVATE ${GTEST_INCLUDE_DIRS})
+  # The database tests start the standalone fake MariaDB server in src/test.
+  target_compile_definitions(${TARGET_TESTRUNNER} PRIVATE MRPG_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
   list(APPEND TARGETS_OWN ${TARGET_TESTRUNNER})
   list(APPEND TARGETS_LINK ${TARGET_TESTRUNNER})
@@ -924,8 +977,16 @@ if(GTEST_FOUND OR DOWNLOAD_GTEST)
   add_custom_target(run_tests
     COMMAND $<TARGET_FILE:${TARGET_TESTRUNNER}> ${TESTRUNNER_ARGS}
     COMMENT Running tests
-    DEPENDS ${TARGET_TESTRUNER}
+    DEPENDS ${TARGET_TESTRUNNER}
     USES_TERMINAL
+  )
+
+  # Same suite through CTest: `ctest --output-on-failure` in the build directory,
+  # or the "run tests" action of an IDE. The runner returns the failure count.
+  add_test(NAME ${TARGET_TESTRUNNER} COMMAND ${TARGET_TESTRUNNER} ${TESTRUNNER_ARGS})
+  set_tests_properties(${TARGET_TESTRUNNER} PROPERTIES
+    FAIL_REGULAR_EXPRESSION "\\[  FAILED  \\]"
+    TIMEOUT 900
   )
 endif()
 
@@ -1206,6 +1267,38 @@ unset(CPACK_DIRS)
 unset(CPACK_FILES)
 include(CPack)
 
+function(set_target_folder_if_exists TARGET_NAME)
+  if(TARGET "${TARGET_NAME}")
+    set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "${ARGN}")
+  endif()
+endfunction()
+
+foreach(target json md5 zlib libmaxminddb)
+  set_target_folder_if_exists(${target} "Dependencies")
+endforeach()
+set_target_folder_if_exists(engine-shared "Libraries")
+set_target_folder_if_exists(game-shared "Libraries")
+set_target_folder_if_exists(mmoteeworlds_db "Server/Database")
+if(TARGET_SERVER)
+  set_target_folder_if_exists(${TARGET_SERVER} "Server")
+endif()
+if(TARGET_RELAY)
+  set_target_folder_if_exists(${TARGET_RELAY} "Server")
+endif()
+if(TARGET_SYNC_TEST)
+  set_target_folder_if_exists(${TARGET_SYNC_TEST} "Tests/Integration")
+endif()
+if(TARGET_TESTRUNNER)
+  set_target_folder_if_exists(${TARGET_TESTRUNNER} "Tests/Unit")
+endif()
+set_target_folder_if_exists(everything "Build")
+set_target_folder_if_exists(run_tests "Tests")
+set_target_folder_if_exists(package_default "Packaging")
+set_target_folder_if_exists(package_all "Packaging")
+foreach(target ${PACKAGE_TARGETS})
+  set_target_folder_if_exists(${target} "Packaging")
+endforeach()
+
 ########################################################################
 # COMPILER-SPECIFICS
 ########################################################################
@@ -1285,20 +1378,16 @@ foreach(target ${TARGETS_OWN})
   endif()
 
   target_include_directories(${target} PRIVATE ${PROJECT_BINARY_DIR}/src)
-  target_include_directories(${target} PRIVATE src)
-  target_include_directories(${target} PRIVATE src/game/server/core)
   target_compile_definitions(${target} PRIVATE $<$<CONFIG:Debug>:CONF_DEBUG>)
-  target_include_directories(${target} PRIVATE ${ZLIB_INCLUDE_DIRS})
-  target_include_directories(${target} PRIVATE ${CURL_INCLUDE_DIRS})
 
-  if(OPENSSL_FOUND)
-	target_compile_definitions(${target} PRIVATE CONF_OPENSSL)
-	target_include_directories(${target} PRIVATE ${OPENSSL_INCLUDE_DIRS})
+  if(NOT target STREQUAL "mmoteeworlds_db")
+    target_include_directories(${target} PRIVATE src src/game/server/core ${ZLIB_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS})
+    if(OPENSSL_FOUND)
+      target_compile_definitions(${target} PRIVATE CONF_OPENSSL)
+      target_include_directories(${target} PRIVATE ${OPENSSL_INCLUDE_DIRS})
+    endif()
   endif()
 
-  if(MARIADB_FOUND)
-	target_include_directories(${target} PRIVATE ${MARIADB_INCLUDE_DIRS})
-  endif()
 endforeach()
 
 foreach(target ${TARGETS_DEP})

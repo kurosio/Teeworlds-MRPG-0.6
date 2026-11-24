@@ -5,7 +5,7 @@
 
 #include "components/accounts/account_manager.h"
 #include "components/guilds/guild_manager.h"
-#include "components/Bots/BotManager.h"
+#include "components/bots/bot_manager.h"
 #include "components/mails/mail_wrapper.h"
 
 void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
@@ -406,8 +406,8 @@ void RconProcessor::ConSyncLinesForTranslate(IConsole::IResult* pResult, void* p
 	const auto pServer = (IServer*)pUserData;
 	const auto pSelf = (CGS*)pServer->GameServer();
 
-	// start thread for sync lines
-	std::thread(&CMmoController::SyncLocalizations, pSelf->Core()).detach();
+	// the sync runs on generic background workers and reports back on the game thread
+	pSelf->Core()->SyncLocalizationsAsync();
 }
 
 
@@ -515,21 +515,20 @@ void RconProcessor::ConUnBanAcc(IConsole::IResult* pResult, void* pUserData)
 
 void RconProcessor::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 {
-	// initialize variables
-	int Counter = 0;
 	const auto pServer = (IServer*)pUserData;
 	const auto pSelf = (CGS*)pServer->GameServer(INITIALIZER_WORLD_ID);
 
-	// collects banned accounts
-	for(const auto& p : pSelf->Core()->AccountManager()->BansAccount())
+	// the list is read in the background and printed when it arrives
+	auto* pConsole = pSelf->Console();
+	pSelf->Core()->AccountManager()->BansAccount([pConsole](std::vector<CAccountManager::AccBan>&& vBans)
 	{
-		// write information about afk
-		pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", "ban_id=%d name='%s' ban_until='%s' reason='%s'", p.id, p.nickname.c_str(), p.until.c_str(), p.reason.c_str());
-		Counter++;
-	}
+		for(const auto& p : vBans)
+			pConsole->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", "ban_id=%d name='%s' ban_until='%s' reason='%s'", 
+				p.id, p.nickname.c_str(), p.until.c_str(), p.reason.c_str());
 
-	// total bans
-	pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", "%d bans in total", Counter);
+		// total bans
+		pConsole->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", "%d bans in total", (int)vBans.size());
+	});
 }
 
 

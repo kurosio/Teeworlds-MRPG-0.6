@@ -1,9 +1,9 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_QUEST_STEP_DATA_INFO_H
-#define GAME_SERVER_COMPONENT_QUEST_STEP_DATA_INFO_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_QUESTS_QUEST_STEP_DATA_H
+#define GAME_SERVER_CORE_COMPONENTS_QUESTS_QUEST_STEP_DATA_H
 
-#include <game/server/core/components/Bots/BotData.h>
+#include <game/server/core/components/bots/bot_data.h>
 
 class CGS;
 class CPlayer;

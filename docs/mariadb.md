@@ -76,12 +76,12 @@ mysql -u root -p -e "SHOW VARIABLES LIKE 'character_set_server';"
 
 ## 3) Database and user commands for MRPG
 
-The server opens two connections, one per database. Each query uses one of them, chosen by its table:
+The server requires exactly two database endpoints, each with an independent connection pool. Every query is routed by its declared table kind:
 
-* `mrpg_shared` — content, accounts and records. When several game servers work together, this database is replicated between them and the server reaches it through [`other/sql_bridge`](../other/sql_bridge/README.md) (`SELECT` from the local replica, writes to the primary over the WAN).
-* `mrpg_local` — the state of one game server (guilds, groups, auction, owners of houses). Every game server has its own. It is **never replicated** and it never goes through the bridge: it is a plain direct connection to the MariaDB next to the server.
+* `mrpg_shared` — the remote authoritative database for content, accounts and data shared by game servers. The game server connects to MariaDB directly; reads and writes use the same endpoint.
+* `mrpg_local` — this game server's local state (groups, guild decorations/history/invites, house decorations and links). It connects directly to the MariaDB local to this server.
 
-Both may live in one MariaDB (single server) or in two (bridge deployments).
+For a development setup both endpoints may be on one MariaDB host, but they remain separate schemas, endpoint configurations and pools. Production deployments should point the remote endpoint at the shared database host and the local endpoint at `127.0.0.1`.
 
 ```sql
 CREATE DATABASE IF NOT EXISTS mrpg_shared
@@ -92,11 +92,13 @@ CREATE DATABASE IF NOT EXISTS mrpg_local
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-CREATE USER IF NOT EXISTS 'mrpg_user'@'127.0.0.1' IDENTIFIED BY 'CHANGE_ME_SHARED_PASSWORD';
+-- Run on the remote MariaDB; restrict the host to the game server's address.
+CREATE USER IF NOT EXISTS 'mrpg_user'@'GAME_SERVER_IP' IDENTIFIED BY 'CHANGE_ME_SHARED_PASSWORD';
+GRANT SELECT, INSERT, UPDATE, DELETE ON mrpg_shared.* TO 'mrpg_user'@'GAME_SERVER_IP';
+
+-- Run on this game server's local MariaDB.
 CREATE USER IF NOT EXISTS 'mrpg_local'@'127.0.0.1' IDENTIFIED BY 'CHANGE_ME_LOCAL_PASSWORD';
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON mrpg_shared.* TO 'mrpg_user'@'127.0.0.1';
--- Local game state has a separate, database-scoped account with full access.
-GRANT ALL PRIVILEGES ON mrpg_local.* TO 'mrpg_local'@'127.0.0.1';
+GRANT SELECT, INSERT, UPDATE, DELETE ON mrpg_local.* TO 'mrpg_local'@'127.0.0.1';
 FLUSH PRIVILEGES;
 ```
 
@@ -117,7 +119,14 @@ mysql -u root -p mrpg_local < mrpg_local.sql
 | `mrpg_local` | `tw_groups`, `tw_guilds_decorations`, `tw_guilds_history`, `tw_guilds_invites`, `tw_houses_decorations`, `tw_links` |
 | `mrpg_shared` | every other table |
 
-The six local tables are a fixed list in the server (`LOCAL_TABLES` in `src/engine/server/sql_connect_pool.cpp`). Every query names its table, and the first name decides the connection: a name from that list uses the local connection, every other name the shared one. The game code never names a database, and nothing is parsed from the SQL text.
+The six local tables are a fixed list in the database layer (`LOCAL_TABLES` in `src/engine/server/db/db_types.h`). A module names its endpoint once, at compile time, from the table it writes:
+
+```cpp
+static constexpr Db::EKind KIND = Db::KindOfTable(TW_GUILDS_TABLE); // EKind::Local for the six, EKind::Remote otherwise
+Db::Query(KIND, "UPDATE tw_guilds SET Bank = ? WHERE ID = ?", Db::Bind(Bank, ID));
+```
+
+A name from that list uses the local pool, every other name uses the remote pool, and routing never parses the SQL text. Both endpoints and database names are required at startup; a missing local endpoint is an error, not a fallback to remote.
 
 Notes:
 
@@ -126,19 +135,42 @@ Notes:
 * Moving a table to the other database means editing that list and rebuilding the server.
 * A query for a table that exists in neither database goes to the shared database, so the error names it.
 
+### json columns
+
+`tw_bots_info.JsonTeeInfo` holds one tee-info document. The column was
+`varchar(128)` with a default that was not valid JSON (`color_feer`, no closing
+brace), so a row written without an explicit value, or a value a little longer
+than the seeded ones, produced a document the parser rejects. The dump declares
+`varchar(256)` and a valid default; an installation created earlier needs the
+same two changes once, with every game server stopped:
+
+```sql
+ALTER TABLE tw_bots_info
+    MODIFY `JsonTeeInfo` varchar(256) NOT NULL
+    DEFAULT '{\"color_body\":-1,\"color_feet\":-1,\"custom_color\":0,\"skin\":\"default\"}';
+-- rows written with the old default, and rows cut by the old width:
+UPDATE tw_bots_info SET JsonTeeInfo = '{\"color_body\":-1,\"color_feet\":-1,\"custom_color\":0,\"skin\":\"default\"}'
+    WHERE JSON_VALID(JsonTeeInfo) = 0;
+```
+
+A column that stores a json document is sized for the largest document the code
+writes, not for the seeded ones: MariaDB truncates an overlong value in a
+non-strict `sql_mode`, and a truncated document is a parse error every time it
+is read.
+
 ### Server settings
 
 ```
-# shared: through the bridge (or straight to the primary without one)
+# remote: direct connection to the shared authoritative MariaDB
 sv_sql_host "127.0.0.1"
-sv_sql_port "33060"
+sv_sql_port "3306"
 sv_sql_login "mrpg_user"
 sv_sql_password "CHANGE_ME_SHARED_PASSWORD"
 sv_sql_database_shared "mrpg_shared"
 sv_sql_pool_size 3
 sv_sql_use_tls 0
 
-# local: direct game-server → local MariaDB, never the bridge
+# local: direct game-server → its own local MariaDB
 sv_sql_local_host "127.0.0.1"
 sv_sql_local_port "3306"
 sv_sql_local_login "mrpg_local"
@@ -148,26 +180,15 @@ sv_sql_local_pool_size 1
 sv_sql_local_use_tls 0
 ```
 
-`sv_sql_*` is the shared connection, `sv_sql_local_*` the local one. Each pool opens exactly its own connections: `sv_sql_pool_size` to the shared database, `sv_sql_local_pool_size` to the local one (plus one synchronous connection per database and thread that needs it).
+`sv_sql_*` configures the remote connection, and `sv_sql_local_*` configures the local connection. Each independent pool opens only its endpoint's connections: `sv_sql_pool_size` to the remote database and `sv_sql_local_pool_size` to the local one. There are no synchronous/ad-hoc database connections.
 
-Where the two point:
-
-| Setup | `sv_sql_host` | `sv_sql_local_host` |
-|---|---|---|
-| one MariaDB, no bridge | its address | empty (same server) |
-| bridge for the shared database | the bridge (33060) | the MariaDB next to the server (3306) — **not** the bridge |
-
-The local SQL port is always MariaDB's own (`sv_sql_local_port`), never the bridge port: the bridge serves `mrpg_shared` only and would not know a local database. When the local database lives on the primary instead, set `sv_sql_local_host` to the primary — correct, but every local query then pays a WAN round trip.
-
-On a replica configured with `read_only = 1`, normal database grants alone still reject local writes with MariaDB error 1290. Grant the direct local account `READ ONLY ADMIN` in addition to its database-scoped `ALL PRIVILEGES`; this bypasses the global read-only guard but does not grant it access to `mrpg_shared`. `other/sql_bridge/setup_replication.sh` creates this exact account and grant automatically.
-
-`sv_sql_local_database ""` leaves the local connection unused: every query goes to the shared database, as in older versions. Set both names in the configuration file, not while the server runs. The shared login and the local login may differ; each connection is opened with its own account.
+For development on one MariaDB host, use that host address for both endpoints but keep the separate schema names and credentials. In production, configure `sv_sql_host` with the remote MariaDB address and `sv_sql_local_host` as `127.0.0.1` (or the local MariaDB address). Both database names and both complete endpoint configurations are mandatory; an empty `sv_sql_local_database` is invalid. The remote and local logins may differ.
 
 For split-database deployments, every game server needs a local database of its own; give each of them another name, for example `sv_sql_local_database "mrpg_local_eu"`.
 
-At startup the server opens both databases. It does not start if:
+At startup the server opens and checks both databases. It does not start if:
 
-* the shared database can not be opened, or the local one is configured and can not be opened;
+* either required endpoint is incomplete or cannot be opened;
 * a local table is missing in the local database (import `mrpg_local.sql`);
 * a local table sits in the shared database (a half-finished split would be read from the wrong side).
 
@@ -193,9 +214,8 @@ tables and backup until the new installation has been checked.
 
 Before starting the server, ensure the local database contains all six tables
 and that none of those six tables remains in the shared database. The server
-checks both conditions at startup and refuses an ambiguous split. Grant the
-game account access to the new local database, set `sv_sql_database_shared`
-to the shared database and `sv_sql_local_database` to the per-server local
-database, then start the server and inspect its SQL startup log. For
-multi-server replicas, follow the current [SQL bridge upgrade guide](../other/sql_bridge/README.md)
-instead of manually moving replicated tables on a live installation.
+checks both conditions at startup and refuses an ambiguous split. Grant the local account access to the new local database, set
+`sv_sql_database_shared` to the remote shared database and
+`sv_sql_local_database` to the per-server local database, then start the server
+and inspect its SQL startup log. Keep all game servers stopped until the
+migration and endpoint checks are complete.

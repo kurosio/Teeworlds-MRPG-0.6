@@ -76,9 +76,10 @@ record using the shared database. Account-session takeover is a request/ack
 exchange and is handled separately by the account manager.
 
 For guild and auction refreshes, the corresponding records must be visible to
-every game server (the same database or a replicated shared database), or a
-receiver cannot apply the event. The account takeover flow also assumes shared
-account data. Local-only tables must not be used as cross-server state.
+every game server through the same remote database endpoint, or a receiver
+cannot apply the event. The account takeover flow also assumes shared account
+data. Local-only tables must not be used as cross-server state. Database
+operations use direct MariaDB connections to the configured remote endpoint.
 Delivery is not durable or acknowledged end to end. The sending server keeps
 unsent frames in memory and retries them after reconnect if the connection
 breaks mid-write; once a frame has been written to its TCP socket, it is removed

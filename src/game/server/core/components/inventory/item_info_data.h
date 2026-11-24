@@ -153,6 +153,9 @@ public:
 	std::string GetStringAttributesInfo(CPlayer* pPlayer, int Enchant) const;
 	std::string GetStringEnchantLevel(int Enchant) const;
 
+	// IDs of the catalog entries matching the supplied filters.
+	static std::vector<ItemIdentifier> CollectIDs(std::optional<ItemGroup> Group, std::optional<ItemType> Type);
+
 	// total data
 	inline static std::unordered_map<int, PotionContext> s_vTotalPotionByItemIDList{};
 };

@@ -1,5 +1,5 @@
-#ifndef GAME_SERVER_COMPONENT_WAREHOUSE_DATA_H
-#define GAME_SERVER_COMPONENT_WAREHOUSE_DATA_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_WAREHOUSE_WAREHOUSE_DATA_H
+#define GAME_SERVER_CORE_COMPONENTS_WAREHOUSE_WAREHOUSE_DATA_H
 
 #include <teeother/tools/grouped_container.h>
 #include <game/server/core/components/inventory/item_data.h>

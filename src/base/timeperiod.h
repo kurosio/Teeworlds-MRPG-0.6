@@ -1,6 +1,8 @@
 #ifndef BASE_TIMEPERIOD_H
 #define BASE_TIMEPERIOD_H
 
+#include <base/format.h>
+
 #include <chrono>
 #include <map>
 #include <string>
@@ -137,7 +139,7 @@ public:
     }
 
     [[nodiscard]] std::string asSqlInterval() const {
-        return std::format("interval {} second", m_TotalDuration.count());
+        return fmt_default("interval {} second", m_TotalDuration.count());
     }
 
     [[nodiscard]] constexpr std::chrono::seconds duration() const noexcept { return m_TotalDuration; }
@@ -149,10 +151,10 @@ public:
     // Format as string (e.g., "2d 5h 30m 15s")
     [[nodiscard]] std::string toString() const {
         std::string result;
-        if (m_Days > 0) result += std::format("{}d ", m_Days);
-        if (m_Hours > 0) result += std::format("{}h ", m_Hours);
-        if (m_Minutes > 0) result += std::format("{}m ", m_Minutes);
-        if (m_Seconds > 0 || result.empty()) result += std::format("{}s", m_Seconds);
+        if (m_Days > 0) result += fmt_default("{}d ", m_Days);
+        if (m_Hours > 0) result += fmt_default("{}h ", m_Hours);
+        if (m_Minutes > 0) result += fmt_default("{}m ", m_Minutes);
+        if (m_Seconds > 0 || result.empty()) result += fmt_default("{}s", m_Seconds);
         return result;
     }
 

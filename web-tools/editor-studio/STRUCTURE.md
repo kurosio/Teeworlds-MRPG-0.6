@@ -233,7 +233,7 @@ node web-tools/editor-studio/tools/check.mjs
   что уже вставлено: имя записи и `#ID`; клик по чипу меняет запись, крестик убирает подстановку,
   неизвестный ID подсвечивается. Справа в панели — длина реплики в байтах и лимит игры (1024).
   Подстановки те же, что заменяет сервер в
-  `src/game/server/core/components/Bots/DialogsData.cpp`.
+  `src/game/server/core/components/bots/dialogs_data.cpp`.
 - **db-editor-runtime.js** — компактный runtime для CRUD-редакторов БД (список + форма + сохранение).
   Запоминает последнюю открытую запись (`editor-core:last-record:<ресурс>`) и
   открывает редактор на ней после перезагрузки; перерисовка списка сохраняет

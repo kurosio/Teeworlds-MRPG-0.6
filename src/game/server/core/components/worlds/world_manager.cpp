@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "world_manager.h"
+#include "world_db.h"
 
 #include <game/server/gamecontext.h>
 
@@ -13,19 +14,19 @@ CWorldManager::~CWorldManager()
 	m_PathFinderBFS.clear();
 }
 
-void CWorldManager::InitCollectingNodes(const std::string& SqlQueryWhereWorld)
+void CWorldManager::InitCollectingNodes(int WorldID)
 {
 	// resource definitions belong to this world
-	ResultPtr pNodes = Database->Execute<DB::SELECT>("*", "tw_nodes_collecting", SqlQueryWhereWorld.c_str());
-	while(pNodes->next())
+	auto Nodes = WorldDb::ListCollectingNodes(WorldID);
+	while(Nodes.Next())
 	{
-		const int ID = pNodes->getInt("ID");
-		const int SwitchID = pNodes->getInt("SwitchID");
-		const std::string Type = pNodes->getString("Type");
+		const int ID = Nodes.GetInt("ID");
+		const int SwitchID = Nodes.GetInt("SwitchID");
+		const std::string Type = Nodes.GetString("Type");
 		GatheringNode Node {};
-		Node.Name = pNodes->getString("Name");
-		Node.Level = pNodes->getInt("Level");
-		Node.Health = pNodes->getInt("Health");
+		Node.Name = Nodes.GetString("Name");
+		Node.Level = Nodes.GetInt("Level");
+		Node.Health = Nodes.GetInt("Health");
 		if(SwitchID < 1 || SwitchID > 255 || Node.Level < 1 || Node.Health < 1 || Node.Name.empty())
 		{
 			dbg_msg("collecting", "Invalid node #%d in world %d", ID, GS()->GetWorldID());
@@ -33,7 +34,7 @@ void CWorldManager::InitCollectingNodes(const std::string& SqlQueryWhereWorld)
 		}
 
 		// sets an exact base amount. ChanceProcessor keeps the weighted selection.
-		const std::string Properties = pNodes->getString("Properties");
+		const std::string Properties = Nodes.GetString("Properties");
 		const DBSet Items(Properties);
 		bool Valid = true;
 		for(const auto& Entry : Items.getItems())
@@ -75,36 +76,26 @@ void CWorldManager::InitCollectingNodes(const std::string& SqlQueryWhereWorld)
 	}
 }
 
-void CWorldManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
+void CWorldManager::OnInitWorld(int WorldID)
 {
-	InitCollectingNodes(SqlQueryWhereWorld);
+	InitCollectingNodes(WorldID);
 
 	std::deque<CWorldSwapData> vSwappers{};
 	const auto currentWorldID = GS()->GetWorldID();
 
 	// initializing world swappers from the database
-	ResultPtr pResSwap = Database->Execute<DB::SELECT>("*", "tw_world_swap", SqlQueryWhereWorld.c_str());
-	while(pResSwap->next())
+	auto Swappers = WorldDb::ListSwappers(WorldID);
+	while(Swappers.Next())
 	{
-        std::pair<vec2, vec2> SwapperPos;
-        SwapperPos.first = vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY"));
-        SwapperPos.second = vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY"));
+		std::pair<vec2, vec2> SwapperPos;
+		SwapperPos.first = vec2(Swappers.GetInt("PositionX"), Swappers.GetInt("PositionY"));
+		SwapperPos.second = vec2(Swappers.GetInt("TwoPositionX"), Swappers.GetInt("TwoPositionY"));
 
-        std::pair<int, int> Worlds;
-        Worlds.first = pResSwap->getInt("WorldID") ;
-        Worlds.second = pResSwap->getInt("TwoWorldID");
+		std::pair<int, int> Worlds;
+		Worlds.first = Swappers.GetInt("WorldID");
+		Worlds.second = Swappers.GetInt("TwoWorldID");
 
 		vSwappers.emplace_back(SwapperPos, Worlds);
-//        if(Worlds.second == currentWorldID) // two-sided
-//        {
-//            std::swap(SwapperPos.first, SwapperPos.second);
-//            std::swap(Worlds.first, Worlds.second);
-//            vSwappers.emplace_back(SwapperPos, Worlds);
-//            dbg_msg("SWAPPERS", "[%d](%0.2f;0.2f) -> [%d](%0.2f;0.2f)",
-//                    Worlds.first, SwapperPos.first.x, SwapperPos.first.y,
-//                    Worlds.second, SwapperPos.second.x, SwapperPos.second.y
-//            );
-//        }
 	}
 
 	// initializing world data

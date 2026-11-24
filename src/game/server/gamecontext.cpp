@@ -19,7 +19,7 @@
 #include "core/entities/items/drop_items.h"
 
 #include "core/components/accounts/account_manager.h"
-#include "core/components/Bots/BotManager.h"
+#include "core/components/bots/bot_manager.h"
 #include "core/components/quests/quest_manager.h"
 #include "core/components/skills/skill_manager.h"
 
@@ -27,7 +27,7 @@
 #include "core/components/accounts/account_listener.h"
 #include "core/components/achievements/achievement_listener.h"
 #include "core/components/inventory/inventory_listener.h"
-#include "core/components/Eidolons/EidolonInfoData.h"
+#include "core/components/eidolons/eidolon_info_data.h"
 #include "core/components/worlds/world_data.h"
 #include "core/tools/vote_optional.h"
 #include "core/tools/vote_wrapper.h"
@@ -629,20 +629,10 @@ void CGS::ProcessNicknameChange(CPlayer* pPlayer, const char* pNewNickname) cons
 			auto* pGS = pPlayer->GS();
 			const int ClientID = pPlayer->GetCID();
 			if(Accepted)
-			{
-				if(pGS->Core()->AccountManager()->ChangeNickname(NewName, ClientID))
-				{
-					pGS->Chat(ClientID, "Your nickname has been successfully updated.");
-				}
-				else
-				{
-					pGS->Chat(ClientID, "This nickname is already in use.");
-				}
-			}
+				pGS->Core()->AccountManager()->ChangeNickname(NewName, ClientID);
 			else
-			{
-				pGS->Chat(ClientID, "You need to set a '{~}' nickname. This window will keep appearing until you confirm the nickname change.", Instance::Server()->ClientName(ClientID));
-			}
+				pGS->Chat(ClientID, "You need to set a '{~}' nickname. This window will keep appearing until you confirm the nickname change.", 
+					Instance::Server()->ClientName(ClientID));
 		};
 
 		auto closeCondition = [NewName](CPlayer* pPlayer)
@@ -790,45 +780,47 @@ void CGS::OnTickGlobal()
 	if(ChatTopMessageIntervalTicks > 0 && Server()->Tick() % ChatTopMessageIntervalTicks == 0)
 	{
 		const auto RandomType = (ToplistType)(rand() % (int)ToplistType::NUM_TOPLIST_TYPES);
-		auto vResult = Core()->GetTopList(RandomType, 2);
+
+		// the list is read in the background: a cold list is simply skipped this round
+		const auto& vResult = Core()->GetTopList(RandomType, 3);
 		if(vResult.size() < 3)
 			return;
 
 		if(RandomType == ToplistType::PlayerExpert)
 		{
 			Chat(-1, "-- {}", "Top Specialists in the Realm");
-			for(auto& [Iter, Top] : vResult)
+			for(const auto& [Iter, Top] : vResult)
 			{
-				const auto* pNickname = Server()->GetAccountNickname(Top.Data["AccountID"].to_int());
-				const auto Value = Top.Data["Level"].to_int();
-				Chat(-1, "{}: '{~} - {}LV'.", Top.Name, pNickname, Value);
+				const auto* pNickname = Server()->GetAccountNickname(Top.m_Extra.to_int());
+				const auto Value = Top.m_Value.to_int();
+				Chat(-1, "{}: '{~} - {}LV'.", Top.m_Name, pNickname, Value);
 			}
 
 			return;
 		}
 
-		auto& Leader = vResult[1];
-		auto& Second = vResult[2];
+		const auto& Leader = vResult.at(1);
+		const auto& Second = vResult.at(2);
 
 		if(RandomType == ToplistType::PlayerRating)
 		{
 			Chat(-1, "Rating leader: '{~} ({})'! In second place is '{~} ({})' — the competition is heating up!",
-				Leader.Name, Leader.Data["Rating"].to_int(), Second.Name, Second.Data["Rating"].to_int());
+				Leader.m_Name, Leader.m_Value.to_int(), Second.m_Name, Second.m_Value.to_int());
 		}
 		else if(RandomType == ToplistType::PlayerWealthy)
 		{
 			Chat(-1, "Wealthiest player: '{~}({$})' is richest! '{~}({$})' close behind!",
-				Leader.Name, Leader.Data["Bank"], Second.Name, Second.Data["Bank"]);
+				Leader.m_Name, Leader.m_Value, Second.m_Name, Second.m_Value);
 		}
 		else if(RandomType == ToplistType::GuildLeveling)
 		{
 			Chat(-1, "The most experienced guild: '{~} (Level {})'! Close behind: '{~} (Level {})'.",
-				Leader.Name, Leader.Data["Level"], Second.Name, Second.Data["Level"]);
+				Leader.m_Name, Leader.m_Value, Second.m_Name, Second.m_Value);
 		}
 		else if(RandomType == ToplistType::GuildWealthy)
 		{
 			Chat(-1, "The richest guild: '{~}({$})'! Second place: '{~}({$})' is catching up!",
-				Leader.Name, Leader.Data["Bank"], Second.Name, Second.Data["Bank"]);
+				Leader.m_Name, Leader.m_Value, Second.m_Name, Second.m_Value);
 		}
 	}
 }
@@ -1526,8 +1518,7 @@ bool CGS::OnClientVoteCommand(int ClientID, const char *pCmd, const std::vector<
         return true;
 
     // parsing everything else
-    const auto csqlReason = sqlstr::CSqlString<64>(pReason);
-    return Core()->OnPlayerVoteCommand(pPlayer, pCmd, Extras, ReasonNumber, csqlReason.cstr());
+    return Core()->OnPlayerVoteCommand(pPlayer, pCmd, Extras, ReasonNumber, pReason);
 }
 
 bool CGS::OnClientMotdCommand(int ClientID, const char* pCmd)

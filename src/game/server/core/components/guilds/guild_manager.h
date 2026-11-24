@@ -5,6 +5,7 @@
 #include <game/server/core/mmo_component.h>
 
 #include "guild_data.h"
+#include <components/houses/guild_house_data.h>
 
 class CGuildManager : public MmoComponent
 {
@@ -17,7 +18,7 @@ class CGuildManager : public MmoComponent
 
 	void OnPreInit() override;
 	void OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID) override;
-	void OnInitWorld(const std::string& SqlQueryWhereWorld) override;
+	void OnInitWorld(int WorldID) override;
 	void OnTick() override;
 	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason) override;

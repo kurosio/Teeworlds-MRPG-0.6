@@ -900,6 +900,7 @@ struct CStrVariableData
 	char* m_pStr;
 	int m_MaxSize;
 	char* m_pOldValue;
+	bool m_Secret;
 };
 
 static void IntVariableCommand(IConsole::IResult* pResult, void* pUserData)
@@ -1001,7 +1002,10 @@ static void StrVariableCommand(IConsole::IResult* pResult, void* pUserData)
 	else
 	{
 		char aBuf[1024];
-		str_format(aBuf, sizeof(aBuf), "Value: %s", pData->m_pStr);
+		if(pData->m_Secret)
+			str_copy(aBuf, "Value: <redacted>", sizeof(aBuf));
+		else
+			str_format(aBuf, sizeof(aBuf), "Value: %s", pData->m_pStr);
 		pData->m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "console", aBuf);
 	}
 }
@@ -1178,9 +1182,12 @@ void CConsole::Init()
 #define MACRO_CONFIG_STR(Name, ScriptName, Len, Def, Flags, Desc) \
 	{ \
 		static char s_aOldValue[Len] = Def; \
-		static CStrVariableData Data = {this, g_Config.m_##Name, Len, s_aOldValue}; \
+		static CStrVariableData Data = {this, g_Config.m_##Name, Len, s_aOldValue, static_cast<bool>((Flags)&CFGFLAG_SECRET)}; \
 		static char s_aHelp[256]; \
-		str_format(s_aHelp, sizeof(s_aHelp), "%s (default: \"%s\", max length: %d)", Desc, Def, Len - 1); \
+		if((Flags)&CFGFLAG_SECRET) \
+			str_format(s_aHelp, sizeof(s_aHelp), "%s (secret, max length: %d)", Desc, Len - 1); \
+		else \
+			str_format(s_aHelp, sizeof(s_aHelp), "%s (default: \"%s\", max length: %d)", Desc, Def, Len - 1); \
 		Register(#ScriptName, "?r", Flags, StrVariableCommand, &Data, s_aHelp); \
 	}
 

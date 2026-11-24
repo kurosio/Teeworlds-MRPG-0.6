@@ -3,7 +3,8 @@
 #ifndef GAME_SERVER_CORE_COMPONENTS_GUILDS_GUILD_DATA_H
 #define GAME_SERVER_CORE_COMPONENTS_GUILDS_GUILD_DATA_H
 
-#include <components/houses/guild_house_data.h>
+class CGS;
+class CGuildHouse;
 
 #define TW_GUILDS_TABLE "tw_guilds"
 #define TW_GUILDS_RANKS_TABLE "tw_guilds_ranks"
@@ -25,6 +26,9 @@ enum GuildMisc
 	GUILD_NEW_UPGRADE_DECORATION_SLOT = 5, // New guilds start with 5 decoration slots
 	GUILD_RENT_DAYS_DEFAULT = 3,           // Default rent duration for a guild
 };
+
+// The rank every guild is created with
+inline constexpr const char* DEFAULT_GUILD_RANK_NAME = "Newbie";
 
 // Enum for results of guild-related operations
 enum class GuildResult : int
@@ -225,7 +229,7 @@ public:
 		CRank* Get(GuildRankIdentifier ID) const;
 		CRank* GetDefaultRank() const { return m_pDefaultRank; }
 
-		[[nodiscard]] GuildResult Add(const std::string& Rank);
+		void Add(const std::string& Rank, int ClientID = -1);
 		[[nodiscard]] GuildResult Remove(const std::string& Rank);
 		void UpdateDefaultRank();
 
@@ -361,14 +365,15 @@ public:
 	}
 
 	void Init(const std::string& Name, const std::string& JsonMembers, GuildRankIdentifier DefaultRankID, int Level,
-		uint64_t Experience, int Score, int LeaderUID, const BigInt& Bank, int64_t Logflag, ResultPtr* pRes)
+		uint64_t Experience, int Score, int LeaderUID, const BigInt& Bank, int64_t Logflag, const Db::CResultSet* pResult)
 	{
 		m_Name = Name;
 		m_LeaderUID = LeaderUID;
 		m_Level = Level;
 		m_Experience = Experience;
 		m_Score = Score;
-		m_UpgradesData.initFields(pRes);
+		if(pResult)
+			m_UpgradesData.initFields(*pResult);
 
 		// components init
 		delete m_pLogger;
@@ -382,10 +387,11 @@ public:
 		m_pRanks->UpdateDefaultRank();
 	}
 
-	void InitFromRow(ResultPtr& pRes)
+	void InitFromRow(const Db::CResultSet& Result)
 	{
-		Init(pRes->getString("Name"), pRes->getString("Members"), pRes->getInt("DefaultRankID"), pRes->getInt("Level"),
-			pRes->getUInt64("Exp"), pRes->getInt("Score"), pRes->getInt("LeaderUID"), pRes->getBigInt("Bank"), pRes->getInt64("LogFlag"), &pRes);
+		Init(Result.GetString("Name"), Result.GetString("Members"), Result.GetInt("DefaultRankID"), Result.GetInt("Level"),
+			Result.GetUInt64("Exp"), Result.GetInt("Score"), Result.GetInt("LeaderUID"), Result.GetBigInt("Bank"),
+			Result.GetInt64("LogFlag"), &Result);
 	}
 
 	// Get guild ID

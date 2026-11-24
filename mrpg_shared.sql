@@ -539,7 +539,7 @@ CREATE TABLE `tw_auction_slots` (
 CREATE TABLE `tw_bots_info` (
   `ID` int(11) NOT NULL,
   `Name` varchar(32) NOT NULL DEFAULT 'Bot name',
-  `JsonTeeInfo` varchar(128) NOT NULL DEFAULT '{ "skin": "default", 	"custom_color": 0, 	"color_body": 0, 	"color_feer": 0}',
+  `JsonTeeInfo` varchar(256) NOT NULL DEFAULT '{"color_body":-1,"color_feet":-1,"custom_color":0,"skin":"default"}',
   `EquippedModules` varchar(64) NOT NULL DEFAULT '0',
   `SlotHammer` int(11) DEFAULT 2,
   `SlotGun` int(11) DEFAULT 3,
@@ -2182,7 +2182,8 @@ ALTER TABLE `tw_accounts_data`
   ADD PRIMARY KEY (`ID`),
   ADD UNIQUE KEY `Nick` (`Nick`),
   ADD KEY `tw_accounts_data_ibfk_3` (`WorldID`),
-  ADD KEY `ProfessionID` (`ProfessionID`);
+  ADD KEY `ProfessionID` (`ProfessionID`),
+  ADD KEY `idx_accounts_data_rating` (`Rating`);
 
 --
 -- Indexes for table `tw_accounts_items`
@@ -2204,7 +2205,8 @@ ALTER TABLE `tw_accounts_mailbox`
 -- Indexes for table `tw_accounts_professions`
 --
 ALTER TABLE `tw_accounts_professions`
-  ADD PRIMARY KEY (`ID`);
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `idx_accounts_professions_owner_profession` (`UserID`,`ProfessionID`);
 
 --
 -- Indexes for table `tw_accounts_quests`
@@ -2337,9 +2339,8 @@ ALTER TABLE `tw_dungeons_door`
 --
 ALTER TABLE `tw_dungeons_records`
   ADD PRIMARY KEY (`ID`),
-  ADD KEY `tw_dungeons_records_ibfk_1` (`UserID`),
-  ADD KEY `DungeonID` (`DungeonID`),
-  ADD KEY `Seconds` (`Time`);
+  ADD KEY `idx_dungeons_records_user_time` (`UserID`,`Time`),
+  ADD KEY `idx_dungeons_records_dungeon_time` (`DungeonID`,`Time`);
 
 --
 -- Indexes for table `tw_guilds_houses`
@@ -2395,7 +2396,8 @@ ALTER TABLE `tw_quest_boards`
 --
 ALTER TABLE `tw_rhythm_records`
   ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `WorldID` (`WorldID`);
+  ADD KEY `idx_rhythm_records_leaderboard` (`WorldID`,`Difficulty`,`Score`),
+  ADD KEY `idx_rhythm_records_lookup` (`UserID`,`WorldID`,`Difficulty`,`Score`);
 
 --
 -- Indexes for table `tw_skills_list`

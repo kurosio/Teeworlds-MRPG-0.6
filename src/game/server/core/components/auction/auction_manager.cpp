@@ -2,9 +2,11 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "auction_manager.h"
 
+#include "auction_db.h"
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/inventory/inventory_manager.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
+#include <game/server/core/tools/db_async_context.h>
 
 CAuctionManager::~CAuctionManager()
 {
@@ -16,19 +18,19 @@ CAuctionManager::~CAuctionManager()
 void CAuctionManager::OnPreInit()
 {
 	// init auction slots
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_AUCTION_SLOTS_TABLE);
-	while(pRes->next())
+	auto Slots = AuctionDb::ListSlots();
+	while(Slots.Next())
 	{
-		int ID = pRes->getInt("ID");
-		int ItemID = pRes->getInt("ItemID");
-		int Value = pRes->getInt("Value");
-		int Enchant = pRes->getInt("Enchant");
-		int Price = pRes->getInt("Price");
-		int OwnerID = pRes->getInt("OwnerID");
+		int ID = Slots.GetInt("ID");
+		int ItemID = Slots.GetInt("ItemID");
+		int Value = Slots.GetInt("Value");
+		int Enchant = Slots.GetInt("Enchant");
+		int Price = Slots.GetInt("Price");
+		int OwnerID = Slots.GetInt("OwnerID");
 
 		// init by server
 		CItem Item(ItemID, Value, Enchant);
-		Item.SetStringData(pRes->getString("Data"));
+		Item.SetStringData(Slots.GetString("Data"));
 		CAuctionSlot::CreateElement(ID)->Init(Item, Price, OwnerID);
 	}
 }
@@ -44,15 +46,15 @@ void CAuctionManager::OnSyncEvent(std::string EventName, const CServerSync::SReq
 		if(Req.Value <= 0 || GetSlot(Req.Value))
 			return;
 
-		auto pSelect = Database->Prepare<DB::SELECT>("*", TW_AUCTION_SLOTS_TABLE, "WHERE ID = '{}'", Req.Value);
-		pSelect->AtExecute([this, SlotID = Req.Value](ResultPtr pRes)
+		AuctionDb::ReadSlot(Req.Value)
+			.Then([this, SlotID = Req.Value](Db::CResultSet&& Result)
 		{
-			if(GetSlot(SlotID) || !pRes->next())
+			if(GetSlot(SlotID) || !Result.HasRows())
 				return;
 
-			CItem Item(pRes->getInt("ItemID"), pRes->getInt("Value"), pRes->getInt("Enchant"));
-			Item.SetStringData(pRes->getString("Data"));
-			CAuctionSlot::CreateElement(SlotID)->Init(Item, pRes->getInt("Price"), pRes->getInt("OwnerID"));
+			CItem Item(Result.GetInt("ItemID"), Result.GetInt("Value"), Result.GetInt("Enchant"));
+			Item.SetStringData(Result.GetString("Data"));
+			CAuctionSlot::CreateElement(SlotID)->Init(Item, Result.GetInt("Price"), Result.GetInt("OwnerID"));
 		});
 	}
 
@@ -382,20 +384,34 @@ void CAuctionManager::CreateSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData) c
 		// try to spend selling auction item
 		if(pPlayer->Account()->SpendCurrency(pItem->GetValue(), pItem->GetID()))
 		{
-			// get the highest group ID from the database
-			ResultPtr pResID = Database->Execute<DB::SELECT>("ID", TW_AUCTION_SLOTS_TABLE, "ORDER BY ID DESC LIMIT 1");
-			const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // Increment the highest group ID by 1, or set to 1 if no previous group exists
+			// The slot id is assigned by the server, so it is asked for first and the
+			// slot is published in the answer. The item is copied out of the player's
+			// menu data, which may change before the answer arrives.
+			const CItem Item = *pItem;
+			const int Price = pAuctionData->GetPrice();
+			const std::string ItemName = pPlayerItem->Info()->GetName();
+			auto pContext = DbAsync::MakeContext(ClientID);
+			AuctionDb::ReadNextSlotID()
+				.Then([pContext, AccountID, Item, Price, ItemName](Db::CResultSet&& NextSlot)
+			{
+				if(!pContext->GetPlayer())
+					return;
 
-			// insert new slot
-			Database->Execute<DB::INSERT>(TW_AUCTION_SLOTS_TABLE, "(ID, ItemID, Value, Price, Enchant, OwnerID, Data) VALUES ('{}', '{}', '{}', '{}', '{}', '{}', NULLIF(UNHEX('{}'), ''))",
-				InitID, pItem->GetID(), pItem->GetValue(), pAuctionData->GetPrice(), pItem->GetEnchant(), pPlayer->Account()->GetID(), sqlstr::HexEncode(pItem->GetStringData()));
-			CAuctionSlot::CreateElement(InitID)->Init(*pItem, pAuctionData->GetPrice(), AccountID);
-			Sync->Push(syncevents::AUCTION_SLOT_CREATE, GS()->GetWorldID(), InitID);
+				auto* pGS = pContext->GS();
+				const int ClientID = pContext->GetClientID();
+				const int InitID = NextSlot.HasRows() ? NextSlot.GetInt("NextID") : 1;
 
-			// send messages
-			const int AvailableSlots = g_Config.m_SvMaxPlayerAuctionSlots - GetSlotsCountByAccountID(AccountID);
-			GS()->Chat(-1, "'{~}' listed [{} x{}] on auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pItem->GetValue());
-			GS()->Chat(ClientID, "Free personal slots: {}.", AvailableSlots);
+				// insert new slot
+				AuctionDb::CreateSlot(InitID, Item.GetID(), Item.GetValue(), Price, Item.GetEnchant(), AccountID,
+					Item.GetStringData());
+				CAuctionSlot::CreateElement(InitID)->Init(Item, Price, AccountID);
+				Sync->Push(syncevents::AUCTION_SLOT_CREATE, pGS->GetWorldID(), InitID);
+
+				// send messages
+				const int AvailableSlots = g_Config.m_SvMaxPlayerAuctionSlots - CAuctionManager::GetSlotsCountByAccountID(AccountID);
+				pGS->Chat(-1, "'{~}' listed [{} x{}] on auction.", pGS->Server()->ClientName(ClientID), ItemName.c_str(), Item.GetValue());
+				pGS->Chat(ClientID, "Free personal slots: {}.", AvailableSlots);
+			});
 		}
 	}
 }
@@ -454,7 +470,7 @@ bool CAuctionManager::BuySlot(CPlayer* pPlayer, int ID) const
 	return false;
 }
 
-int CAuctionManager::GetSlotsCountByAccountID(int AccountID) const
+int CAuctionManager::GetSlotsCountByAccountID(int AccountID)
 {
 	return (int)std::ranges::count_if(CAuctionSlot::Data(), [AccountID](const CAuctionSlot* pSlot)
 	{
@@ -462,7 +478,7 @@ int CAuctionManager::GetSlotsCountByAccountID(int AccountID) const
 	});
 }
 
-int CAuctionManager::GetTotalSlotsCount() const
+int CAuctionManager::GetTotalSlotsCount()
 {
 	return static_cast<int>(CAuctionSlot::Data().size());
 }
@@ -480,7 +496,7 @@ void CAuctionManager::RemoveSlotByID(int ID) const
 {
 	if(auto* pSlot = GetSlot(ID))
 	{
-		Database->Execute<DB::REMOVE>(TW_AUCTION_SLOTS_TABLE, "WHERE ID = '{}'", ID);
+		AuctionDb::DeleteSlot(ID);
 		std::erase(CAuctionSlot::Data(), pSlot);
 		delete pSlot;
 		Sync->Push(syncevents::AUCTION_SLOT_REMOVE, GS()->GetWorldID(), ID);

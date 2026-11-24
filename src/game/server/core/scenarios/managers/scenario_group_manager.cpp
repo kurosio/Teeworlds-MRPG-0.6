@@ -1,4 +1,4 @@
-﻿#include "scenario_group_manager.h"
+#include "scenario_group_manager.h"
 
 void CScenarioGroupManager::UpdateScenarios()
 {

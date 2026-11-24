@@ -1,5 +1,6 @@
 #include "farmzone_manager.h"
 
+#include <components/houses/house_db.h>
 #include <game/server/core/entities/items/gathering_node.h>
 #include <game/server/gamecontext.h>
 
@@ -188,7 +189,5 @@ void CFarmzonesManager::Save() const
 	}
 
 	// save to database
-	Database->Execute<DB::UPDATE>(m_pHouse->GetTableName(),
-		"Farmzones = '{}' WHERE ID = '{}'",
-		Farmzones.dump(4), m_pHouse->GetID());
+	HouseDb::Shared::SaveFarmzones(m_pHouse->GetTableName(), m_pHouse->GetID(), Farmzones.dump(4));
 }

@@ -1,4 +1,4 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "character.h"
 #include <generated/server_data.h>
@@ -14,7 +14,7 @@
 #include <game/server/core/scenarios/managers/scenario_group_manager.h>
 #include <game/server/core/scenarios/managers/scenario_world_manager.h>
 
-#include <game/server/core/components/Bots/BotData.h>
+#include <game/server/core/components/bots/bot_data.h>
 #include <game/server/core/components/groups/group_data.h>
 #include <game/server/core/components/guilds/guild_manager.h>
 #include <game/server/core/components/quests/quest_manager.h>

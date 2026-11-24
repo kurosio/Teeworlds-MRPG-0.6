@@ -1,4 +1,4 @@
-﻿#include "motd_menu.h"
+#include "motd_menu.h"
 
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>

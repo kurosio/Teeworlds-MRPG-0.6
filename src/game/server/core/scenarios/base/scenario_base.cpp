@@ -1,4 +1,4 @@
-﻿#include "component_registry.h"
+#include "component_registry.h"
 #include "scenario_base.h"
 
 #include <scenarios/base/scenario_base_player.h>

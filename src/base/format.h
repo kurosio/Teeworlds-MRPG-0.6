@@ -1,5 +1,16 @@
-﻿#ifndef BASE_FORMAT_H
+#ifndef BASE_FORMAT_H
 #define BASE_FORMAT_H
+
+#include <algorithm>
+#include <array>
+#include <numeric>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+#include <base/big_int.h>
 
 template <char separator = '.'>
 constexpr std::string fmt_big_digit(std::string_view numberStr)
@@ -188,9 +199,9 @@ public:
 		if(!pText)
 			return "";
 
-		std::string Result = std::move(handle(pText));
+		std::string Result = handle(pText);
 		m_Definer = {};
-		return std::move(Result);
+		return Result;
 	}
 };
 

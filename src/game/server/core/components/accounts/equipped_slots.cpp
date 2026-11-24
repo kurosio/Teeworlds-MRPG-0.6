@@ -24,29 +24,32 @@ std::optional<int> EquippedSlots::getEquippedItemID(ItemType type) const
 
 void EquippedSlots::load(const std::string& equippedSlotsJson)
 {
-	mystd::json::parse(equippedSlotsJson, [this](nlohmann::json& jsonData)
+	mystd::json::parse(equippedSlotsJson, [this](nlohmann::json& Json) { load(Json); });
+}
+
+void EquippedSlots::load(const nlohmann::json& equippedSlotsJson)
+{
+	if(!equippedSlotsJson.is_object())
+		return;
+
+	// Walk our own slots and read their entry: the stored keys are the slot
+	// types, so nothing has to be converted from a string to find them.
+	for(auto& [slotType, itemID] : m_Slots)
 	{
-		if(!jsonData.is_object())
-			return;
+		const auto It = equippedSlotsJson.find(std::to_string((int)slotType));
+		if(It == equippedSlotsJson.end())
+			continue;
 
-		for(auto& [strType, jsonItemID] : jsonData.items())
+		if(It->is_number_integer())
 		{
-			const auto currentItemType = (ItemType)std::stoi(strType);
-			auto it = findSlotIter(currentItemType);
-			if(it == m_Slots.end())
-				continue;
-
-			if(jsonItemID.is_number_integer())
-			{
-				CItem item(jsonItemID.get<int>(), 1);
-				it->second = (item.IsValid() && item.Info()->IsType(currentItemType) ? std::make_optional<int>(item.GetID()) : std::nullopt);
-			}
-			else if(jsonItemID.is_null())
-			{
-				it->second = std::nullopt;
-			}
+			CItem item(It->get<int>(), 1);
+			itemID = (item.IsValid() && item.Info()->IsType(slotType) ? std::make_optional<int>(item.GetID()) : std::nullopt);
 		}
-	});
+		else if(It->is_null())
+		{
+			itemID = std::nullopt;
+		}
+	}
 }
 
 bool EquippedSlots::equipItem(int itemID)

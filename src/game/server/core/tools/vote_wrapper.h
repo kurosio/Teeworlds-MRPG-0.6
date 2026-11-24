@@ -1,10 +1,16 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_CORE_UTILITIES_VOTE_WRAPPER_H
 #define GAME_SERVER_CORE_UTILITIES_VOTE_WRAPPER_H
 
 #include <base/types.h>
+
+#include <set>
 #include <stack>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 // forward declarations
 class CGS;
@@ -56,6 +62,38 @@ enum VoteWrapperFlags : int
 	VWF_HIDABLE_MASK = VWF_CLOSED | VWF_OPEN | VWF_UNIQUE,
 };
 
+// A background request that a menu shows.
+//
+// While the answer is missing the menu says "Loading ..." instead of an empty
+// list, and the answer redraws it - the component neither keeps a "requested"
+// flag nor asks for the redraw itself:
+//
+//     const CVoteLoad Load = LoadIdentity();
+//     if(Load.Begin())                     // false: a request of this load runs
+//         Db::Query(...).Then([Load](Db::CResultSet&& Rows) { ...; Load.Finish(); });
+//
+//     if(Wrapper.WaitLoad(Load))           // the menu shows the waiting state
+//         Wrapper.Add("Best player: loading ...");
+class CVoteLoad
+{
+public:
+	CVoteLoad() = default;
+	explicit CVoteLoad(std::string LoadID) : m_LoadID(std::move(LoadID)) {}
+
+	[[nodiscard]] const std::string& ID() const noexcept { return m_LoadID; }
+	[[nodiscard]] bool IsRunning() const;
+
+	// Starts the request; false when one of the same load runs already.
+	[[nodiscard]] bool Begin() const;
+	// The answer is in: every menu that showed this load is redrawn.
+	void Finish() const;
+	// Remembers that this menu shows the load, so Finish() can redraw it.
+	void Wait(int ClientID, int MenuID) const;
+
+private:
+	std::string m_LoadID {};
+};
+
 class CVoteOption
 {
 public:
@@ -90,6 +128,7 @@ class CVoteGroup
 	int m_HiddenID{};
 	int m_Flags{};
 	bool m_HasTitle{};
+	std::string m_LoadID {};
 	bool m_NextMarkedListItem{};
 
 	CGS* GS() const noexcept { return m_pGS; }
@@ -191,6 +230,13 @@ public:
 		m_pGroup->SetVoteTitleImpl("null", {}, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pTitle, args...));
 		return *this;
 	}
+
+	// The group renders the answer of Load: while it is missing the group says
+	// "Loading ..." instead of "Is empty", and the answer redraws the menu.
+	VoteWrapper& SetLoad(const CVoteLoad& Load);
+
+	// true while the answer of Load is missing, and this menu waits for it.
+	[[nodiscard]] bool WaitLoad(const CVoteLoad& Load) const;
 
 	void ReinitNumeralDepthStyles(std::initializer_list<std::pair<int, int>> vNumeralFlags) const
 	{
@@ -305,17 +351,15 @@ class CVotePlayerData
 		int m_Flag{};
 	};
 
-	enum class STATE_UPDATER : int { WAITING, RUNNING, DONE };
-
 	CGS* m_pGS{};
 	CPlayer* m_pPlayer{};
 	int m_LastMenuID{ MENU_MAIN };
 	int m_CurrentMenuID{ MENU_MAIN };
 	std::optional<int> m_ExtraID{};
 
-	std::thread m_VoteUpdater{};
-	std::atomic<bool> m_ShuttingDown{ false };
-	std::atomic<STATE_UPDATER> m_VoteUpdaterStatus{ STATE_UPDATER::WAITING };
+	// A redraw is deferred to the next tick instead of spawning a thread per menu:
+	// requests while one is pending collapse into it.
+	bool m_VoteUpdateRequested{};
 
 	mystd::string_mapper<int> m_StringMapper{};
 	std::unordered_map<int, std::unordered_map<int, VoteGroupHidden>> m_aHiddenGroup{};
@@ -324,17 +368,12 @@ class CVotePlayerData
 	VoteGroupHidden* EmplaceHidden(int ID, int Type);
 	VoteGroupHidden* GetHidden(int ID);
 	void ResetHidden(int MenuID);
-	static void ThreadVoteUpdater(CVotePlayerData* pData);
 
 public:
 	CVotePlayerData() = default;
 
 	~CVotePlayerData()
 	{
-		m_ShuttingDown.store(true, std::memory_order_release);
-		if (m_VoteUpdater.joinable())
-			m_VoteUpdater.join();
-
 		ClearVotes();
 		m_pGS = nullptr;
 		m_pPlayer = nullptr;

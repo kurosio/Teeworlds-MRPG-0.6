@@ -16,14 +16,12 @@ namespace DbAsync
 		std::weak_ptr<void> m_pConnectionLifetime;
 
 	public:
-		explicit CContextBase(int ClientID, int WorldID = INITIALIZER_WORLD_ID);
+		explicit CContextBase(int ClientID);
 
 		int GetClientID() const { return m_ClientID; }
-		int GetWorldID() const { return m_WorldID; }
 
 		IServer* Server() const { return Instance::Server(); }
 		CGS* GS() const;
-		CGS* GS(int WorldID) const;
 		CPlayer* GetPlayer(bool CheckAuth = false, bool CheckCharacter = false) const;
 
 	private:
@@ -37,38 +35,24 @@ namespace DbAsync
 
 	public:
 		template<typename... TArgs>
-		CContext(int ClientID, int WorldID, TArgs&&... Args)
-			: CContextBase(ClientID, WorldID), m_Payload(std::forward<TArgs>(Args)...)
+		CContext(int ClientID, TArgs&&... Args)
+			: CContextBase(ClientID), m_Payload(std::forward<TArgs>(Args)...)
 		{
 		}
 
 		TPayload& Data() { return m_Payload; }
 		const TPayload& Data() const { return m_Payload; }
-
-		TPayload* operator->() { return &m_Payload; }
-		const TPayload* operator->() const { return &m_Payload; }
 	};
 
-	inline static std::shared_ptr<CContextBase> MakeContext(int ClientID)
+	inline std::shared_ptr<CContextBase> MakeContext(int ClientID)
 	{
-		return std::make_shared<CContextBase>(ClientID, INITIALIZER_WORLD_ID);
-	}
-
-	inline static std::shared_ptr<CContextBase> MakeContextInWorld(int ClientID, int WorldID)
-	{
-		return std::make_shared<CContextBase>(ClientID, WorldID);
+		return std::make_shared<CContextBase>(ClientID);
 	}
 
 	template<typename TPayload, typename... TArgs>
 	std::shared_ptr<CContext<TPayload>> MakeContext(int ClientID, TArgs&&... Args)
 	{
-		return std::make_shared<CContext<TPayload>>(ClientID, INITIALIZER_WORLD_ID, std::forward<TArgs>(Args)...);
-	}
-
-	template<typename TPayload, typename... TArgs>
-	std::shared_ptr<CContext<TPayload>> MakeContextInWorld(int ClientID, int WorldID, TArgs&&... Args)
-	{
-		return std::make_shared<CContext<TPayload>>(ClientID, WorldID, std::forward<TArgs>(Args)...);
+		return std::make_shared<CContext<TPayload>>(ClientID, std::forward<TArgs>(Args)...);
 	}
 }
 

@@ -18,7 +18,7 @@ git submodule update --init --recursive
 
 ## Build on Linux
 
-Requirements: CMake 3.16 or newer, a C/C++ compiler and build tools, Git, Python 3, MariaDB Connector/C development files, SQLite development files, and libcurl development files. OpenSSL development files are optional (they enable TLS support where configured). On Debian/Ubuntu:
+Requirements: CMake 3.16 or newer, a C/C++ compiler and build tools, Git, Python 3, MariaDB Connector/C development files, SQLite development files for the Editor Studio API, and libcurl development files. OpenSSL development files are optional (they enable TLS support where configured). On Debian/Ubuntu:
 
 ```sh
 sudo apt update
@@ -38,7 +38,7 @@ On Windows, install Visual Studio with the C++ desktop workload, CMake, Python 3
 
 ## Server setup
 
-1. Install MariaDB and import `mrpg_shared.sql` and `mrpg_local.sql` as described in [docs/mariadb.md](docs/mariadb.md). A single-database setup is supported by leaving `sv_sql_local_database` empty; multi-server deployments should read the [SQL bridge guide](other/sql_bridge/README.md).
+1. Install the remote and local MariaDB endpoints and import `mrpg_shared.sql` and `mrpg_local.sql` as described in [docs/mariadb.md](docs/mariadb.md). Both endpoints are required; configure `sv_sql_*` for the remote shared database and `sv_sql_local_*` for this server's local database.
 2. Review `autoexec_server.cfg`. It is an example configuration, **not a production-ready secure configuration**: change the RCON passwords, database credentials, server name, map, and other values for your deployment. Do not expose database or RCON passwords in public repositories or logs.
 3. Place the required game data and map files in the paths expected by `storage.cfg`. The default server configuration uses `maps/main.map`.
 4. Start the server from its deployment directory so that it can find its configuration, data, and maps. The server reads `autoexec_server.cfg` and accepts console command lines as command-line arguments; it does not use the relay's `-f <config>` option.
@@ -49,7 +49,7 @@ For optional cross-server event synchronization, build and configure `mmoteeworl
 
 - [MariaDB setup and schema layout](docs/mariadb.md)
 - [Cross-server synchronization relay](docs/server_sync.md)
-- [SQL bridge and replicated shared database](other/sql_bridge/README.md)
+- [Asynchronous database API and two-endpoint routing](docs/database.md)
 - [Multiworld map notes](maps/README.md)
 - [Translations](server_lang/README.txt)
 

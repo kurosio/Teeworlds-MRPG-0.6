@@ -2,11 +2,14 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "house_data.h"
 
+#include "house_db.h"
+
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 #include <game/server/core/entities/items/gathering_node.h>
 #include <game/server/core/entities/tools/draw_board.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
+#include <game/server/core/components/inventory/item_data.h>
 
 constexpr int s_SecondsPerRentDay = 60 * 60 * 24;
 
@@ -63,7 +66,7 @@ void CHouse::InitComponents(const BigInt& Bank, const std::string& DoorsData, co
 	// initialize components
 	m_pBankManager = new CBankManager(this, Bank);
 	m_pDoorManager = new CDoorManager(this, DoorsData);
-	m_pDecorationManager = new CDecorationManager(this, TW_GUILD_HOUSES_DECORATION_TABLE);
+	m_pDecorationManager = new CDecorationManager(this, TW_HOUSES_DECORATION_TABLE);
 	m_pFarmzonesManager = new CFarmzonesManager(this, FarmzonesData);
 
 
@@ -104,7 +107,7 @@ void CHouse::Buy(CPlayer* pPlayer)
 		m_pBankManager->Reset();
 		m_RentEndTimestamp = AddRentDaysToTimestamp(0, 3);
 		pPlayer->Account()->ReinitializeHouse();
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '0', RentDays = '{}' WHERE ID = '{}'", m_RentEndTimestamp, m_ID);
+		HouseDb::ResetBankAndRent(m_ID, m_RentEndTimestamp);
 		Links::Add("player_house", m_AccountID, m_ID);
 
 		// send information
@@ -140,7 +143,7 @@ void CHouse::Sell()
 	}
 	m_pDoorManager->CloseAll();
 	m_pBankManager->Reset();
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '0' WHERE ID = '{}'", m_ID);
+	HouseDb::ResetBank(m_ID);
 	Links::Remove("player_house", m_AccountID, m_ID);
 	m_AccountID = -1;
 
@@ -173,7 +176,7 @@ bool CHouse::ExtendRentDays(int Days)
 	if(m_pBankManager->Spend(GetRentPrice() * Days))
 	{
 		m_RentEndTimestamp = AddRentDaysToTimestamp(m_RentEndTimestamp, Days);
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "RentDays = '{}' WHERE ID = '{}'", m_RentEndTimestamp, m_ID);
+		HouseDb::SaveRentDays(m_ID, m_RentEndTimestamp);
 		return true;
 	}
 
@@ -189,7 +192,7 @@ bool CHouse::ReduceRentDays(int Days)
 
 	// reduce rent days
 	m_RentEndTimestamp = maximum(time(nullptr), m_RentEndTimestamp - (time_t)(clamp(Days, 1, DaysLeft) * s_SecondsPerRentDay));
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "RentDays = '{}' WHERE ID = '{}'", m_RentEndTimestamp, m_ID);
+	HouseDb::SaveRentDays(m_ID, m_RentEndTimestamp);
 	return true;
 }
 

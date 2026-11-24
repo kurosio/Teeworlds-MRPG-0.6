@@ -1,12 +1,13 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "inventory_manager.h"
+#include "inventory_db.h"
 
 #include <engine/shared/datafile.h>
+#include <game/server/core/tools/db_async_context.h>
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
 
-#include <game/server/core/components/houses/house_manager.h>
 #include <game/server/core/components/quests/quest_manager.h>
 
 void ForEachMatchingItem(std::optional<ItemGroup> filterGroup, std::optional<ItemType> filterType,
@@ -28,19 +29,19 @@ void ForEachMatchingItem(std::optional<ItemGroup> filterGroup, std::optional<Ite
 
 void CInventoryManager::OnPreInit()
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_items_list");
-	while(pRes->next())
+	auto Items = InventoryDb::ListItemDescriptions();
+	while(Items.Next())
 	{
-		const auto ItemID = pRes->getInt("ID");
-		const auto Name = pRes->getString("Name");
-		const auto Description = pRes->getString("Description");
-		const auto GroupSet = DBSet(pRes->getString("Group"));
-		const auto TypeSet = DBSet(pRes->getString("Type"));
-		const auto FlagsSet = DBSet(pRes->getString("Flags"));
-		const auto ScenarioData = pRes->getString("ScenarioData");
-		const auto ScenarioMode = pRes->getString("ScenarioMode");
-		const auto InitialPrice = pRes->getInt("InitialPrice");
-		const auto Data = pRes->getString("Data");
+		const auto ItemID = Items.GetInt("ID");
+		const auto Name = Items.GetString("Name");
+		const auto Description = Items.GetString("Description");
+		const auto GroupSet = DBSet(Items.GetString("Group"));
+		const auto TypeSet = DBSet(Items.GetString("Type"));
+		const auto FlagsSet = DBSet(Items.GetString("Flags"));
+		const auto ScenarioData = Items.GetString("ScenarioData");
+		const auto ScenarioMode = Items.GetString("ScenarioMode");
+		const auto InitialPrice = Items.GetInt("InitialPrice");
+		const auto Data = Items.GetString("Data");
 
 		CItemDescription::ContainerAttributes aContainerAttributes;
 		for(int i = 0; i < MAX_ATTRIBUTES_FOR_ITEM; i++)
@@ -49,8 +50,8 @@ void CInventoryManager::OnPreInit()
 			str_format(aAttributeID, sizeof(aAttributeID), "AT%d", (i + 1));
 			str_format(aAttributeValue, sizeof(aAttributeValue), "ATValue%d", (i + 1));
 
-			const auto AttributeID = (AttributeIdentifier)pRes->getInt(aAttributeID);
-			const auto AttributeValue = pRes->getInt(aAttributeValue);
+			const auto AttributeID = (AttributeIdentifier)Items.GetInt(aAttributeID);
+			const auto AttributeValue = Items.GetInt(aAttributeValue);
 
 			if(AttributeID >= AttributeIdentifier::DMG && AttributeValue > 0)
 			{
@@ -62,38 +63,60 @@ void CInventoryManager::OnPreInit()
 		CItemDescription(ItemID).Init(Name, Description, GroupSet, TypeSet, FlagsSet, InitialPrice, aContainerAttributes, Data, ScenarioData, ScenarioMode);
 	}
 
-	ResultPtr pResAtt = Database->Execute<DB::SELECT>("*", "tw_attributes");
-	while(pResAtt->next())
+	auto Attributes = InventoryDb::ListAttributes();
+	while(Attributes.Next())
 	{
-		const auto ID = (AttributeIdentifier)pResAtt->getInt("ID");
-		const auto Name = pResAtt->getString("Name");
-		const auto UpgradePrice = pResAtt->getInt("Price");
-		const auto Group = (AttributeGroup)pResAtt->getInt("Group");
+		const auto ID = (AttributeIdentifier)Attributes.GetInt("ID");
+		const auto Name = Attributes.GetString("Name");
+		const auto UpgradePrice = Attributes.GetInt("Price");
+		const auto Group = (AttributeGroup)Attributes.GetInt("Group");
 
 		CAttributeDescription::CreateElement(ID)->Init(Name, UpgradePrice, Group);
 	}
 }
 
 
-void CInventoryManager::OnPlayerLogin(CPlayer* pPlayer)
+void CInventoryManager::OnRegisterAccountLoadStages(CPlayer* pPlayer)
 {
+	auto* pAccount = pPlayer->Account();
 	const int ClientID = pPlayer->GetCID();
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_items", "WHERE UserID = '{}'", pPlayer->Account()->GetID());
-	while(pRes->next())
+	const int AccountID = pAccount->GetID();
+	pAccount->AddLoadStage("inventory", [ClientID, AccountID](CAccountData::CLoadDone Done)
 	{
-		const auto ItemID = pRes->getInt("ItemID");
-		const auto Value = pRes->getInt("Value");
-		const auto Settings = pRes->getInt("Settings");
-		const auto Enchant = pRes->getInt("Enchant");
-		const auto Durability = pRes->getInt("Durability");
-		const auto ExpiresAt = pRes->getInt("ExpiresAt");
+		auto pContext = DbAsync::MakeContext(ClientID);
+		InventoryDb::LoadAccountItems(AccountID).Then([pContext, Done = std::move(Done)](Db::CResultSet&& Items) mutable
+		{
+			auto* pPlayer = pContext->GetPlayer();
+			if(!pPlayer || !Items.Ok())
+			{
+				Done(false);
+				return;
+			}
 
-		CPlayerItem(ItemID, ClientID).Init(Value, Enchant, Durability, Settings, ExpiresAt, pRes->getString("Data"));
-	}
+			const int LoadedClientID = pPlayer->GetCID();
+			while(Items.Next())
+			{
+				const auto ItemID = Items.GetInt("ItemID");
+				const auto Value = Items.GetInt("Value");
+				const auto Settings = Items.GetInt("Settings");
+				const auto Enchant = Items.GetInt("Enchant");
+				const auto Durability = Items.GetInt("Durability");
+				const auto ExpiresAt = Items.GetInt("ExpiresAt");
+				CPlayerItem(ItemID, LoadedClientID).Init(Value, Enchant, Durability, Settings, ExpiresAt, Items.GetString("Data"));
+			}
+			Done(true);
+		});
+	});
+}
 
-	// remove expired temporary items after loading inventory
+
+void CInventoryManager::RemoveExpiredItems(CPlayer* pPlayer)
+{
+	if(!pPlayer)
+		return;
+
 	const int CurrentTime = (int)time(nullptr);
-	for(auto& [ItemID, ItemData] : CPlayerItem::Data()[ClientID])
+	for(auto& [ItemID, ItemData] : CPlayerItem::Data()[pPlayer->GetCID()])
 	{
 		if(!ItemData.HasItem())
 			continue;
@@ -494,47 +517,13 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 void CInventoryManager::RepairDurabilityItems(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	Database->Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '{}'", pPlayer->Account()->GetID());
+	InventoryDb::RepairDurability(pPlayer->Account()->GetID());
 	for(auto& [ID, Item] : CPlayerItem::Data()[ClientID])
 	{
 		if(Item.GetDurability() < 100)
 			Item.SetDurability(100);
 	}
 	pPlayer->TryCreateEidolon();
-}
-
-std::vector<int> CInventoryManager::GetItemsCollection(std::optional<ItemGroup> optGroup, std::optional<ItemType> optType)
-{
-	std::vector<int> ItemIDs {};
-
-	for(const auto& [ID, pInfo] : CItemDescription::Data())
-	{
-		if(!optGroup.has_value() && !optType.has_value())
-			break;
-
-		if(optGroup.has_value() && !pInfo.IsGroup(optGroup.value()))
-			continue;
-
-		if(optType.has_value() && !pInfo.IsType(optType.value()))
-			continue;
-
-		ItemIDs.push_back(ID);
-	}
-
-	return ItemIDs;
-}
-
-std::vector<int> CInventoryManager::GetItemIDsCollectionByType(ItemType Type)
-{
-	std::vector<int> ItemIDs {};
-
-	for(const auto& [ID, pInfo] : CItemDescription::Data())
-	{
-		if(pInfo.IsType(Type))
-			ItemIDs.push_back(ID);
-	}
-
-	return ItemIDs;
 }
 
 bool CInventoryManager::ListInventory(int ClientID, std::optional<ItemGroup> GroupOpt, std::optional<ItemType> TypeOpt)

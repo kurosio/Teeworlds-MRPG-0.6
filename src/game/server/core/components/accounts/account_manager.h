@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_ACCOUNT_MAIN_CORE_H
-#define GAME_SERVER_COMPONENT_ACCOUNT_MAIN_CORE_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_ACCOUNT_MANAGER_H
+#define GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_ACCOUNT_MANAGER_H
 #include <game/server/core/mmo_component.h>
 #include <base/timeperiod.h>
 
@@ -30,6 +30,7 @@ class CAccountManager : public MmoComponent
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;
 	bool OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd) override;
 
+public:
 	struct AccBan
 	{
 		int id;
@@ -47,16 +48,29 @@ public:
 
 	// Starts a login whose claim on the account has been written.
 	void BeginSessionTakeover(CPlayer* pPlayer, const AccountSession::SClaim& Claim, bool RecommendPin);
-	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false, int64_t ClaimDeadline = 0);
+	// Starts the account load. It is staged and asynchronous: everything the
+	// account needs is requested at once, OnLoaded runs on the game thread when
+	// the last answer is in and the account is playable.
+	//
+	// Returns false when the load could not be started at all - the player is
+	// gone, not authenticated, or not in a world - because then OnLoaded will
+	// never run and the caller has to end the login instead of waiting for it.
+	bool LoadAccount(CPlayer* pPlayer, bool FirstInitilize = false, int64_t ClaimDeadline = 0, std::function<void(bool)> OnLoaded = {});
 	void SetPinCode(int ClientID, const char* pCurrentPasswordOrPin, const char* pNewPin, bool IsChangingPin);
 	void ChangePassword(int ClientID, const char* pOldPassword, const char* pNewPassword, const char* pPinCode);
-	bool ChangeNickname(const std::string& newNickname, int ClientID) const;
-	bool BanAccount(CPlayer* pPlayer, CTimePeriod Time, const std::string& Reason);
-	bool UnBanAccount(int BanId) const;
+	// Asynchronous commands: the answer (a chat message or an rcon line) is the
+	// only feedback, so they return nothing and never wait for the database.
+	void ChangeNickname(std::string NewNickname, int ClientID);
+	void BanAccount(CPlayer* pPlayer, CTimePeriod Time, const std::string& Reason);
+	void UnBanAccount(int BanId) const;
+	void BansAccount(std::function<void(std::vector<AccBan>&&)> OnLoaded) const;
+
+	// Runs the part of the login that needs every loaded account field.
+	void FinishAccountLoad(CPlayer* pPlayer, int64_t ClaimDeadline);
+	// Gives a claim back and ends the connection that waited for it.
+	void AbortSessionClaim(int ClientID, const AccountSession::SClaim& Claim);
 
 	int GetLastVisitedWorldID(CPlayer* pPlayer) const;
-	bool GetAccountPin(int AccountID, std::string& OutPinCode) const;
-	std::vector<AccBan> BansAccount() const;
 
 	static bool IsActive(int ClientID)
 	{
@@ -97,6 +111,21 @@ private:
 		Abandoned, // the player is gone without OnClientReset
 	};
 
+	// A login whose account load has been started: the answer of that load is the
+	// last thing a login waits for, so it is watched like the pending stage.
+	struct SLoadingLogin
+	{
+		int m_ClientID {};
+		AccountSession::SClaim m_Claim {};
+		int64_t m_StartedAt {};
+	};
+
+	// Forgets the load of a client and answers how long it took, 0 if it was not
+	// watched (already finished, reset or given up).
+	int64_t AckLoadingLogin(int ClientID);
+	// Ends the logins whose account load never answered.
+	void SweepLoadingLogins();
+
 	EPendingState EvaluatePendingLogin(const SPendingLogin& Pending, int64_t Now) const;
 	void ProcessPendingLogins();
 	bool CompleteLogin(int ClientID, const AccountSession::SClaim& Claim, bool RecommendPin);
@@ -111,6 +140,7 @@ private:
 	void AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* pProf) const;
 
 	std::vector<SPendingLogin> m_vPendingLogins {};
+	std::vector<SLoadingLogin> m_vLoadingLogins {};
 	int64_t m_NextSessionCheck = 0;
 };
 

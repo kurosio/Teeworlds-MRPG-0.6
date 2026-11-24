@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "rhythm.h"
+#include "rhythm_db.h"
 
 #include <base/math.h>
 #include <base/system.h>
@@ -765,23 +766,14 @@ void CGameControllerRhythm::SaveRhythmResults() const
 		pPlayer->GetItem(itMaterial)->Add(MaterialReward, 0, 0, 0, false);
 		GS()->Chat(ClientID, "You received {} materials for completing Rhythm!", MaterialReward);
 
-		// save a single best record per player in current rhythm world
+		// Save a single best record per player in the current rhythm world. The best
+		// score is improved and the record is created when it does not exist yet, so
+		// both statements can be sent without reading first.
 		const int AccountID = pPlayer->Account()->GetID();
 		const int WorldID = GS()->GetWorldID();
-		ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Score", "tw_rhythm_records",
-			"WHERE UserID = '{}' AND WorldID = '{}' AND Difficulty = '{}' ORDER BY Score DESC LIMIT 1", AccountID, WorldID, m_Difficulty.c_str());
-		if(!pRes->next())
-		{
-			Database->Execute<DB::INSERT>("tw_rhythm_records", "(UserID, WorldID, Difficulty, Score) VALUES ('{}', '{}', '{}', '{}')",
-				AccountID, WorldID, m_Difficulty.c_str(), Points);
-		}
-		else
-		{
-			const int RecordID = pRes->getInt("ID");
-			const int BestScore = pRes->getInt("Score");
-			if(Points > BestScore)
-				Database->Execute<DB::UPDATE>("tw_rhythm_records", "Score = '{}' WHERE ID = '{}'", Points, RecordID);
-		}
+		const std::string Difficulty = m_Difficulty;
+		RhythmDb::ImproveRecord(AccountID, WorldID, Difficulty, Points);
+		RhythmDb::CreateRecordIfMissing(AccountID, WorldID, Difficulty, Points);
 		GS()->Chat(-1, "'{~}' finished '{}[{~}]' with {} points!", Server()->ClientName(ClientID), Server()->GetWorldName(WorldID), m_Difficulty, Points);
 	}
 }

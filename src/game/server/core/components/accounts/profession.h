@@ -34,6 +34,7 @@ public:
 
 	void Init(int ClientID, const std::optional<std::string>& jsonData);
 	void Save();
+	std::string GetPreparedJsonString() const;
 
 	void AddExperience(uint64_t Experience);
 	bool Upgrade(AttributeIdentifier ID, int Units, int PricePerUnit);
@@ -52,8 +53,6 @@ public:
 	EquippedSlots& GetEquippedSlots() { return m_EquippedSlots; }
 	void ResetUpgrades();
 
-private:
-	std::string GetPreparedJsonString() const;
 };
 
 /*

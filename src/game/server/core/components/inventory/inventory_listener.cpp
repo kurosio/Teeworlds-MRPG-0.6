@@ -1,4 +1,6 @@
 #include "inventory_listener.h"
+
+#include <engine/server/async_file.h>
 #include <game/server/gamecontext.h>
 #include <game/server/worldmodes/dungeon/dungeon.h>
 #include <game/server/core/entities/tools/flying_point.h>
@@ -206,6 +208,11 @@ void CInventoryListener::UpdateAttributesFull(CPlayer* pPlayer)
 // attributes tracker
 void CAttributesTracker::LoadTrackingData()
 {
+	if(m_Loaded)
+		return;
+
+	m_Loaded = true;
+
 	ByteArray RawData;
 	if(!mystd::file::load(ATTRIBUTE_TRACKING_FILE_NAME, &RawData))
 	{
@@ -244,15 +251,7 @@ void CAttributesTracker::SaveTrackingData()
 			});
 	}
 
-	std::string Data = j.dump(4);
-	auto Result = mystd::file::save(ATTRIBUTE_TRACKING_FILE_NAME, Data.data(), static_cast<unsigned>(Data.size()));
-	if(Result != mystd::file::result::SUCCESSFUL)
-	{
-		dbg_msg("attributes_tracking", "Failed to save the attributes. Re-creating file.");
-		mystd::file::remove(ATTRIBUTE_TRACKING_FILE_NAME);
-		m_vTrackingData.clear();
-		SaveTrackingData();
-	}
+	AsyncFile::Write(ATTRIBUTE_TRACKING_FILE_NAME, j.dump(4));
 }
 
 void CAttributesTracker::UpdateTrackingDataIfNecessary(CPlayer* pPlayer, int AttributeID, size_t NewValue)

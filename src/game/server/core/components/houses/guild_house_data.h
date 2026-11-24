@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_GUILD_HOUSE_DATA_H
-#define GAME_SERVER_COMPONENT_GUILD_HOUSE_DATA_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_HOUSES_GUILD_HOUSE_DATA_H
+#define GAME_SERVER_CORE_COMPONENTS_HOUSES_GUILD_HOUSE_DATA_H
 
 #include "base/interface_house.h"
 #include "base/decoration_manager.h"
@@ -10,7 +10,6 @@
 
 #define TW_GUILDS_HOUSES "tw_guilds_houses"
 #define TW_GUILD_HOUSES_DECORATION_TABLE "tw_guilds_decorations"
-static constexpr float s_GuildChancePlanting = 0.025f;
 
 class CGS;
 class CPlayer;
@@ -66,7 +65,6 @@ public:
 	{
 		return m_pDecorationManager;
 	}
-
 
 	CFarmzonesManager* GetFarmzonesManager() const
 	{

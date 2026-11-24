@@ -91,22 +91,22 @@ bool CMultiWorlds::LoadFromDB(IKernel* pKernel, IStorageEngine* pStorage)
 	CTuneZoneManager::GetInstance().LoadSoundsFromDirectory("server_data/sounds", pStorage);
 	Clear(false);
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_worlds");
-	while(pRes->next())
+	auto Worlds = Db::Query(Db::KindOfTable("tw_worlds"), "SELECT * FROM tw_worlds").Result();
+	while(Worlds.Next())
 	{
-		const int WorldID = pRes->getInt("ID");
+		const int WorldID = Worlds.GetInt("ID");
 		dbg_assert(WorldID < ENGINE_MAX_WORLDS, "exceeded pool of allocated memory for worlds");
 
 		if (g_Config.m_SvDevInitDefaultWorld && WorldID > BASE_GAME_WORLD_ID)
 			break;
 
-		std::string Name = pRes->getString("Name");
-		std::string Path = pRes->getString("Path");
-		std::string Type = pRes->getString("Type");
-		const auto FlagsSet = DBSet(pRes->getString("Flags"));
-		const int RespawnWorldID = pRes->getInt("RespawnWorldID");
-		const int JailWorldID = pRes->getInt("JailWorldID");
-		const int RequiredLevel = pRes->getInt("RequiredLevel");
+		std::string Name = Worlds.GetString("Name");
+		std::string Path = Worlds.GetString("Path");
+		std::string Type = Worlds.GetString("Type");
+		const auto FlagsSet = DBSet(Worlds.GetString("Flags"));
+		const int RespawnWorldID = Worlds.GetInt("RespawnWorldID");
+		const int JailWorldID = Worlds.GetInt("JailWorldID");
+		const int RequiredLevel = Worlds.GetInt("RequiredLevel");
 
 		CWorldDetail WorldDetail(Type, FlagsSet, RespawnWorldID, JailWorldID, RequiredLevel);
 		if(m_apWorlds[WorldID])

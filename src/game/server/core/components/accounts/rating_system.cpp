@@ -1,8 +1,11 @@
 #include "rating_system.h"
 
 #include <engine/server.h>
+#include <engine/server/async_file.h>
+#include <game/server/core/tools/db_async_context.h>
 #include <game/server/gamecontext.h>
 #include "account_data.h"
+#include "account_db.h"
 
 namespace
 {
@@ -23,8 +26,12 @@ namespace
 void RatingSystem::Init(CAccountData* pAccount)
 {
 	m_pAccount = pAccount;
+	m_Rating = g_Config.m_SvMinRating;
+	m_Wins = 0;
+	m_Losses = 0;
+	m_Played = 0;
+	m_vHistory.clear();
 	m_FileName = GetRatingFileName(pAccount->GetID());
-	Load();
 }
 
 void RatingSystem::DecreaseRating(int Decreasing)
@@ -188,40 +195,64 @@ void RatingSystem::Create()
 	UpdateClient();
 }
 
-void RatingSystem::Load()
+void RatingSystem::RegisterLoadStage()
 {
 	if(!m_pAccount)
 		return;
 
-	// try load and get raw data
-	ByteArray RawData;
-	if(!mystd::file::load(m_FileName.c_str(), &RawData))
+	const int ClientID = m_pAccount->GetClientID();
+	const std::string Filename = m_FileName;
+	m_pAccount->AddLoadStage("rating", [ClientID, Filename](CAccountData::CLoadDone Done)
 	{
-		Create();
-		return;
-	}
+		auto pContext = DbAsync::MakeContext(ClientID);
+		AsyncFile::Read(Filename.c_str(), [pContext, Filename, Done = std::move(Done)](AsyncFile::SReadResult&& Read) mutable
+		{
+			auto* pPlayer = pContext->GetPlayer();
+			if(!pPlayer || !pPlayer->Account())
+			{
+				Done(false);
+				return;
+			}
+			if(!Read.Ok() && !Read.Missing())
+			{
+				dbg_msg("rating_system", "could not read '%s': %s", Filename.c_str(), Read.m_Error.c_str());
+				Done(false);
+				return;
+			}
 
-	// try initialize json by raw string data
-	std::string rawString = (char*)RawData.data();
-	bool hasError = mystd::json::parse(rawString, [this](nlohmann::json& j)
-	{
-		m_Rating = j.value("rating", g_Config.m_SvMinRating);
-		m_Played = j.value("played", 0);
-		m_Wins = j.value("wins", 0);
-		m_Losses = j.value("losses", 0);
-		m_vHistory = j.value("history", std::vector<int>{});
+			const std::string& Content = Read.m_Content;
+			auto& Self = pPlayer->Account()->GetRatingSystem();
+			if(Content.empty())
+			{
+				Self.Create();
+				Done(true);
+				return;
+			}
+
+			const bool ParseError = mystd::json::parse(Content, [&Self](nlohmann::json& j)
+			{
+				Self.m_Rating = j.value("rating", g_Config.m_SvMinRating);
+				Self.m_Played = j.value("played", 0);
+				Self.m_Wins = j.value("wins", 0);
+				Self.m_Losses = j.value("losses", 0);
+				Self.m_vHistory = j.value("history", std::vector<int>{});
+			});
+
+			if(ParseError)
+			{
+				dbg_msg("rating_system", "can't initialize '%s'. Re-creating....", Self.m_FileName.c_str());
+				Self.m_Rating = g_Config.m_SvMinRating;
+				Self.m_Played = 0;
+				Self.m_Wins = 0;
+				Self.m_Losses = 0;
+				Self.m_vHistory.clear();
+				Self.Save();
+			}
+
+			Self.UpdateClient();
+			Done(true);
+		});
 	});
-
-	// has error re-creating file
-	if(hasError)
-	{
-		dbg_msg("rating_system", "can't initialize '%s'. Re-creating....", m_FileName.c_str());
-		mystd::file::remove(m_FileName.c_str());
-		Create();
-		return;
-	}
-
-	UpdateClient();
 }
 
 void RatingSystem::Save()
@@ -237,16 +268,10 @@ void RatingSystem::Save()
 		{"history", m_vHistory}
 	};
 
-	std::string Data = j.dump(4);
-	auto Result = mystd::file::save(m_FileName.c_str(), Data.data(), static_cast<unsigned>(Data.size()));
-	if(Result == mystd::file::result::SUCCESSFUL)
-	{
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Rating = '{}' WHERE ID = '{}'", m_Rating, m_pAccount->GetID());
-	}
-	else
-	{
-		dbg_msg("rating", "Failed to save the rating file AID(%d).", m_pAccount->GetID());
-	}
+	// The file is a cache of the rating; it is written in the background and the
+	// database copy is updated regardless of the disk.
+	AsyncFile::Write(m_FileName.c_str(), j.dump(4));
+	AccountDb::SaveRating(m_pAccount->GetID(), m_Rating);
 }
 
 void RatingSystem::UpdateClient() const

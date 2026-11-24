@@ -1,0 +1,24 @@
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#ifndef GAME_SERVER_CORE_COMPONENTS_EIDOLONS_EIDOLON_MANAGER_H
+#define GAME_SERVER_CORE_COMPONENTS_EIDOLONS_EIDOLON_MANAGER_H
+#include <game/server/core/mmo_component.h>
+
+#include "eidolon_info_data.h"
+
+class CEidolonManager : public MmoComponent, public IEventListener
+{
+	ScopedEventListener m_Events;
+	void OnPreInit() override;
+	void OnPlayerProfessionExperience(CPlayer* pPlayer, CProfession* pProfession, uint64_t& Experience) override;
+	int m_EidolonItemSelected[MAX_PLAYERS] {};
+
+	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason) override;
+	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
+
+public:
+	// return eidolon size by pair (first player collection / second maximum eidolons)
+	std::pair<int, int> GetEidolonsSize(int ClientID) const;
+};
+
+#endif

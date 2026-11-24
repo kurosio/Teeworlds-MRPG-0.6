@@ -1,4 +1,4 @@
-﻿#include "achievement_listener.h"
+#include "achievement_listener.h"
 #include "achievement_data.h"
 
 #include <game/server/gamecontext.h>

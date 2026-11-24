@@ -1,8 +1,11 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "guild_data.h"
+
+#include "guild_db.h"
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
+#include <game/server/core/components/guilds/guild_manager.h>
 
 CGS* CGuild::GS() const { return (CGS*)Instance::GameServerPlayer(m_pHouse != nullptr ? m_pHouse->GetWorldID() : INITIALIZER_WORLD_ID); }
 
@@ -29,7 +32,7 @@ bool CGuild::Upgrade(GuildUpgrade Type)
 	if(m_pBankManager->Spend(Price))
 	{
 		pUpgradeField->m_Value += 1;
-		Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "{} = '{}' WHERE ID = '{}'", pUpgradeField->getFieldName(), pUpgradeField->m_Value, m_ID);
+		GuildDb::SaveUpgradeField(m_ID, pUpgradeField->getFieldName(), pUpgradeField->m_Value);
 
 		// Add and send a history entry for the upgrade
 		m_pLogger->Add(LOGFLAG_UPGRADES_CHANGES, "'%s' upgraded to %d level", pUpgradeField->getDescription(), pUpgradeField->m_Value);
@@ -69,7 +72,7 @@ void CGuild::AddExperience(uint64_t Experience)
 	// update table
 	if(rand() % 10 == 2 || UpdateTable)
 	{
-		Database->Execute<DB::UPDATE>("tw_guilds", "Level = '{}', Exp = '{}' WHERE ID = '{}'", m_Level, m_Experience, m_ID);
+		GuildDb::SaveLevelAndExp(m_ID, m_Level, m_Experience);
 	}
 }
 
@@ -85,7 +88,7 @@ GuildResult CGuild::SetLeader(int AccountID)
 
 	// implement the leader change
 	m_LeaderUID = AccountID;
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "LeaderUID = '{}' WHERE ID = '{}'", m_LeaderUID, m_ID);
+	GuildDb::SaveLeaderUID(m_ID, m_LeaderUID);
 
 	// send messages
 	const char* pNickNewLeader = Instance::Server()->GetAccountNickname(m_LeaderUID);
@@ -120,7 +123,7 @@ GuildResult CGuild::BuyHouse(int HouseID)
 		m_pHouse = *IterHouse;
 		m_pHouse->UpdateGuild(this);
 		m_pHouse->m_RentEndTimestamp = (int)time(nullptr) + GUILD_RENT_DAYS_DEFAULT * 60 * 60 * 24;
-		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '{}' WHERE ID = '{}'", m_pHouse->m_RentEndTimestamp, HouseID);
+		GuildDb::SaveHouseRentDays(m_pHouse->m_RentEndTimestamp, HouseID);
 		Links::Add("guild_house", m_ID, HouseID);
 
 		// send messages
@@ -212,7 +215,7 @@ CGS* CGuild::CBank::GS() const
 
 void CGuild::CBank::Save() const
 {
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Value, m_pGuild->GetID());
+	GuildDb::SaveBank(m_pGuild->GetID(), m_Value.to_string());
 	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
 }
 
@@ -250,7 +253,7 @@ void CGuild::CLogEntry::SetActivityFlag(int64_t Flag)
 		m_Logflag |= Flag;
 
 	// update the database
-	Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "LogFlag = '{}' WHERE ID = '{}'", m_Logflag, m_pGuild->GetID());
+	GuildDb::SaveLogFlag(m_pGuild->GetID(), m_Logflag);
 }
 
 bool CGuild::CLogEntry::IsActivityFlagSet(int64_t Flag) const { return (Flag & m_Logflag); }
@@ -279,18 +282,17 @@ void CGuild::CLogEntry::Add(int64_t LogFlag, const char* pBuffer, ...)
 		str_timestamp_format(aBufTimeStamp, sizeof(aBufTimeStamp), FORMAT_WITHOUT_SEC_SPACE);
 
 		// add the formatted string and timestamp to the logs list
-		const auto cBuf = CSqlString<64>(aBuf);
-		m_aLogs.push_back({ cBuf.cstr(), aBufTimeStamp });
-		Database->Execute<DB::INSERT>(TW_GUILDS_HISTORY_TABLE, "(GuildID, Text, Time) VALUES ('{}', '{}', '{}')", m_pGuild->GetID(), cBuf.cstr(), aBufTimeStamp);
+		m_aLogs.push_back({ aBuf, aBufTimeStamp });
+		GuildDb::AddHistoryEntry(m_pGuild->GetID(), aBuf, aBufTimeStamp);
 	}
 }
 
 void CGuild::CLogEntry::InitLogs()
 {
 	// initialize the logs list
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_HISTORY_TABLE, "WHERE GuildID = '{}' ORDER BY ID DESC LIMIT {}", m_pGuild->GetID(), (int)GUILD_LOGS_MAX_COUNT);
-	while(pRes->next())
-		m_aLogs.push_back({ pRes->getString("Text").c_str(), pRes->getString("Time").c_str() });
+	auto Logs = GuildDb::ListHistory(m_pGuild->GetID(), (int)GUILD_LOGS_MAX_COUNT);
+	while(Logs.Next())
+		m_aLogs.push_back({ Logs.GetString("Text").c_str(), Logs.GetString("Time").c_str() });
 }
 
 /* -------------------------------------
@@ -306,23 +308,20 @@ CGuild::CRank::CRank(GuildRankIdentifier RID, std::string&& Rank, int64_t Rights
 
 GuildResult CGuild::CRank::Rename(std::string NewRank)
 {
-	// initialize variables
-	auto cstrNewRank = CSqlString<64>(NewRank.c_str());
-	const int LengthRank = str_length(cstrNewRank.cstr());
-
 	// check validity
+	const int LengthRank = str_length(NewRank.c_str());
 	if(LengthRank < 2 || LengthRank > MAX_NAME_LENGTH)
 		return GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME;
 
 	// check already exists
-	if(m_pGuild->GetRanks()->Get(cstrNewRank.cstr()))
+	if(m_pGuild->GetRanks()->Get(NewRank))
 		return GuildResult::RANK_RENAME_ALREADY_NAME_EXISTS;
 
 	// implement renaming
-	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "renamed rank '%s' to '%s'", m_Rank.c_str(), cstrNewRank.cstr());
-	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Name = '{}' WHERE ID = '{}'", cstrNewRank.cstr(), m_ID);
+	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "renamed rank '%s' to '%s'", m_Rank.c_str(), NewRank.c_str());
+	GuildDb::SaveRankName(m_ID, NewRank);
 	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
-	m_Rank = cstrNewRank.cstr();
+	m_Rank = NewRank;
 	return GuildResult::RANK_SUCCESSFUL;
 }
 
@@ -334,7 +333,7 @@ void CGuild::CRank::ToggleRight(int64_t Right)
 			continue;
 
 		m_Rights ^= Right;
-		Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Rights = '{}' WHERE ID = '{}'", m_Rights, m_ID);
+		GuildDb::SaveRankRights(m_ID, m_Rights);
 		Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
 		return;
 	}
@@ -365,12 +364,12 @@ CGuild::CRanksManager::~CRanksManager()
 void CGuild::CRanksManager::Init(GuildRankIdentifier DefaultID)
 {
 	// execute a database query to get the rank data for the guild
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_RANKS_TABLE, "WHERE GuildID = '{}' ORDER BY ID", m_pGuild->GetID());
-	while(pRes->next())
+	auto Ranks = GuildDb::ListRanks(m_pGuild->GetID());
+	while(Ranks.Next())
 	{
-		const GuildRankIdentifier RID = pRes->getInt("ID");
-		std::string Rank = pRes->getString("Name").c_str();
-		const int64_t Rights = pRes->getInt64("Rights");
+		const GuildRankIdentifier RID = Ranks.GetInt("ID");
+		std::string Rank = Ranks.GetString("Name").c_str();
+		const int64_t Rights = Ranks.GetInt64("Rights");
 		auto* pRank = m_aRanks.emplace_back(new CRank(RID, std::move(Rank), Rights, m_pGuild));
 
 		// check is default rank and set the default rank pointer
@@ -385,15 +384,16 @@ void CGuild::CRanksManager::UpdateDefaultRank()
 	if(m_pDefaultRank)
 		return;
 
-	// if there are no ranks, create a default rank
+	// the first rank of the guild is the default one
 	if(!m_aRanks.empty())
-		m_pDefaultRank = m_aRanks.front();
-	else
 	{
-		GuildResult Result = Add("Newbie");
-		dbg_assert(Result == GuildResult::RANK_SUCCESSFUL, "guild cannot initialize a default rank");
-		m_pDefaultRank = Get("Newbie");
+		m_pDefaultRank = m_aRanks.front();
+		return;
 	}
+
+	// A guild created by this version is written together with its default rank, so
+	// an empty rank list is old data: it is repaired once, in the background.
+	Add(DEFAULT_GUILD_RANK_NAME, -1);
 
 	// update the guild members
 	for(const auto& pIterMember : m_pGuild->GetMembers()->GetContainer())
@@ -410,45 +410,88 @@ void CGuild::CRanksManager::UpdateDefaultRank()
 	m_pGuild->GetMembers()->Save();
 }
 
-GuildResult CGuild::CRanksManager::Add(const std::string& Rank)
+void CGuild::CRanksManager::Add(const std::string& Rank, int ClientID)
 {
-	// initialize variables
-	auto cstrRank = CSqlString<64>(Rank.c_str());
-	const int LengthRank = str_length(cstrRank.cstr());
+	CGS* pGS = GS();
+	const GuildIdentifier GuildID = m_pGuild->GetID();
+	auto Report = [pGS, ClientID, &Rank](GuildResult Result)
+	{
+		if(ClientID < 0)
+			return;
+
+		switch(Result)
+		{
+			default: pGS->Chat(ClientID, "Unforeseen error."); break;
+			case GuildResult::RANK_ADD_ALREADY_EXISTS: pGS->Chat(ClientID, "The rank name already exists"); break;
+			case GuildResult::RANK_ADD_LIMIT_HAS_REACHED: pGS->Chat(ClientID, "Rank limit reached, '{} out of {}'.", (int)GUILD_RANKS_MAX_COUNT, (int)GUILD_RANKS_MAX_COUNT); break;
+			case GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME: pGS->Chat(ClientID, "Minimum number of 'characters 2, maximum 16'."); break;
+			case GuildResult::RANK_SUCCESSFUL:
+				pGS->Chat(ClientID, "The rank '{~}' has been successfully added!", Rank.c_str());
+				pGS->UpdateVotesIfForAll(MENU_GUILD_RANK_LIST);
+			break;
+		}
+	};
 
 	// check length
+	const int LengthRank = str_length(Rank.c_str());
 	if(LengthRank < 2 || LengthRank > MAX_NAME_LENGTH)
-		return GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME;
+	{
+		Report(GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME);
+		return;
+	}
 
 	// check if the rank already exists
-	if(std::count_if(m_aRanks.begin(), m_aRanks.end(), [&cstrRank](const CRank* pRank) { return std::string(pRank->GetName()) == cstrRank.cstr(); }))
-		return GuildResult::RANK_ADD_ALREADY_EXISTS;
+	if(std::count_if(m_aRanks.begin(), m_aRanks.end(), [&Rank](const CRank* pRank) { return pRank->GetName() == Rank; }))
+	{
+		Report(GuildResult::RANK_ADD_ALREADY_EXISTS);
+		return;
+	}
 
 	// check if the rank total count has reached the limit
 	if((int)m_aRanks.size() >= GUILD_RANKS_MAX_COUNT)
-		return GuildResult::RANK_ADD_LIMIT_HAS_REACHED;
+	{
+		Report(GuildResult::RANK_ADD_LIMIT_HAS_REACHED);
+		return;
+	}
 
-	// get next rank ID
-	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", TW_GUILDS_RANKS_TABLE, "ORDER BY ID DESC LIMIT 1");
-	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1;
+	// the rank gets the next free id, which is read before the rank is written
+	GuildDb::ReadNextRankID()
+		.Then([pGS, GuildID, Rank, Report](Db::CResultSet&& NextRank)
+	{
+		const int InitID = NextRank.HasRows() ? NextRank.GetInt("NextID") : 1;
 
-	// implement the new rank
-	GuildIdentifier GuildID = m_pGuild->GetID();
-	Database->Execute<DB::INSERT>(TW_GUILDS_RANKS_TABLE, "(ID, Rights, GuildID, Name) VALUES ('{}', '{}', '{}', '{}')", InitID, static_cast<int64_t>(RANKFLAG_RIGHT_DEFAULT), GuildID, cstrRank.cstr());
-	m_aRanks.emplace_back(new CRank(InitID, cstrRank.cstr(), RANKFLAG_RIGHT_DEFAULT, m_pGuild));
+		// implement the new rank
+		GuildDb::CreateRank(InitID, static_cast<int64_t>(RANKFLAG_RIGHT_DEFAULT), GuildID, Rank);
 
-	// send messages
-	GS()->ChatGuild(GuildID, "New rank is created [{~}]!", cstrRank.cstr());
-	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "added rank '%s'", cstrRank.cstr());
-	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
-	return GuildResult::RANK_SUCCESSFUL;
+		auto* pGuild = pGS->Core()->GuildManager()->GetGuildByID(GuildID);
+		if(!pGuild)
+			return;
+
+		CRank* pRank = pGuild->GetRanks()->m_aRanks.emplace_back(new CRank(InitID, std::string(Rank), RANKFLAG_RIGHT_DEFAULT, pGuild));
+
+		// the first rank becomes the default one, members without a rank join it
+		if(!pGuild->GetRanks()->m_pDefaultRank)
+		{
+			pGuild->GetRanks()->m_pDefaultRank = pRank;
+			for(const auto& pIterMember : pGuild->GetMembers()->GetContainer())
+			{
+				const auto pMember = pIterMember.second;
+				if(!pMember->GetRank())
+					(void)pMember->SetRank(pRank);
+			}
+		}
+
+		// send messages
+		pGS->ChatGuild(GuildID, "New rank is created [{~}]!", Rank.c_str());
+		pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "added rank '%s'", Rank.c_str());
+		Sync->Push(syncevents::GUILD_UPDATE, pGS->GetWorldID(), GuildID);
+		Report(GuildResult::RANK_SUCCESSFUL);
+	});
 }
 
 GuildResult CGuild::CRanksManager::Remove(const std::string& Rank)
 {
-	// initialize variables
-	auto cstrRank = CSqlString<64>(Rank.c_str());
-	auto pRank = Get(cstrRank.cstr());
+	auto pRank = Get(Rank);
 
 	// check validity
 	if(!pRank)
@@ -469,13 +512,13 @@ GuildResult CGuild::CRanksManager::Remove(const std::string& Rank)
 	}
 
 	// implement removal
-	Database->Execute<DB::REMOVE>(TW_GUILDS_RANKS_TABLE, "WHERE ID = '{}'", pRank->GetID());
+	GuildDb::DeleteRank(pRank->GetID());
 	m_aRanks.erase(std::find(m_aRanks.begin(), m_aRanks.end(), pRank));
 	delete pRank;
 
 	// send messages
-	GS()->ChatGuild(m_pGuild->GetID(), "Rank '{~}' successfully delete", cstrRank.cstr());
-	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "removed rank '%s'", cstrRank.cstr());
+	GS()->ChatGuild(m_pGuild->GetID(), "Rank '{~}' successfully delete", Rank.c_str());
+	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "removed rank '%s'", Rank.c_str());
 	Sync->Push(syncevents::GUILD_UPDATE, GS()->GetWorldID(), m_pGuild->GetID());
 	return GuildResult::RANK_SUCCESSFUL;
 }
@@ -751,8 +794,7 @@ void CGuild::CMembersManager::Save() const
 	}
 
 	// Update the guild data in the database
-	Database->Execute<DB::UPDATE, 300>(TW_GUILDS_TABLE, "DefaultRankID = '{}', Members = '{}' WHERE ID = '{}'",
-		m_pGuild->GetRanks()->GetDefaultRank()->GetID(), MembersData.dump().c_str(), m_pGuild->GetID());
+	GuildDb::SaveDefaultRankAndMembers(m_pGuild->GetID(), m_pGuild->GetRanks()->GetDefaultRank()->GetID(), MembersData.dump());
 }
 
 CGuild::CMember* CGuild::CMembersManager::Get(int AccountID)
@@ -782,11 +824,11 @@ CGuild::CRequestsManager::~CRequestsManager()
 void CGuild::CRequestsManager::Init()
 {
 	// Execute a database query to get the rank data for the guild
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '{}'", m_pGuild->GetID());
-	while(pRes->next())
+	auto Requests = GuildDb::ListInvites(m_pGuild->GetID());
+	while(Requests.Next())
 	{
 		// Load the account that sent the request
-		int AccountID = pRes->getInt("UserID");
+		int AccountID = Requests.GetInt("UserID");
 		m_aRequestsJoin.push_back(new RequestData(AccountID));
 	}
 }
@@ -818,7 +860,7 @@ GuildResult CGuild::CRequestsManager::Request(int FromUID)
 	m_aRequestsJoin.push_back(new RequestData(FromUID));
 
 	// Insert the invite into the database
-	Database->Execute<DB::INSERT>(TW_GUILDS_INVITES_TABLE, "(GuildID, UserID) VALUES ('{}', '{}')", m_pGuild->GetID(), FromUID);
+	GuildDb::CreateInvite(m_pGuild->GetID(), FromUID);
 	return GuildResult::MEMBER_SUCCESSFUL;
 }
 
@@ -831,7 +873,7 @@ GuildResult CGuild::CRequestsManager::Accept(int UserID, const CMember* pFromMem
 	if(Iter != m_aRequestsJoin.end())
 	{
 		// Remove the request from the database and delete it from memory
-		Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '{}' AND UserID = '{}'", m_pGuild->GetID(), (*Iter)->GetFromUID());
+		GuildDb::DeleteInvite(m_pGuild->GetID(), (*Iter)->GetFromUID());
 		delete (*Iter);
 		m_aRequestsJoin.erase(Iter);
 
@@ -863,7 +905,7 @@ void CGuild::CRequestsManager::Deny(int UserID, const CMember* pFromMember)
 	if(Iter != m_aRequestsJoin.end())
 	{
 		// Remove the request from the database
-		Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '{}' AND UserID = '{}'", m_pGuild->GetID(), (*Iter)->GetFromUID());
+		GuildDb::DeleteInvite(m_pGuild->GetID(), (*Iter)->GetFromUID());
 
 		// If pFromMember exists
 		if(pFromMember)

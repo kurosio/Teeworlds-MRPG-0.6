@@ -1,7 +1,9 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_ACCOUNT_SESSION_H
-#define GAME_SERVER_COMPONENT_ACCOUNT_SESSION_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_ACCOUNT_SESSION_H
+#define GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_ACCOUNT_SESSION_H
+
+#include "account_db.h"
 
 #include <cstdint>
 #include <functional>
@@ -21,22 +23,9 @@ namespace AccountSession
 	constexpr int HEARTBEAT_STALE_SECONDS = 45; // older heartbeat (or reservation) counts as dead
 
 	// One session: the account and the token it logged in with.
-	struct SKey
-	{
-		int m_AccountID {};
-		std::string m_Token {};
-	};
-
+	using SKey = AccountDb::SSessionKey;
 	// The row as it was read.
-	struct SRecord
-	{
-		bool m_Exists {};
-		int m_ServerID {};
-		int m_ClientID {};
-		std::string m_Token {};
-		int m_Heartbeat {}; // 0: the owning login never finished
-		int m_HeartbeatAge { -1 }; // seconds since the last heartbeat, -1 if unknown
-	};
+	using SRecord = AccountDb::SSessionRecord;
 
 	// A login's attempt to take an account: the new token and the row it replaces.
 	struct SClaim
@@ -50,12 +39,12 @@ namespace AccountSession
 
 	using ReadCallback = std::function<void(std::optional<SRecord>)>; // nullopt: the read failed
 	using DoneCallback = std::function<void(bool)>; // true: the write matched a row
-	using RowsCallback = std::function<void(const std::vector<SKey>&)>; // only on success
+	using RowsCallback = std::function<void(bool, const std::vector<SKey>&)>; // success, then rows
 
 	std::string GenerateToken();
 
-	// Reads the current owner (primary: the row arbitrates between servers). Only a
-	// snapshot; TryClaim checks it again.
+	// Reads the current owner from the remote database, where the row arbitrates
+	// between servers. This is only a snapshot; TryClaim checks it again.
 	void ReadRecord(int AccountID, ReadCallback Done);
 
 	// Takes the account if the row still holds the token we read and it may be taken
@@ -75,8 +64,8 @@ namespace AccountSession
 	// Refreshes the heartbeat of the given active sessions, in batches.
 	void RefreshHeartbeats(const std::vector<SKey>& vKeys);
 
-	// Tokens currently stored for the given accounts (primary read); nothing is
-	// delivered if the query fails.
+	// Tokens currently stored for the given accounts in the remote database. The
+	// callback reports success separately so a failed read is not mistaken for no rows.
 	void FetchTokens(const std::vector<int>& vAccountIDs, RowsCallback Done);
 }
 

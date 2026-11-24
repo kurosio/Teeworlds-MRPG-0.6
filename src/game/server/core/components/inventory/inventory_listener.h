@@ -23,14 +23,18 @@ inline void to_json(nlohmann::json& j, const TrackingAttributeData& data)
 
 inline void from_json(const nlohmann::json& j, TrackingAttributeData& data)
 {
-    j.at("account_id").get_to(data.AccountID);
-    j.at("amount").get_to(data.Amount);
+    if(!j.is_object())
+        return;
+
+    data.AccountID = j.value("account_id", 0);
+    data.Amount = j.value("amount", 0);
 }
 
 // attributes tracker
 class CAttributesTracker
 {
     friend class CInventoryListener;
+    bool m_Loaded = false;
     std::unordered_map<int, TrackingAttributeData> m_vTrackingData {};
 
     void UpdateTrackingDataIfNecessary(CPlayer* pPlayer, int AttributeID, size_t NewValue);

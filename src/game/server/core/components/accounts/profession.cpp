@@ -1,4 +1,6 @@
 #include "profession.h"
+
+#include "account_db.h"
 #include <engine/server.h>
 
 #include <game/server/entity_manager.h>
@@ -28,15 +30,10 @@ void CProfession::Init(int ClientID, const std::optional<std::string>& jsonData)
 {
 	m_ClientID = ClientID;
 
-	// first initialize
+	// Missing records keep the constructor defaults. The account load stage
+	// persists all such defaults in one batched statement after initialization.
 	if(!jsonData.has_value())
-	{
-		const auto Data = GetPreparedJsonString();
-		const auto AccountID = GetPlayer()->Account()->GetID();
-		Database->Execute<DB::INSERT>("tw_accounts_professions", "(UserID, ProfessionID, Data) VALUES ('{}', '{}', '{}')",
-			AccountID, (int)m_ProfessionID, Data);
 		return;
-	}
 
 	// loading from data
 	mystd::json::parse(jsonData.value(), [this](nlohmann::json& json)
@@ -44,11 +41,20 @@ void CProfession::Init(int ClientID, const std::optional<std::string>& jsonData)
 		m_Level = json.value("level", 1);
 		m_Experience = json.value("exp", 0);
 		m_UpgradePoint = json.value("up", 0);
-		for(auto& [ID, Value] : json["attributes"].items())
+
+		// A key that is not a number is not an attribute: skip it instead of
+		// throwing away the whole profession.
+		const nlohmann::json Attributes = json.value("attributes", nlohmann::json::object());
+		for(auto& [ID, Value] : Attributes.items())
 		{
-			m_Attributes[(AttributeIdentifier)std::stoi(ID)] = Value;
+			int AttributeID = 0;
+			if(std::from_chars(ID.data(), ID.data() + ID.size(), AttributeID).ec != std::errc())
+				continue;
+			m_Attributes[(AttributeIdentifier)AttributeID] = Value;
 		}
-		m_EquippedSlots.load(json["equipped"].dump());
+
+		// The slots are read from the document itself: no dump, no second parse.
+		m_EquippedSlots.load(json.value("equipped", nlohmann::json::object()));
 	});
 }
 
@@ -58,8 +64,7 @@ void CProfession::Save()
 	const auto* pPlayer = GetPlayer();
 	const auto Data = GetPreparedJsonString();
 	const auto AccountID = pPlayer->Account()->GetID();
-	Database->Execute<DB::UPDATE>("tw_accounts_professions", "Data = '{}' WHERE ProfessionID = '{}' AND UserID = '{}'",
-		Data, (int)m_ProfessionID, AccountID);
+	AccountDb::SaveProfession(AccountID, (int)m_ProfessionID, Data);
 }
 
 void CProfession::AddExperience(uint64_t Experience)

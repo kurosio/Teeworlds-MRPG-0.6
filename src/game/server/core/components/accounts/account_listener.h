@@ -1,5 +1,5 @@
-#ifndef GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_ACCOUNTS_LISTENER_H
-#define GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_ACCOUNTS_LISTENER_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_ACCOUNT_LISTENER_H
+#define GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_ACCOUNT_LISTENER_H
 
 #include <game/server/core/tools/event_listener.h>
 
@@ -22,14 +22,18 @@ inline void to_json(nlohmann::json& j, const TrackingLevelingData& data)
 
 inline void from_json(const nlohmann::json& j, TrackingLevelingData& data)
 {
-	j.at("account_id").get_to(data.AccountID);
-	j.at("level").get_to(data.Level);
+	if(!j.is_object())
+		return;
+
+	data.AccountID = j.value("account_id", 0);
+	data.Level = j.value("level", 0);
 }
 
 // leveling tracker
 class CLevelingTracker
 {
 	friend class CAccountListener;
+	bool m_Loaded = false;
 	std::unordered_map<int, TrackingLevelingData> m_vTrackingData {};
 
 	void UpdateTrackingDataIfNecessary(CPlayer* pPlayer, int ProfessionID, int NewLevel);

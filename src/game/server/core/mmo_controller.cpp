@@ -1,6 +1,9 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "mmo_controller.h"
+#include "mmo_db.h"
+
+#include <engine/server/async.h>
 
 #include <game/server/gamecontext.h>
 
@@ -8,10 +11,10 @@
 #include "components/achievements/achievement_manager.h"
 #include "components/auction/auction_manager.h"
 #include "components/aethernet/aethernet_manager.h"
-#include "components/Bots/BotManager.h"
+#include "components/bots/bot_manager.h"
 #include "components/crafting/craft_manager.h"
 #include "components/duties/duties_manager.h"
-#include "components/Eidolons/EidolonManager.h"
+#include "components/eidolons/eidolon_manager.h"
 #include "components/groups/group_manager.h"
 #include "components/guilds/guild_manager.h"
 #include "components/houses/house_manager.h"
@@ -26,12 +29,15 @@
 #include "components/accounts/account_listener.h"
 #include "components/inventory/inventory_listener.h"
 
+#include <engine/server/async_file.h>
 #include <game/server/core/tools/db_async_context.h>
 #include <teeother/components/localization.h>
 
 namespace
 {
 	std::mutex gs_LocalizationSyncMutex;
+
+	// The endpoints of the tables this file touches, resolved once at compile time.
 }
 
 CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
@@ -86,8 +92,7 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 		if(m_pGameServer->GetWorldID() == INITIALIZER_WORLD_ID)
 			pComponent->OnPreInit();
 
-		const auto selectStr = fmt_default("WHERE WorldID = '{}'", m_pGameServer->GetWorldID());
-		pComponent->OnInitWorld(selectStr);
+		pComponent->OnInitWorld(m_pGameServer->GetWorldID());
 
 		if(isLastInitializedWorld)
 			pComponent->OnPostInit();
@@ -96,23 +101,26 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 	// initialize links last, when the data of all components is already loaded
 	if(isLastInitializedWorld)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_LINKS_TABLE);
-		while(pRes->next())
+		auto Links = MmoDb::ListLinks();
+		while(Links.Next())
 		{
-			const auto Type = pRes->getString("Type");
-			const auto OwnerID = pRes->getInt64("OwnerID");
-			const auto TargetID = pRes->getInt64("TargetID");
+			const auto Type = Links.GetString("Type");
+			const auto OwnerID = Links.GetInt64("OwnerID");
+			const auto TargetID = Links.GetInt64("TargetID");
 
 			for(auto& pComponent : m_System.m_vComponents)
 				pComponent->OnInitLink(Type, OwnerID, TargetID);
 		}
 	}
 
-	// log about listeners
+		// log about listeners
 	if(isLastInitializedWorld)
 	{
 		g_EventListenerManager.LogRegisteredEvents();
-		std::thread(&CMmoController::SyncLocalizations, this).detach();
+
+		// the language files are synced on generic background workers, so maintenance
+		// run neither blocks the start nor lives in an untracked thread
+		SyncLocalizationsAsync();
 	}
 }
 
@@ -166,6 +174,12 @@ bool CMmoController::OnClientMessage(int MsgID, void* pRawMsg, int ClientID) con
 	return false;
 }
 
+
+void CMmoController::RegisterAccountLoadStages(CPlayer* pPlayer) const
+{
+	for(const auto& pComponent : m_System.m_vComponents)
+		pComponent->OnRegisterAccountLoadStages(pPlayer);
+}
 
 void CMmoController::OnPlayerLogin(CPlayer* pPlayer) const
 {
@@ -329,22 +343,39 @@ void CMmoController::OnResetClientData(int ClientID) const
 
 void CMmoController::OnHandleGlobalTimePeriod() const
 {
-	// initialize variables
-	ByteArray RawData {};
-	std::vector<ETimePeriod> aPeriodsUpdated {};
-	time_t CurrentTimeStamp = time(nullptr);
+	// The period stamps live in a small file; it is read in the background and the
+	// logic runs on the game thread when the content arrives. A second call while
+	// the read is running is dropped, so the checks cannot pile up.
+	if(m_TimePeriodPending)
+		return;
 
-	// try open file
-	mystd::file::result Result = mystd::file::load("server_data/time_periods.cfg", &RawData);
-	if(Result == mystd::file::result::ERROR_FILE)
+	m_TimePeriodPending = true;
+	AsyncFile::Read("server_data/time_periods.cfg", [this](AsyncFile::SReadResult&& Read)
 	{
-		const auto Data = fmt_default("{}\n{}\n{}", CurrentTimeStamp, CurrentTimeStamp, CurrentTimeStamp);
-		mystd::file::save("server_data/time_periods.cfg", Data.data(), (unsigned)Data.size());
+		m_TimePeriodPending = false;
+		if(!Read.Ok() && !Read.Missing())
+		{
+			dbg_msg("time_period", "could not read time periods: %s", Read.m_Error.c_str());
+			return;
+		}
+		ApplyGlobalTimePeriod(Read.m_Content);
+	});
+}
+
+void CMmoController::ApplyGlobalTimePeriod(const std::string& Data) const
+{
+	// initialize variables
+	std::vector<ETimePeriod> aPeriodsUpdated {};
+	const time_t CurrentTimeStamp = time(nullptr);
+
+	// no file yet: the periods start now
+	if(Data.empty())
+	{
+		AsyncFile::Write("server_data/time_periods.cfg", fmt_default("{}\n{}\n{}", CurrentTimeStamp, CurrentTimeStamp, CurrentTimeStamp));
 		return;
 	}
 
 	// load time stamps
-	auto Data = std::string((char*)RawData.data(), RawData.size());
 	time_t DailyStamp = CurrentTimeStamp;
 	time_t WeekStamp = CurrentTimeStamp;
 	time_t MonthStamp = CurrentTimeStamp;
@@ -388,8 +419,7 @@ void CMmoController::OnHandleGlobalTimePeriod() const
 	// if any time period has been updated
 	if(!aPeriodsUpdated.empty())
 	{
-		Data = fmt_default("{}\n{}\n{}", DailyStamp, WeekStamp, MonthStamp);
-		mystd::file::save("server_data/time_periods.cfg", Data.data(), (unsigned)Data.size());
+		AsyncFile::Write("server_data/time_periods.cfg", fmt_default("{}\n{}\n{}", DailyStamp, WeekStamp, MonthStamp));
 		for(const auto& component : m_System.m_vComponents)
 		{
 			for(const auto& periods : aPeriodsUpdated)
@@ -456,28 +486,28 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	if(Table == SAVE_STATS)
 	{
 		const auto Bank = pAccount->GetBankManager().to_string();
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Bank = '{}' WHERE ID = '{}'", Bank, AccountID);
+		AccountDb::SaveBank(AccountID, Bank);
 	}
 
 	// save social
 	else if(Table == SAVE_SOCIAL)
 	{
 		const auto CrimeScore = pAccount->GetCrime();
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "CrimeScore = '{}' WHERE ID = '{}'", CrimeScore, AccountID);
+		AccountDb::SaveCrimeScore(AccountID, CrimeScore);
 	}
 
 	// save profession
 	else if(Table == SAVE_PROFESSION)
 	{
 		const auto ProfessionID = (int)pAccount->GetActiveProfessionID();
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "ProfessionID = '{}' WHERE ID = '{}'", ProfessionID, AccountID);
+		AccountDb::SaveProfessionID(AccountID, ProfessionID);
 	}
 
 	// save world position
 	else if(Table == SAVE_POSITION)
 	{
 		const int LatestCorrectWorldID = AccountManager()->GetLastVisitedWorldID(pPlayer);
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "WorldID = '{}' WHERE ID = '{}'", LatestCorrectWorldID, AccountID);
+		AccountDb::SaveWorldID(AccountID, LatestCorrectWorldID);
 	}
 
 	// save time periods
@@ -486,225 +516,276 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 		const auto Daily = pAccount->m_Periods.m_DailyStamp;
 		const auto Week = pAccount->m_Periods.m_WeekStamp;
 		const auto Month = pAccount->m_Periods.m_MonthStamp;
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '{}', WeekStamp = '{}', MonthStamp = '{}' WHERE ID = '{}'", Daily, Week, Month, AccountID);
+		AccountDb::SaveStamps(AccountID, Daily, Week, Month);
 	}
 
 	// save language
 	else if(Table == SAVE_LANGUAGE)
 	{
-		const char* pLanguage = pPlayer->GetLanguage();
-		const auto cClearLanguage = CSqlString<16>(pLanguage);
-		Database->Execute<DB::UPDATE>("tw_accounts", "Language = '{}' WHERE ID = '{}'", cClearLanguage.cstr(), AccountID);
+		AccountDb::SaveLanguage(AccountID, pPlayer->GetLanguage());
 	}
 
 	// main data
 	else
 	{
-		const auto pLogin = pAccount->GetLogin();
-		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '{}' WHERE ID = '{}'", pLogin, AccountID);
+		AccountDb::SaveUsername(AccountID, pAccount->GetLogin());
 	}
+}
+
+
+CVoteLoad CMmoController::TopLoad(ToplistType Type, int Rows)
+{
+	return CVoteLoad(fmt_default("top_{}_{}", (int)Type, Rows));
+}
+
+CVoteLoad CMmoController::DungeonLoad(int DungeonID, int Rows)
+{
+	return CVoteLoad(fmt_default("dungeon_{}_{}", DungeonID, Rows));
+}
+
+CVoteLoad CMmoController::RhythmLoad(int WorldID, const std::string& Difficulty, int Rows)
+{
+	return CVoteLoad(fmt_default("rhythm_{}_{}_{}", WorldID, Difficulty, Rows));
 }
 
 
 void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistType Type, int Rows) const
 {
-	auto vResult = GetTopList(Type, Rows);
+	const char* pTitle = "";
+	switch(Type)
+	{
+		case ToplistType::GuildLeveling:   pTitle = "Top 10 guilds leveling";       break;
+		case ToplistType::GuildWealthy:    pTitle = "Top 10 guilds wealthy";        break;
+		case ToplistType::PlayerRating:    pTitle = "Top 10 players rank points";   break;
+		case ToplistType::PlayerWealthy:   pTitle = "Top 10 players wealthy";       break;
+		case ToplistType::PlayerExpert:    pTitle = "Top Specialists in the Realm"; break;
+		case ToplistType::PlayerAttributes: pTitle = "Top by attributes";           break;
+		default: break;
+	}
+	pWrapper->SetTitle(pTitle);
 
-	if(Type == ToplistType::GuildLeveling)
+	const auto& vResult = GetTopList(Type, Rows);
+	if(vResult.empty())
 	{
-		pWrapper->SetTitle("Top 10 guilds leveling");
-		for(auto& Elem : vResult)
-		{
-			const auto Rank = Elem.first;
-			const auto Guildname = Elem.second.Name;
-			const auto Level = Elem.second.Data["Level"].to_int();
-			const auto Experience = Elem.second.Data["Exp"];
-			pWrapper->Add("{}. {~} :: Level {} : Exp {}", Rank, Guildname, Level, Experience);
-		}
+		// nothing cached yet: the menu says that it waits and is redrawn with the rows
+		pWrapper->SetLoad(TopLoad(Type, Rows));
+		return;
 	}
-	else if(Type == ToplistType::GuildWealthy)
+
+	switch(Type)
 	{
-		pWrapper->SetTitle("Top 10 guilds wealthy");
-		for(auto& Elem : vResult)
-		{
-			const auto Rank = Elem.first;
-			const auto Guildname = Elem.second.Name;
-			const auto Bank = Elem.second.Data["Bank"];
-			pWrapper->Add("{}. {~} :: Bank {$}", Rank, Guildname, Bank);
-		}
-	}
-	else if(Type == ToplistType::PlayerRating)
-	{
-		pWrapper->SetTitle("Top 10 players rank points");
-		for(auto& Elem : vResult)
-		{
-			const auto Rank = Elem.first;
-			const auto Nickname = Elem.second.Name;
-			const auto Rating = Elem.second.Data["Rating"].to_int();
-			pWrapper->Add("{}. {~} :: Rating {}", Rank, Nickname, Rating);
-		}
-	}
-	else if(Type == ToplistType::PlayerWealthy)
-	{
-		pWrapper->SetTitle("Top 10 players wealthy");
-		for(auto& Elem : vResult)
-		{
-			const auto Rank = Elem.first;
-			const auto Nickname = Elem.second.Name;
-			const auto Bank = Elem.second.Data["Bank"];
-			pWrapper->Add("{}. {~} :: Wealthy(bank) {$} golds", Rank, Nickname, Bank);
-		}
-	}
-	else if(Type == ToplistType::PlayerExpert)
-	{
-		pWrapper->SetTitle("Top Specialists in the Realm");
-		for(auto& [Iter, Top] : vResult)
-		{
-			const char* pNickname = Instance::Server()->GetAccountNickname(Top.Data["AccountID"].to_int());
-			const auto Level = Top.Data["Level"].to_int();
-			pWrapper->Add("{}: '{~} - {}LV'.", Top.Name, pNickname, Level);
-		}
-	}
-	else if(Type == ToplistType::PlayerAttributes)
-	{
-		pWrapper->SetTitle("Top by attributes");
-		for(auto& [Iter, Top] : vResult)
-		{
-			const char* pNickname = Instance::Server()->GetAccountNickname(Top.Data["AccountID"].to_int());
-			const auto Value = Top.Data["Value"].to_int();
-			pWrapper->Add("{}: '{~} - {}'.", Top.Name, pNickname, Value);
-		}
+		case ToplistType::GuildLeveling:
+			for(const auto& [Rank, Top] : vResult)
+				pWrapper->Add("{}. {~} :: Level {} : Exp {}", Rank, Top.m_Name, Top.m_Value.to_int(), Top.m_Extra);
+			break;
+		case ToplistType::GuildWealthy:
+			for(const auto& [Rank, Top] : vResult)
+				pWrapper->Add("{}. {~} :: Bank {$}", Rank, Top.m_Name, Top.m_Value);
+			break;
+		case ToplistType::PlayerRating:
+			for(const auto& [Rank, Top] : vResult)
+				pWrapper->Add("{}. {~} :: Rating {}", Rank, Top.m_Name, Top.m_Value.to_int());
+			break;
+		case ToplistType::PlayerWealthy:
+			for(const auto& [Rank, Top] : vResult)
+				pWrapper->Add("{}. {~} :: Wealthy(bank) {$} golds", Rank, Top.m_Name, Top.m_Value);
+			break;
+		case ToplistType::PlayerExpert:
+			for(const auto& [Rank, Top] : vResult)
+				pWrapper->Add("{}: '{~} - {}LV'.", Top.m_Name, Instance::Server()->GetAccountNickname(Top.m_Extra.to_int()), Top.m_Value.to_int());
+			break;
+		case ToplistType::PlayerAttributes:
+			for(const auto& [Rank, Top] : vResult)
+				pWrapper->Add("{}: '{~} - {}'.", Top.m_Name, Instance::Server()->GetAccountNickname(Top.m_Extra.to_int()), Top.m_Value.to_int());
+			break;
+		default:
+			break;
 	}
 }
 
 
-std::map<int, CMmoController::TempTopData> CMmoController::GetTopList(ToplistType Type, int Rows) const
+bool CMmoController::NeedTopRows(const std::string& Key) const
 {
-	std::map<int, TempTopData> vResult {};
+	STopRows& Cache = m_TopRows[Key];
 
+	// rows stay valid for a while, so opening a menu again does not query again
+	constexpr int LifetimeSeconds = 20;
+	if(Cache.m_Loaded && GS()->Server()->Tick() - Cache.m_Stamp < LifetimeSeconds * GS()->Server()->TickSpeed())
+		return false;
+
+	// one request per list at a time
+	return CVoteLoad(Key).Begin();
+}
+
+void CMmoController::SetTopRows(const std::string& Key, std::map<int, TempTopData>&& Rows) const
+{
+	STopRows& Cache = m_TopRows[Key];
+	Cache.m_Rows = std::move(Rows);
+	Cache.m_Stamp = GS()->Server()->Tick();
+	Cache.m_Loaded = true;
+
+	// the menus that showed the waiting state are drawn again with the rows
+	CVoteLoad(Key).Finish();
+}
+
+const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(ToplistType Type, int Rows) const
+{
+	const std::string Key = TopLoad(Type, Rows).ID();
+	if(!NeedTopRows(Key))
+		return TopRows(Key);
+
+	// every list is written by its own statement and filled in its own answer
 	if(Type == ToplistType::GuildLeveling)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Exp DESC LIMIT {}", Rows);
-		while(pRes->next())
+		MmoDb::TopGuildsByLevel(Rows)
+			.Then([this, Key](Db::CResultSet&& Guilds)
 		{
-			const auto Rank = pRes->getRow();
-			auto& field = vResult[Rank];
-			field.Name = pRes->getString("Name");
-			field.Data["Level"] = pRes->getInt("Level");
-			field.Data["Exp"] = pRes->getUInt64("Exp");
-		}
+			std::map<int, TempTopData> vResult {};
+			while(Guilds.Next())
+			{
+				auto& Field = vResult[Guilds.Row()];
+				Field.m_Name = Guilds.GetString("Name");
+				Field.m_Value = Guilds.GetInt("Level");
+				Field.m_Extra = Guilds.GetUInt64("Exp");
+			}
+			SetTopRows(Key, std::move(vResult));
+		});
 	}
 	else if(Type == ToplistType::GuildWealthy)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank + 0 DESC LIMIT {}", Rows);
-		while(pRes->next())
+		MmoDb::TopGuildsByBank(Rows)
+			.Then([this, Key](Db::CResultSet&& Guilds)
 		{
-			const auto Rank = pRes->getRow();
-			auto& field = vResult[Rank];
-			field.Name = pRes->getString("Name");
-			field.Data["Bank"] = pRes->getBigInt("Bank");
-		}
+			std::map<int, TempTopData> vResult {};
+			while(Guilds.Next())
+			{
+				auto& Field = vResult[Guilds.Row()];
+				Field.m_Name = Guilds.GetString("Name");
+				Field.m_Value = Guilds.GetBigInt("Bank");
+			}
+			SetTopRows(Key, std::move(vResult));
+		});
 	}
 	else if(Type == ToplistType::PlayerRating)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Rating DESC LIMIT {}", Rows);
-		while(pRes->next())
+		MmoDb::TopAccountsByRating(Rows)
+			.Then([this, Key](Db::CResultSet&& Accounts)
 		{
-			const auto Rank = pRes->getRow();
-			auto& field = vResult[Rank];
-			field.Name = pRes->getString("Nick");
-			field.Data["ID"] = pRes->getInt("ID");
-			field.Data["Rating"] = pRes->getInt("Rating");
-		}
+			std::map<int, TempTopData> vResult {};
+			while(Accounts.Next())
+			{
+				auto& Field = vResult[Accounts.Row()];
+				Field.m_Name = Accounts.GetString("Nick");
+				Field.m_Value = Accounts.GetInt("Rating");
+			}
+			SetTopRows(Key, std::move(vResult));
+		});
 	}
 	else if(Type == ToplistType::PlayerWealthy)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Bank + 0 DESC LIMIT {}", Rows);
-		while(pRes->next())
+		MmoDb::TopAccountsByBank(Rows)
+			.Then([this, Key](Db::CResultSet&& Accounts)
 		{
-			const auto Rank = pRes->getRow();
-			auto& field = vResult[Rank];
-			field.Name = pRes->getString("Nick");
-			field.Data["ID"] = pRes->getInt("ID");
-			field.Data["Bank"] = pRes->getBigInt("Bank");
-		}
+			std::map<int, TempTopData> vResult {};
+			while(Accounts.Next())
+			{
+				auto& Field = vResult[Accounts.Row()];
+				Field.m_Name = Accounts.GetString("Nick");
+				Field.m_Value = Accounts.GetBigInt("Bank");
+			}
+			SetTopRows(Key, std::move(vResult));
+		});
 	}
 	else if(Type == ToplistType::PlayerExpert)
 	{
+		// tracked in memory
+		std::map<int, TempTopData> vResult {};
 		int Iter = 0;
-		auto& vTrackings = g_AccountListener.LevelingTracker().GetTrackings();
-		for(auto& [professionID, data] : vTrackings)
+		const auto& vTrackings = g_AccountListener.LevelingTracker().GetTrackings();
+		for(const auto& [professionID, data] : vTrackings)
 		{
-			auto& field = vResult[Iter];
-			field.Name = GetProfessionName((ProfessionIdentifier)professionID);
-			field.Data["AccountID"] = data.AccountID;
-			field.Data["Level"] = data.Level;
+			auto& Field = vResult[Iter];
+			Field.m_Name = GetProfessionName((ProfessionIdentifier)professionID);
+			Field.m_Value = data.Level;
+			Field.m_Extra = data.AccountID;
 			Iter++;
 		}
+		SetTopRows(Key, std::move(vResult));
 	}
 	else if(Type == ToplistType::PlayerAttributes)
 	{
+		// tracked in memory
+		std::map<int, TempTopData> vResult {};
 		int Iter = 0;
-		auto& vTrackings = g_InventoryListener.AttributeTracker().GetTrackings();
-		for(auto& [attributeID, data] : vTrackings)
+		const auto& vTrackings = g_InventoryListener.AttributeTracker().GetTrackings();
+		for(const auto& [attributeID, data] : vTrackings)
 		{
 			auto* pAttributeInfo = GS()->GetAttributeInfo((AttributeIdentifier)attributeID);
-			if(pAttributeInfo)
-			{
-				auto& field = vResult[Iter];
-				field.Name = pAttributeInfo->GetName();
-				field.Data["AccountID"] = data.AccountID;
-				field.Data["Value"] = data.Amount;
-				Iter++;
-			}
+			if(!pAttributeInfo)
+				continue;
+
+			auto& Field = vResult[Iter];
+			Field.m_Name = pAttributeInfo->GetName();
+			Field.m_Value = data.Amount;
+			Field.m_Extra = data.AccountID;
+			Iter++;
 		}
+		SetTopRows(Key, std::move(vResult));
 	}
 
-	return vResult;
+	return TopRows(Key);
 }
 
-std::map<int, CMmoController::TempTopData> CMmoController::GetDungeonTopList(int DungeonID, int Rows) const
+const std::map<int, CMmoController::TempTopData>& CMmoController::GetDungeonTopList(int DungeonID, int Rows) const
 {
-	std::map<int, TempTopData> vResult {};
+	const std::string Key = DungeonLoad(DungeonID, Rows).ID();
+	if(!NeedTopRows(Key))
+		return TopRows(Key);
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE DungeonID = '{}' ORDER BY Time ASC LIMIT {}", DungeonID, Rows);
-	while(pRes->next())
+	MmoDb::TopDungeonRecords(DungeonID, Rows)
+		.Then([this, Key](Db::CResultSet&& Records)
 	{
-		const auto Rank = pRes->getRow();
-		auto& field = vResult[Rank];
-		field.Name = GS()->Server()->GetAccountNickname(pRes->getInt("UserID"));
-		field.Data["Time"] = pRes->getInt("Time");
-	}
+		std::map<int, TempTopData> vResult {};
+		while(Records.Next())
+		{
+			auto& Field = vResult[Records.Row()];
+			Field.m_Name = Instance::Server()->GetAccountNickname(Records.GetInt("UserID"));
+			Field.m_Value = Records.GetInt("Time");
+		}
+		SetTopRows(Key, std::move(vResult));
+	});
 
-	return vResult;
+	return TopRows(Key);
 }
 
-std::map<int, CMmoController::TempTopData> CMmoController::GetRhythmTopList(int WorldID, const std::string& Difficulty, int Rows) const
+const std::map<int, CMmoController::TempTopData>& CMmoController::GetRhythmTopList(int WorldID, const std::string& Difficulty, int Rows) const
 {
-	std::map<int, TempTopData> vResult {};
+	const std::string Key = RhythmLoad(WorldID, Difficulty, Rows).ID();
+	if(!NeedTopRows(Key))
+		return TopRows(Key);
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_rhythm_records",
-		"WHERE WorldID = '{}' AND Difficulty = '{}' ORDER BY Score DESC LIMIT {}", WorldID, Difficulty.c_str(), Rows);
-	while(pRes->next())
+	MmoDb::TopRhythmRecords(WorldID, Difficulty, Rows)
+		.Then([this, Key](Db::CResultSet&& Records)
 	{
-		const auto Rank = pRes->getRow();
-		auto& field = vResult[Rank];
-		field.Name = GS()->Server()->GetAccountNickname(pRes->getInt("UserID"));
-		field.Data["Score"] = pRes->getInt("Score");
-	}
+		std::map<int, TempTopData> vResult {};
+		while(Records.Next())
+		{
+			auto& Field = vResult[Records.Row()];
+			Field.m_Name = Instance::Server()->GetAccountNickname(Records.GetInt("UserID"));
+			Field.m_Value = Records.GetInt("Score");
+		}
+		SetTopRows(Key, std::move(vResult));
+	});
 
-	return vResult;
+	return TopRows(Key);
 }
 
 
 void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int ClientID)
 {
-	CSqlString<MAX_NAME_LENGTH> Nickname(ClientName.data());
-	const auto AsyncEnterRes = Database->Prepare<DB::SELECT>("d.ID, d.Nick, a.Username, a.TimeoutCode",
-		"tw_accounts_data d JOIN tw_accounts a ON a.ID = d.ID", "WHERE d.Nick = '{}'", Nickname.cstr());
-
 	auto pContext = DbAsync::MakeContext(ClientID);
-	AsyncEnterRes->AtExecute([pContext, CapturedNickname = std::string(Nickname.cstr()), ClientID](ResultPtr pRes)
+	AccountDb::FindAccountByNickname(ClientName)
+		.Then([pContext, CapturedNickname = std::string(ClientName), ClientID](Db::CResultSet&& Result)
 	{
 		auto* pGS = (CGS*)Instance::Server()->GameServerPlayer(ClientID);
 		if(!pGS)
@@ -715,7 +796,7 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 			return;
 
 		// first enter
-		const bool HasAccount = pRes->next();
+		const bool HasAccount = Result.HasRows();
 		const std::string GuestCredential = CAccountManager::BuildGuestCredential(CapturedNickname.c_str());
 		pPlayer->GetSharedData().m_AuthType = AUTH_TYPE_NONE;
 		if(!HasAccount)
@@ -729,8 +810,8 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 		}
 
 		// initialize variables
-		const auto Login = pRes->getString("Username");
-		const auto TimeoutCode = pRes->getString("TimeoutCode");
+		const auto Login = Result.GetString("Username");
+		const auto TimeoutCode = Result.GetString("TimeoutCode");
 		const bool IsGuest = CAccountManager::IsGuestCredentialForNickname(Login, CapturedNickname.c_str());
 		const bool HasTimeoutCode = !TimeoutCode.empty();
 
@@ -756,6 +837,11 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 }
 
 // dump dialogs for translate
+void CMmoController::SyncLocalizationsAsync() const
+{
+	Async::Run([this] { SyncLocalizations(); });
+}
+
 void CMmoController::SyncLocalizations() const
 {
 	// check action states

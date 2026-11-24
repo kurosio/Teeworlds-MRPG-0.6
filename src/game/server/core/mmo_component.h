@@ -4,14 +4,11 @@
 #define GAME_SERVER_CORE_MMO_COMPONENT_H
 
 #include <engine/server/server_sync.h>
-#include <engine/server/sql_string_helpers.h>
 #include "tools/event_listener.h"
 
 #include <any>
 #include <vector>
 #include <string>
-
-using namespace sqlstr;
 
 class MmoComponent
 {
@@ -62,9 +59,9 @@ private:
 	/**
 	 * @brief Initializes the MMO component for a specific world.
 	 *
-	 * @param SqlQueryWhereWorld The location of the local world.
+	 * @param WorldID The world being initialized.
 	 */
-	virtual void OnInitWorld(const std::string& SqlQueryWhereWorld) {}
+	virtual void OnInitWorld(int WorldID) {}
 
 	/**
 	 * @brief Initializes the MMO component post init.
@@ -122,6 +119,14 @@ private:
 	 * @return True if the message was handled, false otherwise.
 	 */
 	virtual bool OnClientMessage(int MsgID, void* pRawMsg, int ClientID) { return false; }
+
+	/**
+	 * @brief Registers account-data stages before the account load plan starts.
+	 *
+	 * This hook must only register work; it must not mutate ready gameplay state.
+	 * @param pPlayer A pointer to the player whose account is being loaded.
+	 */
+	virtual void OnRegisterAccountLoadStages(CPlayer* pPlayer) {}
 
 	/**
 	 * @brief Called when a player logs in.

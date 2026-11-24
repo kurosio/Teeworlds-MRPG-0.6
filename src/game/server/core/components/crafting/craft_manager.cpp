@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "craft_manager.h"
 
+#include "craft_db.h"
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
 
@@ -9,21 +10,21 @@
 #include <components/mails/mail_wrapper.h>
 #include <tools/item_source_helper.h>
 
-void CCraftManager::OnInitWorld(const std::string& Where)
+void CCraftManager::OnInitWorld(int WorldID)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_crafts_list", Where.c_str());
-	while(pRes->next())
+	auto Crafts = CraftDb::ListCrafts(WorldID);
+	while(Crafts.Next())
 	{
 		// initialize variables
-		const auto GroupNameSet = DBSet(pRes->getString("GroupName"));
-		const auto ItemID = pRes->getInt("ItemID");
-		const auto ItemValue = pRes->getInt("ItemValue");
-		const auto Price = pRes->getInt("Price");
-		const auto WorldID = pRes->getInt("WorldID");
+		const auto GroupNameSet = DBSet(Crafts.GetString("GroupName"));
+		const auto ItemID = Crafts.GetInt("ItemID");
+		const auto ItemValue = Crafts.GetInt("ItemValue");
+		const auto Price = Crafts.GetInt("Price");
+		const auto WorldID = Crafts.GetInt("WorldID");
 
 		// initialize required ingredients
 		CItemsContainer RequiredIngredients {};
-		DBSet ItemsSet(pRes->getString("RequiredItems"));
+		DBSet ItemsSet(Crafts.GetString("RequiredItems"));
 		for(const auto& Elem : ItemsSet.getItems())
 		{
 			int ItemID {};
@@ -36,7 +37,7 @@ void CCraftManager::OnInitWorld(const std::string& Where)
 		}
 
 		// initialize craft element
-		CraftIdentifier ID = pRes->getInt("ID");
+		CraftIdentifier ID = Crafts.GetInt("ID");
 		auto* pCraftItem = CCraftItem::CreateElement(ID);
 		pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
 

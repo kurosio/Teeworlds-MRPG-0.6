@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_MMO_UTILS_FIELD_DATA_H
 #define GAME_SERVER_MMO_UTILS_FIELD_DATA_H
 
+#include <engine/server/db/db_result.h>
+
 /*
  * Like all data structures must have setters and getters
  * This is just a template for more convenient work with database data
@@ -16,7 +18,7 @@
  *		DBField<int> m_Level { "Level", "info", this };
  * } m_Data;
  *
- * m_Data.initFields();
+ * m_Data.initFields(Result);
  */
 
 template < typename T >
@@ -123,79 +125,35 @@ public:
         return std::get<DBField<T>>(*it);
     }
 
-    std::string getUpdateField()
+    // Reads every field of the container from one row of a result.
+    void initFields(const Db::CResultSet& Result)
     {
-        std::string Fields;
         for(auto& p : m_VariantsData)
         {
-            std::visit([&Fields](auto&& arg)
+            std::visit([&Result](auto&& arg)
             {
                 using T = std::decay_t<decltype(arg)>;
-                if constexpr(std::is_same_v<T, DBField<int>> || std::is_same_v<T, DBField<unsigned int>> ||
-                    std::is_same_v<T, DBField<int64_t>> || std::is_same_v<T, DBField<uint64_t>> ||
-                    std::is_same_v<T, DBField<float>> || std::is_same_v<T, DBField<double>>)
-                {
-                    Fields.append(arg.getFieldName()).append("=").append(std::to_string(arg.m_Value)).append(",");
-                }
+                if constexpr(std::is_same_v<T, DBField<int>>)
+                    arg.m_Value = Result.GetInt(arg.getFieldName());
+                else if constexpr(std::is_same_v<T, DBField<unsigned int>>)
+                    arg.m_Value = Result.GetUInt(arg.getFieldName());
+                else if constexpr(std::is_same_v<T, DBField<int64_t>>)
+                    arg.m_Value = Result.GetInt64(arg.getFieldName());
+                else if constexpr(std::is_same_v<T, DBField<uint64_t>>)
+                    arg.m_Value = Result.GetUInt64(arg.getFieldName());
+                else if constexpr(std::is_same_v<T, DBField<float>>)
+                    arg.m_Value = static_cast<float>(Result.GetDouble(arg.getFieldName()));
+                else if constexpr(std::is_same_v<T, DBField<double>>)
+                    arg.m_Value = Result.GetDouble(arg.getFieldName());
                 else if constexpr(std::is_same_v<T, DBField<std::string>>)
-                {
-                    Fields.append(arg.getFieldName()).append("=").append(arg.m_Value).append(",");
-                }
+                    arg.m_Value = Result.GetString(arg.getFieldName());
                 else if constexpr(std::is_same_v<T, DBField<bool>>)
-                {
-                    Fields.append(arg.getFieldName()).append("=").append(arg.m_Value ? "true" : "false").append(",");
-                }
+                    arg.m_Value = Result.GetBoolean(arg.getFieldName());
                 else if constexpr(std::is_same_v<T, DBField<BigInt>>)
-                {
-                    Fields.append(arg.getFieldName()).append("=").append(arg.m_Value.to_string()).append(",");
-                }
+                    arg.m_Value = BigInt(Result.GetString(arg.getFieldName()));
                 else
-                {
                     dbg_assert(always_false_v<T>, "non-exhaustive visitor!");
-                }
             }, p);
-        }
-
-        Fields.pop_back();
-        return Fields;
-    }
-
-    void initFields(ResultPtr* pRes)
-    {
-        if(pRes != nullptr)
-        {
-            for(auto& p : m_VariantsData)
-            {
-                std::visit([&pRes](auto&& arg)
-                {
-                    using T = std::decay_t<decltype(arg)>;
-                    if constexpr(std::is_same_v<T, DBField<int>>)
-                        arg.m_Value = pRes->get()->getInt(arg.getFieldName());
-                    else if constexpr(std::is_same_v<T, DBField<unsigned int>>)
-                        arg.m_Value = pRes->get()->getUInt(arg.getFieldName());
-                    else if constexpr(std::is_same_v<T, DBField<int64_t>>)
-                        arg.m_Value = pRes->get()->getInt64(arg.getFieldName());
-                    else if constexpr(std::is_same_v<T, DBField<uint64_t>>)
-                        arg.m_Value = pRes->get()->getUInt64(arg.getFieldName());
-                    else if constexpr(std::is_same_v<T, DBField<float>>)
-                        arg.m_Value = static_cast<float>(pRes->get()->getDouble(arg.getFieldName()));
-                    else if constexpr(std::is_same_v<T, DBField<double>>)
-                        arg.m_Value = pRes->get()->getDouble(arg.getFieldName());
-                    else if constexpr(std::is_same_v<T, DBField<std::string>>)
-                        arg.m_Value = pRes->get()->getString(arg.getFieldName());
-                    else if constexpr(std::is_same_v<T, DBField<bool>>)
-                        arg.m_Value = pRes->get()->getBoolean(arg.getFieldName());
-                    else if constexpr(std::is_same_v<T, DBField<BigInt>>)
-                    {
-                        const std::string stringValue = pRes->get()->getString(arg.getFieldName()).c_str();
-                        arg.m_Value = BigInt(stringValue);
-                    }
-                    else
-                    {
-                        dbg_assert(always_false_v<T>, "non-exhaustive visitor!");
-                    }
-                }, p);
-            }
         }
     }
 };

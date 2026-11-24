@@ -4,7 +4,7 @@
 #include <game/server/entities/character.h>
 #include <game/server/entities/pickup.h>
 #include <game/server/core/entities/items/drop_pickup.h>
-#include <game/server/core/components/Bots/BotData.h>
+#include <game/server/core/components/bots/bot_data.h>
 #include <game/server/core/entities/items/drop_items.h>
 #include <game/server/gamecontext.h>
 #include <game/server/playerbot.h>

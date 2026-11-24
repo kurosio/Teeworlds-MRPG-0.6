@@ -13,6 +13,7 @@ public:
 	void initSlot(ItemType type, std::optional<int> itemID = std::nullopt);
 	bool equipItem(int itemID);
 	bool unequipItem(int itemID);
+	void load(const nlohmann::json& equippedSlotsJson);
 	void load(const std::string& equippedSlotsJson);
 
 	const std::vector<SlotEntry>& getSlots() const { return m_Slots; }

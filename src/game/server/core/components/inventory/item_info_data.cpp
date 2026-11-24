@@ -32,6 +32,23 @@ namespace
 	}
 }
 
+std::vector<ItemIdentifier> CItemDescription::CollectIDs(std::optional<ItemGroup> Group, std::optional<ItemType> Type)
+{
+	std::vector<ItemIdentifier> IDs;
+	if(!Group && !Type)
+		return IDs;
+
+	for(const auto& [ID, Info] : Data())
+	{
+		if(Group && !Info.IsGroup(*Group))
+			continue;
+		if(Type && !Info.IsType(*Type))
+			continue;
+		IDs.push_back(ID);
+	}
+	return IDs;
+}
+
 int CItemDescription::GetEnchantAttributeValue(AttributeIdentifier ID) const
 {
 	for (const auto& Att : m_aAttributes)

@@ -1,20 +1,22 @@
 #include "skill_manager.h"
+#include "skill_db.h"
 
+#include <game/server/core/tools/db_async_context.h>
 #include <game/server/gamecontext.h>
 #include "skill_data.h"
 
 void CSkillManager::OnPreInit()
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_skills_list");
-	while (pRes->next())
+	auto Skills = SkillDb::ListSkills();
+	while(Skills.Next())
 	{
-		const auto ID = pRes->getInt("ID");
-		const auto Name = pRes->getString("Name");
-		const auto Description = pRes->getString("Description");
-		const auto ManaCostPct = pRes->getInt("ManaCostPct");
-		const auto PriceSP = pRes->getInt("PriceSP");
-		const auto Passive = pRes->getBoolean("Passive");
-		const auto ProfID = (ProfessionIdentifier)pRes->getInt("ProfessionID");
+		const auto ID = Skills.GetInt("ID");
+		const auto Name = Skills.GetString("Name");
+		const auto Description = Skills.GetString("Description");
+		const auto ManaCostPct = Skills.GetInt("ManaCostPct");
+		const auto PriceSP = Skills.GetInt("PriceSP");
+		const auto Passive = Skills.GetBoolean("Passive");
+		const auto ProfID = (ProfessionIdentifier)Skills.GetInt("ProfessionID");
 
 		CSkillDescription::CreateElement(ID)->Init(Name, Description, ProfID, ManaCostPct, PriceSP, Passive);
 	}
@@ -22,15 +24,57 @@ void CSkillManager::OnPreInit()
 	CSkillTree::LoadFromDB();
 }
 
-void CSkillManager::OnPlayerLogin(CPlayer *pPlayer)
+void CSkillManager::OnRegisterAccountLoadStages(CPlayer* pPlayer)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE UserID = '{}'", pPlayer->Account()->GetID());
-	while(pRes->next())
+	auto* pAccount = pPlayer->Account();
+	const int ClientID = pPlayer->GetCID();
+	const int AccountID = pAccount->GetID();
+	pAccount->AddLoadStage("skills", [ClientID, AccountID](CAccountData::CLoadDone Done)
 	{
-		const auto ID = pRes->getInt("SkillID");
-		const auto SelectedEmoticon = pRes->getInt("UsedByEmoticon");
-		CSkill::CreateElement(pPlayer->GetCID(), ID)->Init(true, SelectedEmoticon);
-	}
+		auto pContext = DbAsync::MakeContext(ClientID);
+		SkillDb::LoadAccountSkills(AccountID).Then([pContext, AccountID, Done = std::move(Done)](Db::CResultSet&& Skills) mutable
+		{
+			if(!pContext->GetPlayer() || !Skills.Ok())
+			{
+				Done(false);
+				return;
+			}
+
+			std::vector<std::pair<int, int>> vSkills;
+			while(Skills.Next())
+				vSkills.emplace_back(Skills.GetInt("SkillID"), Skills.GetInt("UsedByEmoticon"));
+
+			// Load every tree choice in one request, not one blocking query per skill.
+			SkillDb::LoadAccountTreeSelections(AccountID).Then([pContext, Done = std::move(Done), vSkills = std::move(vSkills)](Db::CResultSet&& Choices) mutable
+			{
+				auto* pPlayer = pContext->GetPlayer();
+				if(!pPlayer || !Choices.Ok())
+				{
+					Done(false);
+					return;
+				}
+
+				std::unordered_map<int, std::unordered_map<int, int>> TreeSelections;
+				while(Choices.Next())
+				{
+					const int SkillID = Choices.GetInt("SkillID");
+					const int Level = Choices.GetInt("LevelIndex");
+					const int Option = Choices.GetInt("OptionIndex");
+					if(SkillID > 0 && Level > 0 && Option > 0)
+						TreeSelections[SkillID][Level] = Option;
+				}
+
+				for(const auto& [SkillID, SelectedEmoticon] : vSkills)
+				{
+					auto* pSkill = CSkill::CreateElement(pPlayer->GetCID(), SkillID);
+					pSkill->Init(true, SelectedEmoticon);
+					if(auto It = TreeSelections.find(SkillID); It != TreeSelections.end())
+						pSkill->m_TreeSelections = std::move(It->second);
+				}
+				Done(true);
+			});
+		});
+	});
 }
 
 void CSkillManager::OnClientReset(int ClientID)

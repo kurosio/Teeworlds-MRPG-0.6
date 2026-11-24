@@ -11,6 +11,7 @@
 #include <casino/dice_duel_game.h>
 #include <casino/roulette_game.h>
 
+#include <game/server/core/components/inventory/item_data.h>
 #include <game/server/core/components/inventory/inventory_manager.h>
 #include <game/server/core/components/mails/mailbox_manager.h>
 #include <game/server/core/components/worlds/world_data.h>
@@ -34,7 +35,7 @@ namespace
 	constexpr int ACCOUNT_SESSION_TAKEOVER_TIMEOUT_SECONDS = 10;
 	constexpr int ACCOUNT_SESSION_CLAIM_ATTEMPTS = 3;
 
-	// The primary can be remote (SQL bridge over the WAN), so a login waits seconds.
+	// The remote database can have WAN latency, so a login may wait several seconds.
 	constexpr int64_t AUTH_PROGRESS_FIRST_SECONDS = 5;
 	constexpr int64_t AUTH_PROGRESS_REPEAT_SECONDS = 15;
 
@@ -42,6 +43,7 @@ namespace
 	{
 		Shared.m_pAuthorizationAttempt = pAttempt;
 		Shared.m_AuthIsRegistration = Registration;
+		Shared.m_AuthStartedAt = time_get();
 		Shared.m_AuthProgressTick = time_get() + AUTH_PROGRESS_FIRST_SECONDS * time_freq();
 	}
 
@@ -100,6 +102,9 @@ class DbAuthorization
 		std::string m_PinCode{};
 		AccountSession::SClaim m_Claim{};
 		int m_Attempts{};
+		// The account row is read while the session of the account is taken, so
+		// the login does not spend a round trip on it after the claim.
+		Db::CRequest m_AccountRequest{};
 	};
 	using CAuthorizationContextPtr = std::shared_ptr<DbAsync::CContext<CAuthorizationPayload>>;
 
@@ -112,65 +117,78 @@ class DbAuthorization
 		return pPlayer;
 	}
 
-	static void OnCheckNickname(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
+	// One login query, one step of checks: everything the decision needs arrives
+	// in a single row, so the pipeline cannot read the account twice and take the
+	// two answers for the same state.
+	static void OnCheckNickname(const CAuthorizationContextPtr& pContext, Db::CResultSet&& Result)
 	{
 		auto* pPlayer = GetPlayer(pContext);
 		if(!pPlayer)
 			return;
 
-		if(!pRes->next())
+		if(!Result.Ok())
+		{
+			dbg_msg("Account", "Login query failed: %s", Result.Error().ToString().c_str());
+			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: the account database is not reachable.");
+			pContext->GS()->Chat(pContext->GetClientID(), "Please try again a bit later.");
+			return;
+		}
+
+		const AccountDb::SCredentials Credentials = AccountDb::ParseCredentials(Result);
+		if(!Credentials.m_Found)
 		{
 			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: account with this nickname was not found.");
 			return;
 		}
 
-		pContext->Data().m_Claim.m_AccountID = pRes->getInt("ID");
-		OnCheckCredentials(pContext, pRes);
+		pContext->Data().m_Claim.m_AccountID = Credentials.m_AccountID;
+		OnCheckCredentials(pContext, Credentials);
 	}
 
-	static void OnCheckCredentials(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
+	static void OnCheckCredentials(const CAuthorizationContextPtr& pContext, const AccountDb::SCredentials& Credentials)
 	{
 		auto* pPlayer = GetPlayer(pContext);
 		if(!pPlayer)
 			return;
 
-		if(!pRes->getBoolean("CredentialsFound") || (pRes->getString("Password") != CAccountManager::HashPassword(pContext->Data().m_Password, pRes->getString("PasswordSalt"))))
+		if(!Credentials.m_CredentialsFound ||
+			Credentials.m_Password != CAccountManager::HashPassword(pContext->Data().m_Password, Credentials.m_PasswordSalt))
 		{
 			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: incorrect login or password.");
 			return;
 		}
 
 		// All entry points, including /login, must enforce guest protection.
-		const auto TimeoutCode = pRes->getString("TimeoutCode");
-		if(CAccountManager::IsGuestCredentialForNickname(pRes->getString("Username"), pRes->getString("AccountNickname").c_str()) &&
-			!TimeoutCode.empty() && TimeoutCode != pPlayer->GetSharedData().m_TimeoutCode)
+		if(CAccountManager::IsGuestCredentialForNickname(Credentials.m_Username, Credentials.m_Nickname.c_str()) &&
+			!Credentials.m_TimeoutCode.empty() && Credentials.m_TimeoutCode != pPlayer->GetSharedData().m_TimeoutCode)
 		{
 			pContext->GS()->Chat(pContext->GetClientID(), "Invalid timeout code. Please try /timeout <code> again.");
 			return;
 		}
 
 		auto& Data = pContext->Data();
-		Data.m_Language = pRes->getString("Language");
-		Data.m_LoginDate = pRes->getString("LoginDate");
-		Data.m_PinCode = pRes->getString("PinCode");
-		OnCheckBans(pContext, pRes);
+		Data.m_Language = Credentials.m_Language;
+		Data.m_LoginDate = Credentials.m_LoginDate;
+		Data.m_PinCode = Credentials.m_PinCode;
+		OnCheckBans(pContext, Credentials);
 	}
 
-	static void OnCheckBans(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
+	static void OnCheckBans(const CAuthorizationContextPtr& pContext, const AccountDb::SCredentials& Credentials)
 	{
 		auto* pPlayer = GetPlayer(pContext);
 		if(!pPlayer)
 			return;
 
-		if(pRes->getBoolean("HasBan"))
+		if(Credentials.m_HasBan)
 		{
-			const auto BannedUntil = pRes->getString("BannedUntil");
-			const auto Reason = pRes->getString("Reason");
 			pContext->GS()->Chat(pContext->GetClientID(), "Account is temporarily blocked.");
-			pContext->GS()->Chat(pContext->GetClientID(), "Until: '{}'. Reason: '{}'.", BannedUntil, Reason);
+			pContext->GS()->Chat(pContext->GetClientID(), "Until: '{}'. Reason: '{}'.", Credentials.m_BannedUntil, Credentials.m_BanReason);
 			return;
 		}
 
+		// The row the account is created from does not depend on the session, so
+		// it is asked for now: its answer is ready by the time the claim is ours.
+		pContext->Data().m_AccountRequest = AccountDb::LoadAccount(Credentials.m_AccountID);
 		ReadOwnerAndClaim(pContext);
 	}
 
@@ -237,12 +255,19 @@ class DbAuthorization
 
 	static void LoadAccountData(const CAuthorizationContextPtr& pContext)
 	{
-		auto pData = Database->Prepare<DB::SELECT>("*", "tw_accounts_data", "WHERE ID = '{}'", pContext->Data().m_Claim.m_AccountID);
-		pData->PrimaryRead(); // the account can be newer than the replica: registered moments ago, possibly elsewhere
-		pData->AtExecute([pContext](ResultPtr pDataRes) { OnLoadAccountData(pContext, pDataRes); });
+		auto& Data = pContext->Data();
+		auto Load = std::move(Data.m_AccountRequest);
+		Data.m_AccountRequest = {};
+
+		// The read was started with the session step; only a login that reached
+		// this point without one reads the row here.
+		if(!Load)
+			Load = AccountDb::LoadAccount(Data.m_Claim.m_AccountID);
+
+		Load.Then([pContext](Db::CResultSet&& Result) { OnLoadAccountData(pContext, std::move(Result)); });
 	}
 
-	static void OnLoadAccountData(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
+	static void OnLoadAccountData(const CAuthorizationContextPtr& pContext, Db::CResultSet&& Result)
 	{
 		auto* pPlayer = GetPlayer(pContext);
 		auto& Data = pContext->Data();
@@ -253,7 +278,9 @@ class DbAuthorization
 			return;
 		}
 
-		if(!pRes->next())
+		// A failed read and an empty account row are different problems; neither
+		// may leave the reservation behind.
+		if(!Result.Ok() || !Result.Next())
 		{
 			AccountSession::Release(Claim);
 			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: account data could not be loaded.");
@@ -264,7 +291,8 @@ class DbAuthorization
 		if(!pPlayer->GetSharedData().m_GuestLogin.empty() && Data.m_Login != pPlayer->GetSharedData().m_GuestLogin)
 			pPlayer->GetSharedData().m_GuestLogin.clear();
 
-		pPlayer->Account()->Init(Claim.m_AccountID, pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Language, Data.m_LoginDate, std::move(pRes));
+		pPlayer->Account()->Init(Claim.m_AccountID, pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Language,
+			Data.m_LoginDate, Result);
 		pPlayer->Account()->SetSessionToken(Claim.m_Token);
 		if(time_get() >= Claim.m_Deadline)
 		{
@@ -294,13 +322,11 @@ public:
 
 		StartAuthProgress(pPlayer->GetSharedData(), pContext, false);
 
-		// LEFT JOIN keeps the nickname/credentials error distinction.
-		const auto Columns = fmt_default("d.ID, d.Nick AS AccountNickname, (a.ID IS NOT NULL AND a.Username = '{}') AS CredentialsFound, a.Username, a.TimeoutCode, a.LoginDate, a.Language, a.PinCode, a.Password, a.PasswordSalt, (b.AccountId IS NOT NULL) AS HasBan, b.BannedUntil, b.Reason", Login);
-		auto pAuth = Database->Prepare<DB::SELECT>(Columns.c_str(),
-			"tw_accounts_data d LEFT JOIN tw_accounts a ON a.ID = d.ID LEFT JOIN tw_accounts_bans b ON b.AccountId = a.ID AND CURRENT_TIMESTAMP() < b.BannedUntil",
-			"WHERE d.Nick = '{}' LIMIT 1", Nick);
-		pAuth->PrimaryRead(); // credentials can be newer than the replica, and a stale answer means a wrong error
-		pAuth->AtExecute([pContext](ResultPtr pRes) { DbAuthorization::OnCheckNickname(pContext, pRes); });
+		// The nickname, the password hash check and the ban arrive in one row.
+		AccountDb::Authenticate(Nick, Login).Then([pContext](Db::CResultSet&& Result)
+		{
+			DbAuthorization::OnCheckNickname(pContext, std::move(Result));
+		});
 	}
 };
 
@@ -327,13 +353,9 @@ class DbRegistration
 			Data.m_Nickname.c_str(), pStage, pContext->GetClientID(), Data.m_InitID);
 
 		if(Data.m_InitID > 0)
-			Database->Execute<DB::REMOVE>("tw_accounts", "WHERE ID = '{}'", Data.m_InitID);
+			AccountDb::DeleteAccount(Data.m_InitID);
 		else
-		{
-			const auto cClearLogin = CSqlString<64>(Data.m_Login.c_str());
-			Database->Execute<DB::REMOVE>("tw_accounts", "WHERE Username = '{}' AND Password = '{}' AND PasswordSalt = '{}' ORDER BY ID DESC LIMIT 1",
-				cClearLogin.cstr(), Data.m_PasswordHash.c_str(), Data.m_PasswordSalt.c_str());
-		}
+			AccountDb::DeleteAccountByCredentials(Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt);
 
 		if(!pContext->GetPlayer())
 			return;
@@ -341,7 +363,7 @@ class DbRegistration
 		pContext->GS()->Chat(pContext->GetClientID(), "Please try again a bit later.");
 	}
 
-	static void OnLookup(const CRegistrationContextPtr& pContext, ResultPtr pRes)
+	static void OnLookup(const CRegistrationContextPtr& pContext, Db::CResultSet&& Result)
 	{
 		auto* pGS = pContext->GS();
 		const auto& Data = pContext->Data();
@@ -351,11 +373,20 @@ class DbRegistration
 		if(!pPlayer)
 			return;
 
-		if(pRes->next())
+		// A failed lookup is not "the nickname is free": creating the account
+		// would then fail on the unique index instead of the check above.
+		if(!Result.Ok())
 		{
-			const auto AccountID = pRes->getInt("ID");
-			const auto CurrentLogin = pRes->getString("Username");
-			const auto TimeoutCode = pRes->getString("TimeoutCode");
+			CleanupAccountOnError(pContext, "lookup nickname");
+			return;
+		}
+
+		const AccountDb::SNickname Nickname = AccountDb::ParseNickname(Result);
+		if(Nickname.m_Found)
+		{
+			const auto AccountID = Nickname.m_AccountID;
+			const auto CurrentLogin = Nickname.m_Username;
+			const auto TimeoutCode = Nickname.m_TimeoutCode;
 			if(!CAccountManager::IsGuestCredentialForNickname(CurrentLogin, Data.m_Nickname.c_str()))
 			{
 				pGS->Chat(ClientID, "This nickname is already linked to another account.");
@@ -371,22 +402,24 @@ class DbRegistration
 				return;
 			}
 
-			Database->Execute<DB::UPDATE>([pContext](bool Updated)
-			{
-				if(!pContext->GetPlayer())
-					return;
-				if(!Updated)
+			AccountDb::UpdateCredentials(AccountID, Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt)
+				.Then([pContext](Db::CResultSet&& Result)
 				{
-					dbg_msg("Account", "Registration of '%s' could not update the existing account (client %d).", pContext->Data().m_Nickname.c_str(), pContext->GetClientID());
-					pContext->GS()->Chat(pContext->GetClientID(), "Registration update failed.");
-					pContext->GS()->Chat(pContext->GetClientID(), "Please try again later.");
-					return;
-				}
+					if(!pContext->GetPlayer())
+						return;
+					if(!Result.Changed())
+					{
+						dbg_msg("Account", "Registration of '%s' could not update the existing account (client %d).",
+							pContext->Data().m_Nickname.c_str(), pContext->GetClientID());
+						pContext->GS()->Chat(pContext->GetClientID(), "Registration update failed.");
+						pContext->GS()->Chat(pContext->GetClientID(), "Please try again later.");
+						return;
+					}
 
-				pContext->GS()->Chat(pContext->GetClientID(), "Registration completed successfully.");
-				pContext->GS()->Chat(pContext->GetClientID(), "Remember your login and password.");
-				pContext->GS()->Chat(pContext->GetClientID(), "Your nickname is your unique game identifier.");
-			}, "tw_accounts", "Username = '{}', Password = '{}', PasswordSalt = '{}' WHERE ID = '{}'", Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt, AccountID);
+					pContext->GS()->Chat(pContext->GetClientID(), "Registration completed successfully.");
+					pContext->GS()->Chat(pContext->GetClientID(), "Remember your login and password.");
+					pContext->GS()->Chat(pContext->GetClientID(), "Your nickname is your unique game identifier.");
+				});
 			return;
 		}
 
@@ -397,35 +430,36 @@ class DbRegistration
 	static void CreateAccount(const CRegistrationContextPtr& pContext)
 	{
 		const auto& Data = pContext->Data();
-		// The id comes from the INSERT: selecting the row back can hit a stale replica.
-		Database->ExecuteInsertId<DB::INSERT>([pContext](int64_t InsertID) { OnInsertAccount(pContext, InsertID); },
-			"tw_accounts", "(Username, Password, PasswordSalt, RegisterDate, RegisteredIP, Language) VALUES ('{}', '{}', '{}', UTC_TIMESTAMP(), '{}', '{}')",
-			Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt, Data.m_RegisteredIP, Data.m_Language);
-	}
+		AccountDb::SRegistration Registration;
+		Registration.m_Login = Data.m_Login;
+		Registration.m_PasswordHash = Data.m_PasswordHash;
+		Registration.m_PasswordSalt = Data.m_PasswordSalt;
+		Registration.m_Nickname = Data.m_Nickname;
+		Registration.m_RegisteredIP = Data.m_RegisteredIP;
+		Registration.m_Language = Data.m_Language;
 
-	static void OnInsertAccount(const CRegistrationContextPtr& pContext, int64_t InsertID)
-	{
-		auto& Data = pContext->Data();
-		Data.m_InitID = static_cast<int>(InsertID); // kept even when the player is gone: the cleanup removes exactly this row
-
-		if(InsertID <= 0)
-			CleanupAccountOnError(pContext, "insert tw_accounts");
-		else if(!pContext->GetPlayer())
-			CleanupAccountOnError(pContext, "player gone after insert tw_accounts");
-		else
-			Database->Execute<DB::INSERT>([pContext](bool Updated) { OnInsertAccountData(pContext, Updated); },
-				"tw_accounts_data", "(ID, Nick) VALUES ('{}', '{}')", Data.m_InitID, Data.m_Nickname);
-	}
-
-	static void OnInsertAccountData(const CRegistrationContextPtr& pContext, bool Success)
-	{
-		if(!Success)
+		// The account and its data row are created in one transaction: a failure
+		// leaves nothing behind that would have to be cleaned up afterwards.
+		AccountDb::Register(Registration).Then([pContext](Db::CResultSet&& Result)
 		{
-			CleanupAccountOnError(pContext, "insert tw_accounts_data");
-			return;
-		}
+			auto& Data = pContext->Data();
+			const int64_t AccountID = Result.Ok() ? Result.InsertId() : 0;
+			// kept even when the player is gone: the cleanup removes exactly this row
+			Data.m_InitID = static_cast<int>(std::max<int64_t>(0, AccountID));
 
-		AuthorizeAfterSuccess(pContext);
+			if(AccountID <= 0)
+			{
+				CleanupAccountOnError(pContext, "create account");
+				return;
+			}
+			if(!pContext->GetPlayer())
+			{
+				// The login cannot continue, so the account must not stay either.
+				CleanupAccountOnError(pContext, "player gone after create account");
+				return;
+			}
+			AuthorizeAfterSuccess(pContext);
+		});
 	}
 
 	static void AuthorizeAfterSuccess(const CRegistrationContextPtr& pContext)
@@ -455,10 +489,10 @@ public:
 			DbRegistration::CRegistrationPayload { pMgr, 0, Login, Pass, AccountPasswordHash, aSalt, Nick, RegisterIP, Language });
 		StartAuthProgress(pPlayer->GetSharedData(), pContext, true);
 
-		// The nickname must be free on the primary: a lagging replica hides taken ones.
-		auto pLookup = Database->Prepare<DB::SELECT>("d.ID, a.Username, a.TimeoutCode", "tw_accounts_data d LEFT JOIN tw_accounts a ON a.ID = d.ID", "WHERE d.Nick = '{}' LIMIT 1", Nick);
-		pLookup->PrimaryRead();
-		pLookup->AtExecute([pContext](ResultPtr pRes) { OnLookup(pContext, pRes); });
+		AccountDb::LookupNickname(Nick).Then([pContext](Db::CResultSet&& Result)
+		{
+			DbRegistration::OnLookup(pContext, std::move(Result));
+		});
 	}
 };
 
@@ -485,6 +519,9 @@ void CAccountManager::OnPlayerLogin(CPlayer* pPlayer)
 
 void CAccountManager::OnClientReset(int ClientID)
 {
+	if(const auto It = CAccountData::ms_aData.find(ClientID); It != CAccountData::ms_aData.end())
+		It->second.CancelLoad();
+
 	// A login that never completed gives its reservation back.
 	for(const auto& Pending : m_vPendingLogins)
 	{
@@ -492,6 +529,14 @@ void CAccountManager::OnClientReset(int ClientID)
 			AccountSession::Release(Pending.m_Claim);
 	}
 	std::erase_if(m_vPendingLogins, [ClientID](const SPendingLogin& Pending) { return Pending.m_ClientID == ClientID; });
+
+	// The same for a login that already started to load its account.
+	for(const auto& Loading : m_vLoadingLogins)
+	{
+		if(Loading.m_ClientID == ClientID)
+			AccountSession::Release(Loading.m_Claim);
+	}
+	std::erase_if(m_vLoadingLogins, [ClientID](const SLoadingLogin& Loading) { return Loading.m_ClientID == ClientID; });
 
 	int AccountID = 0;
 	std::string SessionToken;
@@ -514,7 +559,13 @@ void CAccountManager::OnClientReset(int ClientID)
 void CAccountManager::BeginSessionTakeover(CPlayer* pPlayer, const AccountSession::SClaim& Claim, bool RecommendPin)
 {
 	if(!pPlayer || Claim.m_Token.empty() || pPlayer->Account()->GetID() != Claim.m_AccountID)
+	{
+		// The reservation was written for a login that cannot continue: left
+		// behind, it would refuse the next attempt of this account until the
+		// heartbeat counts as stale.
+		AccountSession::Release(Claim);
 		return;
+	}
 
 	// Sessions of this account on this server end now. The login completes only
 	// after their slots are released (OnClientReset).
@@ -592,8 +643,14 @@ void CAccountManager::VerifySessions(std::vector<SLocalSession> vSessions, std::
 	for(const auto& Session : vSessions)
 		vAccountIDs.push_back(Session.m_Key.m_AccountID);
 
-	AccountSession::FetchTokens(vAccountIDs, [this, vSessions = std::move(vSessions), OnVerified](const std::vector<AccountSession::SKey>& vRows)
+	AccountSession::FetchTokens(vAccountIDs, [this, vSessions = std::move(vSessions), OnVerified](bool Success, const std::vector<AccountSession::SKey>& vRows)
 	{
+		if(!Success)
+		{
+			dbg_msg("Account", "could not verify local sessions against the database");
+			return;
+		}
+
 		// The row is the truth: a session whose token is no longer stored there was taken over.
 		for(const auto& Session : vSessions)
 		{
@@ -641,37 +698,99 @@ bool CAccountManager::CompleteLogin(int ClientID, const AccountSession::SClaim& 
 	if(time_get() >= Claim.m_Deadline)
 		return false;
 
-	pGS->Chat(ClientID, "Login successful. Welcome back!");
-	if(NeedsRemoteTakeover(Claim))
-		pGS->Chat(ClientID, "Warning: The previous account session on another server was terminated.");
-	if(RecommendPin)
-	{
-		pGS->Chat(ClientID, "Security recommendation: set a PIN code.");
-		pGS->Chat(ClientID, "Command: /set_pin <current_password> <new_pin>.");
-	}
-
 	if(pPlayer->m_pMotdMenu)
 		pPlayer->CloseMotdMenu();
 	pGS->m_pController->DoTeamChange(pPlayer);
-	pGS->Core()->AccountManager()->LoadAccount(pPlayer, true, Claim.m_Deadline);
 
-	// LoadAccount may have moved the player to another world: re-fetch before use.
-	pGS = static_cast<CGS*>(Instance::GameServerPlayer(ClientID));
-	pPlayer = pGS ? pGS->GetPlayer(ClientID, false) : nullptr;
-	if(!pPlayer || pPlayer->Account()->GetSessionToken() != Claim.m_Token || !pPlayer->Account()->IsReadyToPlay() || time_get() >= Claim.m_Deadline)
-		return false;
-
-	// The reservation stays until the row is active, so no other login can take
-	// over in the meantime. A failed write ends this session.
+	// The account load answers on the game thread: only then is the account
+	// playable and only then can the session be activated. The reservation stays
+	// until the row is active, so no other login can take over in the meantime.
 	auto pContext = DbAsync::MakeContext(ClientID);
-	AccountSession::Activate(Claim, [pContext, Token = Claim.m_Token](bool Success)
+	auto* pManager = this;
+
+	// The load is watched until it answers: the login fails with a message when
+	// the deadline passes instead of waiting for an answer that is not coming.
+	m_vLoadingLogins.push_back({ ClientID, Claim, time_get() });
+
+	const bool Started = pGS->Core()->AccountManager()->LoadAccount(pPlayer, true, Claim.m_Deadline,
+		[pContext, pManager, Claim, RecommendPin](bool LoadSuccess)
+		{
+			const int64_t LoadMs = pManager->AckLoadingLogin(pContext->GetClientID());
+			auto* pPlayer = pContext->GetPlayer();
+			if(!LoadSuccess)
+			{
+				AccountSession::Release(Claim);
+				if(pPlayer)
+				{
+					pContext->GS()->Chat(pContext->GetClientID(), "Login failed: account data could not be loaded.");
+					pContext->Server()->Kick(pContext->GetClientID(), "Account data load failed");
+				}
+				return;
+			}
+			if(!pPlayer || pPlayer->Account()->GetSessionToken() != Claim.m_Token || !pPlayer->Account()->IsReadyToPlay() || time_get() >= Claim.m_Deadline)
+			{
+				pManager->AbortSessionClaim(pContext->GetClientID(), Claim);
+				return;
+			}
+
+			// One line per login: it is where a slow login is read from, next to
+			// the slow statement report of the database.
+			int64_t AuthMs = 0;
+			if(const auto ItShared = CAccountSharedData::ms_aPlayerSharedData.find(pContext->GetClientID()); ItShared != CAccountSharedData::ms_aPlayerSharedData.end() && ItShared->second.m_AuthStartedAt > 0)
+				AuthMs = (time_get() - ItShared->second.m_AuthStartedAt) * 1000 / time_freq();
+			dbg_msg("Account", "login of client %d is complete: account load %lld ms, the whole login %lld ms",
+				pContext->GetClientID(), (long long)LoadMs, (long long)AuthMs);
+
+			// The account is complete and the session is ours: this - not the
+			// moment the password matched - is the login, so this is when the
+			// player is told about it.
+			pContext->GS()->Chat(pContext->GetClientID(), "Login successful. Welcome back!");
+			if(NeedsRemoteTakeover(Claim))
+				pContext->GS()->Chat(pContext->GetClientID(), "Warning: The previous account session on another server was terminated.");
+			if(RecommendPin)
+			{
+				pContext->GS()->Chat(pContext->GetClientID(), "Security recommendation: set a PIN code.");
+				pContext->GS()->Chat(pContext->GetClientID(), "Command: /set_pin <current_password> <new_pin>.");
+			}
+
+			AccountSession::Activate(Claim, [pContext, Token = Claim.m_Token](bool Success)
+			{
+				auto* pCurrentPlayer = pContext->GetPlayer();
+				if(!Success && pCurrentPlayer && pCurrentPlayer->Account()->GetSessionToken() == Token)
+					pContext->Server()->Kick(pContext->GetClientID(), "Account session activation failed");
+			});
+			g_EventListenerManager.Notify<IEventListener::PlayerLogin>(pPlayer, pPlayer->Account());
+		});
+
+	// No load was started, so no answer will ever arrive: end the login here
+	// instead of leaving the player with an account that never becomes playable.
+	if(!Started)
 	{
-		auto* pCurrentPlayer = pContext->GetPlayer();
-		if(!Success && pCurrentPlayer && pCurrentPlayer->Account()->GetSessionToken() == Token)
-			pContext->Server()->Kick(pContext->GetClientID(), "Account session activation failed");
-	});
-	g_EventListenerManager.Notify<IEventListener::PlayerLogin>(pPlayer, pPlayer->Account());
+		AckLoadingLogin(ClientID);
+		AccountSession::Release(Claim);
+		pGS->Chat(ClientID, "Login failed: the account could not be loaded.");
+		pGS->Chat(ClientID, "Please reconnect and try again.");
+		pGS->Server()->Kick(ClientID, "Account load did not start");
+	}
 	return true;
+}
+
+void CAccountManager::AbortSessionClaim(int ClientID, const AccountSession::SClaim& Claim)
+{
+	// The load did not finish in time or the session is no longer ours: give the
+	// reservation back and end the connection that was waiting for it.
+	AckLoadingLogin(ClientID);
+	AccountSession::Release(Claim);
+
+	const auto It = CAccountData::ms_aData.find(ClientID);
+	if(It == CAccountData::ms_aData.end() || It->second.GetSessionToken() != Claim.m_Token)
+		return;
+
+	// The login is over without a playable account; say so instead of dropping
+	// the player back into the world as if nothing had happened.
+	if(auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(ClientID)))
+		pGS->Chat(ClientID, "Login failed: the account did not finish loading.");
+	Server()->Kick(ClientID, "Account session reservation expired");
 }
 
 CAccountManager::EPendingState CAccountManager::EvaluatePendingLogin(const SPendingLogin& Pending, int64_t Now) const
@@ -702,6 +821,57 @@ CAccountManager::EPendingState CAccountManager::EvaluatePendingLogin(const SPend
 		return EPendingState::Wait;
 
 	return EPendingState::Ready;
+}
+
+int64_t CAccountManager::AckLoadingLogin(int ClientID)
+{
+	const int64_t Now = time_get();
+	for(auto It = m_vLoadingLogins.begin(); It != m_vLoadingLogins.end(); ++It)
+	{
+		if(It->m_ClientID != ClientID)
+			continue;
+
+		const int64_t Ms = (Now - It->m_StartedAt) * 1000 / time_freq();
+		m_vLoadingLogins.erase(It);
+		return Ms;
+	}
+	return 0;
+}
+
+// A login ends in three stages: the pending one waits for the previous owner of
+// the account, this one waits for the account itself. Both are watched, because
+// a stage that never answers would keep the reservation and leave the player in
+// "Login is still in progress" until the round ends.
+void CAccountManager::SweepLoadingLogins()
+{
+	const int64_t Now = time_get();
+	for(auto It = m_vLoadingLogins.begin(); It != m_vLoadingLogins.end();)
+	{
+		auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(It->m_ClientID));
+		auto* pPlayer = pGS ? pGS->GetPlayer(It->m_ClientID, false) : nullptr;
+		if(!pPlayer)
+		{
+			// nobody is left to be told: only the reservation has to go back
+			AccountSession::Release(It->m_Claim);
+			It = m_vLoadingLogins.erase(It);
+			continue;
+		}
+
+		if(Now < It->m_Claim.m_Deadline)
+		{
+			++It;
+			continue;
+		}
+
+		const int ClientID = It->m_ClientID;
+		const AccountSession::SClaim Claim = It->m_Claim;
+		const int64_t ElapsedS = (Now - It->m_StartedAt) / time_freq();
+		It = m_vLoadingLogins.erase(It);
+
+		dbg_msg("Account", "the account of client %d did not finish loading in %lld seconds: the login is given up",
+			ClientID, (long long)ElapsedS);
+		AbortSessionClaim(ClientID, Claim);
+	}
 }
 
 void CAccountManager::ProcessPendingLogins()
@@ -780,6 +950,7 @@ void CAccountManager::OnSyncEvent(std::string EventName, const CServerSync::SReq
 void CAccountManager::OnTick()
 {
 	ProcessPendingLogins();
+	SweepLoadingLogins();
 
 	if(GS()->GetWorldID() != INITIALIZER_WORLD_ID)
 		return;
@@ -910,7 +1081,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Currency information
-		const auto currencyItemIDs = CInventoryManager::GetItemsCollection(ItemGroup::Currency, std::nullopt);
+		const auto currencyItemIDs = CItemDescription::CollectIDs(ItemGroup::Currency, std::nullopt);
 		VoteWrapper VCurrency(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Currency");
 		VCurrency.Add("Bank: {}", pAccount->GetBankManager());
 		for(int itemID : currencyItemIDs)
@@ -1440,58 +1611,69 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	// motd menu personal assistant
 	if(Menulist == MOTD_MENU_PERSONAL_ASSISTANT)
 	{
-		auto* pAccount = pPlayer->Account();
-		const auto gold = pAccount->GetGold();
-		const auto goldCapacity = pAccount->GetGoldCapacity();
-		const auto bankGold = pAccount->GetBankManager();
-
-		// personal assistant
-		MotdMenu MAssistant(ClientID, MTFLAG_CLOSE_BUTTON, "Quick tips update as you progress.");
-		MAssistant.AddText("Profession: {}", GetProfessionName(pAccount->GetActiveProfessionID()));
-		MAssistant.AddText("Level {}.", pAccount->GetLevel());
-		MAssistant.AddText("Gold: {$}/{$}", gold, goldCapacity);
-		MAssistant.AddText("Bank: {$}", bankGold);
-		MAssistant.AddText("World: {}", Server()->GetWorldName(pPlayer->GetCurrentWorldID()));
-		MAssistant.AddSeparateLine();
-
-		// recommendations
-		MAssistant.AddText("Recommendations:");
-		bool hasRecommendation = false;
-		const int mailCount = Core()->MailboxManager()->GetMailCount(pAccount->GetID());
-		const auto crimeScore = pAccount->GetCrime();
-		const auto totalProfUP = pAccount->GetTotalProfessionsUpgradePoints();
-
-		if(mailCount > 0)
+		// The assistant counts the letters, so the menu is built when the answer
+		// is in instead of waiting for it here.
+		auto pAccount = pPlayer->Account();
+		auto pContext = DbAsync::MakeContext(ClientID);
+		Core()->MailboxManager()->CountMails(pAccount->GetID()).Then([pContext](Db::CResultSet&& Result)
 		{
-			MAssistant.AddText("- You have {} mail waiting for you.", mailCount);
-			hasRecommendation = true;
-		}
-		if(goldCapacity > 0 && gold >= (goldCapacity * 8) / 10)
-		{
-			MAssistant.AddText("- Consider depositing gold to avoid loss.");
-			hasRecommendation = true;
-		}
-		if(crimeScore > 0)
-		{
-			MAssistant.AddText("- Your crime score attracts bounty hunters.");
-			hasRecommendation = true;
-		}
-		if(totalProfUP > 0)
-		{
-			MAssistant.AddText("- Spend {} upgrade points to strengthen your profession.", totalProfUP);
-			hasRecommendation = true;
-		}
-		if(!hasRecommendation)
-			MAssistant.AddText("- Everything looks good. Keep it up!");
-		MAssistant.AddSeparateLine();
+			auto* pPlayer = pContext->GetPlayer();
+			if(!pPlayer)
+				return;
 
-		// quick actions
-		MAssistant.AddText("Quick actions:");
-		MAssistant.AddMenu(MOTD_MENU_BONUSES_INFO, NOPE, "\u2696 Active bonuses");
-		MAssistant.AddMenu(MOTD_MENU_WANTED_INFO, NOPE, "\u2694 Wanted list");
-		MAssistant.AddMenu(MOTD_MENU_WIKI_INFO, NOPE, "\u2605 Wiki guide");
-		MAssistant.AddSeparateLine();
-		MAssistant.Send(MOTD_MENU_PERSONAL_ASSISTANT);
+			auto* pAccount = pPlayer->Account();
+			const auto gold = pAccount->GetGold();
+			const auto goldCapacity = pAccount->GetGoldCapacity();
+			const auto bankGold = pAccount->GetBankManager();
+			const int mailCount = Result.HasRows() ? Result.GetInt("Letters") : 0;
+
+			// personal assistant
+			MotdMenu MAssistant(pContext->GetClientID(), MTFLAG_CLOSE_BUTTON, "Quick tips update as you progress.");
+			MAssistant.AddText("Profession: {}", GetProfessionName(pAccount->GetActiveProfessionID()));
+			MAssistant.AddText("Level {}.", pAccount->GetLevel());
+			MAssistant.AddText("Gold: {$}/{$}", gold, goldCapacity);
+			MAssistant.AddText("Bank: {$}", bankGold);
+			MAssistant.AddText("World: {}", pContext->Server()->GetWorldName(pPlayer->GetCurrentWorldID()));
+			MAssistant.AddSeparateLine();
+
+			// recommendations
+			MAssistant.AddText("Recommendations:");
+			bool hasRecommendation = false;
+			const auto crimeScore = pAccount->GetCrime();
+			const auto totalProfUP = pAccount->GetTotalProfessionsUpgradePoints();
+
+			if(mailCount > 0)
+			{
+				MAssistant.AddText("- You have {} mail waiting for you.", mailCount);
+				hasRecommendation = true;
+			}
+			if(goldCapacity > 0 && gold >= (goldCapacity * 8) / 10)
+			{
+				MAssistant.AddText("- Consider depositing gold to avoid loss.");
+				hasRecommendation = true;
+			}
+			if(crimeScore > 0)
+			{
+				MAssistant.AddText("- Your crime score attracts bounty hunters.");
+				hasRecommendation = true;
+			}
+			if(totalProfUP > 0)
+			{
+				MAssistant.AddText("- Spend {} upgrade points to strengthen your profession.", totalProfUP);
+				hasRecommendation = true;
+			}
+			if(!hasRecommendation)
+				MAssistant.AddText("- Everything looks good. Keep it up!");
+			MAssistant.AddSeparateLine();
+
+			// quick actions
+			MAssistant.AddText("Quick actions:");
+			MAssistant.AddMenu(MOTD_MENU_BONUSES_INFO, NOPE, "\u2696 Active bonuses");
+			MAssistant.AddMenu(MOTD_MENU_WANTED_INFO, NOPE, "\u2694 Wanted list");
+			MAssistant.AddMenu(MOTD_MENU_WIKI_INFO, NOPE, "\u2605 Wiki guide");
+			MAssistant.AddSeparateLine();
+			MAssistant.Send(MOTD_MENU_PERSONAL_ASSISTANT);
+		});
 		return true;
 	}
 
@@ -1732,13 +1914,9 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* pLo
 
 AccountCodeResult CAccountManager::RegisterAccountRaw(int ClientID, const char* pLogin, const char* pPassword)
 {
-	const auto cClearLogin = CSqlString<32>(pLogin);
-	const auto cClearPass = CSqlString<32>(pPassword);
-	const auto cClearNick = CSqlString<32>(Server()->ClientName(ClientID));
-
 	char aAddrStr[64] {};
 	Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
-	DbRegistration::StartRegistration(this, ClientID, cClearLogin.cstr(), cClearPass.cstr(), cClearNick.cstr(), aAddrStr);
+	DbRegistration::StartRegistration(this, ClientID, pLogin, pPassword, Server()->ClientName(ClientID), aAddrStr);
 	return AccountCodeResult::AOP_REGISTER_OK;
 }
 
@@ -1759,25 +1937,24 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 
 AccountCodeResult CAccountManager::LoginAccountRaw(int ClientID, const char* pLogin, const char* pPassword)
 {
-	const auto sqlStrLogin = CSqlString<64>(pLogin);
-	const auto sqlStrPass = CSqlString<64>(pPassword);
-	const auto sqlStrNick = CSqlString<32>(Server()->ClientName(ClientID));
-	DbAuthorization::StartAuthorization(this, ClientID, sqlStrLogin.cstr(), sqlStrPass.cstr(), sqlStrNick.cstr());
+	DbAuthorization::StartAuthorization(this, ClientID, pLogin, pPassword, Server()->ClientName(ClientID));
 	return AccountCodeResult::AOP_LOGIN_OK;
 }
 
-void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize, int64_t ClaimDeadline)
+bool CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize, int64_t ClaimDeadline, std::function<void(bool)> OnLoaded)
 {
 	if(!pPlayer || !pPlayer->IsAuthed())
-		return;
+		return false;
 
-	// load same player context
+	// The client may already be in another world: the manager of that world owns
+	// the player object the answers have to be applied to.
 	if(!GS()->IsPlayerInWorld(pPlayer->GetCID()))
 	{
 		auto* pActiveGS = static_cast<CGS*>(Instance::GameServerPlayer(pPlayer->GetCID()));
-		if(auto* pActivePlayer = pActiveGS->GetPlayer(pPlayer->GetCID(), false))
-			pActiveGS->Core()->AccountManager()->LoadAccount(pActivePlayer, FirstInitilize, ClaimDeadline);
-		return;
+		auto* pActivePlayer = pActiveGS ? pActiveGS->GetPlayer(pPlayer->GetCID(), false) : nullptr;
+		if(!pActivePlayer)
+			return false;
+		return pActiveGS->Core()->AccountManager()->LoadAccount(pActivePlayer, FirstInitilize, ClaimDeadline, std::move(OnLoaded));
 	}
 
 	// Broadcast a message to the player with their current location
@@ -1791,19 +1968,48 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize, int64_t
 	// Check if it is not the first initialization
 	if(!FirstInitilize)
 	{
-		const int Letters = Core()->MailboxManager()->GetMailCount(pAccount->GetID());
-		if(Letters > 0)
-		{
-			GS()->Chat(ClientID, "You have '{} unread letters'.", Letters);
-		}
-
+		Core()->MailboxManager()->NotifyUnreadMails(pPlayer);
 		pAccount->GetBonusManager().SendInfoAboutActiveBonuses();
 		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
-		return;
+		if(OnLoaded)
+			OnLoaded(true);
+		return true;
 	}
 
-	// on player login
+	// Collect account-owned and component-owned data work before starting the
+	// plan. Login hooks remain separate from stage registration; independent
+	// reads still run concurrently, behind one readiness barrier.
+	auto pContext = DbAsync::MakeContext(ClientID);
+	auto* pManager = this;
+	pAccount->RegisterLoadStages();
+	Core()->RegisterAccountLoadStages(pPlayer);
 	Core()->OnPlayerLogin(pPlayer);
+	pAccount->RunLoadStages([pContext, pManager, ClaimDeadline, OnLoaded = std::move(OnLoaded)](bool Success) mutable
+	{
+		auto* pPlayer = pContext->GetPlayer();
+		if(!Success || !pPlayer)
+		{
+			if(OnLoaded)
+				OnLoaded(false);
+			return;
+		}
+
+		pManager->FinishAccountLoad(pPlayer, ClaimDeadline);
+		if(OnLoaded)
+			OnLoaded(true);
+	});
+	return true;
+}
+
+void CAccountManager::FinishAccountLoad(CPlayer* pPlayer, int64_t ClaimDeadline)
+{
+	auto* pAccount = pPlayer->Account();
+	const int ClientID = pPlayer->GetCID();
+
+	// The parts of the account are all in, so the expired ones can go now: the
+	// removal clears the equipment slot that still names such an item, which is
+	// only possible once the professions of the account are loaded.
+	Core()->InventoryManager()->RemoveExpiredItems(pPlayer);
 
 	// initialize default item's & settings
 	auto InitSettingsItem = [pPlayer](const std::unordered_map<int, int>& pItems)
@@ -1837,6 +2043,9 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize, int64_t
 		return;
 	}
 	pAccount->SetReadyToPlay(true);
+
+	// the rating belongs to the loaded account, so the client is updated with it
+	Server()->UpdateAccountBase(pAccount->GetID(), Server()->ClientName(ClientID), pAccount->GetRatingSystem().GetRating());
 
 	// notify about rank
 	const int Rank = Server()->GetAccountRank(pAccount->GetID());
@@ -1878,66 +2087,73 @@ void CAccountManager::SetPinCode(int ClientID, const char* pCurrentPasswordOrPin
 		}
 	}
 
-	// fetch current pin code
-	const auto AccountID = pPlayer->Account()->GetID();
-	std::string CurrentPinInDb;
-	bool bPinCurrentlySet = GetAccountPin(AccountID, CurrentPinInDb);
-
-	if(IsChangingPin)
+	// One statement answers everything the checks below need: whether a PIN is
+	// set (and which one) and whether the entered password is the account one.
+	const int AccountID = pPlayer->Account()->GetID();
+	const std::string NewPin = pNewPin;
+	const std::string Current = pCurrentPasswordOrPin ? pCurrentPasswordOrPin : "";
+	auto pContext = DbAsync::MakeContext(ClientID);
+	AccountDb::ReadPinCodeAndPassword(AccountID)
+		.Then([pContext, AccountID, IsChangingPin, NewPin, Current](Db::CResultSet&& Account)
 	{
-		// is not set need set pin
-		if(!bPinCurrentlySet)
+		if(!pContext->GetPlayer())
+			return;
+
+		auto* pGS = pContext->GS();
+		const int ClientID = pContext->GetClientID();
+		if(!Account.HasRows())
 		{
-			GS()->Chat(ClientID, "You don't have a PIN code set.");
-			GS()->Chat(ClientID, "Use '/set_pin' to set your PIN.");
+			pGS->Chat(ClientID, "Error retrieving account data.");
 			return;
 		}
 
-		// check valid pin
-		if(CurrentPinInDb != pCurrentPasswordOrPin)
+		const std::string PinInDb = Account.GetString("PinCode");
+		const bool PinIsSet = !PinInDb.empty();
+
+		if(IsChangingPin)
 		{
-			GS()->Chat(ClientID, "The current PIN code you entered is incorrect.");
-			return;
+			// is not set need set pin
+			if(!PinIsSet)
+			{
+				pGS->Chat(ClientID, "You don't have a PIN code set.");
+				pGS->Chat(ClientID, "Use '/set_pin' to set your PIN.");
+				return;
+			}
+
+			// check valid pin
+			if(PinInDb != Current)
+			{
+				pGS->Chat(ClientID, "The current PIN code you entered is incorrect.");
+				return;
+			}
+			if(Current == NewPin)
+			{
+				pGS->Chat(ClientID, "The new PIN cannot be the same as the old PIN.");
+				return;
+			}
 		}
-		if(str_comp(pCurrentPasswordOrPin, pNewPin) == 0)
+		else
 		{
-			GS()->Chat(ClientID, "The new PIN cannot be the same as the old PIN.");
-			return;
-		}
-	}
-	else
-	{
-		// is set need change pin
-		if(bPinCurrentlySet)
-		{
-			GS()->Chat(ClientID, "You already have a PIN code set.");
-			GS()->Chat(ClientID, "Use '/change_pin' to update your PIN.");
-			return;
+			// is set need change pin
+			if(PinIsSet)
+			{
+				pGS->Chat(ClientID, "You already have a PIN code set.");
+				pGS->Chat(ClientID, "Use '/change_pin' to update your PIN.");
+				return;
+			}
+
+			// check valid password
+			if(Account.GetString("Password") != HashPassword(Current.c_str(), Account.GetString("PasswordSalt")))
+			{
+				pGS->Chat(ClientID, "The account password you entered is incorrect.");
+				return;
+			}
 		}
 
-		// check valid password
-		ResultPtr pResAccount = Database->Execute<DB::SELECT>("Password, PasswordSalt", "tw_accounts", "WHERE ID = '{}'", AccountID);
-		if(!pResAccount->next())
-		{
-			GS()->Chat(ClientID, "Error retrieving account data.");
-			return;
-		}
-
-		const auto DbPassword = pResAccount->getString("Password");
-		const auto DbSalt = pResAccount->getString("PasswordSalt");
-		const CSqlString<32> sqlCurrentPassword(pCurrentPasswordOrPin);
-		if(DbPassword != HashPassword(sqlCurrentPassword.cstr(), DbSalt))
-		{
-			GS()->Chat(ClientID, "The account password you entered is incorrect.");
-			return;
-		}
-	}
-
-	// save new pin-code
-	const CSqlString<16> sqlNewPin(pNewPin);
-	Database->Execute<DB::UPDATE>("tw_accounts", "PinCode = '{}' WHERE ID = '{}'", sqlNewPin.cstr(), AccountID);
-	GS()->Chat(ClientID, "Your PIN code has been successfully {}!", Instance::Localize(ClientID, IsChangingPin ? "changed" : "set"));
-	return;
+		// save new pin-code
+		AccountDb::SavePinCode(AccountID, NewPin);
+		pGS->Chat(ClientID, "Your PIN code has been successfully {}!", Instance::Localize(ClientID, IsChangingPin ? "changed" : "set"));
+	});
 }
 
 void CAccountManager::ChangePassword(int ClientID, const char* pOldPassword, const char* pNewPassword, const char* pPinCode)
@@ -1964,19 +2180,6 @@ void CAccountManager::ChangePassword(int ClientID, const char* pOldPassword, con
 		return;
 	}
 
-	// get pincode
-	std::string PinFromDb;
-	const int AccountID = pPlayer->Account()->GetID();
-	bool bPinIsSet = GetAccountPin(AccountID, PinFromDb);
-
-	// check is pincode set
-	if(!bPinIsSet)
-	{
-		GS()->Chat(ClientID, "For security, you must first set up a PIN code.");
-		GS()->Chat(ClientID, "Use '/set_pin' to set your PIN.");
-		return;
-	}
-
 	// require pin code
 	if(pPinCode == nullptr || *pPinCode == '\0')
 	{
@@ -2000,88 +2203,138 @@ void CAccountManager::ChangePassword(int ClientID, const char* pOldPassword, con
 		}
 	}
 
-	// check valid pincode
-	if(PinFromDb != pPinCode)
+	// One statement answers both questions: the PIN of the account and its
+	// password hash. The checks and the hash of the new password follow in the
+	// answer, on the game thread.
+	const int AccountID = pPlayer->Account()->GetID();
+	const std::string OldPassword = pOldPassword;
+	const std::string NewPassword = pNewPassword;
+	const std::string Pin = pPinCode;
+	auto pContext = DbAsync::MakeContext(ClientID);
+	AccountDb::ReadPinCodeAndPassword(AccountID)
+		.Then([pContext, AccountID, OldPassword, NewPassword, Pin](Db::CResultSet&& Account)
 	{
-		GS()->Chat(ClientID, "The PIN code you entered is incorrect.");
-		return;
-	}
+		if(!pContext->GetPlayer())
+			return;
 
-	// get current password
-	ResultPtr pResAccount = Database->Execute<DB::SELECT>("Password, PasswordSalt", "tw_accounts", "WHERE ID = '{}'", AccountID);
-	if(!pResAccount->next())
-	{
-		GS()->Chat(ClientID, "Error retrieving account data.");
-		return;
-	}
+		auto* pGS = pContext->GS();
+		const int ClientID = pContext->GetClientID();
+		if(!Account.HasRows())
+		{
+			pGS->Chat(ClientID, "Error retrieving account data.");
+			return;
+		}
 
-	// check valid password
-	const auto CurrentDbPassword = pResAccount->getString("Password");
-	const auto CurrentDbSalt = pResAccount->getString("PasswordSalt");
-	const CSqlString<32> sqlOldPassword(pOldPassword);
-	if(CurrentDbPassword != HashPassword(sqlOldPassword.cstr(), CurrentDbSalt))
-	{
-		GS()->Chat(ClientID, "The old password you entered is incorrect.");
-		return;
-	}
+		// check is pincode set
+		const std::string PinFromDb = Account.GetString("PinCode");
+		if(PinFromDb.empty())
+		{
+			pGS->Chat(ClientID, "For security, you must first set up a PIN code.");
+			pGS->Chat(ClientID, "Use '/set_pin' to set your PIN.");
+			return;
+		}
 
-	// update new password
-	char aNewSalt[32] = { 0 };
-	secure_random_password(aNewSalt, sizeof(aNewSalt), 24);
-	const CSqlString<32> sqlNewPassword(pNewPassword);
-	const std::string HashedNewPassword = HashPassword(sqlNewPassword.cstr(), aNewSalt);
-	Database->Execute<DB::UPDATE>("tw_accounts", "Password = '{}', PasswordSalt = '{}' WHERE ID = '{}'", HashedNewPassword, aNewSalt, AccountID);
+		// check valid pincode
+		if(PinFromDb != Pin)
+		{
+			pGS->Chat(ClientID, "The PIN code you entered is incorrect.");
+			return;
+		}
 
-	// information
-	GS()->Chat(ClientID, "Your password has been successfully changed!");
-	GS()->Chat(ClientID, "Please remember your new login details.");
-	GS()->Chat(ClientID, "New password: '{}'.", sqlNewPassword.cstr());
-	return;
+		// check valid password
+		if(Account.GetString("Password") != HashPassword(OldPassword.c_str(), Account.GetString("PasswordSalt")))
+		{
+			pGS->Chat(ClientID, "The old password you entered is incorrect.");
+			return;
+		}
+
+		// update new password
+		char aNewSalt[32] = { 0 };
+		secure_random_password(aNewSalt, sizeof(aNewSalt), 24);
+		const std::string HashedNewPassword = HashPassword(NewPassword.c_str(), aNewSalt);
+		AccountDb::SavePassword(AccountID, HashedNewPassword, aNewSalt);
+
+		// information
+		pGS->Chat(ClientID, "Your password has been successfully changed!");
+		pGS->Chat(ClientID, "Please remember your new login details.");
+		pGS->Chat(ClientID, "New password: '{}'.", NewPassword.c_str());
+	});
 }
 
-bool CAccountManager::ChangeNickname(const std::string& newNickname, int ClientID) const
+void CAccountManager::ChangeNickname(std::string NewNickname, int ClientID)
 {
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
+	// The name is only changed when the database says it is free; the player is
+	// told in the answer, so nothing waits for the lookup.
+	auto* pPlayer = GS()->GetPlayer(ClientID, true);
 	if(!pPlayer)
-		return false;
+		return;
+	const int AccountID = pPlayer->Account()->GetID();
 
-	// check newnickname
-	const auto cClearNick = CSqlString<32>(newNickname.c_str());
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '{}'", cClearNick.cstr());
-	if(pRes->next())
-		return false;
+	auto pContext = DbAsync::MakeContext(ClientID);
+	AccountDb::FindNicknameOwner(NewNickname)
+		.Then([pContext, AccountID, NewNickname](Db::CResultSet&& Existing)
+	{
+		auto* pPlayer = pContext->GetPlayer();
+		if(!pPlayer)
+			return;
 
-	Database->Execute<DB::UPDATE>("tw_accounts_data", "Nick = '{}' WHERE ID = '{}'", cClearNick.cstr(), pPlayer->Account()->GetID());
-	Server()->SetClientName(ClientID, newNickname.c_str());
-	return true;
+		auto* pGS = pContext->GS();
+		const int ClientID = pContext->GetClientID();
+		if(Existing.HasRows())
+		{
+			pGS->Chat(ClientID, "This nickname is already in use.");
+			return;
+		}
+
+		AccountDb::SaveNickname(AccountID, NewNickname);
+		pGS->Server()->SetClientName(ClientID, NewNickname.c_str());
+		pGS->Chat(ClientID, "Your nickname has been successfully updated.");
+	});
 }
 
 void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 {
-	CPlayer* pPlayer = GS()->GetPlayer(ClientID);
+	auto* pPlayer = GS()->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
-	char aSelect[256];
-	const auto cVoucherCode = CSqlString<32>(pVoucher);
-	str_format(aSelect, sizeof(aSelect), "v.*, IF((SELECT r.ID FROM tw_voucher_redeemed r WHERE CASE v.Multiple WHEN 1 THEN r.VoucherID = v.ID AND r.UserID = %d ELSE r.VoucherID = v.ID END) IS NULL, FALSE, TRUE) AS used", pPlayer->Account()->GetID());
-
-	ResultPtr pResVoucher = Database->Execute<DB::SELECT>(aSelect, "tw_voucher v", "WHERE v.Code = '{}'", cVoucherCode.cstr());
-	if(pResVoucher->next())
+	// The voucher decides what the player gets, so it is read, checked and
+	// redeemed in the answer; nothing waits for it here.
+	const std::string VoucherCode = pVoucher;
+	auto pContext = DbAsync::MakeContext(ClientID);
+	AccountDb::FindVoucher(pPlayer->Account()->GetID(), VoucherCode)
+		.Then([pContext, VoucherCode](Db::CResultSet&& Voucher)
 	{
-		const int VoucherID = pResVoucher->getInt("ID");
-		const int ValidUntil = pResVoucher->getInt("ValidUntil");
-		nlohmann::json JsonData = nlohmann::json::parse(pResVoucher->getString("Data").c_str());
+		auto* pPlayer = pContext->GetPlayer();
+		if(!pPlayer)
+			return;
 
-		if(ValidUntil > 0 && ValidUntil < time(0))
+		auto* pGS = pContext->GS();
+		const int ClientID = pContext->GetClientID();
+		if(!Voucher.HasRows())
 		{
-			GS()->Chat(ClientID, "The voucher code '{}' has expired.", pVoucher);
+			pGS->Chat(ClientID, "The voucher code '{}' does not exist.", VoucherCode.c_str());
 			return;
 		}
 
-		if(pResVoucher->getBoolean("used"))
+		const int VoucherID = Voucher.GetInt("ID");
+		const int ValidUntil = Voucher.GetInt("ValidUntil");
+
+		// The voucher decides what the player gets, so a document that cannot be
+		// read gives nothing: the parsing helper reports it and hands back an
+		// empty object instead of throwing inside the answer.
+		nlohmann::json JsonData = nlohmann::json::object();
+		mystd::json::parse(Voucher.GetString("Data"), [&JsonData](nlohmann::json& Json) { JsonData = Json; });
+
+		if(ValidUntil > 0 && ValidUntil < time(0))
 		{
-			GS()->Chat(ClientID, "This voucher has already been redeemed.");
+			pGS->Chat(ClientID, "The voucher code '{}' has expired.", VoucherCode.c_str());
+			return;
+		}
+
+		if(Voucher.GetBoolean("used"))
+		{
+			pGS->Chat(ClientID, "This voucher has already been redeemed.");
 			return;
 		}
 
@@ -2104,90 +2357,99 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 			}
 		}
 
-		GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
-		GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
+		pGS->Core()->SaveAccount(pPlayer, SAVE_STATS);
+		pGS->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
 
-		Database->Execute<DB::INSERT>("tw_voucher_redeemed", "(VoucherID, UserID, TimeCreated) VALUES ({}, {}, {})", VoucherID, pPlayer->Account()->GetID(), (int)time(0));
-		GS()->Chat(ClientID, "You have successfully redeemed the voucher '{}'.", pVoucher);
+		AccountDb::RedeemVoucher(VoucherID, pPlayer->Account()->GetID(), (int64_t)time(0));
+		pGS->Chat(ClientID, "You have successfully redeemed the voucher '{}'.", VoucherCode.c_str());
+	});
+}
+
+void CAccountManager::BanAccount(CPlayer* pPlayer, CTimePeriod Time, const std::string& Reason)
+{
+	if(!pPlayer || !pPlayer->Account())
 		return;
-	}
 
-	GS()->Chat(ClientID, "The voucher code '{}' does not exist.", pVoucher);
+	// The ban is written unless one is active already; the player is removed in
+	// the answer, on the game thread.
+	const int AccountID = pPlayer->Account()->GetID();
+	const int ClientID = pPlayer->GetCID();
+	const int64_t DurationSeconds = Time.duration().count();
+	auto pContext = DbAsync::MakeContext(ClientID);
+	AccountDb::ReadActiveBan(AccountID)
+		.Then([pContext, AccountID, ClientID, DurationSeconds, Reason](Db::CResultSet&& ActiveBan)
+	{
+		auto* pGS = pContext->GS();
+		if(!pGS)
+			return;
+		auto* pConsole = pGS->Console();
+		if(!ActiveBan.Ok())
+		{
+			pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Could not check the account's current ban");
+			return;
+		}
+		if(ActiveBan.HasRows())
+		{
+			pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "This account is already banned");
+			return;
+		}
+
+		AccountDb::CreateBan(AccountID, DurationSeconds, Reason).Then([pContext, ClientID](Db::CResultSet&& Created)
+		{
+			auto* pGS = pContext->GS();
+			if(!pGS)
+				return;
+			if(!Created.Ok() || !Created.Changed())
+			{
+				pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "The ban could not be saved");
+				return;
+			}
+
+			pContext->Server()->Kick(ClientID, "Your account was banned");
+			pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Successfully banned!");
+		});
+	});
 }
 
-bool CAccountManager::BanAccount(CPlayer* pPlayer, CTimePeriod Time, const std::string& Reason)
+void CAccountManager::UnBanAccount(int BanId) const
 {
-	// Check if the account is already banned
-	ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil", "tw_accounts_bans", "WHERE AccountId = '{}' AND current_timestamp() < `BannedUntil`", pPlayer->Account()->GetID());
-	if(pResBan->next())
+	// Search for the ban and lift it in the answer.
+	AccountDb::ReadActiveBanByID(BanId)
+		.Then([BanId](Db::CResultSet&& ActiveBan)
 	{
-		// Print message and return false if the account is already banned
-		m_GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "This account is already banned");
-		return false;
-	}
+		auto* pConsole = static_cast<CGS*>(Instance::GameServer(INITIALIZER_WORLD_ID))->Console();
+		if(!ActiveBan.HasRows())
+		{
+			// the ban does not exist or has already run out
+			pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Ban is not valid anymore or does not exist!");
+			return;
+		}
 
-	// Ban the account
-	Database->Execute<DB::INSERT>("tw_accounts_bans", "(AccountId, BannedUntil, Reason) VALUES ('{}', '{}', '{}')",
-		pPlayer->Account()->GetID(), std::string("current_timestamp + " + Time.asSqlInterval()), Reason);
-	GS()->Server()->Kick(pPlayer->GetCID(), "Your account was banned");
-	m_GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Successfully banned!");
-	return true;
+		AccountDb::LiftBan(BanId);
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Successfully unbanned!");
+	});
 }
 
-bool CAccountManager::UnBanAccount(int BanId) const
+void CAccountManager::BansAccount(std::function<void(std::vector<AccBan>&&)> OnLoaded) const
 {
-	// Search for ban using the specified BanId
-	ResultPtr pResBan = Database->Execute<DB::SELECT>("AccountId", "tw_accounts_bans", "WHERE Id = '{}' AND current_timestamp() < `BannedUntil`", BanId);
-	if(pResBan->next())
+	AccountDb::ListActiveBans()
+		.Then([OnLoaded = std::move(OnLoaded)](Db::CResultSet&& Bans)
 	{
-		// If the ban exists and the current timestamp is still less than the BannedUntil timestamp, unban the account
-		Database->Execute<DB::UPDATE>("tw_accounts_bans", "BannedUntil = current_timestamp WHERE Id = '{}'", BanId);
-		m_GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Successfully unbanned!");
-		return true;
-	}
+		std::vector<AccBan> vBans;
+		vBans.reserve(100);
+		while(Bans.Next())
+		{
+			int ID = Bans.GetInt("Id");
+			int AccountID = Bans.GetInt("AccountId");
+			std::string BannedUntil = Bans.GetString("BannedUntil");
+			std::string PlayerNickname = Instance::Server()->GetAccountNickname(AccountID);
+			std::string Reason = Bans.GetString("Reason");
+			vBans.emplace_back(ID, BannedUntil, std::move(PlayerNickname), std::move(Reason));
+		}
 
-	// If the ban does not exist or the current timestamp is already greater than the BannedUntil timestamp, print an error message
-	m_GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Ban is not valid anymore or does not exist!");
-	return false;
-}
-
-// Function: BansAccount
-std::vector<CAccountManager::AccBan> CAccountManager::BansAccount() const
-{
-	constexpr std::size_t capacity = 100;
-	std::vector<AccBan> out;
-	out.reserve(capacity);
-
-	/*
-		Execute a SELECT query on the "tw_accounts_bans" table in the database,
-		retrieving the columns "Id", "BannedUntil", "Reason", and "AccountId"
-		where the current timestamp is less than the "BannedUntil" value
-	*/
-	ResultPtr pResBan = Database->Execute<DB::SELECT>("Id, BannedUntil, Reason, AccountId", "tw_accounts_bans", "WHERE current_timestamp() < `BannedUntil`");
-	while(pResBan->next())
-	{
-		int ID = pResBan->getInt("Id");
-		int AccountID = pResBan->getInt("AccountId");
-		std::string BannedUntil = pResBan->getString("BannedUntil");
-		std::string PlayerNickname = Server()->GetAccountNickname(AccountID);
-		std::string Reason = pResBan->getString("Reason");
-		out.emplace_back(ID, BannedUntil, std::move(PlayerNickname), std::move(Reason));
-	}
-
-	return out;
-}
-
-bool CAccountManager::GetAccountPin(int AccountID, std::string& OutPinCode) const
-{
-	ResultPtr pResPin = Database->Execute<DB::SELECT>("PinCode", "tw_accounts", "WHERE ID = '{}'", AccountID);
-	if(pResPin->next())
-	{
-		OutPinCode = pResPin->getString("PinCode");
-		return !OutPinCode.empty();
-	}
-
-	OutPinCode.clear();
-	return false;
+		if(OnLoaded)
+			OnLoaded(std::move(vBans));
+	});
 }
 
 int CAccountManager::GetLastVisitedWorldID(CPlayer* pPlayer) const

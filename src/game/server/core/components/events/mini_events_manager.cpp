@@ -37,7 +37,7 @@ void CMiniEventsManager::ScheduleQuickRoll(int MinSeconds, int MaxSeconds)
 	m_Data.m_NextRollTick = Server()->Tick() + (TickSpeed * DelaySeconds);
 }
 
-void CMiniEventsManager::OnInitWorld(const std::string&)
+void CMiniEventsManager::OnInitWorld(int)
 {
 	GS()->m_Multipliers.RemoveSource(MultiplierSource::RandomEvent);
 	ScheduleNextRoll();

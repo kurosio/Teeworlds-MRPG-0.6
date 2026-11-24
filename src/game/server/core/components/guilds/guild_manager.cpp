@@ -1,22 +1,26 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "guild_manager.h"
 
+#include "guild_db.h"
+#include <game/server/core/tools/db_async_context.h>
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
 
-#include <game/server/core/components/inventory/inventory_manager.h>
+#include <game/server/core/components/inventory/item_info_data.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
 
 #include <components/houses/entities/house_door.h>
 
+static constexpr float s_GuildChancePlanting = 0.025f;
+
 void CGuildManager::OnPreInit()
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_TABLE);
-	while (pRes->next())
+	auto Guilds = GuildDb::ListGuilds();
+	while(Guilds.Next())
 	{
-		const GuildIdentifier ID = pRes->getInt("ID");
-		CGuild::CreateElement(ID)->InitFromRow(pRes);
+		const GuildIdentifier ID = Guilds.GetInt("ID");
+		CGuild::CreateElement(ID)->InitFromRow(Guilds);
 	}
 }
 
@@ -37,21 +41,21 @@ void CGuildManager::OnInitLink(const std::string& Type, int64_t OwnerID, int64_t
 	}
 }
 
-void CGuildManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
+void CGuildManager::OnInitWorld(int WorldID)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_HOUSES, SqlQueryWhereWorld.c_str());
-	while(pRes->next())
+	auto Houses = GuildDb::ListHouses(WorldID);
+	while(Houses.Next())
 	{
 		// initialize variables
-		GuildHouseIdentifier ID = pRes->getInt("ID");
-		int InitialFee = pRes->getInt("InitialFee");
-		time_t RentDays = pRes->getInt64("RentDays");
-		std::string JsonDoors = pRes->getString("Doors");
-		std::string JsonFarmzones = pRes->getString("Farmzones");
-		std::string JsonPropersties = pRes->getString("Properties");
+		GuildHouseIdentifier ID = Houses.GetInt("ID");
+		int InitialFee = Houses.GetInt("InitialFee");
+		time_t RentDays = Houses.GetInt64("RentDays");
+		std::string JsonDoors = Houses.GetString("Doors");
+		std::string JsonFarmzones = Houses.GetString("Farmzones");
+		std::string JsonPropersties = Houses.GetString("Properties");
 
 		// initialize guild houses
-		std::string KickPosStr = pRes->getString("KickPos");
+		std::string KickPosStr = Houses.GetString("KickPos");
 		vec2 KickPos = {};
 		mystd::json::parse(KickPosStr, [&KickPos](nlohmann::json& pJson)
 		{
@@ -459,18 +463,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
-		// result
-		switch(pGuild->GetRanks()->Add(pReason))
-		{
-			default: GS()->Chat(ClientID, "Unforeseen error."); break;
-			case GuildResult::RANK_ADD_ALREADY_EXISTS: GS()->Chat(ClientID, "The rank name already exists"); break;
-			case GuildResult::RANK_ADD_LIMIT_HAS_REACHED: GS()->Chat(ClientID, "Rank limit reached, '{} out of {}'.", (int)GUILD_RANKS_MAX_COUNT, (int)GUILD_RANKS_MAX_COUNT); break;
-			case GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME: GS()->Chat(ClientID, "Minimum number of 'characters 2, maximum 16'."); break;
-			case GuildResult::RANK_SUCCESSFUL:
-				GS()->Chat(ClientID, "The rank '{~}' has been successfully added!", pReason);
-				GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_LIST);
-			break;
-		}
+		// the rank is written in the answer and the result is reported there
+		pGuild->GetRanks()->Add(pReason, ClientID);
 		return true;
 	}
 
@@ -1118,14 +1112,14 @@ void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SReque
 		if(GetGuildByID(Req.Value))
 			return;
 
-		auto pSelect = Database->Prepare<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
-		pSelect->AtExecute([this, GuildID = Req.Value](ResultPtr pRes)
+		GuildDb::ReadGuild(Req.Value)
+			.Then([this, GuildID = Req.Value](Db::CResultSet&& Result)
 		{
-			if(GetGuildByID(GuildID) || !pRes->next())
+			if(GetGuildByID(GuildID) || !Result.HasRows())
 				return;
 
-			CGuild::CreateElement(GuildID)->InitFromRow(pRes);
-			GS()->Chat(-1, "New guilds '{~}' have been created!", pRes->getString("Name").c_str());
+			CGuild::CreateElement(GuildID)->InitFromRow(Result);
+			GS()->Chat(-1, "New guilds '{~}' have been created!", Result.GetString("Name").c_str());
 		});
 	}
 
@@ -1135,14 +1129,14 @@ void CGuildManager::OnSyncEvent(std::string EventName, const CServerSync::SReque
 		if(!GetGuildByID(Req.Value))
 			return;
 
-		auto pSelect = Database->Prepare<DB::SELECT>("*", TW_GUILDS_TABLE, "WHERE ID = '{}'", Req.Value);
-		pSelect->AtExecute([this, GuildID = Req.Value](ResultPtr pRes)
+		GuildDb::ReadGuild(Req.Value)
+			.Then([this, GuildID = Req.Value](Db::CResultSet&& Result)
 		{
 			const auto pGuild = GetGuildByID(GuildID);
-			if(!pGuild || !pRes->next())
+			if(!pGuild || !Result.HasRows())
 				return;
 
-			pGuild->InitFromRow(pRes);
+			pGuild->InitFromRow(Result);
 			dbg_msg("guild", "guild updated: %s", pGuild->GetName());
 		});
 	}
@@ -1181,37 +1175,70 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 		return;
 	}
 
-	// check guild name
-	CSqlString<64> GuildName(pGuildName);
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", TW_GUILDS_TABLE, "WHERE Name = '{}'", GuildName.cstr());
-	if(pRes->next())
+	// The name has to be free and the guild id comes from the server, so the whole
+	// creation runs in the answers: name check, then ticket, then the new guild.
+	const std::string Name = pGuildName;
+	auto pContext = DbAsync::MakeContext(ClientID);
+	GuildDb::FindGuildByName(Name)
+		.Then([pContext, Name](Db::CResultSet&& Existing)
 	{
-		GS()->Chat(ClientID, "This guild name already useds!");
-		return;
-	}
+		auto* pPlayer = pContext->GetPlayer();
+		if(!pPlayer)
+			return;
 
-	// check guild ticket
-	if(!pPlayer->Account()->SpendCurrency(1, itTicketGuild))
-	{
-		GS()->Chat(ClientID, "You need first buy guild ticket on shop!");
-		return;
-	}
+		auto* pGS = pContext->GS();
+		const int ClientID = pContext->GetClientID();
+		if(Existing.HasRows())
+		{
+			pGS->Chat(ClientID, "This guild name already useds!");
+			return;
+		}
 
-	// get next guild ID
-	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", TW_GUILDS_TABLE, "ORDER BY ID DESC LIMIT 1");
-	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1; // TODO: thread save ? hm need for table all time auto increment = 1; NEED FIX IT -- use some kind of uuid
+		// check guild ticket
+		if(!pPlayer->Account()->SpendCurrency(1, itTicketGuild))
+		{
+			pGS->Chat(ClientID, "You need first buy guild ticket on shop!");
+			return;
+		}
 
-	// implement creation and add to table
-	CGuild* pGuild = CGuild::CreateElement(InitID);
-	const std::string MembersData = R"({"members":[{"id":)" + std::to_string(pPlayer->Account()->GetID()) + R"(,"rank_id":0,"deposit":"0"}]})";
-	pGuild->Init(GuildName.cstr(), MembersData, -1, 1, 0, 0, pPlayer->Account()->GetID(), 0, -1, nullptr);
-	pPlayer->Account()->ReinitializeGuild();
-	Database->Execute<DB::INSERT>(TW_GUILDS_TABLE, "(ID, Name, LeaderUID, Members) VALUES ('{}', '{}', '{}', '{}')",
-		InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
+		// the new guild gets the next free id
+		GuildDb::ReadNextGuildID()
+			.Then([pContext, Name](Db::CResultSet&& NextGuild)
+		{
+			auto* pPlayer = pContext->GetPlayer();
+			if(!pPlayer || pPlayer->Account()->HasGuild())
+				return;
 
-	Sync->Push(syncevents::GUILD_CREATE, GS()->GetWorldID(), InitID);
-	GS()->Chat(-1, "New guilds '{~}' have been created!", GuildName.cstr());
-	pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
+			const int InitID = NextGuild.HasRows() ? NextGuild.GetInt("NextID") : 1;
+			const int LeaderUID = pPlayer->Account()->GetID();
+			const std::string MembersData = R"({"members":[{"id":)" + std::to_string(LeaderUID) + R"(,"rank_id":0,"deposit":"0"}]})";
+
+			// the guild is written together with its default rank, so a later load
+			// never has to create a rank while it reads
+			GuildDb::CreateGuild(InitID, Name, LeaderUID, MembersData);
+			GuildDb::ReadNextRankID()
+				.Then([pContext, InitID, Name, LeaderUID, MembersData](Db::CResultSet&& NextRank)
+			{
+				auto* pPlayer = pContext->GetPlayer();
+				if(!pPlayer)
+					return;
+
+				auto* pGS = pContext->GS();
+				const int RankID = NextRank.HasRows() ? NextRank.GetInt("NextID") : 1;
+				GuildDb::CreateRank(RankID, static_cast<int64_t>(RANKFLAG_RIGHT_DEFAULT), InitID, DEFAULT_GUILD_RANK_NAME);
+
+				// implement creation and add to the world
+				CGuild* pGuild = CGuild::CreateElement(InitID);
+				const std::string Members = MembersData;
+				pGuild->Init(Name, Members, RankID, 1, 0, 0, LeaderUID, 0, -1, nullptr);
+				pPlayer->Account()->ReinitializeGuild();
+
+				Sync->Push(syncevents::GUILD_CREATE, pGS->GetWorldID(), InitID);
+				pGS->Chat(-1, "New guilds '{~}' have been created!", Name.c_str());
+				pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
+			});
+		});
+	});
 }
 
 void CGuildManager::Disband(GuildIdentifier ID) const
@@ -1240,10 +1267,10 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	GS()->Chat(-1, "The '{~}' guild has been disbanded.", pGuild->GetName());
 
 	// remove all related guild data
-	Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '{}'", pGuild->GetID());
-	Database->Execute<DB::REMOVE>(TW_GUILDS_HISTORY_TABLE, "WHERE GuildID = '{}'", pGuild->GetID());
-	Database->Execute<DB::REMOVE>(TW_GUILDS_RANKS_TABLE, "WHERE GuildID = '{}'", pGuild->GetID());
-	Database->Execute<DB::REMOVE>(TW_GUILDS_TABLE, "WHERE ID = '{}'", pGuild->GetID());
+	GuildDb::DeleteInvitesOfGuild(pGuild->GetID());
+	GuildDb::DeleteHistoryOfGuild(pGuild->GetID());
+	GuildDb::DeleteRanksOfGuild(pGuild->GetID());
+	GuildDb::DeleteGuild(pGuild->GetID());
 	Sync->Push(syncevents::GUILD_DISBAND, GS()->GetWorldID(), pGuild->GetID());
 
 	// erase guild from server
@@ -1712,7 +1739,7 @@ void CGuildManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// items list availables can be planted
-	auto vItems = CInventoryManager::GetItemIDsCollectionByType(ItemType::ResourceHarvestable);
+	auto vItems = CItemDescription::CollectIDs(std::nullopt, ItemType::ResourceHarvestable);
 	VoteWrapper VPossiblePlanting(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2741 Possible items for planting");
 	for(auto& ID : vItems)
 	{

@@ -9,6 +9,7 @@
 #include <engine/server.h>
 #include <engine/storage.h>
 
+#include <engine/server/db/db_startup.h>
 #include <engine/server/server.h>
 #include <engine/server/server_logger.h>
 #include <engine/shared/assertion_logger.h>
@@ -146,15 +147,19 @@ int main(int argc, const char** argv)
 	}
 
 	// opens both connections and checks that the tables are in the right database
-	if(!Database->InitDatabases())
+	if(!Db::StartFromConfig())
 	{
 		dbg_msg("server", "failed to prepare the shared and the local database");
+		Db::Shutdown();
+		delete pKernel;
 		return -1;
 	}
 
 	if(!pServer->MultiWorlds()->LoadFromDB(pKernel, pStorage))
 	{
 		dbg_msg("server", "failed to load worlds");
+		Db::Shutdown();
+		delete pKernel;
 		return -1;
 	}
 
@@ -191,6 +196,7 @@ int main(int argc, const char** argv)
 
 	// free
 	pServerLogger->OnServerDeletion();
+	Db::Shutdown();
 	delete pKernel;
 
 	secure_random_uninit();

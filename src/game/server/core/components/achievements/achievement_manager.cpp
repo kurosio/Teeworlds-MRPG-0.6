@@ -1,6 +1,7 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "achievement_manager.h"
+#include "achievement_db.h"
 
 #include <algorithm>
 #include <map>
@@ -138,17 +139,17 @@ namespace
 
 void CAchievementManager::OnPreInit()
 {
-	ResultPtr pResult = Database->Execute<DB::SELECT>("*", TW_ACHIEVEMENTS);
-	while(pResult->next())
+	auto Achievements = AchievementDb::ListAchievements();
+	while(Achievements.Next())
 	{
 		// initialize variables
-		int ID = pResult->getInt("ID");
-		int Type = pResult->getInt("Type");
-		int Criteria = pResult->getInt("Criteria");
-		int Required = pResult->getInt("Required");
-		std::string Name = pResult->getString("Name");
-		std::string Reward = pResult->getString("Reward");
-		int AchievementPoint = pResult->getInt("AchievementPoint");
+		int ID = Achievements.GetInt("ID");
+		int Type = Achievements.GetInt("Type");
+		int Criteria = Achievements.GetInt("Criteria");
+		int Required = Achievements.GetInt("Required");
+		std::string Name = Achievements.GetString("Name");
+		std::string Reward = Achievements.GetString("Reward");
+		int AchievementPoint = Achievements.GetInt("AchievementPoint");
 
 		// create element
 		auto* pAchievement = CAchievementInfo::CreateElement(ID);

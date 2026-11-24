@@ -1,4 +1,5 @@
 #include "skill_data.h"
+#include "skill_db.h"
 
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
@@ -19,25 +20,6 @@ CPlayer* CSkill::GetPlayer() const
 {
 	return GS()->GetPlayer(m_ClientID);
 }
-
-void CSkill::LoadTreeChoicesFromDB()
-{
-	auto* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return;
-
-	// load from database
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skill_tree", "WHERE UserID = '{}' AND SkillID = '{}'", pPlayer->Account()->GetID(), m_ID);
-	m_TreeSelections.clear();
-	while(pRes->next())
-	{
-		const int L = pRes->getInt("LevelIndex");
-		const int O = pRes->getInt("OptionIndex");
-		if(L > 0 && O > 0)
-			m_TreeSelections[L] = O;
-	}
-}
-
 
 int CSkill::GetTreeNodePriceSP(int LevelIndex, int OptionIndex) const
 {
@@ -77,9 +59,7 @@ bool CSkill::SetTreeOption(int LevelIndex, int OptionIndex)
 		return false;
 
 	// update
-	Database->Execute<DB::INSERT>("tw_accounts_skill_tree",
-		"(UserID, SkillID, LevelIndex, OptionIndex) VALUES ('{}','{}','{}','{}')",
-		pPlayer->Account()->GetID(), m_ID, LevelIndex, OptionIndex);
+	SkillDb::CreateTreeSelection(pPlayer->Account()->GetID(), m_ID, LevelIndex, OptionIndex);
 	m_TreeSelections[LevelIndex] = OptionIndex;
 
 	// message
@@ -110,7 +90,7 @@ bool CSkill::ResetTree()
 		return false;
 
 	// update & message
-	Database->Execute<DB::REMOVE>("tw_accounts_skill_tree", "WHERE UserID = '{}' AND SkillID = '{}'", pPlayer->Account()->GetID(), m_ID);
+	SkillDb::DeleteTreeSelection(pPlayer->Account()->GetID(), m_ID);
 	m_TreeSelections.clear();
 	GS()->Chat(pPlayer->GetCID(), "Skill tree for ['{}'] was reset (cost: {} SP).", Info()->GetName(), Cost);
 	return true;
@@ -171,8 +151,7 @@ void CSkill::SelectNextControlEmote()
 			m_SelectedEmoticon++;
 	}
 
-	Database->Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '{}' WHERE SkillID = '{}' AND UserID = '{}'",
-		m_SelectedEmoticon, m_ID, pPlayer->Account()->GetID());
+	SkillDb::SaveUsedByEmoticon(m_ID, pPlayer->Account()->GetID(), m_SelectedEmoticon);
 }
 
 bool CSkill::Use()
@@ -543,7 +522,7 @@ bool CSkill::Upgrade()
 	// update state learned
 	m_Learned = true;
 	m_SelectedEmoticon = -1;
-	Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, UsedByEmoticon) VALUES ('{}', '{}', '{}');", m_ID, pPlayer->Account()->GetID(), m_SelectedEmoticon);
+	SkillDb::CreateAccountSkill(m_ID, pPlayer->Account()->GetID(), m_SelectedEmoticon);
 	GS()->Chat(ClientID, "Learned a new skill ['{}']", Info()->GetName());
 	return true;
 }

@@ -45,9 +45,23 @@ void CSqlLostQueryLogger::LogLostQuery(const char* pReason, const char* pType, c
 	if(!m_File)
 		return;
 
+	// Keep every record on one line even if a query contains control characters.
+	// The caller redacts SQL literals; this logger also bounds and sanitizes the
+	// text so a malformed/dynamic statement cannot forge log entries.
+	constexpr size_t MAX_QUERY_LOG_LENGTH = 4096;
+	std::string SafeQuery = Query.substr(0, MAX_QUERY_LOG_LENGTH);
+	for(char& c : SafeQuery)
+	{
+		const auto Byte = static_cast<unsigned char>(c);
+		if(Byte < 0x20 || Byte == 0x7f)
+			c = ' ';
+	}
+	if(Query.size() > MAX_QUERY_LOG_LENGTH)
+		SafeQuery.append("...");
+
 	char aTimestamp[64];
 	str_timestamp(aTimestamp, sizeof(aTimestamp));
-	const std::string line = fmt_default("[{}] {} {}: {}", aTimestamp, pReason, pType, Query);
+	const std::string line = fmt_default("[{}] {} {}: {}", aTimestamp, pReason, pType, SafeQuery);
 	io_write(m_File, line.c_str(), line.size());
 	io_write_newline(m_File);
 	io_flush(m_File);

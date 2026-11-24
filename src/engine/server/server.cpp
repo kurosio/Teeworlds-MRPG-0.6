@@ -1,4 +1,4 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <cstdint>
 
@@ -9,6 +9,7 @@
 #include <engine/engine.h>
 #include <engine/map.h>
 #include <engine/server.h>
+#include <engine/server/async.h>
 #include <engine/storage.h>
 
 #include <generated/version.h>
@@ -28,7 +29,6 @@
 #include "register.h"
 #include "server.h"
 
-#include "sqlite3/sqlite_handler.h"
 
 #if defined(CONF_FAMILY_WINDOWS)
 #define WIN32_LEAN_AND_MEAN
@@ -2170,8 +2170,8 @@ int CServer::Run(ILogger* pLogger)
 					}
 				}
 
-				// async safety only by server tick
-				CConectionPool::ProcessCallbacks();
+				// database completions run on the game thread only, from here
+				Async::RunMainThreadTasks();
 
 				// game server tick
 				MultiWorlds()->GetWorld(INITIALIZER_WORLD_ID)->GameServer()->OnTickGlobal();
@@ -2657,13 +2657,13 @@ void CServer::InitBaseAccounts()
 	if(!m_vBaseAccounts.empty())
 		return;
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Nick, Rating", "tw_accounts_data");
-	m_vBaseAccounts.reserve(pRes->rowsCount() + 10000);
-	while(pRes->next())
+	auto Accounts = Db::Query(Db::KindOfTable("tw_accounts_data"), "SELECT ID, Nick, Rating FROM tw_accounts_data").Result();
+	m_vBaseAccounts.reserve(Accounts.RowCount() + 10000);
+	while(Accounts.Next())
 	{
-		const int UID = pRes->getInt("ID");
-		const auto Nick = pRes->getString("Nick");
-		const auto Rating = pRes->getInt("Rating");
+		const int UID = Accounts.GetInt("ID");
+		const auto Nick = Accounts.GetString("Nick");
+		const auto Rating = Accounts.GetInt("Rating");
 		UpdateAccountBase(UID, Nick, Rating);
 	}
 }

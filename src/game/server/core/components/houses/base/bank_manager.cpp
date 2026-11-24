@@ -1,4 +1,5 @@
 #include "bank_manager.h"
+#include <components/houses/house_db.h>
 #include <game/server/gamecontext.h>
 
 CGS* CBankManager::GS() const
@@ -27,9 +28,7 @@ void CBankManager::Add(int Value)
 
 	// update database
 	m_Bank += Value;
-	Database->Execute<DB::UPDATE>(m_pHouse->GetTableName(),
-		"Bank = '{}' WHERE ID = '{}'",
-		m_Bank, m_pHouse->GetID());
+	HouseDb::SaveBank(m_pHouse->GetID(), m_Bank.to_string());
 	GS()->Chat(pPlayer->GetCID(), "You put '{} gold' in the safe, now '{}'!", Value, m_Bank);
 }
 
@@ -50,9 +49,7 @@ void CBankManager::Take(int Value)
 	{
 		m_Bank -= Value;
 		pPlayer->Account()->AddGold(Value);
-		Database->Execute<DB::UPDATE>(m_pHouse->GetTableName(),
-			"Bank = '{}' WHERE ID = '{}'",
-			m_Bank, m_pHouse->GetID());
+		HouseDb::SaveBank(m_pHouse->GetID(), m_Bank.to_string());
 		GS()->Chat(ClientID, "You take '{} gold' in the safe '{}'!", Value, m_Bank);
 	}
 }
@@ -66,8 +63,6 @@ bool CBankManager::Spend(int Value)
 
 	// update
 	m_Bank -= Value;
-	Database->Execute<DB::UPDATE>(m_pHouse->GetTableName(),
-		"Bank = '{}' WHERE ID = '{}'",
-		m_Bank, m_pHouse->GetID());
+	HouseDb::SaveBank(m_pHouse->GetID(), m_Bank.to_string());
 	return true;
 }

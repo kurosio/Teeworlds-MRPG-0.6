@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "entities/waiting_door.h"
+#include "dungeon_db.h"
 #include "dungeon.h"
 
 #include <game/server/core/balance/balance.h>
@@ -356,20 +357,8 @@ void CGameControllerDungeon::SaveDungeonRecord(const CPlayer* pPlayer) const
 	const int AccountID = pPlayer->Account()->GetID();
 	const int DungeonID = m_pDungeon->GetID();
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records",
-		"WHERE UserID = '{}' AND DungeonID = '{}' ORDER BY Time ASC LIMIT 1", AccountID, DungeonID);
-
-	if(!pRes->next())
-	{
-		Database->Execute<DB::INSERT>("tw_dungeons_records", "(UserID, DungeonID, Time) VALUES ('{}', '{}', '{}')",
-			AccountID, DungeonID, FinishTime);
-		return;
-	}
-
-	const int BestTime = pRes->getInt("Time");
-	if(FinishTime < BestTime)
-	{
-		const int RecordID = pRes->getInt("ID");
-		Database->Execute<DB::UPDATE>("tw_dungeons_records", "Time = '{}' WHERE ID = '{}'", FinishTime, RecordID);
-	}
+	// The best time is improved and the record is created when there is none yet,
+	// so both statements can be sent without reading the current record first.
+	DungeonDb::ImproveRecord(AccountID, DungeonID, FinishTime);
+	DungeonDb::CreateRecordIfMissing(AccountID, DungeonID, FinishTime);
 }

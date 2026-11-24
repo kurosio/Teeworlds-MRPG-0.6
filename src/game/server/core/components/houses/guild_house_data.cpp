@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "guild_house_data.h"
 
+#include <components/guilds/guild_db.h>
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
@@ -91,7 +92,7 @@ bool CGuildHouse::ExtendRentDays(int Days)
 	if(m_pGuild->GetBankManager()->Spend(GetRentPrice() * Days))
 	{
 		m_RentEndTimestamp = AddRentDaysToTimestamp(m_RentEndTimestamp, Days);
-		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '{}' WHERE ID = '{}'", m_RentEndTimestamp, m_ID);
+		GuildDb::SaveHouseRentDays(m_RentEndTimestamp, m_ID);
 		return true;
 	}
 
@@ -107,7 +108,7 @@ bool CGuildHouse::ReduceRentDays(int Days)
 
 	// reduce rent days
 	m_RentEndTimestamp = maximum(time(nullptr), m_RentEndTimestamp - (time_t)(clamp(Days, 1, DaysLeft) * s_SecondsPerRentDay));
-	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '{}' WHERE ID = '{}'", m_RentEndTimestamp, m_ID);
+	GuildDb::SaveHouseRentDays(m_RentEndTimestamp, m_ID);
 	return true;
 }
 

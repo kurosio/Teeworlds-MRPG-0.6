@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "quest_manager.h"
+#include "quest_db.h"
 
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
@@ -136,7 +137,7 @@ bool CPlayerQuest::Accept(int StartStep)
 	SetNewState(QuestState::Accepted);
 	m_Step = maximum(1, StartStep);
 	m_Datafile.Create();
-	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('{}', '{}', '{}')", m_ID, pPlayer->Account()->GetID(), (int)m_State);
+	QuestDb::CreateAccountQuest(m_ID, pPlayer->Account()->GetID(), (int)m_State);
 
 	// message about quest accept state
 	if(Info()->HasFlag(QUEST_FLAG_TUTORIAL))
@@ -199,7 +200,7 @@ void CPlayerQuest::Reset()
 	m_Step = 1;
 	SetNewState(QuestState::NoAccepted);
 	m_Datafile.Delete();
-	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '{}' AND UserID = '{}'", m_ID, pPlayer->Account()->GetID());
+	QuestDb::DeleteAccountQuest(m_ID, pPlayer->Account()->GetID());
 }
 
 void CPlayerQuest::UpdateStepProgress()
@@ -279,7 +280,7 @@ void CPlayerQuest::UpdateStepProgress()
 	// update quest state in database
 	SetNewState(QuestState::Finished);
 	m_Datafile.Delete();
-	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '{}' WHERE QuestID = '{}' AND UserID = '{}'", (int)m_State, m_ID, pPlayer->Account()->GetID());
+	QuestDb::SaveAccountQuestState(m_ID, pPlayer->Account()->GetID(), (int)m_State);
 
 	// save player stats and accept next story quest
 	GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);

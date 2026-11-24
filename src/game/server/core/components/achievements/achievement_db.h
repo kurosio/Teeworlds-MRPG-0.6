@@ -1,0 +1,11 @@
+#ifndef GAME_SERVER_CORE_COMPONENTS_ACHIEVEMENTS_ACHIEVEMENT_DB_H
+#define GAME_SERVER_CORE_COMPONENTS_ACHIEVEMENTS_ACHIEVEMENT_DB_H
+
+#include <engine/server/db/db_async.h>
+
+namespace AchievementDb
+{
+	Db::CResultSet ListAchievements();
+}
+
+#endif // GAME_SERVER_COMPONENT_ACHIEVEMENTS_ACHIEVEMENT_DB_H

@@ -1,4 +1,4 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_CORE_TEMPLATE_UTILS_H
 #define GAME_SERVER_CORE_TEMPLATE_UTILS_H
@@ -489,19 +489,26 @@ namespace mystd
 			}
 			catch(const nlohmann::json::parse_error& e)
 			{
-				dbg_msg("[json parse] Invalid json: %s", e.what());
+				// The size and the opening bytes tell a truncated document apart
+				// from two documents that were put one after the other.
+				dbg_msg("json", "[json parse] Invalid json (%zu bytes, begins '%.*s'): %s",
+					Data.size(), (int)std::min<size_t>(Data.size(), 48), Data.c_str(), e.what());
 			}
+			// A document that parses but does not hold what the callback expects
+			// (a missing key, a value of the wrong type) is bad data, not a bug in
+			// the server: it is reported and dropped. Trapping here would let one
+			// malformed row or file take the whole server down while it starts.
 			catch(const nlohmann::json::exception& e)
 			{
-				dbg_assert(false, fmt_default("[json parse] JSON library exception: {}", e.what()).c_str());
+				dbg_msg("json", "[json parse] Invalid json content: %s", e.what());
 			}
 			catch(const std::exception& e)
 			{
-				dbg_assert(false, fmt_default("[json parse] Standard exception during processing: {}", e.what()).c_str());
+				dbg_msg("json", "[json parse] Failed to apply json: %s", e.what());
 			}
 			catch(...)
 			{
-				dbg_assert(false, "[json parse] Unknown non-standard exception during processing.");
+				dbg_msg("json", "[json parse] Failed to apply json: unknown exception");
 			}
 
 			return true;

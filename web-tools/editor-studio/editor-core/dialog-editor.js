@@ -1,7 +1,7 @@
 (() => {
   /**
    * Форматы реплики — подстановки, которые игровой сервер заменяет в тексте
-   * (`src/game/server/core/components/Bots/DialogsData.cpp`):
+   * (`src/game/server/core/components/bots/dialogs_data.cpp`):
    *   <bot_12> <item_31> <world_3> — имя записи по её ID;
    *   <player> <time> <here> <eidolon> — данные игрока в момент показа.
    */

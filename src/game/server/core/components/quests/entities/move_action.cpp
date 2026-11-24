@@ -1,4 +1,4 @@
-#include "game/server/core/components/Bots/BotData.h"
+#include "game/server/core/components/bots/bot_data.h"
 #include "move_action.h"
 #include "dir_navigator.h"
 

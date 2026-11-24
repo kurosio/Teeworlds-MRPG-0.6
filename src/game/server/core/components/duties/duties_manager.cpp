@@ -1,4 +1,5 @@
 #include "duties_manager.h"
+#include "duties_db.h"
 
 #include <engine/storage.h>
 #include <game/server/gamecontext.h>
@@ -8,14 +9,14 @@
 
 void CDutiesManager::OnPreInit()
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons");
-	while(pRes->next())
+	auto Dungeons = DutiesDb::ListDungeons();
+	while(Dungeons.Next())
 	{
-		const int ID = pRes->getInt("ID");
-		auto WaitingDoorPos = vec2(pRes->getInt("DoorX"), pRes->getInt("DoorY"));
-		auto WorldID = pRes->getInt("WorldID");
-		auto Scenario = pRes->getJson("Scenario");
-		auto TimeLimit = pRes->getInt("TimeLimit");
+		const int ID = Dungeons.GetInt("ID");
+		auto WaitingDoorPos = vec2(Dungeons.GetInt("DoorX"), Dungeons.GetInt("DoorY"));
+		auto WorldID = Dungeons.GetInt("WorldID");
+		auto Scenario = Dungeons.GetJson("Scenario");
+		auto TimeLimit = Dungeons.GetInt("TimeLimit");
 
 		auto* pDungeon = CDungeonData::CreateElement(ID);
 		pDungeon->Init(WaitingDoorPos, WorldID, Scenario, TimeLimit);
@@ -36,8 +37,10 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// dungeons
 		VoteWrapper VDungeon(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262C Dungeons ({})", GetWorldsCountByType(WorldType::Dungeon));
-		if(const auto BestPlayer = GetBestDungeonPlayer())
+		if(const auto& BestPlayer = GetBestDungeonPlayer())
 			VDungeon.Add("Best player: {~} with {} points.", BestPlayer->first, BestPlayer->second);
+		else if(VDungeon.WaitLoad(BestDungeonLoad()))
+			VDungeon.Add("Best player: loading ...");
 		else
 			VDungeon.Add("Best player: not found yet.");
 		for(const auto* pDungeon : CDungeonData::Data())
@@ -91,8 +94,10 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// Rhythm
 		VoteWrapper VRhythm(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u266C Rhythm ({})", GetWorldsCountByType(WorldType::Rhythm));
-		if(const auto BestPlayer = GetBestRhythmPlayer())
+		if(const auto& BestPlayer = GetBestRhythmPlayer())
 			VRhythm.Add("Best player: {~} with {} points.", BestPlayer->first, BestPlayer->second);
+		else if(VRhythm.WaitLoad(BestRhythmLoad()))
+			VRhythm.Add("Best player: loading ...");
 		else
 			VRhythm.Add("Best player: not found yet.");
 		for(int i = 0; i < Server()->GetWorldsSize(); i++)
@@ -398,17 +403,20 @@ void CDutiesManager::ShowDungeonInfo(CPlayer* pPlayer, CDungeonData* pDungeon) c
 
 	// records
 	VoteWrapper VRecords(ClientID, VWF_SEPARATE_OPEN| VWF_STYLE_SIMPLE, "Records of passing");
-	auto vTopRecords = Core()->GetDungeonTopList(pDungeon->GetID(), 5);
+	const auto& vTopRecords = Core()->GetDungeonTopList(pDungeon->GetID(), 5);
 	if(vTopRecords.empty())
 	{
-		VRecords.Add("No records yet.");
+		if(VRecords.WaitLoad(CMmoController::DungeonLoad(pDungeon->GetID(), 5)))
+			VRecords.Add("Loading ...");
+		else
+			VRecords.Add("No records yet.");
 	}
-	else for(auto& [Pos, RowData] : vTopRecords)
+	else for(const auto& [Pos, RowData] : vTopRecords)
 	{
 		char aBuf[128];
-		auto Time = RowData.Data["Time"].to_int();
+		auto Time = RowData.m_Value.to_int();
 		str_time(Time, TIME_MINS, aBuf, sizeof(aBuf));
-		VRecords.Add("{}. {~} - {}.", Pos, RowData.Name, aBuf);
+		VRecords.Add("{}. {~} - {}.", Pos, RowData.m_Name, aBuf);
 	}
 }
 
@@ -480,7 +488,7 @@ void CDutiesManager::ShowRhythmInfo(CPlayer* pPlayer, int WorldID) const
 	const auto ClientsNum = Server()->GetClientsCountByWorld(WorldID);
 	const char* pStatus = (ClientsNum > 0 ? "Active" : "Waiting");
 	const char* pName = Server()->GetWorldName(WorldID);
-	const auto vDifficulties = GetRhythmDifficulties(WorldID);
+	const auto& vDifficulties = GetRhythmDifficulties(WorldID);
 	const bool IsDifficultyLocked = ClientsNum > 0;
 	const std::string LockedDifficulty = CGameControllerRhythm::GetSelectedDifficultyForWorld(WorldID);
 
@@ -501,13 +509,18 @@ void CDutiesManager::ShowRhythmInfo(CPlayer* pPlayer, int WorldID) const
 	{
 		// add record list
 		VoteWrapper VOptions(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Rhythm [{~}]", Difficulty);
-		auto vTopRecords = Core()->GetRhythmTopList(WorldID, Difficulty, 3);
+		const auto& vTopRecords = Core()->GetRhythmTopList(WorldID, Difficulty, 3);
 		if(vTopRecords.empty())
-			VOptions.Add("No records yet.");
+		{
+			if(VOptions.WaitLoad(CMmoController::RhythmLoad(WorldID, Difficulty, 3)))
+				VOptions.Add("Loading ...");
+			else
+				VOptions.Add("No records yet.");
+		}
 		else
 		{
-			for(auto& [Pos, RowData] : vTopRecords)
-				VOptions.Add("{}. {~} - {} score.", Pos, RowData.Name, RowData.Data["Score"].to_int());
+			for(const auto& [Pos, RowData] : vTopRecords)
+				VOptions.Add("{}. {~} - {} score.", Pos, RowData.m_Name, RowData.m_Value.to_int());
 		}
 
 		// lock difficulty if another is active
@@ -561,8 +574,12 @@ void CDutiesManager::ShowMiniGamesInfo(CPlayer* pPlayer, int WorldID) const
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
-std::vector<std::string> CDutiesManager::GetRhythmDifficulties(int WorldID) const
+const std::vector<std::string>& CDutiesManager::GetRhythmDifficulties(int WorldID) const
 {
+	// read once per world and kept: the files do not change while the server runs
+	if(const auto it = m_DifficultiesByWorld.find(WorldID); it != m_DifficultiesByWorld.end())
+		return it->second;
+
 	const std::string_view MapName = Server()->GetWorldName(WorldID);
 	struct SScanData
 	{
@@ -601,31 +618,73 @@ std::vector<std::string> CDutiesManager::GetRhythmDifficulties(int WorldID) cons
 	if(vDifficulties.empty())
 		vDifficulties.emplace_back("Default");
 
-	return vDifficulties;
+	return m_DifficultiesByWorld.emplace(WorldID, std::move(vDifficulties)).first->second;
 }
 
-std::optional<std::pair<std::string, int>> CDutiesManager::GetBestDungeonPlayer() const
+CVoteLoad CDutiesManager::BestDungeonLoad()
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>(
-		"UserID, SUM(CASE WHEN Time > 0 THEN GREATEST(1, 10000 / Time) ELSE 10000 END) AS Points",
-		"tw_dungeons_records", "GROUP BY UserID ORDER BY Points DESC LIMIT 1");
-	if(!pRes->next())
-		return std::nullopt;
-
-	const int UserID = pRes->getInt("UserID");
-	const int Points = pRes->getInt("Points");
-	return std::make_pair(std::string(GS()->Server()->GetAccountNickname(UserID)), Points);
+	return CVoteLoad("best_dungeon");
 }
 
-std::optional<std::pair<std::string, int>> CDutiesManager::GetBestRhythmPlayer() const
+CVoteLoad CDutiesManager::BestRhythmLoad()
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("UserID, SUM(Score) AS Points", "tw_rhythm_records", "GROUP BY UserID ORDER BY Points DESC LIMIT 1");
-	if(!pRes->next())
-		return std::nullopt;
+	return CVoteLoad("best_rhythm");
+}
 
-	const int UserID = pRes->getInt("UserID");
-	const int Points = pRes->getInt("Points");
-	return std::make_pair(std::string(GS()->Server()->GetAccountNickname(UserID)), Points);
+bool CDutiesManager::NeedBest(const SBestPlayer& Cache, const CVoteLoad& Load) const
+{
+	// the value stays valid for a while, so opening the menu again does not query again
+	constexpr int LifetimeSeconds = 20;
+	if(Cache.m_Loaded && GS()->Server()->Tick() - Cache.m_Stamp < LifetimeSeconds * GS()->Server()->TickSpeed())
+		return false;
+
+	return Load.Begin();
+}
+
+void CDutiesManager::SetBest(SBestPlayer& Cache, std::optional<std::pair<std::string, int>>&& Value, const CVoteLoad& Load) const
+{
+	Cache.m_Value = std::move(Value);
+	Cache.m_Stamp = GS()->Server()->Tick();
+	Cache.m_Loaded = true;
+
+	// the menus that showed the waiting state are drawn again with the value
+	Load.Finish();
+}
+
+const std::optional<std::pair<std::string, int>>& CDutiesManager::GetBestDungeonPlayer() const
+{
+	const CVoteLoad Load = BestDungeonLoad();
+	if(NeedBest(m_BestDungeon, Load))
+	{
+		DutiesDb::ReadBestDungeonPlayer()
+			.Then([this, Load](Db::CResultSet&& Best)
+		{
+			std::optional<std::pair<std::string, int>> Value {};
+			if(Best.HasRows())
+				Value = std::make_pair(std::string(Instance::Server()->GetAccountNickname(Best.GetInt("UserID"))), Best.GetInt("Points"));
+			SetBest(m_BestDungeon, std::move(Value), Load);
+		});
+	}
+
+	return m_BestDungeon.m_Value;
+}
+
+const std::optional<std::pair<std::string, int>>& CDutiesManager::GetBestRhythmPlayer() const
+{
+	const CVoteLoad Load = BestRhythmLoad();
+	if(NeedBest(m_BestRhythm, Load))
+	{
+		DutiesDb::ReadBestRhythmPlayer()
+			.Then([this, Load](Db::CResultSet&& Best)
+		{
+			std::optional<std::pair<std::string, int>> Value {};
+			if(Best.HasRows())
+				Value = std::make_pair(std::string(Instance::Server()->GetAccountNickname(Best.GetInt("UserID"))), Best.GetInt("Points"));
+			SetBest(m_BestRhythm, std::move(Value), Load);
+		});
+	}
+
+	return m_BestRhythm.m_Value;
 }
 
 CDungeonData* CDutiesManager::GetDungeonByID(int DungeonID) const

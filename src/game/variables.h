@@ -215,41 +215,46 @@ MACRO_CONFIG_INT(SvRageQuitDecreaseRating, sv_rage_quit_decrease_rating, 50, 10,
 MACRO_CONFIG_INT(SvHighlightExperts, sv_highlight_experts, 1, 0, 1, CFGFLAG_SERVER, "Highlight by aura experts professions.")
 
 
-// mysql: two connections. The shared database goes through the bridge
-// (other/sql_bridge/mysql_bridge.py): SELECTs are served by the local replica,
-// writes go to the primary over the WAN. The local database is a plain direct
-// connection without the bridge and without replication.
-MACRO_CONFIG_STR(SvMySqlHost, sv_sql_host, 32, "localhost", CFGFLAG_SERVER, "MySQL shared host (bridge)")
-MACRO_CONFIG_STR(SvMySqlDatabaseShared, sv_sql_database_shared, 32, "mrpg_shared", CFGFLAG_SERVER, "MySQL shared database: content, accounts and records, replicated between the servers")
-MACRO_CONFIG_STR(SvMySqlLogin, sv_sql_login, 32, "root", CFGFLAG_SERVER, "MySQL shared login")
-MACRO_CONFIG_STR(SvMySqlPassword, sv_sql_password, 32, "", CFGFLAG_SERVER, "MySQL shared password")
-MACRO_CONFIG_INT(SvMySqlPort, sv_sql_port, 3306, 0, 65000, CFGFLAG_SERVER, "MySQL shared port (bridge)")
-MACRO_CONFIG_INT(SvMySqlPoolSize, sv_sql_pool_size, 2, 1, 12, CFGFLAG_SERVER, "MySQL shared pool size (connections through the bridge)")
-MACRO_CONFIG_INT(SvMySqlUseTls, sv_sql_use_tls, 0, 0, 1, CFGFLAG_SERVER, "Enable TLS/SSL for the shared connection (0 = off, 1 = on; the bridge does not terminate TLS, so 0 when going through it)")
+// The database layer has exactly two required endpoints and pools: the remote
+// shared authority and this server's local database. Neither endpoint is a proxy
+// for the other; table ownership selects one of them explicitly.
+MACRO_CONFIG_STR(SvMySqlHost, sv_sql_host, 32, "localhost", CFGFLAG_SERVER, "Remote shared MariaDB host")
+MACRO_CONFIG_STR(SvMySqlDatabaseShared, sv_sql_database_shared, 32, "mrpg_shared", CFGFLAG_SERVER, "Remote shared database: content, accounts and records")
+MACRO_CONFIG_STR(SvMySqlLogin, sv_sql_login, 32, "mrpg_user", CFGFLAG_SERVER | CFGFLAG_SECRET | CFGFLAG_NONTEEHISTORIC, "Remote shared database login")
+MACRO_CONFIG_STR(SvMySqlPassword, sv_sql_password, 32, "", CFGFLAG_SERVER | CFGFLAG_SECRET | CFGFLAG_NONTEEHISTORIC, "Remote shared database password")
+MACRO_CONFIG_INT(SvMySqlPort, sv_sql_port, 3306, 1, 65000, CFGFLAG_SERVER, "Remote shared MariaDB port")
+MACRO_CONFIG_INT(SvMySqlPoolSize, sv_sql_pool_size, 4, 1, 12, CFGFLAG_SERVER, "Maximum remote shared pool connections")
+MACRO_CONFIG_INT(SvMySqlUseTls, sv_sql_use_tls, 0, 0, 1, CFGFLAG_SERVER, "Enable TLS/SSL for the remote shared database connection")
 
-// local database: direct connection, no bridge, no replica. Empty database
-// name = no local database, every query uses the shared connection. Empty
-// host = the local connection uses the shared endpoint (same server).
-MACRO_CONFIG_STR(SvMySqlLocalHost, sv_sql_local_host, 32, "", CFGFLAG_SERVER, "MySQL local host (empty = same endpoint as the shared one)")
-MACRO_CONFIG_STR(SvMySqlLocalDatabase, sv_sql_local_database, 32, "", CFGFLAG_SERVER, "MySQL local database: the tables of this server only (empty = one database)")
-MACRO_CONFIG_STR(SvMySqlLocalLogin, sv_sql_local_login, 32, "root", CFGFLAG_SERVER, "MySQL local login")
-MACRO_CONFIG_STR(SvMySqlLocalPassword, sv_sql_local_password, 32, "", CFGFLAG_SERVER, "MySQL local password")
-MACRO_CONFIG_INT(SvMySqlLocalPort, sv_sql_local_port, 3306, 0, 65000, CFGFLAG_SERVER, "MySQL local port")
+// Required direct connection to this server's own MariaDB. Empty host/database
+// is rejected at startup; it never falls back to the remote endpoint.
+MACRO_CONFIG_STR(SvMySqlLocalHost, sv_sql_local_host, 32, "127.0.0.1", CFGFLAG_SERVER, "Local MariaDB host")
+MACRO_CONFIG_STR(SvMySqlLocalDatabase, sv_sql_local_database, 32, "mrpg_local", CFGFLAG_SERVER, "Required local database for this server's state")
+MACRO_CONFIG_STR(SvMySqlLocalLogin, sv_sql_local_login, 32, "mrpg_local", CFGFLAG_SERVER | CFGFLAG_SECRET | CFGFLAG_NONTEEHISTORIC, "MySQL local login")
+MACRO_CONFIG_STR(SvMySqlLocalPassword, sv_sql_local_password, 32, "", CFGFLAG_SERVER | CFGFLAG_SECRET | CFGFLAG_NONTEEHISTORIC, "MySQL local password")
+MACRO_CONFIG_INT(SvMySqlLocalPort, sv_sql_local_port, 3306, 1, 65000, CFGFLAG_SERVER, "Local MariaDB port")
 MACRO_CONFIG_INT(SvMySqlLocalPoolSize, sv_sql_local_pool_size, 1, 1, 12, CFGFLAG_SERVER, "MySQL local pool size (direct connections)")
 MACRO_CONFIG_INT(SvMySqlLocalUseTls, sv_sql_local_use_tls, 0, 0, 1, CFGFLAG_SERVER, "Enable TLS/SSL for the local connection (0 = off, 1 = on)")
 
 // mysql retry and timeout tuning
 MACRO_CONFIG_INT(SvSqlSelectMaxRetries, sv_sql_select_max_retries, 3, 0, 10, CFGFLAG_SERVER, "MySQL max retries for SELECT tasks")
-MACRO_CONFIG_INT(SvSqlDmlMaxRetries, sv_sql_dml_max_retries, 1, 0, 10, CFGFLAG_SERVER, "MySQL max retries for INSERT/UPDATE/DELETE tasks")
 MACRO_CONFIG_INT(SvSqlRetryBaseDelayMs, sv_sql_retry_base_delay_ms, 500, 50, 5000, CFGFLAG_SERVER, "MySQL base delay (ms) for retry backoff")
-MACRO_CONFIG_INT(SvSqlConnectRetryDelayMs, sv_sql_connect_retry_delay_ms, 500, 50, 5000, CFGFLAG_SERVER, "MySQL delay (ms) before retrying connection creation")
-MACRO_CONFIG_INT(SvSqlQueueWaitTimeoutMs, sv_sql_queue_wait_timeout_ms, 1000, 100, 10000, CFGFLAG_SERVER, "MySQL enqueue wait timeout (ms) when queue is full")
+MACRO_CONFIG_INT(SvSqlRetryMaxDelayMs, sv_sql_retry_max_delay_ms, 8000, 500, 60000, CFGFLAG_SERVER, "MySQL maximum exponential delay (ms) between safe query retries")
+MACRO_CONFIG_INT(SvSqlConnectTimeoutMs, sv_sql_connect_timeout_ms, 5000, 250, 60000, CFGFLAG_SERVER, "MySQL maximum time (ms) to open one new connection, capped by the request deadline")
+MACRO_CONFIG_INT(SvSqlConnectRetryDelayMs, sv_sql_connect_retry_delay_ms, 500, 50, 5000, CFGFLAG_SERVER, "MySQL initial delay (ms) before retrying connection creation")
+MACRO_CONFIG_INT(SvSqlConnectRetryMaxDelayMs, sv_sql_connect_retry_max_delay_ms, 30000, 1000, 300000, CFGFLAG_SERVER, "MySQL maximum exponential delay (ms) between failed connection attempts")
+MACRO_CONFIG_INT(SvSqlQueueWaitTimeoutMs, sv_sql_queue_wait_timeout_ms, 5000, 100, 60000, CFGFLAG_SERVER, "MySQL wait for a free pooled connection (ms) before a query gives up")
+MACRO_CONFIG_INT(SvSqlQueryTimeoutMs, sv_sql_query_timeout_ms, 30000, 1000, 600000, CFGFLAG_SERVER, "MySQL limit (ms) of one asynchronous query, including retries")
+MACRO_CONFIG_INT(SvSqlIdlePingMs, sv_sql_idle_ping_ms, 30000, 0, 600000, CFGFLAG_SERVER, "MySQL ping a pooled connection that was idle this long before reusing it (0 = off)")
+MACRO_CONFIG_INT(SvSqlStatementTimeoutMs, sv_sql_statement_timeout_ms, 30000, 0, 600000, CFGFLAG_SERVER, "MariaDB aborts a statement that runs longer than this (0 = off); keep it below sv_sql_socket_timeout_ms")
+MACRO_CONFIG_INT(SvSqlSocketTimeoutMs, sv_sql_socket_timeout_ms, 60000, 1000, 600000, CFGFLAG_SERVER, "MySQL socket read/write timeout (ms) of one connection")
+MACRO_CONFIG_INT(SvSqlSlowStatementWarnMs, sv_sql_slow_statement_warn_ms, 1000, 0, 600000, CFGFLAG_SERVER, "Log the text of a statement that took longer than this (0 = off)")
+MACRO_CONFIG_INT(SvSqlDebug, sv_sql_debug, 0, 0, 1, CFGFLAG_SERVER, "Log detailed SQL queue, connection and transaction diagnostics (bound values are never logged)")
 
 // mysql metrics and logging
 MACRO_CONFIG_INT(SvSqlSyncSelectWarnMs, sv_sql_sync_select_warn_ms, 100, 1, 10000, CFGFLAG_SERVER, "MySQL sync SELECT warning threshold in ms")
-MACRO_CONFIG_INT(SvSqlQueueWaitWarnMs, sv_sql_queue_wait_warn_ms, 200, 1, 10000, CFGFLAG_SERVER, "MySQL queue wait warning threshold in ms")
 MACRO_CONFIG_INT(SvSqlQueueWarnSize, sv_sql_queue_warn_size, 50, 1, 10000, CFGFLAG_SERVER, "MySQL queue size warning threshold")
-MACRO_CONFIG_INT(SvSqlQueueMaxSize, sv_sql_queue_max_size, 500, 1, 100000, CFGFLAG_SERVER, "MySQL queue max size (enqueue waits when reached)")
+MACRO_CONFIG_INT(SvSqlQueueMaxSize, sv_sql_queue_max_size, 2000, 1, 100000, CFGFLAG_SERVER, "MySQL queue max size (a query is refused when the queue is full; the game thread never waits)")
 MACRO_CONFIG_STR(SvSqlFailedLogFile, sv_sql_failed_log_file, 128, "sql_failed_log.txt", CFGFLAG_SERVER, "Filename to log failed SQL queries")
 
 

@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_HOUSE_DATA_H
-#define GAME_SERVER_COMPONENT_HOUSE_DATA_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_HOUSES_HOUSE_DATA_H
+#define GAME_SERVER_CORE_COMPONENTS_HOUSES_HOUSE_DATA_H
 
 #include "base/interface_house.h"
 #include "base/bank_manager.h"
@@ -9,9 +9,8 @@
 #include "base/door_manager.h"
 #include "base/decoration_manager.h"
 
-#include <components/inventory/item_data.h>
-
 #define TW_HOUSES_TABLE "tw_houses"
+#define TW_HOUSES_DECORATION_TABLE "tw_houses_decorations"
 
 class CGS;
 class CPlayer;

@@ -1,5 +1,7 @@
 #include "prison_manager.h"
 
+#include <engine/server/async_file.h>
+#include <game/server/core/tools/db_async_context.h>
 #include <game/server/gamecontext.h>
 #include <game/server/player.h>
 
@@ -54,9 +56,9 @@ void PrisonManager::Release()
 		if(pPlayer->GetCharacter())
 			pPlayer->GetCharacter()->Die(m_ClientID, WEAPON_WORLD);
 
-		auto* pStorage = GS()->Storage();
-		const auto Filename = getFileName(pPlayer->Account()->GetID());
-		pStorage->RemoveFile(Filename.c_str(), IStorageEngine::TYPE_ABSOLUTE);
+		// the prison file is removed in the background, after any queued save
+		const std::string Filename = getFileName(pPlayer->Account()->GetID());
+		AsyncFile::Remove(GS()->Storage(), Filename.c_str(), IStorageEngine::TYPE_ABSOLUTE);
 		GS()->Chat(-1, "'{~}' has been released from prison.", GS()->Server()->ClientName(m_ClientID));
 	}
 }
@@ -109,58 +111,67 @@ void PrisonManager::PostTick()
 	GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, 50, "Remaining prison time: {} seconds.", Remaining);
 }
 
-void PrisonManager::Load()
+void PrisonManager::RegisterLoadStage()
 {
-	const auto* pPlayer = GetPlayer();
-	if(!pPlayer)
+	auto* pGS = GS();
+	const auto* pPlayer = pGS ? pGS->GetPlayer(m_ClientID) : nullptr;
+	if(!pPlayer || !pPlayer->Account())
 		return;
 
-	auto* pStorage = GS()->Storage();
-	const auto Filename = getFileName(pPlayer->Account()->GetID());
-	if(const auto File = pStorage->OpenFile(Filename.c_str(), IOFLAG_READ, IStorageEngine::TYPE_ABSOLUTE))
+	const int ClientID = m_ClientID;
+	const std::string Filename = getFileName(pPlayer->Account()->GetID());
+	IStorageEngine* pStorage = pGS->Storage();
+	pPlayer->Account()->AddLoadStage("prison", [ClientID, Filename, pStorage](CAccountData::CLoadDone Done)
 	{
-		const time_t currentTime = time(nullptr);
-		char* pResult = io_read_all_str(File);
-		io_close(File);
-
-		if(pResult)
+		auto pContext = DbAsync::MakeContext(ClientID);
+		AsyncFile::Read(pStorage, Filename.c_str(), IStorageEngine::TYPE_ABSOLUTE,
+			[pContext, Done = std::move(Done)](AsyncFile::SReadResult&& Read) mutable
 		{
-			PrisonTerm prisonTerm;
-#if defined(__GNUC__) && __WORDSIZE == 64
-			if(sscanf(pResult, "%d %ld", &prisonTerm.ImprisonmentTime, &prisonTerm.StartTime) == 2)
-#else
-			if(sscanf(pResult, "%d %lld", &prisonTerm.ImprisonmentTime, &prisonTerm.StartTime) == 2)
-#endif
+			auto* pPlayer = pContext->GetPlayer();
+			if(!pPlayer || !pPlayer->Account())
 			{
-				int elapsedTime = static_cast<int>(time(nullptr) - prisonTerm.StartTime);
-				if(elapsedTime < prisonTerm.ImprisonmentTime)
-				{
-					prisonTerm.StartTime = currentTime - elapsedTime;
-					m_PrisonTerm = prisonTerm;
-				}
+				Done(false);
+				return;
 			}
-			free(pResult);
-		}
-	}
+			if(!Read.Ok() && !Read.Missing())
+			{
+				dbg_msg("prison", "could not read account prison file: %s", Read.m_Error.c_str());
+				Done(false);
+				return;
+			}
+
+			const std::string& Content = Read.m_Content;
+			PrisonTerm Term;
+#if defined(__GNUC__) && __WORDSIZE == 64
+			const int Fields = sscanf(Content.c_str(), "%d %ld", &Term.ImprisonmentTime, &Term.StartTime);
+#else
+			const int Fields = sscanf(Content.c_str(), "%d %lld", &Term.ImprisonmentTime, &Term.StartTime);
+#endif
+			const int ElapsedTime = static_cast<int>(time(nullptr) - Term.StartTime);
+			if(Fields == 2 && ElapsedTime < Term.ImprisonmentTime)
+			{
+				Term.StartTime = time(nullptr) - ElapsedTime;
+				pPlayer->Account()->GetPrisonManager().m_PrisonTerm = Term;
+			}
+			Done(true);
+		});
+	});
 }
 
 void PrisonManager::Save() const
 {
 	const auto* pPlayer = GetPlayer();
-	if(!pPlayer)
+	if(!pPlayer || !pPlayer->Account())
 		return;
 
-	auto* pStorage = GS()->Storage();
-	const auto Filename = getFileName(pPlayer->Account()->GetID());
-	if(const auto File = pStorage->OpenFile(Filename.c_str(), IOFLAG_WRITE, IStorageEngine::TYPE_ABSOLUTE))
-	{
-		char buffer[128];
+	// The line is built here; the write leaves the game thread at once.
+	char aBuffer[128];
 #if defined(__GNUC__) && __WORDSIZE == 64
-		str_format(buffer, sizeof(buffer), "%d %ld\n", m_PrisonTerm.ImprisonmentTime, m_PrisonTerm.StartTime);
+	str_format(aBuffer, sizeof(aBuffer), "%d %ld\n", m_PrisonTerm.ImprisonmentTime, m_PrisonTerm.StartTime);
 #else
-		str_format(buffer, sizeof(buffer), "%d %lld\n", m_PrisonTerm.ImprisonmentTime, m_PrisonTerm.StartTime);
+	str_format(aBuffer, sizeof(aBuffer), "%d %lld\n", m_PrisonTerm.ImprisonmentTime, m_PrisonTerm.StartTime);
 #endif
-		io_write(File, buffer, str_length(buffer));
-		io_close(File);
-	}
+
+	const std::string Filename = getFileName(pPlayer->Account()->GetID());
+	AsyncFile::Write(GS()->Storage(), Filename.c_str(), IStorageEngine::TYPE_ABSOLUTE, std::string(aBuffer));
 }

@@ -1,4 +1,5 @@
 #include "warehouse_manager.h"
+#include "warehouse_db.h"
 
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
@@ -9,17 +10,17 @@ constexpr int g_UpdateTextLifeTime = SERVER_TICK_SPEED * 3;
 
 void CWarehouseManager::OnPreInit()
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_WAREHOUSE_TABLE);
-	while(pRes->next())
+	auto Warehouses = WarehouseDb::ListWarehouses();
+	while(Warehouses.Next())
 	{
-		const auto ID = pRes->getInt("ID");
-		const auto Name = pRes->getString("Name");
-		const auto TypeSet = DBSet(pRes->getString("Type"));
-		const auto TradesStr = pRes->getString("Trades");
-		const auto StorageData = pRes->getJson("StorageData");
-		const auto Pos = vec2((float)pRes->getInt("PosX"), (float)pRes->getInt("PosY"));
-		const auto Currency = pRes->getInt("Currency");
-		const auto WorldID = pRes->getInt("WorldID");
+		const auto ID = Warehouses.GetInt("ID");
+		const auto Name = Warehouses.GetString("Name");
+		const auto TypeSet = DBSet(Warehouses.GetString("Type"));
+		const auto TradesStr = Warehouses.GetString("Trades");
+		const auto StorageData = Warehouses.GetJson("StorageData");
+		const auto Pos = vec2((float)Warehouses.GetInt("PosX"), (float)Warehouses.GetInt("PosY"));
+		const auto Currency = Warehouses.GetInt("Currency");
+		const auto WorldID = Warehouses.GetInt("WorldID");
 
 		CWarehouse::CreateElement(ID)->Init(Name, TypeSet, TradesStr, StorageData, Pos, Currency, WorldID);
 	}

@@ -5,7 +5,7 @@
  * панель форматов над полем, всплывающий выбор записи, чипы подстановок под
  * полем и счётчик длины. Подстановки — те, что заменяет игровой сервер:
  * `<bot_12>`, `<item_31>`, `<world_3>`, `<player>`, `<time>`, `<here>`,
- * `<eidolon>` (src/game/server/core/components/Bots/DialogsData.cpp).
+ * `<eidolon>` (src/game/server/core/components/bots/dialogs_data.cpp).
  *
  * Нужен пакет jsdom (`npm install --no-save jsdom`); без него тест пропускается.
  */
