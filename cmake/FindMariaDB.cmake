@@ -1,6 +1,5 @@
 # Locate MariaDB Connector/C and Connector/C++.
-# Prefer the repository's versioned bundle when requested, then fall back to
-# an installed copy (or the reverse when PREFER_BUNDLED_LIBS is OFF).
+# Prefer a system installation; use the repository's versioned bundle as fallback.
 
 set(MARIADB_BUNDLED_ROOT "${PROJECT_SOURCE_DIR}/libraries/mariadb")
 set(MARIADB_BUNDLED_LIBDIR "${MARIADB_BUNDLED_ROOT}/${TARGET_OS}/lib${TARGET_BITS}")
@@ -41,17 +40,13 @@ if(NOT CMAKE_CROSSCOMPILING)
   endif()
 endif()
 
-if(PREFER_BUNDLED_LIBS)
-  set(_MARIADB_LIBRARY_HINTS "${MARIADB_BUNDLED_LIBDIR}" ${MARIADB_CONFIG_LIBRARY_PATH})
-  set(_MARIADB_LIBRARY_PATHS ${MARIADB_CONFIG_LIBRARY_PATH})
-  set(_MARIADB_INCLUDE_HINTS "${MARIADB_BUNDLED_INCLUDEDIR}" ${MARIADB_CONFIG_INCLUDE_DIRS})
-  set(_MARIADB_INCLUDE_PATHS ${MARIADB_CONFIG_INCLUDE_DIRS})
-else()
-  set(_MARIADB_LIBRARY_HINTS ${MARIADB_CONFIG_LIBRARY_PATH})
-  set(_MARIADB_LIBRARY_PATHS "${MARIADB_BUNDLED_LIBDIR}" ${MARIADB_CONFIG_LIBRARY_PATH})
-  set(_MARIADB_INCLUDE_HINTS ${MARIADB_CONFIG_INCLUDE_DIRS})
-  set(_MARIADB_INCLUDE_PATHS "${MARIADB_BUNDLED_INCLUDEDIR}" ${MARIADB_CONFIG_INCLUDE_DIRS})
-endif()
+# Prefer a system Connector/C++ installation. `mariadb_config` supplies precise
+# system hints when available; CMake's normal system search paths are checked
+# before the bundled fallback paths listed below.
+set(_MARIADB_LIBRARY_HINTS ${MARIADB_CONFIG_LIBRARY_PATH})
+set(_MARIADB_LIBRARY_PATHS "${MARIADB_BUNDLED_LIBDIR}")
+set(_MARIADB_INCLUDE_HINTS ${MARIADB_CONFIG_INCLUDE_DIRS})
+set(_MARIADB_INCLUDE_PATHS "${MARIADB_BUNDLED_INCLUDEDIR}")
 
 find_library(MARIADB_CORE_LIBRARY
   NAMES mariadb mariadbclient libmariadb libmariadbclient

@@ -770,8 +770,15 @@ if(SERVER_COMPILE)
   add_library(mmoteeworlds_db STATIC ${SERVER_DB_SRC})
   target_include_directories(mmoteeworlds_db
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
-    PRIVATE ${MARIADB_INCLUDE_DIRS}
   )
+  # MariaDB Connector/C++ is third-party code. Treat its headers as system
+  # headers for GCC/Clang so project-wide -Werror does not promote their
+  # warnings. Keep a normal /I include on MSVC for broad Visual Studio support.
+  if(MSVC)
+    target_include_directories(mmoteeworlds_db PRIVATE ${MARIADB_INCLUDE_DIRS})
+  else()
+    target_include_directories(mmoteeworlds_db SYSTEM PRIVATE ${MARIADB_INCLUDE_DIRS})
+  endif()
   target_link_libraries(mmoteeworlds_db PUBLIC ${MARIADB_LIBRARIES})
   list(APPEND TARGETS_OWN mmoteeworlds_db)
 
