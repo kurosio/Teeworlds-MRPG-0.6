@@ -13,6 +13,7 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <typeinfo>
 
 namespace Db
 {
@@ -81,32 +82,44 @@ namespace Db
 
 		// Copies one result set into detached rows. Nothing of the client outlives
 		// this call, so the result can travel to another thread.
-		void CopyResult(sql::ResultSet* pResult, CResultSet& Out)
+		void CopyResult(sql::ResultSet* pResult, CResultSet& Out, const char*& pStage, uint32_t& ColumnIndex)
 		{
+			pStage = "metadata";
 			sql::ResultSetMetaData* pMeta = pResult->getMetaData();
 			const uint32_t Columns = pMeta ? pMeta->getColumnCount() : 0;
 
 			std::vector<std::string> vColumns;
 			vColumns.reserve(Columns);
 			for(uint32_t i = 1; i <= Columns; ++i)
+			{
+				ColumnIndex = i;
+				pStage = "metadata_column";
 				vColumns.emplace_back(pMeta->getColumnLabel(i).c_str());
+			}
 			Out.SetColumns(std::move(vColumns));
 
+			pStage = "fetch_row";
 			while(pResult->next())
 			{
 				std::vector<std::optional<std::string>> vRow;
 				vRow.reserve(Columns);
 				for(uint32_t i = 1; i <= Columns; ++i)
 				{
+					ColumnIndex = i;
+					pStage = "read_null";
 					if(pResult->isNull(static_cast<int32_t>(i)))
 						vRow.emplace_back(std::nullopt);
 					else
 					{
+						pStage = "read_column";
 						const auto Value = pResult->getString(static_cast<int32_t>(i));
+						pStage = "copy_column";
 						vRow.emplace_back(std::string(Value.c_str(), Value.length()));
 					}
 				}
+				pStage = "append_row";
 				Out.AddRow(std::move(vRow));
+				pStage = "fetch_row";
 			}
 		}
 
@@ -170,8 +183,11 @@ namespace Db
 				if(ExpectedBindings != Bindings.Values().size())
 					return CResultSet::Failure(SError { 0, "HY093", fmt_default("SQL placeholder count ({}) does not match binding count ({})", ExpectedBindings, Bindings.Values().size()) });
 
+				const char *pStage = "prepare";
+				uint32_t ColumnIndex = 0;
 				try
 				{
+					pStage = "copy_query";
 					const std::string Query(Sql);
 					CResultSet Out;
 					bool HasResult = false;
@@ -184,27 +200,35 @@ namespace Db
 						HasResult = Result;
 						if(!Result)
 						{
+							pStage = "update_count";
 							UpdateCount = pStmt->getUpdateCount();
 							return true;
 						}
 
+						pStage = "get_result";
 						std::unique_ptr<sql::ResultSet> pResult(pStmt->getResultSet());
 						if(pResult)
-							CopyResult(pResult.get(), Out);
+							CopyResult(pResult.get(), Out, pStage, ColumnIndex);
+						pStage = "drain_results";
 						return DrainResults(pStmt, DrainError);
 					};
 
 					bool OutcomeReady = false;
 					if(Bindings.Empty())
 					{
+						pStage = "create_statement";
 						std::unique_ptr<sql::Statement> pStmt(m_pConnection->createStatement());
+						pStage = "execute_statement";
 						OutcomeReady = ReadOutcome(pStmt.get(), pStmt->execute(Query.c_str()));
 					}
 					else
 					{
+						pStage = "prepare_statement";
 						std::unique_ptr<sql::PreparedStatement> pStmt(m_pConnection->prepareStatement(Query.c_str()));
 						std::vector<std::unique_ptr<std::istringstream>> vBlobStreams;
+						pStage = "bind_parameters";
 						BindParameters(pStmt.get(), Bindings, vBlobStreams);
+						pStage = "execute_prepared";
 						OutcomeReady = ReadOutcome(pStmt.get(), pStmt->execute());
 					}
 					if(!OutcomeReady)
@@ -219,6 +243,7 @@ namespace Db
 					{
 						int64_t InsertId = 0;
 						SError Error;
+						pStage = "last_insert_id";
 						if(!ReadLastInsertId(InsertId, Error))
 							return CResultSet::Failure(std::move(Error));
 						Out.SetInsertId(InsertId);
@@ -232,8 +257,11 @@ namespace Db
 						m_Usable = false;
 					return CResultSet::Failure(Error);
 				}
-				catch(const std::exception&)
+				catch(const std::exception& e)
 				{
+					m_Usable = false;
+					dbg_msg("SQL", "Non-SQL exception in stage=%s column=%u type=%s; driver message suppressed.",
+						pStage, ColumnIndex, typeid(e).name());
 					return CResultSet::Failure(SError { -1, "", "database operation failed" });
 				}
 			}
@@ -298,11 +326,6 @@ namespace Db
 				catch(sql::SQLException& e)
 				{
 					Error = FromException(e);
-					return false;
-				}
-				catch(const std::exception& e)
-				{
-					Error = SError { -1, "", "database operation failed" };
 					return false;
 				}
 				return true;
