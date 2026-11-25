@@ -406,9 +406,12 @@ namespace Db
 			Properties["connectTimeout"] = fmt_default("{}", RemainingMs);
 			Properties["socketTimeout"] = fmt_default("{}", m_SocketTimeoutMs);
 			Properties["useTls"] = Endpoint.m_UseTls ? "true" : "false";
-			// Require server-side prepared statements whenever bindings are present;
-			// bound values must never be interpolated into SQL by the client.
-			Properties["useServerPrepStmts"] = "true";
+			// Keep PreparedStatement parameter binding, but use the connector's
+			// client-side implementation. Server-side prepared statements use a
+			// separate binary protocol; on the affected remote connections it
+			// throws std::bad_alloc from execute(). The connector still safely
+			// encodes bound values; no SQL values are interpolated by our code.
+			Properties["useServerPrepStmts"] = "false";
 
 			auto pConnection = std::unique_ptr<sql::Connection>(sql::mariadb::get_driver_instance()->connect(Properties));
 			// The connector's global parser is only used during connect(). Session
