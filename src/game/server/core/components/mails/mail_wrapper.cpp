@@ -8,35 +8,33 @@
 
 void MailWrapper::Send()
 {
-	CGS* pGS = (CGS*)Instance::GameServer();
-
-	// send information about new message
+	auto* pGS = static_cast<CGS*>(Instance::GameServer());
 	const bool LocalMsg = pGS->ChatAccount(m_AccountID, "[Mail] New mail: {}", m_Title);
-	if(LocalMsg)
-	{
-		// the count is a statement of its own: the mail is already written, this
-		// only warns the receiver, so it must not hold up the sender
-		const int AccountID = m_AccountID;
-		pGS->Core()->MailboxManager()->GetUnreadMailsNum(AccountID).Then([AccountID](Db::CResultSet&& Result)
-		{
-			if(!Result.HasRows() || Result.GetInt("Letters") < (int)MAIL_MAX_CAPACITY)
-				return;
 
-			auto* pGS = (CGS*)Instance::GameServer();
+	std::string Description {};
+	for(const auto& Line : m_vDescriptionLines)
+		Description += Line + "\n";
+
+	nlohmann::json Items {};
+	Items["items"] = m_vAttachedItems;
+
+	const int AccountID = m_AccountID;
+	MailDb::CreateMail(m_Title, Description, Items.dump(), AccountID, m_Sender)
+		.Then([AccountID, LocalMsg](Db::CResultSet&& Created)
+	{
+		if(!LocalMsg || !Created.Ok())
+			return;
+
+		// The count runs after the insert: it sees the new letter.
+		auto* pGS = static_cast<CGS*>(Instance::GameServer());
+		if(!pGS)
+			return;
+		pGS->Core()->MailboxManager()->GetUnreadMailsNum(AccountID).Then([AccountID, pGS](Db::CResultSet&& Result)
+		{
+			if(!Result.Ok() || !Result.HasRows() || Result.GetInt("Letters") < (int)MAIL_MAX_CAPACITY)
+				return;
 			pGS->ChatAccount(AccountID, "[Mail] Mailbox is full.");
 			pGS->ChatAccount(AccountID, "[Mail] Clear old mails to receive new ones.");
 		});
-	}
-
-	// parse description's
-	std::string EndDescription {};
-	for(auto& Line : m_vDescriptionLines)
-		EndDescription += Line + "\n";
-
-	// get prepared json attached items
-	nlohmann::json preparedItemsJson {};
-	preparedItemsJson["items"] = m_vAttachedItems;
-
-	// send to database
-	MailDb::CreateMail(m_Title, EndDescription, preparedItemsJson.dump(), m_AccountID, m_Sender);
+	});
 }

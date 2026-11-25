@@ -15,7 +15,7 @@ namespace MailDb
 
 	Db::CRequest ListMails(int AccountID, std::string_view Tag)
 	{
-		return Db::Query(KIND, "SELECT ID, Name, Sender, Readed FROM tw_accounts_mailbox WHERE UserID = ?",
+		return Db::Query(KIND, "SELECT ID, Name, Readed FROM tw_accounts_mailbox WHERE UserID = ? ORDER BY Readed ASC, ID DESC",
 			Db::Bind(AccountID), Db::SQueryOptions().Tag(Tag));
 	}
 
@@ -39,10 +39,12 @@ namespace MailDb
 			Db::Bind(Name, Description, Items, AccountID, Sender));
 	}
 
-	Db::CRequest MarkRead(int MailID, int AccountID)
+	Db::CRequest MarkRead(int MailID, int AccountID, std::string_view Tag)
 	{
+		// The read flag is part of the same tagged step as opening the letter: the
+		// menu redraws only after both the read and this write have completed.
 		return Db::Query(KIND, "UPDATE tw_accounts_mailbox SET Readed = 1 WHERE ID = ? AND UserID = ?",
-			Db::Bind(MailID, AccountID));
+			Db::Bind(MailID, AccountID), Db::SQueryOptions().Tag(Tag));
 	}
 
 	Db::CRequest DeleteMail(int MailID, int AccountID)

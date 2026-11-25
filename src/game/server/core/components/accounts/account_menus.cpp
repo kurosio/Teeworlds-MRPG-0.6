@@ -670,7 +670,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 			const auto gold = pAccount->GetGold();
 			const auto goldCapacity = pAccount->GetGoldCapacity();
 			const auto bankGold = pAccount->GetBankManager();
-			const int mailCount = Result.HasRows() ? Result.GetInt("Letters") : 0;
+			const int mailCount = Result.Ok() && Result.HasRows() ? Result.GetInt("Letters") : 0;
 
 			// personal assistant
 			MotdMenu MAssistant(pContext->GetClientID(), MTFLAG_CLOSE_BUTTON, "Quick tips update as you progress.");
