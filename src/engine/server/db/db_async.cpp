@@ -1031,6 +1031,7 @@ namespace Db
 		}
 
 		bool ExecutionStarted = false;
+		int AcquireRetries = 0;
 		while(true)
 		{
 			if(Task.m_pCancelToken->m_CancelRequested.load())
@@ -1064,14 +1065,43 @@ namespace Db
 				if(SqlDebugEnabled())
 					dbg_msg("SQL Debug", "[%s] connection acquisition failed; open=%d idle=%d busy=%d stopping=%d; statement='%s'",
 					m_Config.m_Endpoint.m_Name.c_str(), Stats.m_Open, Stats.m_Idle, Stats.m_Busy, m_Stopping.load(), Task.m_Label.c_str());
-				if(m_Stopping.load())
+				if(m_Stopping.load() || m_pPool->IsShutdown())
 					return MakeFailure(CancelledError());
-				if(NowMs() >= Task.m_DeadlineMs)
+				const long long Now = NowMs();
+				if(Now >= Task.m_DeadlineMs)
 				{
 					CountExpired();
+					dbg_msg("SQL Error", "The %s database pool could not provide a connection before the request deadline (open=%d idle=%d busy=%d); statement='%s'",
+						m_Config.m_Endpoint.m_Name.c_str(), Stats.m_Open, Stats.m_Idle, Stats.m_Busy, Task.m_Label.c_str());
 					return MakeTimeout();
 				}
-				return MakeFailure(SError { 0, "", fmt_default("no {} database connection available", m_pPool->Config().m_Endpoint.m_Name) });
+				if(m_Config.m_RetryBaseDelayMs <= 0)
+				{
+					dbg_msg("SQL Error", "The %s database pool has no connection available (open=%d idle=%d busy=%d); statement='%s'",
+						m_Config.m_Endpoint.m_Name.c_str(), Stats.m_Open, Stats.m_Idle, Stats.m_Busy, Task.m_Label.c_str());
+					return MakeFailure(SError { 0, "", fmt_default("no {} database connection available", m_pPool->Config().m_Endpoint.m_Name) });
+				}
+
+				// No lease means the SQL job has not run. Retrying acquisition is
+				// therefore safe for reads and writes alike; keep it within the
+				// original request deadline and back off instead of failing a login
+				// during a short pool-capacity spike.
+				++AcquireRetries;
+				long long DelayMs = m_Config.m_RetryBaseDelayMs;
+				for(int i = 1; i < AcquireRetries && DelayMs < m_Config.m_RetryMaxDelayMs; ++i)
+					DelayMs = std::min<long long>(m_Config.m_RetryMaxDelayMs, DelayMs * 2);
+				DelayMs = std::min<long long>(DelayMs, m_Config.m_RetryMaxDelayMs);
+				{
+					std::lock_guard<std::mutex> Lock(m_Mutex);
+					++m_Stats.m_Retries;
+				}
+				if(SqlDebugEnabled())
+					dbg_msg("SQL Debug", "[%s] waiting %lldms before retrying connection acquisition (retry=%d); pool open=%d idle=%d busy=%d; statement='%s'",
+						m_Config.m_Endpoint.m_Name.c_str(), DelayMs, AcquireRetries, Stats.m_Open, Stats.m_Idle, Stats.m_Busy, Task.m_Label.c_str());
+				const long long RetryUntil = NowMs() + std::min<long long>(DelayMs, std::max<long long>(0, Task.m_DeadlineMs - NowMs()));
+				while(NowMs() < RetryUntil && !Task.m_pCancelToken->m_CancelRequested.load())
+					std::this_thread::sleep_for(std::chrono::milliseconds(std::min<long long>(10, RetryUntil - NowMs())));
+				continue;
 			}
 
 			// Waiting for a connection may have used the whole budget: running the

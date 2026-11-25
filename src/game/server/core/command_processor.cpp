@@ -1,7 +1,8 @@
 #include "command_processor.h"
 
 #include <engine/server.h>
-#include <game/server/core/components/accounts/account_manager.h>
+#include <game/server/core/components/accounts/account_auth.h>
+#include <game/server/core/components/accounts/account_profile.h>
 #include <game/server/core/components/guilds/guild_manager.h>
 #include <game/server/core/components/houses/house_manager.h>
 #include <game/server/core/components/groups/group_manager.h>
@@ -92,9 +93,9 @@ void CCommandProcessor::ConChatSetPin(IConsole::IResult* pResult, void* pUser)
 
 	if(pPlayer)
 	{
-		const char* pPinOrPassword = pResult->GetString(0);
+		const char* pPassword = pResult->GetString(0);
 		const char* pNewPincode = pResult->GetString(1);
-		pGS->Core()->AccountManager()->SetPinCode(ClientID, pPinOrPassword, pNewPincode, false);
+		AccountProfile::SetPin(ClientID, pPassword, pNewPincode);
 	}
 }
 
@@ -106,9 +107,9 @@ void CCommandProcessor::ConChatChangePin(IConsole::IResult* pResult, void* pUser
 
 	if(pPlayer)
 	{
-		const char* pPinOrPassword = pResult->GetString(0);
+		const char* pOldPincode = pResult->GetString(0);
 		const char* pNewPincode = pResult->GetString(1);
-		pGS->Core()->AccountManager()->SetPinCode(ClientID, pPinOrPassword, pNewPincode, true);
+		AccountProfile::ChangePin(ClientID, pOldPincode, pNewPincode);
 	}
 }
 
@@ -123,7 +124,7 @@ void CCommandProcessor::ConChatChangePassword(IConsole::IResult* pResult, void* 
 		const char* pOldPassword = pResult->GetString(0);
 		const char* pNewPassword = pResult->GetString(1);
 		const char* pPincode = pResult->GetString(2);
-		pGS->Core()->AccountManager()->ChangePassword(ClientID, pOldPassword, pNewPassword, pPincode);
+		AccountProfile::ChangePassword(ClientID, pOldPassword, pNewPassword, pPincode);
 	}
 }
 
@@ -144,7 +145,7 @@ void CCommandProcessor::ConChatLogin(IConsole::IResult* pResult, void* pUser)
 
 	const char* pUsername = pResult->GetString(0);
 	const char* pPassword = pResult->GetString(1);
-	pGS->Core()->AccountManager()->LoginAccount(ClientID, pUsername, pPassword);
+	AccountAuth::Login(ClientID, pUsername, pPassword);
 }
 
 void CCommandProcessor::ConChatRegister(IConsole::IResult* pResult, void* pUser)
@@ -164,7 +165,7 @@ void CCommandProcessor::ConChatRegister(IConsole::IResult* pResult, void* pUser)
 
 	const char* pUsername = pResult->GetString(0);
 	const char* pPassword = pResult->GetString(1);
-	pGS->Core()->AccountManager()->RegisterAccount(ClientID, pUsername, pPassword);
+	AccountAuth::Register(ClientID, pUsername, pPassword);
 }
 
 void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)
@@ -827,7 +828,7 @@ void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
 
 	char aVoucher[32];
 	str_copy(aVoucher, pResult->GetString(0), sizeof(aVoucher));
-	pGS->Core()->AccountManager()->UseVoucher(ClientID, aVoucher);
+	AccountProfile::UseVoucher(ClientID, aVoucher);
 }
 
 void CCommandProcessor::ConChatPlaceholder(IConsole::IResult* pResult, void* pUser) {}

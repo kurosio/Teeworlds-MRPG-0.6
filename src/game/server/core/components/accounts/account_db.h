@@ -103,6 +103,7 @@ namespace AccountDb
 		int m_ServerID = 0;
 		std::string m_Token;
 		SSessionRecord m_Previous;
+		int64_t m_Deadline = 0;
 	};
 
 	// Reads the current owner. A result without rows is a valid answer (free

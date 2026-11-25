@@ -3,7 +3,7 @@
 #include <game/server/gamecontext.h>
 
 DbAsync::CContextBase::CContextBase(int ClientID)
-	: m_ClientID(ClientID), m_WorldID(ResolveClientWorldID(ClientID))
+	: m_ClientID(ClientID)
 {
 	if(auto* pGS = GS())
 		if(auto* pPlayer = pGS->GetPlayer(ClientID, false))
@@ -12,7 +12,7 @@ DbAsync::CContextBase::CContextBase(int ClientID)
 
 CGS* DbAsync::CContextBase::GS() const
 {
-	return static_cast<CGS*>(Instance::GameServer(m_WorldID));
+	return static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
 }
 
 CPlayer* DbAsync::CContextBase::GetPlayer(bool CheckAuth, bool CheckCharacter) const

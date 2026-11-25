@@ -8,6 +8,8 @@
 #include <game/server/gamecontext.h>
 
 #include "components/accounts/account_manager.h"
+#include "components/accounts/account_auth.h"
+#include "components/accounts/account_db.h"
 #include "components/achievements/achievement_manager.h"
 #include "components/auction/auction_manager.h"
 #include "components/aethernet/aethernet_manager.h"
@@ -797,7 +799,7 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 
 		// first enter
 		const bool HasAccount = Result.HasRows();
-		const std::string GuestCredential = CAccountManager::BuildGuestCredential(CapturedNickname.c_str());
+		const std::string GuestCredential = AccountAuth::BuildGuestCredential(CapturedNickname.c_str());
 		pPlayer->GetSharedData().m_AuthType = AUTH_TYPE_NONE;
 		if(!HasAccount)
 		{
@@ -812,7 +814,7 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 		// initialize variables
 		const auto Login = Result.GetString("Username");
 		const auto TimeoutCode = Result.GetString("TimeoutCode");
-		const bool IsGuest = CAccountManager::IsGuestCredentialForNickname(Login, CapturedNickname.c_str());
+		const bool IsGuest = AccountAuth::IsGuestCredentialForNickname(Login, CapturedNickname.c_str());
 		const bool HasTimeoutCode = !TimeoutCode.empty();
 
 		// guest or default auth

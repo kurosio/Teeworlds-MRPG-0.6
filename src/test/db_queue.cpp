@@ -128,6 +128,25 @@ namespace
 		std::vector<std::shared_ptr<std::atomic<bool>>> m_vConnections;
 	};
 
+	class CTransientConnectDriver final : public Db::IDbDriver
+	{
+	public:
+		std::unique_ptr<Db::IDbConnection> Connect(const Db::SEndpoint&, int, Db::SError& Error) override
+		{
+			if(++m_Connects == 1)
+			{
+				Error = Db::SError { 2003, "HY000", "scripted transient connect failure" };
+				return nullptr;
+			}
+			return std::make_unique<CRecoverableConnection>(std::make_shared<std::atomic<bool>>(true));
+		}
+
+		int Connects() const { return m_Connects.load(); }
+
+	private:
+		std::atomic<int> m_Connects { 0 };
+	};
+
 	class CScriptedDriver;
 
 	class CScriptedConnection final : public Db::IDbConnection
@@ -427,6 +446,32 @@ TEST_F(CDbQueueTest, DropsAndReopensAConnectionLostDuringExecution)
 	EXPECT_GE(m_Driver.ConnectionCount(), 2);
 	EXPECT_EQ(Db::Pool(Db::EKind::Remote)->Stats().m_Busy, 0);
 	EXPECT_LE(Db::Pool(Db::EKind::Remote)->Stats().m_Open, 2);
+}
+
+TEST_F(CDbQueueTest, RetriesConnectionAcquisitionWhenPoolIsTemporarilyBusy)
+{
+	Db::Stop(3000);
+	auto Config = MakeConfig(&m_Driver);
+	Config.m_MaxConnections = 1;
+	Config.m_Workers = 1;
+	Config.m_AcquireTimeoutMs = 40;
+	Config.m_RequestTimeoutMs = 600;
+	Config.m_RetryBaseDelayMs = 20;
+	Config.m_RetryMaxDelayMs = 40;
+	ASSERT_TRUE(Db::Start(Config, Config));
+
+	auto HeldLease = Db::Pool(Db::EKind::Remote)->Acquire(100);
+	ASSERT_TRUE(HeldLease.has_value());
+
+	auto Request = Db::Query(Db::EKind::Remote, "SELECT after_pool_contention");
+	std::this_thread::sleep_for(std::chrono::milliseconds(80));
+	HeldLease->Release();
+
+	const Db::CResultSet Result = Request.Result(1000);
+	ASSERT_TRUE(Result.Ok()) << Result.Error().ToString();
+	EXPECT_EQ(m_Driver.CallCount(), 1u) << "the SQL job must run once after a lease becomes available";
+	EXPECT_GE(Db::Executor(Db::EKind::Remote)->Stats().m_Retries, 1u);
+	EXPECT_EQ(Db::Pool(Db::EKind::Remote)->Stats().m_Busy, 0);
 }
 
 TEST_F(CDbQueueTest, ReadsWithDifferentParametersAreNotShared)
@@ -738,6 +783,25 @@ TEST(CDbQueueCancellationTest, CancellingQueuedWorkPreventsItsSqlFromRunning)
 	Db::Stop(3000);
 }
 
+TEST(CDbPoolBackoffTest, RetriesTransientConnectFailureWithinAcquireDeadline)
+{
+	CTransientConnectDriver Driver;
+	Db::SPoolConfig Config;
+	Config.m_MaxConnections = 1;
+	Config.m_AcquireTimeoutMs = 500;
+	Config.m_ConnectRetryDelayMs = 50;
+	Config.m_IdlePingMs = 0;
+	Db::CDbPool Pool(Driver, Config);
+
+	auto Lease = Pool.Acquire(500);
+	ASSERT_TRUE(Lease.has_value());
+	EXPECT_EQ(Driver.Connects(), 2);
+	EXPECT_EQ(Pool.Stats().m_Failed, 1u);
+	EXPECT_EQ(Pool.Stats().m_Open, 1);
+	EXPECT_EQ(Pool.Stats().m_Busy, 1);
+	Lease->Release();
+}
+
 TEST(CDbPoolBackoffTest, WaitsForTheConfiguredConnectBackoff)
 {
 	CFailingDriver Driver;
@@ -753,7 +817,7 @@ TEST(CDbPoolBackoffTest, WaitsForTheConfiguredConnectBackoff)
 	EXPECT_FALSE(Pool.Acquire(800).has_value());
 	const auto Waited = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - Started).count();
 
-	EXPECT_EQ(Driver.Connects(), 2);
+	EXPECT_EQ(Driver.Connects(), 3);
 	EXPECT_GE(Waited, 300) << "connection attempts must respect the configured backoff";
 	EXPECT_EQ(Pool.Stats().m_Busy, 0);
 	EXPECT_EQ(Pool.Stats().m_Open, 0);

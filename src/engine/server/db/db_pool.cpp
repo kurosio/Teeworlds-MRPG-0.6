@@ -307,7 +307,9 @@ namespace Db
 					pState->m_Busy = std::max(0, pState->m_Busy - 1);
 					pState->m_Cv.notify_all();
 				}
-				return std::nullopt;
+				if(m_Config.m_ConnectRetryDelayMs <= 0 || NowMs() >= Deadline)
+					return std::nullopt;
+				continue;
 			}
 
 			// 3. Wait for a connection to come back.

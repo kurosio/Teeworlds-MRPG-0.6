@@ -301,21 +301,22 @@ ALTER TABLE tw_accounts_data
 | `UpdateCredentials`, `UpdateLoginStamp` | claim an existing account, stamp the login |
 | `ReadSession`, `ClaimSession`, `ActivateSession`, `ReleaseSession`, `RemoveSession`, `RefreshSessionHeartbeats`, `FetchSessionTokens` | who may play an account |
 
-The flow (`account_manager.cpp`), all of it asynchronous:
+The flow (`account_auth.cpp`, then `account_session.cpp`), all of it asynchronous:
 
-1. `CAccountManager::Login` → `DbAuthorization::StartAuthorization` →
-   `AccountDb::Authenticate` (one statement, one row).
+1. `AccountAuth::Login` → `AccountDb::Authenticate` (one statement, one row).
 2. the row is checked once: nickname exists, credentials match the stored hash,
    guest timeout code, ban.
 3. `AccountSession::ReadRecord` → `TryClaim` (compare-and-swap on the token) →
    `AccountDb::LoadAccount` → `CAccountData::Init` →
-   `AccountSession::Activate` → `CompleteLogin`.
+   `AccountSession::BeginTakeover` → the account load → the session row is
+   activated (`AccountDb::ActivateSession`).
 4. registration: `AccountDb::LookupNickname` → `AccountDb::Register` (one
    transaction, id from the first insert) → the same authorization path.
    A player that disappears mid-registration has their account deleted with
    `AccountDb::DeleteAccount`.
-5. disconnect and logout: `AccountSession::Remove` / `Release` (only the token
-   that owns the row matches), `AccountDb::UpdateLoginStamp` was fire and forget.
+5. disconnect and logout: `AccountDb::RemoveSession` / `AccountSession::Release`
+   (only the token that owns the row matches), `AccountDb::UpdateLoginStamp` was
+   fire and forget.
 
 Session ownership is a compare-and-swap in the database, not a decision taken on
 a read: `ClaimSession` matches only while the row still carries the token that
@@ -424,8 +425,8 @@ dependent stages wait for their prerequisites. The coordinator joins every
 stage, reports a failed read once, and only then calls
 `CAccountManager::FinishAccountLoad()`. `CPlayer::Tick()` gates on
 `IsReadyToPlay()`, so no menu, packet or match is served from half-loaded data.
-If the claim deadline passes first, `AbortSessionClaim()` releases the
-reservation and kicks the player. A new account-data loader should register a
+If the claim deadline passes first, the session module (`account_session.cpp`)
+releases the reservation and kicks the player. A new account-data loader should register a
 stage during `OnPlayerLogin()` or `CAccountData::RegisterLoadStages()`, name any real
 ordering requirements in its dependency list, and call its completion exactly
 once after applying its result.

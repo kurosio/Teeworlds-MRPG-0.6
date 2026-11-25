@@ -19,6 +19,8 @@
 #include "core/entities/items/drop_items.h"
 
 #include "core/components/accounts/account_manager.h"
+#include "core/components/accounts/account_auth.h"
+#include "core/components/accounts/account_profile.h"
 #include "core/components/bots/bot_manager.h"
 #include "core/components/quests/quest_manager.h"
 #include "core/components/skills/skill_manager.h"
@@ -629,7 +631,7 @@ void CGS::ProcessNicknameChange(CPlayer* pPlayer, const char* pNewNickname) cons
 			auto* pGS = pPlayer->GS();
 			const int ClientID = pPlayer->GetCID();
 			if(Accepted)
-				pGS->Core()->AccountManager()->ChangeNickname(NewName, ClientID);
+				AccountProfile::ChangeNickname(ClientID, NewName);
 			else
 				pGS->Chat(ClientID, "You need to set a '{~}' nickname. This window will keep appearing until you confirm the nickname change.", 
 					Instance::Server()->ClientName(ClientID));
@@ -978,7 +980,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				Chat(ClientCID, "Guest mode is unavailable. Please try again later.");
 			else if(SharedData.m_AuthType == AUTH_TYPE_REGISTRATION)
 			{
-				Core()->AccountManager()->RegisterGuestAccount(ClientCID, Nickname);
+				AccountAuth::RegisterGuest(ClientCID, Nickname);
 				Chat(ClientCID, "Guest account created. Entering the game...");
 			}
 			else if(SharedData.m_AuthType == AUTH_TYPE_TIMEOUT)
@@ -990,11 +992,11 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 					Chat(ClientCID, "Use: /timeout <code>.");
 				}
 				else
-					Core()->AccountManager()->LoginAccountRaw(ClientCID, SharedData.m_GuestLogin.c_str(), SharedData.m_GuestLogin.c_str());
+					AccountAuth::LoginGuest(ClientCID);
 			}
 			else if(SharedData.m_AuthType == AUTH_TYPE_GUEST)
 			{
-				Core()->AccountManager()->LoginAccountRaw(ClientCID, SharedData.m_GuestLogin.c_str(), SharedData.m_GuestLogin.c_str());
+				AccountAuth::LoginGuest(ClientCID);
 				Chat(ClientCID, "Entering the game in guest mode...");
 			}
 			else if(SharedData.m_AuthType == AUTH_TYPE_LOGIN)

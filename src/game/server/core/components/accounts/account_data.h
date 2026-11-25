@@ -247,9 +247,7 @@ struct CAccountSharedData
 	CAuctionSlot m_TempAuctionSlot;
 	std::unordered_set<int> m_PendingEidolonItemBreaks{};
 	std::weak_ptr<void> m_pAuthorizationAttempt{};
-	int64_t m_AuthProgressTick {}; // next "still in progress" notice of that attempt
-	int64_t m_AuthStartedAt {};    // when the attempt began, for the login timing line
-	bool m_AuthIsRegistration {};
+	int64_t m_AuthStartedAt {};
 	std::shared_ptr<void> m_pConnectionLifetime = std::make_shared<int>(0);
 
 	// guest account data

@@ -5,11 +5,14 @@
 
 #include "account_db.h"
 
-#include <cstdint>
+#include <engine/server/server_sync.h>
+
 #include <functional>
+#include <memory>
 #include <optional>
 #include <string>
-#include <vector>
+
+class CPlayer;
 
 // Who may play an account, stored in tw_account_sessions.
 //
@@ -17,6 +20,12 @@
 // compare-and-swap: it names the token it expects and matches nothing if that
 // token is no longer there. A decision made on an old read is therefore refused
 // by the database instead of silently overwriting a newer owner.
+//
+// The login pipeline (account_auth.cpp) reads the owner, claims the row and
+// then hands the claim to BeginTakeover. From there this module drives the
+// rest of the login: it ends the previous owner's sessions (here and on other
+// servers), waits for the account load and activates the session. The account
+// manager calls Tick, HandleSyncEvent and OnClientReset for it.
 namespace AccountSession
 {
 	constexpr int CLAIM_SECONDS = 30; // time limit of one login, from its start
@@ -26,21 +35,14 @@ namespace AccountSession
 	using SKey = AccountDb::SSessionKey;
 	// The row as it was read.
 	using SRecord = AccountDb::SSessionRecord;
-
-	// A login's attempt to take an account: the new token and the row it replaces.
-	struct SClaim
-	{
-		int m_AccountID {};
-		int m_ClientID {};
-		std::string m_Token {};
-		int64_t m_Deadline {}; // time_get() limit for the whole login
-		SRecord m_Previous {};
-	};
+	// A login's attempt to take an account: the new token, the row it replaces
+	// and the deadline of the whole login.
+	using SClaim = AccountDb::SSessionClaim;
 
 	using ReadCallback = std::function<void(std::optional<SRecord>)>; // nullopt: the read failed
 	using DoneCallback = std::function<void(bool)>; // true: the write matched a row
-	using RowsCallback = std::function<void(bool, const std::vector<SKey>&)>; // success, then rows
 
+	// --- used by the login pipeline -----------------------------------------
 	std::string GenerateToken();
 
 	// Reads the current owner from the remote database, where the row arbitrates
@@ -51,22 +53,26 @@ namespace AccountSession
 	// (active, or its reservation is stale). A refusal leaves the row untouched.
 	void TryClaim(const SClaim& Claim, DoneCallback Done);
 
-	// Turns the reservation into an active session (heartbeat set).
-	void Activate(const SClaim& Claim, DoneCallback Done = {});
-
 	// Gives the claim back: restores the previous row, or removes ours. Only matches
 	// our own unfinished reservation, so it is a no-op if the claim never landed.
 	void Release(const SClaim& Claim, DoneCallback Done = {});
 
-	// Removes an active session on disconnect; matches only that token.
-	void Remove(const SKey& Key);
+	// --- driven by the account manager component -----------------------------
+	// Continues a login whose claim on the account has been written: ends the
+	// previous owner's sessions, loads the account and activates the session.
+	// pAttempt keeps the authorization guard valid through takeover and load.
+	void BeginTakeover(CPlayer* pPlayer, const SClaim& Claim, bool RecommendPin, std::shared_ptr<void> pAttempt);
 
-	// Refreshes the heartbeat of the given active sessions, in batches.
-	void RefreshHeartbeats(const std::vector<SKey>& vKeys);
+	// Completes waiting logins, gives up timed out ones and refreshes the
+	// heartbeats of the local sessions. Called once per server tick.
+	void Tick();
 
-	// Tokens currently stored for the given accounts in the remote database. The
-	// callback reports success separately so a failed read is not mistaken for no rows.
-	void FetchTokens(const std::vector<int>& vAccountIDs, RowsCallback Done);
+	// Session takeover requests and acknowledgements of other servers.
+	void HandleSyncEvent(const std::string& EventName, const CServerSync::SRequest& Req);
+
+	// A client disconnected: gives back its unfinished claims and removes its
+	// active session row.
+	void OnClientReset(int ClientID);
 }
 
 #endif

@@ -3,7 +3,7 @@
 #include <engine/server.h>
 #include <game/server/gamecontext.h>
 
-#include "components/accounts/account_manager.h"
+#include "components/accounts/account_bans.h"
 #include "components/guilds/guild_manager.h"
 #include "components/bots/bot_manager.h"
 #include "components/mails/mail_wrapper.h"
@@ -499,7 +499,7 @@ void RconProcessor::ConBanAcc(IConsole::IResult* pResult, void* pUserData)
 	}
 
 	// ban account
-	pSelf->Core()->AccountManager()->BanAccount(pPlayer, time, pResult->GetString(2));
+	AccountBans::Ban(pPlayer, time, pResult->GetString(2));
 }
 
 
@@ -509,7 +509,7 @@ void RconProcessor::ConUnBanAcc(IConsole::IResult* pResult, void* pUserData)
 	const auto pSelf = (CGS*)pServer->GameServer();
 
 	// unban account by banid
-	pSelf->Core()->AccountManager()->UnBanAccount(pResult->GetInteger(0));
+	AccountBans::Unban(pResult->GetInteger(0));
 }
 
 
@@ -520,7 +520,7 @@ void RconProcessor::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 
 	// the list is read in the background and printed when it arrives
 	auto* pConsole = pSelf->Console();
-	pSelf->Core()->AccountManager()->BansAccount([pConsole](std::vector<CAccountManager::AccBan>&& vBans)
+	AccountBans::List([pConsole](std::vector<AccountBans::SBan>&& vBans)
 	{
 		for(const auto& p : vBans)
 			pConsole->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", "ban_id=%d name='%s' ban_until='%s' reason='%s'", 

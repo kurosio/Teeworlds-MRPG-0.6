@@ -12,7 +12,6 @@ namespace DbAsync
 	class CContextBase
 	{
 		int m_ClientID { -1 };
-		int m_WorldID { INITIALIZER_WORLD_ID };
 		std::weak_ptr<void> m_pConnectionLifetime;
 
 	public:
@@ -23,9 +22,6 @@ namespace DbAsync
 		IServer* Server() const { return Instance::Server(); }
 		CGS* GS() const;
 		CPlayer* GetPlayer(bool CheckAuth = false, bool CheckCharacter = false) const;
-
-	private:
-		static int ResolveClientWorldID(int ClientID) { return Instance::Server()->GetClientWorldID(ClientID); }
 	};
 
 	template<typename TPayload>
