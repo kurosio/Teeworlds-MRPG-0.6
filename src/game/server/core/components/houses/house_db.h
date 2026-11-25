@@ -18,7 +18,6 @@ namespace HouseDb
 		Db::CResultSet ListDecorations(std::string_view Table, int WorldID, int HouseID);
 		Db::CRequest CreateDecoration(std::string_view Table, int ItemID, int HouseID, int PosX, int PosY, int WorldID);
 		Db::CRequest DeleteDecoration(std::string_view Table, int HouseID, int ItemID, int PosX, int PosY);
-		Db::CRequest SaveFarmzones(std::string_view Table, int HouseID, std::string_view Json);
 	};
 }
 

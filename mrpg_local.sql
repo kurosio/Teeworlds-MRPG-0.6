@@ -97,8 +97,9 @@ CREATE TABLE `tw_houses_decorations` (
 CREATE TABLE `tw_links` (
   `ID` int(11) NOT NULL,
   `Type` varchar(32) NOT NULL,
-  `OwnerID` bigint(20) NOT NULL,
-  `TargetID` bigint(20) NOT NULL
+  `OwnerID` bigint(20) NOT NULL DEFAULT 0,
+  `TargetID` bigint(20) NOT NULL,
+  `MetaJson` longtext DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -151,7 +152,8 @@ ALTER TABLE `tw_houses_decorations`
 -- Indexes for table `tw_links`
 --
 ALTER TABLE `tw_links`
-  ADD PRIMARY KEY (`ID`);
+  ADD PRIMARY KEY (`ID`),
+  ADD UNIQUE KEY `uq_tw_links_type_target` (`Type`, `TargetID`);
 
 --
 -- AUTO_INCREMENT for dumped tables

@@ -9,6 +9,16 @@
 CEidolonAI::CEidolonAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	: CBaseAI(pPlayer, pCharacter) {}
 
+bool CEidolonAI::IsOwnerInCombat() const
+{
+	const auto* pOwner = m_pPlayer->GetEidolonOwner();
+	if(!pOwner || !pOwner->GetCharacter())
+		return false;
+
+	return pOwner->m_aPlayerTick[LastDamage] > 0 &&
+		Server()->Tick() - pOwner->m_aPlayerTick[LastDamage] <= Server()->TickSpeed() * 5;
+}
+
 bool CEidolonAI::CanDamage(CPlayer* pFrom)
 {
 	if(!pFrom)
@@ -47,9 +57,13 @@ void CEidolonAI::OnDie(int Killer, int Weapon)
 
 void CEidolonAI::OnTargetRules(float Radius)
 {
-	auto* pOwner = m_pPlayer->GetEidolonOwner();
-	if(!pOwner || !pOwner->GetCharacter())
+	if(!IsOwnerInCombat())
+	{
+		m_Target.Reset();
 		return;
+	}
+
+	auto* pOwner = m_pPlayer->GetEidolonOwner();
 
 	// find from players
 	const auto* pPlayer = SearchPlayerCondition(Radius, [&](const CPlayer* pCandidate)
@@ -87,14 +101,10 @@ void CEidolonAI::Process()
 
 	const auto* pOwnerChar = pOwner->GetCharacter();
 	const float Distance = distance(pOwnerChar->GetPos(), m_pCharacter->GetPos());
-	if(Distance > 400.f && !m_Target.IsEmpty())
-	{
+	if(Distance > 400.f || !IsOwnerInCombat())
 		m_Target.Reset();
-	}
 	else
-	{
 		m_pCharacter->UpdateTarget(400.f);
-	}
 
 	if(const auto* pTargetChar = GS()->GetPlayerChar(m_Target.GetCID()))
 	{

@@ -3,6 +3,9 @@
 #include "guild_manager.h"
 
 #include "guild_db.h"
+#include <engine/server/links.h>
+
+#include <teeother/tools/nlohmann_json.h>
 #include <game/server/core/tools/db_async_context.h>
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
@@ -24,20 +27,34 @@ void CGuildManager::OnPreInit()
 	}
 }
 
-void CGuildManager::OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID)
+void CGuildManager::OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID, const std::string& MetaJson)
 {
-	if (Type == "guild_house")
+	if(Type == "guild_house")
 	{
-		auto* pGuild = GetGuildByID(OwnerID);
+		m_LoadedHouseLinks.insert(TargetID);
 		auto* pHouse = GetHouseByID(TargetID);
-		if (!pGuild || !pHouse || pGuild->HasHouse() || pHouse->IsPurchased())
+		if (!pHouse)
 			return;
 
-		pHouse->UpdateGuild(pGuild);
+		const auto Meta = nlohmann::json::parse(MetaJson, nullptr, false);
+		if (Meta.is_object())
+		{
+			if (const auto It = Meta.find("rent_end"); It != Meta.end() && It->is_number_integer())
+				pHouse->SetRentEndTimestamp(It->get<int64_t>());
+			if (const auto It = Meta.find("farm_items"); It != Meta.end())
+				pHouse->GetFarmzonesManager()->LoadItems(It->dump());
+		}
 
-		// Doors may have opened while the house had no owner.
-		for(auto& [Number, pDoor] : pHouse->GetDoorManager()->GetContainer())
-			pDoor->Close();
+		if (OwnerID > 0)
+		{
+			auto* pGuild = GetGuildByID(OwnerID);
+			if (!pGuild || pGuild->HasHouse() || pHouse->IsPurchased())
+				return;
+
+			pHouse->UpdateGuild(pGuild);
+			for (auto& [Number, pDoor] : pHouse->GetDoorManager()->GetContainer())
+				pDoor->Close();
+		}
 	}
 }
 
@@ -46,22 +63,41 @@ void CGuildManager::OnInitWorld(int WorldID)
 	auto Houses = GuildDb::ListHouses(WorldID);
 	while(Houses.Next())
 	{
-		// initialize variables
-		GuildHouseIdentifier ID = Houses.GetInt("ID");
-		int InitialFee = Houses.GetInt("InitialFee");
-		time_t RentDays = Houses.GetInt64("RentDays");
+		const GuildHouseIdentifier ID = Houses.GetInt("ID");
+		const time_t RentEnd = Houses.GetInt64("RentDays");
+		const int InitialFee = Houses.GetInt("InitialFee");
 		std::string JsonDoors = Houses.GetString("Doors");
 		std::string JsonFarmzones = Houses.GetString("Farmzones");
-		std::string JsonPropersties = Houses.GetString("Properties");
-
-		// initialize guild houses
-		std::string KickPosStr = Houses.GetString("KickPos");
+		std::string JsonProperties = Houses.GetString("Properties");
 		vec2 KickPos = {};
-		mystd::json::parse(KickPosStr, [&KickPos](nlohmann::json& pJson)
+		mystd::json::parse(Houses.GetString("KickPos"), [&KickPos](nlohmann::json& Json)
 		{
-			KickPos = pJson.get<vec2>();
+			KickPos = Json.get<vec2>();
 		});
-		CGuildHouse::CreateElement(ID)->Init(RentDays, InitialFee, GS()->GetWorldID(), std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonPropersties), KickPos);
+
+		auto* pHouse = CGuildHouse::CreateElement(ID);
+		pHouse->Init(RentEnd, InitialFee, GS()->GetWorldID(), std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonProperties), KickPos);
+	}
+}
+
+void CGuildManager::OnLinksLoaded()
+{
+	for(const auto* pHouse : CGuildHouse::Data())
+	{
+		if(m_LoadedHouseLinks.contains(pHouse->GetID()))
+			continue;
+
+		nlohmann::json MetaJson = {
+			{"rent_end", pHouse->GetRentEndTimestamp()},
+			{"farm_items", nlohmann::json::parse(pHouse->GetFarmzonesManager()->GetItemsJson())}
+		};
+
+		Links::Add("guild_house", 0, pHouse->GetID(), MetaJson.dump()).Then(
+			[HouseID = pHouse->GetID()](Db::CResultSet&& Result)
+			{
+				if(!Result.Ok())
+					dbg_msg("guild", "failed to create local link for house %d", HouseID);
+			});
 	}
 }
 

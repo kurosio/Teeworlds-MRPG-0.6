@@ -4,6 +4,9 @@
 #include "house_db.h"
 #include "guild_house_data.h"
 
+#include <engine/server/links.h>
+
+#include <teeother/tools/nlohmann_json.h>
 #include <game/server/core/components/inventory/item_info_data.h>
 #include <game/server/gamecontext.h>
 
@@ -12,34 +15,69 @@
 constexpr int g_UpdateTextLifeTime = SERVER_TICK_SPEED * 2;
 constexpr float g_HouseChancePlanting = 0.025f;
 
-void CHouseManager::OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID)
+void CHouseManager::OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID, const std::string& MetaJson)
 {
-	if (Type == "player_house")
+	if(Type == "player_house")
 	{
-		// OwnerID is the account, TargetID is the house (one owner per house)
+		m_LoadedHouseLinks.insert(TargetID);
 		auto* pHouse = GetHouse(TargetID);
-		if (pHouse && !pHouse->HasOwner())
-			pHouse->SetAccountID(OwnerID);
+		if (!pHouse)
+			return;
+
+		pHouse->SetAccountID(static_cast<int>(OwnerID));
+
+		const auto Meta = nlohmann::json::parse(MetaJson, nullptr, false);
+		if (!Meta.is_object())
+			return;
+
+		if (const auto It = Meta.find("rent_end"); It != Meta.end() && It->is_number_integer())
+			pHouse->SetRentEndTimestamp(It->get<int64_t>());
+		if (const auto It = Meta.find("bank"); It != Meta.end() && It->is_string())
+			pHouse->GetBankManager()->Set(BigInt(It->get<std::string>()));
+		if (const auto It = Meta.find("farm_items"); It != Meta.end())
+			pHouse->GetFarmzonesManager()->LoadItems(It->dump());
 	}
 }
 
 void CHouseManager::OnInitWorld(int WorldID)
 {
-	// initialize houses
 	auto Houses = HouseDb::ListHouses(WorldID);
 	while(Houses.Next())
 	{
-		const auto ID = Houses.GetInt("ID");
-		const auto ClassName = Houses.GetString("Class");
-		const auto InitialFee = Houses.GetInt("InitialFee");
-		const time_t RentDays = Houses.GetInt64("RentDays");
-		const auto Bank = Houses.GetBigInt("Bank");
-		const auto WorldID = Houses.GetInt("WorldID");
-		std::string DoorsData = Houses.GetString("Doors");
-		std::string FarmzonesData = Houses.GetString("Farmzones");
-		std::string PropertiesData = Houses.GetString("Properties");
+		const int ID = Houses.GetInt("ID");
+		const time_t RentEnd = Houses.GetInt64("RentDays");
+		const std::string Bank = Houses.GetString("Bank");
+		const std::string Farmzones = Houses.GetString("Farmzones");
+		const std::string ClassName = Houses.GetString("Class");
+		const int InitialFee = Houses.GetInt("InitialFee");
+		const int HouseWorldID = Houses.GetInt("WorldID");
+		const std::string Doors = Houses.GetString("Doors");
+		const std::string Properties = Houses.GetString("Properties");
 
-		CHouse::CreateElement(ID)->Init(ClassName, RentDays, InitialFee, Bank, WorldID, DoorsData, FarmzonesData, PropertiesData);
+		auto* pHouse = CHouse::CreateElement(ID);
+		pHouse->Init(ClassName, RentEnd, InitialFee, BigInt(Bank), HouseWorldID, Doors, Farmzones, Properties);
+	}
+}
+
+void CHouseManager::OnLinksLoaded()
+{
+	for(const auto* pHouse : CHouse::Data())
+	{
+		if(m_LoadedHouseLinks.contains(pHouse->GetID()))
+			continue;
+
+		nlohmann::json MetaJson = {
+			{"rent_end", pHouse->GetRentEndTimestamp()},
+			{"bank", pHouse->GetBankManager()->Get().to_string()},
+			{"farm_items", nlohmann::json::parse(pHouse->GetFarmzonesManager()->GetItemsJson())}
+		};
+
+		Links::Add("player_house", 0, pHouse->GetID(), MetaJson.dump()).Then(
+			[HouseID = pHouse->GetID()](Db::CResultSet&& Result)
+			{
+				if(!Result.Ok())
+					dbg_msg("house", "failed to create local link for house %d", HouseID);
+			});
 	}
 }
 

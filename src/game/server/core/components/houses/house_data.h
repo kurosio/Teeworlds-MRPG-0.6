@@ -77,6 +77,7 @@ public:
 	int GetRentPrice() const;
 	int GetRentDays() const;
 	time_t GetRentEndTimestamp() const { return m_RentEndTimestamp; }
+	void SetRentEndTimestamp(time_t Timestamp) { m_RentEndTimestamp = Timestamp; }
 	int GetMaxDecorationSlots() const override { return (int)MAX_DECORATIONS_PER_HOUSE; }
 
 	void InitComponents(const BigInt& Bank, const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData);

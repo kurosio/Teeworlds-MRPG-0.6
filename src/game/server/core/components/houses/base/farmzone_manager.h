@@ -29,6 +29,9 @@ public:
 	void Add(CGS* pGS, const vec2& Pos);
 
 private:
+	void SetItems(const std::vector<int>& Items);
+
+private:
 	void NormalizeHealth();
 };
 
@@ -48,6 +51,9 @@ public:
 	void AddFarmzone(const std::string& Farmname, const DBSet& ItemSet, vec2 Pos, float Radius);
 	CFarmzone* GetFarmzoneByPos(vec2 Pos);
 	CFarmzone* GetFarmzoneByID(int ID);
+
+	void LoadItems(std::string_view JsonItems);
+	std::string GetItemsJson() const;
 	void Save() const;
 };
 

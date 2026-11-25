@@ -83,6 +83,7 @@ public:
 	int GetRentPrice() const;
 	int GetRentDays() const;
 	time_t GetRentEndTimestamp() const { return m_RentEndTimestamp; }
+	void SetRentEndTimestamp(time_t Timestamp) { m_RentEndTimestamp = Timestamp; }
 	bool IsPurchased() const { return m_pGuild != nullptr; }
 	const char* GetOwnerName() const;
 

@@ -1,7 +1,8 @@
 #include "farmzone_manager.h"
 
-#include <components/houses/house_db.h>
+#include <engine/server/links.h>
 #include <game/server/core/entities/items/gathering_node.h>
+
 #include <game/server/gamecontext.h>
 
 CFarmzone::CFarmzone(CFarmzonesManager* pManager, const std::string& Name, const DBSet& ItemsSet, vec2 Pos, float Radius)
@@ -99,16 +100,37 @@ void CFarmzone::AddItemToNode(int ItemID)
 
 bool CFarmzone::RemoveItemFromNode(int ItemID)
 {
-	// try remove
-	bool Removed = m_Node.m_vItems.removeElement(ItemID);
+	const bool Removed = m_Node.m_vItems.removeElement(ItemID);
 	if(Removed)
 	{
 		m_Node.m_vItems.setEqualChance(100.f);
 		m_Node.m_vItems.normalizeChances();
 		NormalizeHealth();
 	}
-
 	return Removed;
+}
+
+void CFarmzone::SetItems(const std::vector<int>& Items)
+{
+	std::vector<int> Existing;
+	for(const auto& Item : m_Node.m_vItems)
+		Existing.push_back(Item.Element);
+
+	for(const int ItemID : Existing)
+		m_Node.m_vItems.removeElement(ItemID);
+
+	for(const int ItemID : Items)
+	{
+		if(ItemID > 0)
+			m_Node.m_vItems.addElement(ItemID, 100.f);
+	}
+
+	if(!m_Node.m_vItems.isEmpty())
+	{
+		m_Node.m_vItems.setEqualChance(100.f);
+		m_Node.m_vItems.normalizeChances();
+		NormalizeHealth();
+	}
 }
 
 
@@ -163,31 +185,44 @@ CFarmzone* CFarmzonesManager::GetFarmzoneByID(int ID)
 	return it != m_vFarmzones.end() ? &it->second : nullptr;
 }
 
+void CFarmzonesManager::LoadItems(std::string_view JsonItems)
+{
+	const auto ItemsByZone = nlohmann::json::parse(std::string(JsonItems), nullptr, false);
+	if(!ItemsByZone.is_object())
+		return;
+
+	for(auto It = ItemsByZone.begin(); It != ItemsByZone.end(); ++It)
+	{
+		const int ZoneID = std::atoi(It.key().c_str());
+		auto* pZone = GetFarmzoneByID(ZoneID);
+		if(!pZone || !It.value().is_array())
+			continue;
+
+		std::vector<int> Items;
+		Items.reserve(It.value().size());
+		for(const auto& Item : It.value())
+		{
+			if(Item.is_number_integer())
+				Items.push_back(Item.get<int>());
+		}
+		pZone->SetItems(Items);
+	}
+}
+
+std::string CFarmzonesManager::GetItemsJson() const
+{
+	nlohmann::json ItemsByZone = nlohmann::json::object();
+	for(const auto& [ZoneID, Zone] : m_vFarmzones)
+	{
+		auto& Items = ItemsByZone[std::to_string(ZoneID)] = nlohmann::json::array();
+		for(const auto& Item : Zone.m_Node.m_vItems)
+			Items.push_back(Item.Element);
+	}
+	return ItemsByZone.dump();
+}
 
 void CFarmzonesManager::Save() const
 {
-	// prepare json data
-	nlohmann::json Farmzones;
-	for(auto& p : m_vFarmzones)
-	{
-		nlohmann::json farmzoneData;
-		farmzoneData["name"] = p.second.GetName();
-		farmzoneData["position"] = p.second.GetPos();
-		farmzoneData["radius"] = round_to_int(p.second.GetRadius());
-
-		std::string Items {};
-		for(const auto& Item : p.second.m_Node.m_vItems)
-		{
-			Items += std::to_string(Item.Element);
-			Items += ',';
-		}
-		if(!Items.empty())
-			Items.pop_back();
-
-		farmzoneData["items"] = Items;
-		Farmzones.push_back(farmzoneData);
-	}
-
-	// save to database
-	HouseDb::Shared::SaveFarmzones(m_pHouse->GetTableName(), m_pHouse->GetID(), Farmzones.dump(4));
+	const char* pLinkType = m_pHouse->GetHouseType() == IHouse::Type::Guild ? "guild_house" : "player_house";
+	Links::SaveJsonMeta(pLinkType, m_pHouse->GetID(), "farm_items", GetItemsJson());
 }

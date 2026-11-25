@@ -2,6 +2,7 @@
 
 #include "guild_data.h"
 
+#include <engine/server/links.h>
 #include <components/houses/guild_house_data.h>
 
 #include <base/system.h>
@@ -192,7 +193,6 @@ namespace GuildDb
 
 	Db::CRequest SaveHouseRentDays(int64_t RentEndTimestamp, int HouseID)
 	{
-		return Db::Query(KIND_GUILDS_HOUSES, "UPDATE tw_guilds_houses SET RentDays = ? WHERE ID = ?",
-			Db::Bind(RentEndTimestamp, HouseID));
+		return Links::SaveNumberMeta("guild_house", HouseID, "rent_end", RentEndTimestamp);
 	}
 }

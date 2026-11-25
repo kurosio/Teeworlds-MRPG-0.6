@@ -136,6 +136,7 @@ void CHouse::Sell()
 
 
 	// Update the house data
+	const int AccountID = m_AccountID;
 	if(CPlayer* pPlayer = GetPlayer())
 	{
 		pPlayer->Account()->ReinitializeHouse(true);
@@ -149,7 +150,7 @@ void CHouse::Sell()
 
 
 	// send information
-	GS()->ChatAccount(m_AccountID, "Your House is sold!");
+	GS()->ChatAccount(AccountID, "Your House is sold!");
 	GS()->Chat(-1, "House: '{}' have been is released!", m_ID);
 }
 

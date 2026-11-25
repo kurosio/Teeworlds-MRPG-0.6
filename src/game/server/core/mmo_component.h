@@ -69,13 +69,18 @@ private:
 	virtual void OnPostInit() {}
 
 	/**
+	 * @brief Called after the local links table has been loaded.
+	 */
+	virtual void OnLinksLoaded() {}
+
+	/**
 	 * @brief Called for each row of the links table, after all components are initialized.
 	 *
 	 * @param Type The type of the link (e.g. "player_house", "guild_house").
 	 * @param OwnerID The owner of the link.
 	 * @param TargetID The target of the link.
 	 */
-	virtual void OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID) {}
+	virtual void OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID, const std::string& MetaJson) {}
 
 	/**
 	 * @brief Initilizes the console commands.

@@ -17,6 +17,9 @@ public:
 	void Process() override;
 
 	void OnSnapDDNetCharacter(int SnappingClient, CNetObj_DDNetCharacter* pDDNetCharacter) override;
+
+private:
+	bool IsOwnerInCombat() const;
 };
 
 #endif

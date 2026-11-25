@@ -17,6 +17,7 @@ public:
 		: m_pHouse(pHouse), m_Bank(Bank) { }
 
 	BigInt Get() const { return m_Bank; }
+	void Set(const BigInt& Bank) { m_Bank = Bank; }
 	void Add(int Value);
 	void Take(int Value);
 	bool Spend(int Value);

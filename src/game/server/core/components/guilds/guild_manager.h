@@ -9,6 +9,8 @@
 
 class CGuildManager : public MmoComponent
 {
+	std::unordered_set<int64_t> m_LoadedHouseLinks;
+
 	~CGuildManager() override
 	{
 		// free data
@@ -17,8 +19,9 @@ class CGuildManager : public MmoComponent
 	};
 
 	void OnPreInit() override;
-	void OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID) override;
+	void OnInitLink(const std::string& Type, int64_t OwnerID, int64_t TargetID, const std::string& MetaJson) override;
 	void OnInitWorld(int WorldID) override;
+	void OnLinksLoaded() override;
 	void OnTick() override;
 	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason) override;

@@ -100,7 +100,7 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 			pComponent->OnPostInit();
 	}
 
-	// initialize links last, when the data of all components is already loaded
+	// Load local links first. Managers create only the rows that are missing.
 	if(isLastInitializedWorld)
 	{
 		auto Links = MmoDb::ListLinks();
@@ -109,19 +109,16 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 			const auto Type = Links.GetString("Type");
 			const auto OwnerID = Links.GetInt64("OwnerID");
 			const auto TargetID = Links.GetInt64("TargetID");
+			const auto MetaJson = Links.GetString("MetaJson");
 
-			for(auto& pComponent : m_System.m_vComponents)
-				pComponent->OnInitLink(Type, OwnerID, TargetID);
+			for(auto* pComponent : m_System.m_vComponents)
+				pComponent->OnInitLink(Type, OwnerID, TargetID, MetaJson);
 		}
-	}
+		
+		for(auto* pComponent : m_System.m_vComponents)
+			pComponent->OnLinksLoaded();
 
-		// log about listeners
-	if(isLastInitializedWorld)
-	{
 		g_EventListenerManager.LogRegisteredEvents();
-
-		// the language files are synced on generic background workers, so maintenance
-		// run neither blocks the start nor lives in an untracked thread
 		SyncLocalizationsAsync();
 	}
 }
