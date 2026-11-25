@@ -84,6 +84,7 @@ namespace Db
 		// this call, so the result can travel to another thread.
 		void CopyResult(sql::ResultSet* pResult, CResultSet& Out, const char*& pStage, uint32_t& ColumnIndex)
 		{
+			ColumnIndex = 0;
 			pStage = "metadata";
 			sql::ResultSetMetaData* pMeta = pResult->getMetaData();
 			const uint32_t Columns = pMeta ? pMeta->getColumnCount() : 0;
@@ -98,6 +99,7 @@ namespace Db
 			}
 			Out.SetColumns(std::move(vColumns));
 
+			ColumnIndex = 0;
 			pStage = "fetch_row";
 			while(pResult->next())
 			{
@@ -117,6 +119,7 @@ namespace Db
 						vRow.emplace_back(std::string(Value.c_str(), Value.length()));
 					}
 				}
+				ColumnIndex = 0;
 				pStage = "append_row";
 				Out.AddRow(std::move(vRow));
 				pStage = "fetch_row";
