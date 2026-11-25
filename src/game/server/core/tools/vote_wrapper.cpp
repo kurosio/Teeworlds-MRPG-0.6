@@ -648,7 +648,7 @@ bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, std::vector<std::any
 		const int GroupID = GetIfExists<int>(Extras, 1, NOPE);
 		std::optional<int> NewExtraID = (GroupID <= NOPE) ? std::nullopt : std::make_optional(GroupID);
 
-		if (MenuID == m_CurrentMenuID)
+		if (HasExtraHistoryEnabled(MenuID) && MenuID == m_CurrentMenuID)
 			PushExtraID(MenuID, m_ExtraID);
 		else
 			ClearExtraIDHistory(MenuID);

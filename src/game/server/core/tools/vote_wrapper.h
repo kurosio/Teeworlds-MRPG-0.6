@@ -331,6 +331,7 @@ class CVotePlayerData
 	mystd::string_mapper<int> m_StringMapper{};
 	std::unordered_map<int, std::unordered_map<int, VoteGroupHidden>> m_aHiddenGroup{};
 	std::unordered_map<int, std::stack<std::optional<int>>> m_aExtraIDHistory{};
+	std::unordered_set<int> m_vEnableExtraHistory{};
 
 	VoteGroupHidden* EmplaceHidden(int ID, int Type);
 	VoteGroupHidden* GetHidden(int ID);
@@ -374,6 +375,8 @@ public:
 	void SetLastMenuID(int MenuID) noexcept { m_LastMenuID = MenuID; }
 	[[nodiscard]] int GetLastMenuID() const noexcept { return m_LastMenuID; }
 
+	void EnableExtraHistory(int MenuID) { m_vEnableExtraHistory.insert(MenuID); }
+	[[nodiscard]] bool HasExtraHistoryEnabled(int MenuID) const { return m_vEnableExtraHistory.contains(MenuID); }
 	void PushExtraID(int MenuID, std::optional<int> ExtraID);
 	std::optional<int> PopExtraID(int MenuID);
 	[[nodiscard]] std::optional<int> PeekExtraID(int MenuID) const;
