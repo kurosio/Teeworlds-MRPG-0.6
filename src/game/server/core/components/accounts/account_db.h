@@ -63,7 +63,7 @@ namespace AccountDb
 
 	// Removes an account created by a failed registration.
 	Db::CRequest DeleteAccount(int AccountID);
-	// Fallback when the id of the created account is not known.
+	// Fallback only for an ambiguous registration commit when its inserted id is unknown.
 	Db::CRequest DeleteAccountByCredentials(std::string_view Login, std::string_view PasswordHash, std::string_view PasswordSalt);
 
 	// Credentials of an account that a guest registration claims.

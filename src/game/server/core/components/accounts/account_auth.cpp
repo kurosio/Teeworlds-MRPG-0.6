@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <cctype>
 #include <utility>
-#include <vector>
 
 namespace
 {
@@ -277,7 +276,7 @@ namespace
 	// -----------------------------------------------------------------------
 	struct SRegisterPayload
 	{
-		int m_InitID {};
+		int m_CreatedAccountID {};
 		std::string m_Login {};
 		std::string m_Password {};
 		std::string m_PasswordHash {};
@@ -288,21 +287,27 @@ namespace
 	};
 	using CRegisterContextPtr = std::shared_ptr<DbAsync::CContext<SRegisterPayload>>;
 
-	void CleanupAccountOnError(const CRegisterContextPtr& pContext, const char* pStage)
+	void ReportRegistrationError(const CRegisterContextPtr& pContext, const char* pStage)
 	{
 		const auto& Data = pContext->Data();
 		dbg_msg("Account", "Registration of '%s' failed at '%s' (client %d, account id %d).",
-			Data.m_Nickname.c_str(), pStage, pContext->GetClientID(), Data.m_InitID);
-
-		if(Data.m_InitID > 0)
-			AccountDb::DeleteAccount(Data.m_InitID);
-		else
-			AccountDb::DeleteAccountByCredentials(Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt);
+			Data.m_Nickname.c_str(), pStage, pContext->GetClientID(), Data.m_CreatedAccountID);
 
 		if(!pContext->GetPlayer())
 			return;
 		pContext->GS()->Chat(pContext->GetClientID(), "Registration failed due to server error.");
 		pContext->GS()->Chat(pContext->GetClientID(), "Please try again a bit later.");
+	}
+
+	void CleanupAccountOnError(const CRegisterContextPtr& pContext, const char* pStage)
+	{
+		const auto& Data = pContext->Data();
+		if(Data.m_CreatedAccountID > 0)
+			AccountDb::DeleteAccount(Data.m_CreatedAccountID);
+		else
+			AccountDb::DeleteAccountByCredentials(Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt);
+
+		ReportRegistrationError(pContext, pStage);
 	}
 
 	void AuthorizeAfterSuccess(const CRegisterContextPtr& pContext)
@@ -312,8 +317,8 @@ namespace
 			return;
 		pPlayer->GetSharedData().m_pAuthorizationAttempt.reset();
 		const auto& Data = pContext->Data();
-		dbg_msg("Account", "Registration of '%s' stored the account (client %d, account id %d).", Data.m_Nickname.c_str(), pContext->GetClientID(), Data.m_InitID);
-		pContext->Server()->UpdateAccountBase(Data.m_InitID, Data.m_Nickname, g_Config.m_SvMinRating);
+		dbg_msg("Account", "Registration of '%s' stored the account (client %d, account id %d).", Data.m_Nickname.c_str(), pContext->GetClientID(), Data.m_CreatedAccountID);
+		pContext->Server()->UpdateAccountBase(Data.m_CreatedAccountID, Data.m_Nickname, g_Config.m_SvMinRating);
 		StartLogin(pContext->GetClientID(), Data.m_Login, Data.m_Password, Data.m_Nickname);
 	}
 
@@ -334,8 +339,8 @@ namespace
 		{
 			auto& Data = pContext->Data();
 			const int64_t AccountID = Result.Ok() ? Result.InsertId() : 0;
-			// kept even when the player is gone: the cleanup removes exactly this row
-			Data.m_InitID = static_cast<int>(std::max<int64_t>(0, AccountID));
+			// Keep the id even if the player disconnects: cleanup must target only this row.
+			Data.m_CreatedAccountID = static_cast<int>(std::max<int64_t>(0, AccountID));
 
 			if(AccountID <= 0)
 			{
@@ -366,7 +371,8 @@ namespace
 		// would then fail on the unique index instead of the check above.
 		if(!Result.Ok())
 		{
-			CleanupAccountOnError(pContext, "lookup nickname");
+			// No account has been created at this stage; never run cleanup by credentials.
+			ReportRegistrationError(pContext, "lookup nickname");
 			return;
 		}
 
@@ -520,18 +526,19 @@ namespace AccountAuth
 
 	bool IsGuestCredentialForNickname(std::string_view Login, const char* pNickname)
 	{
-		return Login == BuildGuestCredential(pNickname);
+		constexpr std::string_view GUEST_PREFIX = "Guest-";
+		return Login.starts_with(GUEST_PREFIX) && Login.substr(GUEST_PREFIX.size()) == pNickname;
 	}
 
 	bool IsValidPinLength(std::string_view Pin)
 	{
-		return (int)Pin.length() >= LENGTH_PIN_MIN && (int)Pin.length() <= LENGTH_PIN_MAX;
+		return Pin.size() >= LENGTH_PIN_MIN && Pin.size() <= LENGTH_PIN_MAX;
 	}
 
 	bool IsDigitsOnly(std::string_view Text)
 	{
-		for(const char Character : Text)
-			if(!isdigit(Character))
+		for(const unsigned char Character : Text)
+			if(!std::isdigit(Character))
 				return false;
 		return true;
 	}
