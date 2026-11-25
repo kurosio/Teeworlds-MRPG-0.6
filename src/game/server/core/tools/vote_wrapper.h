@@ -8,6 +8,7 @@
 #include <set>
 #include <stack>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -15,6 +16,7 @@
 // forward declarations
 class CGS;
 class CPlayer;
+class VoteWrapper;
 
 using VoteOptionCallbackImpl = void(*)(CPlayer*, int, std::string, void*);
 
@@ -62,38 +64,6 @@ enum VoteWrapperFlags : int
 	VWF_HIDABLE_MASK = VWF_CLOSED | VWF_OPEN | VWF_UNIQUE,
 };
 
-// A background request that a menu shows.
-//
-// While the answer is missing the menu says "Loading ..." instead of an empty
-// list, and the answer redraws it - the component neither keeps a "requested"
-// flag nor asks for the redraw itself:
-//
-//     const CVoteLoad Load = LoadIdentity();
-//     if(Load.Begin())                     // false: a request of this load runs
-//         Db::Query(...).Then([Load](Db::CResultSet&& Rows) { ...; Load.Finish(); });
-//
-//     if(Wrapper.WaitLoad(Load))           // the menu shows the waiting state
-//         Wrapper.Add("Best player: loading ...");
-class CVoteLoad
-{
-public:
-	CVoteLoad() = default;
-	explicit CVoteLoad(std::string LoadID) : m_LoadID(std::move(LoadID)) {}
-
-	[[nodiscard]] const std::string& ID() const noexcept { return m_LoadID; }
-	[[nodiscard]] bool IsRunning() const;
-
-	// Starts the request; false when one of the same load runs already.
-	[[nodiscard]] bool Begin() const;
-	// The answer is in: every menu that showed this load is redrawn.
-	void Finish() const;
-	// Remembers that this menu shows the load, so Finish() can redraw it.
-	void Wait(int ClientID, int MenuID) const;
-
-private:
-	std::string m_LoadID {};
-};
-
 class CVoteOption
 {
 public:
@@ -128,7 +98,6 @@ class CVoteGroup
 	int m_HiddenID{};
 	int m_Flags{};
 	bool m_HasTitle{};
-	std::string m_LoadID {};
 	bool m_NextMarkedListItem{};
 
 	CGS* GS() const noexcept { return m_pGS; }
@@ -231,12 +200,9 @@ public:
 		return *this;
 	}
 
-	// The group renders the answer of Load: while it is missing the group says
-	// "Loading ..." instead of "Is empty", and the answer redraws the menu.
-	VoteWrapper& SetLoad(const CVoteLoad& Load);
-
-	// true while the answer of Load is missing, and this menu waits for it.
-	[[nodiscard]] bool WaitLoad(const CVoteLoad& Load) const;
+	// Returns true while the named DB request is running and redraws this
+	// menu when the last request with the tag completes.
+	[[nodiscard]] bool WaitLoad(std::string_view Tag, int TimeoutSeconds = 10) const;
 
 	void ReinitNumeralDepthStyles(std::initializer_list<std::pair<int, int>> vNumeralFlags) const
 	{
@@ -338,6 +304,7 @@ public:
 	static void RebuildVotes(int ClientID);
 	static CVoteOption* GetOptionVoteByAction(int ClientID, const char* pActionName);
 };
+
 #undef FMT_LOCALIZE_STR
 
 class CVotePlayerData

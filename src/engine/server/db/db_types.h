@@ -225,6 +225,15 @@ namespace Db
 		// for data no one has to see a moment-old write of - a menu that every
 		// player opens at once; never for a read that must see our own writes.
 		bool m_Coalesce = false;
+		// Optional application-level identity used to expose request state to
+		// menus. This is metadata only; it does not change SQL or deduplication.
+		std::string m_Tag;
+
+		SQueryOptions& Tag(std::string_view Name)
+		{
+			m_Tag.assign(Name);
+			return *this;
+		}
 
 		SQueryOptions& Timeout(int Milliseconds)
 		{

@@ -16,42 +16,42 @@ namespace MmoDb
 		return Db::Query(KIND_LINKS, "SELECT * FROM tw_links").Result();
 	}
 
-	Db::CRequest TopGuildsByLevel(int Rows)
+	Db::CRequest TopGuildsByLevel(int Rows, std::string_view Tag)
 	{
 		return Db::Query(KIND_GUILDS, "SELECT Name, Level, Exp FROM tw_guilds ORDER BY Level DESC, Exp DESC LIMIT ?",
-			Db::Bind(Rows), Db::SQueryOptions().Coalesce());
+			Db::Bind(Rows), Db::SQueryOptions().Coalesce().Tag(Tag));
 	}
 
-	Db::CRequest TopGuildsByBank(int Rows)
+	Db::CRequest TopGuildsByBank(int Rows, std::string_view Tag)
 	{
 		// the bank is a decimal stored as text, so the order is numeric via + 0
 		return Db::Query(KIND_GUILDS, "SELECT Name, Bank FROM tw_guilds ORDER BY Bank + 0 DESC LIMIT ?",
-			Db::Bind(Rows), Db::SQueryOptions().Coalesce());
+			Db::Bind(Rows), Db::SQueryOptions().Coalesce().Tag(Tag));
 	}
 
-	Db::CRequest TopAccountsByRating(int Rows)
+	Db::CRequest TopAccountsByRating(int Rows, std::string_view Tag)
 	{
 		return Db::Query(KIND_ACCOUNTS_DATA, "SELECT Nick, Rating FROM tw_accounts_data ORDER BY Rating DESC LIMIT ?",
-			Db::Bind(Rows), Db::SQueryOptions().Coalesce());
+			Db::Bind(Rows), Db::SQueryOptions().Coalesce().Tag(Tag));
 	}
 
-	Db::CRequest TopAccountsByBank(int Rows)
+	Db::CRequest TopAccountsByBank(int Rows, std::string_view Tag)
 	{
 		return Db::Query(KIND_ACCOUNTS_DATA, "SELECT Nick, Bank FROM tw_accounts_data ORDER BY Bank + 0 DESC LIMIT ?",
-			Db::Bind(Rows), Db::SQueryOptions().Coalesce());
+			Db::Bind(Rows), Db::SQueryOptions().Coalesce().Tag(Tag));
 	}
 
-	Db::CRequest TopDungeonRecords(int DungeonID, int Rows)
+	Db::CRequest TopDungeonRecords(int DungeonID, int Rows, std::string_view Tag)
 	{
 		return Db::Query(KIND_DUNGEON_RECORDS,
 			"SELECT UserID, Time FROM tw_dungeons_records WHERE DungeonID = ? ORDER BY Time ASC LIMIT ?",
-			Db::Bind(DungeonID, Rows), Db::SQueryOptions().Coalesce());
+			Db::Bind(DungeonID, Rows), Db::SQueryOptions().Coalesce().Tag(Tag));
 	}
 
-	Db::CRequest TopRhythmRecords(int WorldID, std::string_view Difficulty, int Rows)
+	Db::CRequest TopRhythmRecords(int WorldID, std::string_view Difficulty, int Rows, std::string_view Tag)
 	{
 		return Db::Query(KIND_RHYTHM_RECORDS,
 			"SELECT UserID, Score FROM tw_rhythm_records WHERE WorldID = ? AND Difficulty = ? ORDER BY Score DESC LIMIT ?",
-			Db::Bind(WorldID, Difficulty, Rows), Db::SQueryOptions().Coalesce());
+			Db::Bind(WorldID, Difficulty, Rows), Db::SQueryOptions().Coalesce().Tag(Tag));
 	}
 }

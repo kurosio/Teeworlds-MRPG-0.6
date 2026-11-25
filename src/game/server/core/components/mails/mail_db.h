@@ -8,13 +8,13 @@
 
 namespace MailDb
 {
-	Db::CRequest CountMails(int AccountID);
-	Db::CRequest ListMails(int AccountID);
-	Db::CRequest ReadMail(int MailID, int AccountID);
+	Db::CRequest GetUnreadMailsNum(int AccountID);
+	Db::CRequest ListMails(int AccountID, std::string_view Tag = {});
+	Db::CRequest ReadMail(int MailID, int AccountID, std::string_view Tag = {});
 	Db::CRequest ReadAttachedItems(int MailID, int AccountID);
 	Db::CRequest CreateMail(std::string_view Name, std::string_view Description, std::string_view Items, int AccountID, std::string_view Sender);
-	Db::CRequest MarkRead(int MailID);
-	Db::CRequest DeleteMail(int MailID);
+	Db::CRequest MarkRead(int MailID, int AccountID);
+	Db::CRequest DeleteMail(int MailID, int AccountID);
 	Db::CRequest DeleteReadMails(int AccountID);
 }
 

@@ -535,19 +535,19 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 }
 
 
-CVoteLoad CMmoController::TopLoad(ToplistType Type, int Rows)
+std::string CMmoController::TopUpdateTag(ToplistType Type)
 {
-	return CVoteLoad(fmt_default("top_{}_{}", (int)Type, Rows));
+	return fmt_default("top_{}", (int)Type);
 }
 
-CVoteLoad CMmoController::DungeonLoad(int DungeonID, int Rows)
+std::string CMmoController::DungeonUpdateTag(int DungeonID)
 {
-	return CVoteLoad(fmt_default("dungeon_{}_{}", DungeonID, Rows));
+	return fmt_default("dungeon_{}", DungeonID);
 }
 
-CVoteLoad CMmoController::RhythmLoad(int WorldID, const std::string& Difficulty, int Rows)
+std::string CMmoController::RhythmUpdateTag(int WorldID, const std::string& Difficulty)
 {
-	return CVoteLoad(fmt_default("rhythm_{}_{}_{}", WorldID, Difficulty, Rows));
+	return fmt_default("rhythm_{}_{}", WorldID, Difficulty);
 }
 
 
@@ -567,10 +567,13 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 	pWrapper->SetTitle(pTitle);
 
 	const auto& vResult = GetTopList(Type, Rows);
+	const bool Loading = pWrapper->WaitLoad(TopUpdateTag(Type), 5);
 	if(vResult.empty())
 	{
-		// nothing cached yet: the menu says that it waits and is redrawn with the rows
-		pWrapper->SetLoad(TopLoad(Type, Rows));
+		if(Loading)
+			pWrapper->Add("Loading ...");
+		else
+			pWrapper->Add("No records yet.");
 		return;
 	}
 
@@ -608,15 +611,9 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 
 bool CMmoController::NeedTopRows(const std::string& Key) const
 {
-	STopRows& Cache = m_TopRows[Key];
-
-	// rows stay valid for a while, so opening a menu again does not query again
+	const STopRows& Cache = m_TopRows[Key];
 	constexpr int LifetimeSeconds = 20;
-	if(Cache.m_Loaded && GS()->Server()->Tick() - Cache.m_Stamp < LifetimeSeconds * GS()->Server()->TickSpeed())
-		return false;
-
-	// one request per list at a time
-	return CVoteLoad(Key).Begin();
+	return !Cache.m_Loaded || GS()->Server()->Tick() - Cache.m_Stamp >= LifetimeSeconds * GS()->Server()->TickSpeed();
 }
 
 void CMmoController::SetTopRows(const std::string& Key, std::map<int, TempTopData>&& Rows) const
@@ -625,22 +622,17 @@ void CMmoController::SetTopRows(const std::string& Key, std::map<int, TempTopDat
 	Cache.m_Rows = std::move(Rows);
 	Cache.m_Stamp = GS()->Server()->Tick();
 	Cache.m_Loaded = true;
-
-	// the menus that showed the waiting state are drawn again with the rows
-	CVoteLoad(Key).Finish();
 }
 
 const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(ToplistType Type, int Rows) const
 {
-	const std::string Key = TopLoad(Type, Rows).ID();
-	if(!NeedTopRows(Key))
-		return TopRows(Key);
+	const std::string Tag = TopUpdateTag(Type);
+	if(!NeedTopRows(Tag) || Db::IsTagRunning(Tag))
+		return TopRows(Tag);
 
-	// every list is written by its own statement and filled in its own answer
 	if(Type == ToplistType::GuildLeveling)
 	{
-		MmoDb::TopGuildsByLevel(Rows)
-			.Then([this, Key](Db::CResultSet&& Guilds)
+		MmoDb::TopGuildsByLevel(Rows, Tag).Then([this, Tag](Db::CResultSet&& Guilds)
 		{
 			std::map<int, TempTopData> vResult {};
 			while(Guilds.Next())
@@ -650,13 +642,12 @@ const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(Top
 				Field.m_Value = Guilds.GetInt("Level");
 				Field.m_Extra = Guilds.GetUInt64("Exp");
 			}
-			SetTopRows(Key, std::move(vResult));
+			SetTopRows(Tag, std::move(vResult));
 		});
 	}
 	else if(Type == ToplistType::GuildWealthy)
 	{
-		MmoDb::TopGuildsByBank(Rows)
-			.Then([this, Key](Db::CResultSet&& Guilds)
+		MmoDb::TopGuildsByBank(Rows, Tag).Then([this, Tag](Db::CResultSet&& Guilds)
 		{
 			std::map<int, TempTopData> vResult {};
 			while(Guilds.Next())
@@ -665,13 +656,12 @@ const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(Top
 				Field.m_Name = Guilds.GetString("Name");
 				Field.m_Value = Guilds.GetBigInt("Bank");
 			}
-			SetTopRows(Key, std::move(vResult));
+			SetTopRows(Tag, std::move(vResult));
 		});
 	}
 	else if(Type == ToplistType::PlayerRating)
 	{
-		MmoDb::TopAccountsByRating(Rows)
-			.Then([this, Key](Db::CResultSet&& Accounts)
+		MmoDb::TopAccountsByRating(Rows, Tag).Then([this, Tag](Db::CResultSet&& Accounts)
 		{
 			std::map<int, TempTopData> vResult {};
 			while(Accounts.Next())
@@ -680,13 +670,12 @@ const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(Top
 				Field.m_Name = Accounts.GetString("Nick");
 				Field.m_Value = Accounts.GetInt("Rating");
 			}
-			SetTopRows(Key, std::move(vResult));
+			SetTopRows(Tag, std::move(vResult));
 		});
 	}
 	else if(Type == ToplistType::PlayerWealthy)
 	{
-		MmoDb::TopAccountsByBank(Rows)
-			.Then([this, Key](Db::CResultSet&& Accounts)
+		MmoDb::TopAccountsByBank(Rows, Tag).Then([this, Tag](Db::CResultSet&& Accounts)
 		{
 			std::map<int, TempTopData> vResult {};
 			while(Accounts.Next())
@@ -695,7 +684,7 @@ const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(Top
 				Field.m_Name = Accounts.GetString("Nick");
 				Field.m_Value = Accounts.GetBigInt("Bank");
 			}
-			SetTopRows(Key, std::move(vResult));
+			SetTopRows(Tag, std::move(vResult));
 		});
 	}
 	else if(Type == ToplistType::PlayerExpert)
@@ -712,7 +701,7 @@ const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(Top
 			Field.m_Extra = data.AccountID;
 			Iter++;
 		}
-		SetTopRows(Key, std::move(vResult));
+		SetTopRows(Tag, std::move(vResult));
 	}
 	else if(Type == ToplistType::PlayerAttributes)
 	{
@@ -732,54 +721,54 @@ const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(Top
 			Field.m_Extra = data.AccountID;
 			Iter++;
 		}
-		SetTopRows(Key, std::move(vResult));
+		SetTopRows(Tag, std::move(vResult));
 	}
 
-	return TopRows(Key);
+	return TopRows(Tag);
 }
 
 const std::map<int, CMmoController::TempTopData>& CMmoController::GetDungeonTopList(int DungeonID, int Rows) const
 {
-	const std::string Key = DungeonLoad(DungeonID, Rows).ID();
-	if(!NeedTopRows(Key))
-		return TopRows(Key);
+	const std::string Tag = DungeonUpdateTag(DungeonID);
+	if(!NeedTopRows(Tag) || Db::IsTagRunning(Tag))
+		return TopRows(Tag);
 
-	MmoDb::TopDungeonRecords(DungeonID, Rows)
-		.Then([this, Key](Db::CResultSet&& Records)
-	{
-		std::map<int, TempTopData> vResult {};
-		while(Records.Next())
+	MmoDb::TopDungeonRecords(DungeonID, Rows, Tag).Then(
+		[this, Tag](Db::CResultSet&& Records)
 		{
-			auto& Field = vResult[Records.Row()];
-			Field.m_Name = Instance::Server()->GetAccountNickname(Records.GetInt("UserID"));
-			Field.m_Value = Records.GetInt("Time");
-		}
-		SetTopRows(Key, std::move(vResult));
-	});
+			std::map<int, TempTopData> vResult {};
+			while(Records.Next())
+			{
+				auto& Field = vResult[Records.Row()];
+				Field.m_Name = Instance::Server()->GetAccountNickname(Records.GetInt("UserID"));
+				Field.m_Value = Records.GetInt("Time");
+			}
+			SetTopRows(Tag, std::move(vResult));
+		});
 
-	return TopRows(Key);
+	return TopRows(Tag);
 }
 
 const std::map<int, CMmoController::TempTopData>& CMmoController::GetRhythmTopList(int WorldID, const std::string& Difficulty, int Rows) const
 {
-	const std::string Key = RhythmLoad(WorldID, Difficulty, Rows).ID();
-	if(!NeedTopRows(Key))
-		return TopRows(Key);
+	const std::string Tag = RhythmUpdateTag(WorldID, Difficulty);
+	if(!NeedTopRows(Tag) || Db::IsTagRunning(Tag))
+		return TopRows(Tag);
 
-	MmoDb::TopRhythmRecords(WorldID, Difficulty, Rows)
-		.Then([this, Key](Db::CResultSet&& Records)
-	{
-		std::map<int, TempTopData> vResult {};
-		while(Records.Next())
+	MmoDb::TopRhythmRecords(WorldID, Difficulty, Rows, Tag).Then(
+		[this, Tag](Db::CResultSet&& Records)
 		{
-			auto& Field = vResult[Records.Row()];
-			Field.m_Name = Instance::Server()->GetAccountNickname(Records.GetInt("UserID"));
-			Field.m_Value = Records.GetInt("Score");
-		}
-		SetTopRows(Key, std::move(vResult));
-	});
+			std::map<int, TempTopData> vResult {};
+			while(Records.Next())
+			{
+				auto& Field = vResult[Records.Row()];
+				Field.m_Name = Instance::Server()->GetAccountNickname(Records.GetInt("UserID"));
+				Field.m_Value = Records.GetInt("Score");
+			}
+			SetTopRows(Tag, std::move(vResult));
+		});
 
-	return TopRows(Key);
+	return TopRows(Tag);
 }
 
 

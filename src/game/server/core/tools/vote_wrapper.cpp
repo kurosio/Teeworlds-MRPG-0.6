@@ -2,8 +2,11 @@
 
 #include <base/system.h>
 
+#include <engine/server/db/db_async.h>
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
+
+#include <unordered_set>
 
 namespace
 {
@@ -62,17 +65,29 @@ namespace
 			pDest[0] = '\0';
 	}
 
-	// Background loads that are running (with the moment they were started) and
-	// the menus that show them. The answers arrive on the game thread, so nothing
-	// here needs a lock.
-	std::unordered_map<std::string, int64_t> s_mRunningLoads;
-	std::unordered_map<std::string, std::vector<std::pair<int, int>>> s_vLoadWaiters;
+	// Menus waiting for named DB requests. Db::WatchTag invokes one completion
+	// callback after the last request with this tag has finished, on the game thread.
+	using CVoteWaiter = std::pair<int, int>;
+	std::unordered_map<std::string, std::vector<CVoteWaiter>> s_vTaggedLoadWaiters;
+	std::unordered_set<std::string> s_vWatchedLoadTags;
 
-	// A load that never reports back must not leave a menu waiting forever, so a
-	// wait that is older than this is dropped and the menu is drawn again (and
-	// may ask for the data another time). A statement that hangs, a callback that
-	// forgot Finish() or a request the database answered late all end up here.
-	constexpr int64_t VOTE_LOAD_TIMEOUT_SEC = 10;
+	void FinishTaggedLoad(const std::string& Tag)
+	{
+		const auto It = s_vTaggedLoadWaiters.find(Tag);
+		if(It == s_vTaggedLoadWaiters.end())
+			return;
+
+		for(const auto& [ClientID, MenuID] : It->second)
+		{
+			auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(ClientID));
+			CPlayer* pPlayer = pGS ? pGS->GetPlayer(ClientID) : nullptr;
+			if(pPlayer)
+				pPlayer->m_VotesData.UpdateVotesIf(MenuID);
+		}
+
+		s_vTaggedLoadWaiters.erase(It);
+		s_vWatchedLoadTags.erase(Tag);
+	}
 
 	// The option list the client is showing right now, so a rebuild that renders
 	// the same list again sends nothing. Every vote click rebuilds the menu, and
@@ -91,77 +106,6 @@ namespace
 		CNetMsg_Sv_VoteClearOptions ClearMsg;
 		Instance::Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
 	}
-}
-
-// =====================================================================
-// CVoteLoad
-// =====================================================================
-
-bool CVoteLoad::IsRunning() const
-{
-	if (m_LoadID.empty())
-		return false;
-
-	const auto It = s_mRunningLoads.find(m_LoadID);
-	if (It == s_mRunningLoads.end())
-		return false;
-
-	if (time_timestamp() - It->second < VOTE_LOAD_TIMEOUT_SEC)
-		return true;
-
-	// The answer never came. The wait is dropped and the menus that showed it are
-	// drawn again instead of staying on "Loading ..." for the rest of the round;
-	// the next build starts the load over.
-	dbg_msg("VoteWrapper", "load '%s' did not answer in %lld seconds, the wait is dropped",
-		m_LoadID.c_str(), (long long)VOTE_LOAD_TIMEOUT_SEC);
-	Finish();
-	return false;
-}
-
-bool CVoteLoad::Begin() const
-{
-	if (m_LoadID.empty())
-		return false;
-
-	// an expired load is not an answer that is still coming: it is dropped, so
-	// this request is started instead of waiting forever behind it
-	if (IsRunning())
-		return false;
-
-	s_mRunningLoads[m_LoadID] = time_timestamp();
-	return true;
-}
-
-void CVoteLoad::Wait(int ClientID, int MenuID) const
-{
-	// The waiter is registered whether the answer is already on its way or not:
-	// a menu that is built before the request is started still has to be drawn
-	// again when the answer comes, otherwise it keeps showing the loading line.
-	if (m_LoadID.empty())
-		return;
-
-	auto& vWaiters = s_vLoadWaiters[m_LoadID];
-	const std::pair<int, int> Waiter(ClientID, MenuID);
-	if (std::ranges::find(vWaiters, Waiter) == vWaiters.end())
-		vWaiters.push_back(Waiter);
-}
-
-void CVoteLoad::Finish() const
-{
-	s_mRunningLoads.erase(m_LoadID);
-
-	const auto It = s_vLoadWaiters.find(m_LoadID);
-	if (It == s_vLoadWaiters.end())
-		return;
-
-	for (const auto& [ClientID, MenuID] : It->second)
-	{
-		auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(ClientID));
-		CPlayer* pPlayer = pGS ? pGS->GetPlayer(ClientID) : nullptr;
-		if (pPlayer)
-			pPlayer->m_VotesData.UpdateVotesIf(MenuID);
-	}
-	s_vLoadWaiters.erase(It);
 }
 
 // =====================================================================
@@ -368,24 +312,30 @@ bool CVoteGroup::IsHidden() const noexcept
 // VoteWrapper
 // =====================================================================
 
-VoteWrapper& VoteWrapper::SetLoad(const CVoteLoad& Load)
+bool VoteWrapper::WaitLoad(std::string_view Tag, int TimeoutSeconds) const
 {
-	if (!m_pGroup)
-		return *this;
-
-	m_pGroup->m_LoadID = Load.ID();
-	Load.Wait(m_pGroup->m_ClientID, m_pGroup->m_pPlayer->m_VotesData.GetCurrentMenuID());
-	return *this;
-}
-
-bool VoteWrapper::WaitLoad(const CVoteLoad& Load) const
-{
-	if (!Load.IsRunning())
+	if(!m_pGroup || Tag.empty())
 		return false;
 
-	if (m_pGroup)
-		Load.Wait(m_pGroup->m_ClientID, m_pGroup->m_pPlayer->m_VotesData.GetCurrentMenuID());
-	return true;
+	const std::string Key(Tag);
+	auto& vWaiters = s_vTaggedLoadWaiters[Key];
+	const CVoteWaiter Waiter(m_pGroup->m_ClientID, m_pGroup->m_pPlayer->m_VotesData.GetCurrentMenuID());
+	if(std::ranges::find(vWaiters, Waiter) == vWaiters.end())
+		vWaiters.push_back(Waiter);
+
+	if(s_vWatchedLoadTags.insert(Key).second)
+	{
+		if(!Db::WatchTag(Key, [Key] { FinishTaggedLoad(Key); }))
+		{
+			s_vWatchedLoadTags.erase(Key);
+			s_vTaggedLoadWaiters.erase(Key);
+			return false;
+		}
+	}
+
+	// Timeout only hides the waiting placeholder; it never cancels the SQL request.
+	// Its eventual completion still redraws the menu with the updated cache.
+	return Db::IsTagRunning(Key, TimeoutSeconds);
 }
 
 void VoteWrapper::RebuildVotes(int ClientID)
@@ -422,15 +372,8 @@ void VoteWrapper::RebuildVotes(int ClientID)
 		if (!pGroup)
 			continue;
 
-		// a group that waits for its data, or a titled empty group, gets a placeholder
-		if (pGroup->IsEmpty() && !pGroup->IsHidden())
-		{
-			const CVoteLoad Load(pGroup->m_LoadID);
-			if (Load.IsRunning())
-				pGroup->AddVoteImpl("null", {}, fmt_localize(pGroup->m_ClientID, "Loading ...").c_str());
-			else if (pGroup->m_HasTitle)
-				pGroup->AddVoteImpl("null", {}, "Is empty");
-		}
+		if(pGroup->IsEmpty() && pGroup->m_HasTitle && !pGroup->IsHidden())
+			pGroup->AddVoteImpl("null", {}, "Is empty");
 
 		if (!(pGroup->m_Flags & VWF_SEPARATE))
 			continue;

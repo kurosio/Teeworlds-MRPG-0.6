@@ -6,8 +6,8 @@
 namespace DutiesDb
 {
 	Db::CResultSet ListDungeons();
-	Db::CRequest ReadBestDungeonPlayer();
-	Db::CRequest ReadBestRhythmPlayer();
+	Db::CRequest ReadBestDungeonPlayer(std::string_view Tag = {});
+	Db::CRequest ReadBestRhythmPlayer(std::string_view Tag = {});
 }
 
 #endif // GAME_SERVER_COMPONENT_DUTIES_DUTIES_DB_H

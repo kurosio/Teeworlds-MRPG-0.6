@@ -7,7 +7,6 @@
 
 #include <any>
 
-class CVoteLoad;
 class CMmoController
 {
 	CGS* m_pGameServer;
@@ -94,11 +93,10 @@ public:
 		bool m_Loaded {};
 	};
 
-	// The identity of a cached list. A menu hands it to VoteWrapper::SetLoad, so
-	// it shows the waiting state and is redrawn when the rows arrive.
-	static CVoteLoad TopLoad(ToplistType Type, int Rows);
-	static CVoteLoad DungeonLoad(int DungeonID, int Rows);
-	static CVoteLoad RhythmLoad(int WorldID, const std::string& Difficulty, int Rows);
+	// Stable query tags for shared top-list reads.
+	static std::string TopUpdateTag(ToplistType Type);
+	static std::string DungeonUpdateTag(int DungeonID);
+	static std::string RhythmUpdateTag(int WorldID, const std::string& Difficulty);
 
 	const std::map<int, TempTopData>& GetTopList(ToplistType Type, int Rows) const;
 	const std::map<int, TempTopData>& GetDungeonTopList(int DungeonID, int Rows) const;
@@ -109,7 +107,7 @@ private:
 	mutable std::map<std::string, STopRows> m_TopRows;
 	mutable bool m_TimePeriodPending = false;
 
-	// true when the entry has to be read (it is marked as running)
+	// true when the cached rows have expired and should be refreshed
 	bool NeedTopRows(const std::string& Key) const;
 	const std::map<int, TempTopData>& TopRows(const std::string& Key) const
 	{

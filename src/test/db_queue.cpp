@@ -4,6 +4,7 @@
 // They use a scripted driver, so they need no database server and no client:
 // what is under test is the queue, not the wire.
 
+#include <engine/server/async.h>
 #include <engine/server/db/db_async.h>
 #include <engine/server/db/db_pool.h>
 
@@ -378,6 +379,52 @@ TEST_F(CDbQueueTest, IdenticalReadsShareOneStatement)
 	// write that landed in between is seen.
 	EXPECT_TRUE(Db::Query(Db::EKind::Remote, "SELECT shared_answer FROM tw_something", {}, Db::SQueryOptions().Coalesce()).Result(5000).Ok());
 	EXPECT_EQ(m_Driver.CallCount(), 2u);
+}
+
+TEST_F(CDbQueueTest, TaggedQueriesNotifyAfterEveryMatchingCallback)
+{
+	m_Driver.BlockExecutions();
+	CExecutionGateGuard GateGuard(m_Driver);
+
+	constexpr std::string_view Tag = "test_shared_tag";
+	const auto Options = Db::SQueryOptions().Tag(Tag);
+	int CallbackCount = 0;
+	int WatcherCount = 0;
+	std::thread::id WatcherThread;
+
+	auto First = Db::Query(Db::EKind::Remote, "SELECT tagged_first", {}, Options);
+	auto Second = Db::Query(Db::EKind::Remote, "SELECT tagged_second", {}, Options);
+	ASSERT_TRUE(m_Driver.WaitForCalls(2, 3000));
+	EXPECT_TRUE(Db::IsTagRunning(Tag));
+	EXPECT_TRUE(Db::WatchTag(Tag, [&]
+	{
+		++WatcherCount;
+		WatcherThread = std::this_thread::get_id();
+	}));
+
+	First.Then([&](Db::CResultSet&& Result)
+	{
+		EXPECT_TRUE(Result.Ok());
+		++CallbackCount;
+	});
+	Second.Then([&](Db::CResultSet&& Result)
+	{
+		EXPECT_TRUE(Result.Ok());
+		++CallbackCount;
+	});
+
+	m_Driver.ReleaseExecutions();
+	for(int i = 0; i < 500 && WatcherCount == 0; ++i)
+	{
+		Async::RunMainThreadTasks();
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
+	}
+	Async::RunMainThreadTasks();
+
+	EXPECT_EQ(CallbackCount, 2);
+	EXPECT_EQ(WatcherCount, 1);
+	EXPECT_EQ(WatcherThread, std::this_thread::get_id());
+	EXPECT_FALSE(Db::IsTagRunning(Tag));
 }
 
 TEST_F(CDbQueueTest, AllowsASingleTrailingStatementTerminator)

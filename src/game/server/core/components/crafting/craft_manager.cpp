@@ -189,6 +189,7 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_CRAFTING_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_CRAFTING_LIST);
+		pPlayer->m_VotesData.EnableExtraHistory(true);
 
 		if(const auto CraftID = pPlayer->m_VotesData.GetExtraID())
 		{

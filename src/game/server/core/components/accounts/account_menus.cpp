@@ -660,7 +660,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		// is in instead of waiting for it here.
 		auto pAccount = pPlayer->Account();
 		auto pContext = DbAsync::MakeContext(ClientID);
-		Core()->MailboxManager()->CountMails(pAccount->GetID()).Then([pContext](Db::CResultSet&& Result)
+		Core()->MailboxManager()->GetUnreadMailsNum(pAccount->GetID()).Then([pContext](Db::CResultSet&& Result)
 		{
 			auto* pPlayer = pContext->GetPlayer();
 			if(!pPlayer)

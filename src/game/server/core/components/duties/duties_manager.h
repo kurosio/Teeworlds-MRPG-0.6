@@ -4,8 +4,6 @@
 
 #include "dungeon_data.h"
 
-class CVoteLoad;
-
 class CDutiesManager : public MmoComponent
 {
 	~CDutiesManager() override
@@ -26,9 +24,6 @@ public:
 	void ShowMiniGamesInfo(CPlayer* pPlayer, int WorldID) const;
 	const std::vector<std::string>& GetRhythmDifficulties(int WorldID) const;
 
-	static CVoteLoad BestDungeonLoad();
-	static CVoteLoad BestRhythmLoad();
-
 	CDungeonData* GetDungeonByID(int DungeonID) const;
 	CDungeonData* GetDungeonByWorldID(int WorldID) const;
 	int GetWorldsCountByType(WorldType Type) const;
@@ -44,9 +39,8 @@ private:
 	mutable SBestPlayer m_BestRhythm {};
 	mutable std::map<int, std::vector<std::string>> m_DifficultiesByWorld {};
 
-	// true when the entry has to be read (the load is marked as running)
-	bool NeedBest(const SBestPlayer& Cache, const CVoteLoad& Load) const;
-	void SetBest(SBestPlayer& Cache, std::optional<std::pair<std::string, int>>&& Value, const CVoteLoad& Load) const;
+	bool NeedBest(const SBestPlayer& Cache) const;
+	void SetBest(SBestPlayer& Cache, std::optional<std::pair<std::string, int>>&& Value) const;
 
 	const std::optional<std::pair<std::string, int>>& GetBestDungeonPlayer() const;
 	const std::optional<std::pair<std::string, int>>& GetBestRhythmPlayer() const;

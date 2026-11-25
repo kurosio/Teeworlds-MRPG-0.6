@@ -7,33 +7,124 @@
 #include <game/server/gamecontext.h>
 #include "mail_wrapper.h"
 
-bool CMailboxManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
+namespace
 {
-	// accept mail by id
-	if(PPSTR(pCmd, "MAIL_ACCEPT") == 0)
+	struct SMailRequestData
 	{
-		const int MailID = GetIfExists<int>(Extras, 0, NOPE);
-		AcceptMail(pPlayer, MailID);
+		int m_AccountID {};
+		uint64_t m_RequestID {};
+	};
+
+	using CMailRequestContext = DbAsync::CContext<SMailRequestData>;
+	std::array<uint64_t, MAX_CLIENTS> s_aMailboxRequestID {};
+
+	CPlayer* GetCurrentMailRequestPlayer(const std::shared_ptr<CMailRequestContext>& pContext, int MenuID, int MailID = NOPE)
+	{
+		CPlayer* pPlayer = pContext ? pContext->GetPlayer() : nullptr;
+		if(!pPlayer)
+			return nullptr;
+
+		const auto& Request = pContext->Data();
+		if(pPlayer->Account()->GetID() != Request.m_AccountID ||
+			s_aMailboxRequestID[pContext->GetClientID()] != Request.m_RequestID ||
+			pPlayer->m_VotesData.GetCurrentMenuID() != MenuID)
+			return nullptr;
+
+		if(MailID != NOPE)
+		{
+			const auto SelectedMail = pPlayer->m_VotesData.GetExtraID();
+			if(!SelectedMail || *SelectedMail != MailID)
+				return nullptr;
+		}
+
+		return pPlayer;
+	}
+
+	void BuildMailboxError(int ClientID, const char* pMessage, bool CanRetry)
+	{
+		mystd::freeContainer(VoteWrapper::Data()[ClientID]);
+		VoteWrapper VError(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Mailbox unavailable");
+		VError.Add("{~}", pMessage);
+		if(CanRetry)
+			VError.AddOption("MAIL_RETRY_LIST", "Retry loading");
+	}
+
+	void BuildMailError(int ClientID)
+	{
+		mystd::freeContainer(VoteWrapper::Data()[ClientID]);
+		VoteWrapper VError(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Mail unavailable");
+		VError.Add("Unable to load this mail. Return to mailbox and try again.");
+	}
+}
+
+bool CMailboxManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any>& Extras, int ReasonNumber, const char* pReason)
+{
+	const int ClientID = pPlayer->GetCID();
+	const int AccountID = pPlayer->Account()->GetID();
+
+	if(PPSTR(pCmd, "MAIL_RETRY_LIST") == 0)
+	{
+		pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
 		return true;
 	}
 
-	// delete mail by id
+	if(PPSTR(pCmd, "MAIL_ACCEPT") == 0)
+	{
+		AcceptMail(pPlayer, GetIfExists<int>(Extras, 0, NOPE));
+		return true;
+	}
+
 	if(PPSTR(pCmd, "MAIL_DELETE") == 0)
 	{
 		const int MailID = GetIfExists<int>(Extras, 0, NOPE);
-		DeleteMail(MailID);
-		InvalidateMailbox(pPlayer->GetCID());
-		pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
+		auto pContext = DbAsync::MakeContext(ClientID);
+		auto Request = MailDb::DeleteMail(MailID, AccountID);
+		if(!Request)
+		{
+			GS()->Chat(ClientID, "Unable to start mail deletion.");
+			return true;
+		}
+
+		Request.Then([pContext](Db::CResultSet&& Result)
+		{
+			auto* pPlayer = pContext->GetPlayer();
+			if(!pPlayer)
+				return;
+
+			if(!Result.Ok())
+			{
+				pContext->GS()->Chat(pContext->GetClientID(), "Unable to delete this mail.");
+				return;
+			}
+			pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
+		});
 		return true;
 	}
 
-	// delete all read mails
 	if(PPSTR(pCmd, "MAIL_DELETE_READ") == 0)
 	{
-		DeleteReadMails(pPlayer->Account()->GetID());
-		InvalidateMailbox(pPlayer->GetCID());
-		GS()->Chat(pPlayer->GetCID(), "All read mails deleted.");
-		pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
+		auto pContext = DbAsync::MakeContext(ClientID);
+		auto Request = MailDb::DeleteReadMails(AccountID);
+		if(!Request)
+		{
+			GS()->Chat(ClientID, "Unable to start deleting read mails.");
+			return true;
+		}
+
+		Request.Then([pContext](Db::CResultSet&& Result)
+		{
+			auto* pPlayer = pContext->GetPlayer();
+			if(!pPlayer)
+				return;
+
+			if(!Result.Ok())
+			{
+				pContext->GS()->Chat(pContext->GetClientID(), "Unable to delete read mails.");
+				return;
+			}
+			pContext->GS()->Chat(pContext->GetClientID(), "All read mails deleted.");
+			pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
+		});
 		return true;
 	}
 
@@ -75,19 +166,9 @@ bool CMailboxManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-Db::CRequest CMailboxManager::CountMails(int AccountID)
+Db::CRequest CMailboxManager::GetUnreadMailsNum(int AccountID)
 {
-	return MailDb::CountMails(AccountID);
-}
-
-CVoteLoad CMailboxManager::ListLoad(int AccountID)
-{
-	return CVoteLoad(fmt_default("mailbox_{}", AccountID));
-}
-
-CVoteLoad CMailboxManager::ViewLoad(int AccountID, int MailID)
-{
-	return CVoteLoad(fmt_default("mail_{}_{}", AccountID, MailID));
+	return MailDb::GetUnreadMailsNum(AccountID);
 }
 
 // tell the player how many letters are waiting, without holding up the login
@@ -97,10 +178,10 @@ void CMailboxManager::NotifyUnreadMails(CPlayer* pPlayer)
 		return;
 
 	auto pContext = DbAsync::MakeContext(pPlayer->GetCID());
-	CountMails(pPlayer->Account()->GetID()).Then([pContext](Db::CResultSet&& Result)
+	GetUnreadMailsNum(pPlayer->Account()->GetID()).Then([pContext](Db::CResultSet&& Result)
 	{
 		auto* pPlayer = pContext->GetPlayer();
-		if(!pPlayer || !Result.HasRows())
+		if(!pPlayer || !Result.Ok() || !Result.HasRows())
 			return;
 
 		const int Letters = Result.GetInt("Letters");
@@ -109,223 +190,259 @@ void CMailboxManager::NotifyUnreadMails(CPlayer* pPlayer)
 	});
 }
 
-// show a list of mails
+// The list is always read from the database. The callback owns its rows only
+// until the current menu is rebuilt; no mailbox data is retained between opens.
 void CMailboxManager::ShowMailboxList(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
-	auto& Mailbox = m_vMailboxes[ClientID];
+	const int AccountID = pPlayer->Account()->GetID();
+	const uint64_t RequestID = ++s_aMailboxRequestID[ClientID];
+	const std::string Tag = fmt_default("mailbox_list_{}_{}", ClientID, RequestID);
+	auto pContext = DbAsync::MakeContext<SMailRequestData>(ClientID, SMailRequestData{ AccountID, RequestID });
 
-	// The mailbox is read in the background the first time it is shown; the menu
-	// is rendered from what was read and rendered again when the answer is in.
-	if(!Mailbox.m_ListRead)
+	VoteWrapper VLoading(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Mailbox");
+	VLoading.Add("Loading mailbox ...");
+
+	auto Request = MailDb::ListMails(AccountID, Tag);
+	if(!Request)
 	{
-		const CVoteLoad Load = ListLoad(pPlayer->Account()->GetID());
-		VoteWrapper(ClientID).SetLoad(Load);
-		if(!Load.Begin())
-			return;
-		auto pContext = DbAsync::MakeContext(ClientID);
-		MailDb::ListMails(pPlayer->Account()->GetID())
-			.Then([pContext, Load](Db::CResultSet&& Mails)
-		{
-			auto* pPlayer = pContext->GetPlayer();
-			if(!pPlayer)
-			{
-				// the player is gone: the load must not stay marked as running
-				Load.Finish();
-				return;
-			}
-
-			auto* pManager = pContext->GS()->Core()->MailboxManager();
-			auto& Cache = pManager->m_vMailboxes[pContext->GetClientID()];
-			while(Mails.Next())
-			{
-				SBasicMail Mail;
-				Mail.m_ID = Mails.GetInt("ID");
-				Mail.m_Name = Mails.GetString("Name");
-				Mail.m_Sender = Mails.GetString("Sender");
-
-				auto& vTarget = Mails.GetBoolean("Readed") ? Cache.m_vRead : Cache.m_vUnread;
-				if(vTarget.size() < MAIL_MAX_CAPACITY)
-					vTarget.push_back(std::move(Mail));
-			}
-			Cache.m_ListRead = true;
-			Load.Finish();
-		});
+		BuildMailboxError(ClientID, "Unable to start the mailbox query.", true);
 		return;
 	}
 
-	// information
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Mailbox help");
-	VInfo.Add("Open mail to read and claim items.");
-	VInfo.Add("Use Claim to get items, Delete to remove.");
-	VoteWrapper::AddEmptyline(ClientID);
+	Request.Then([pContext](Db::CResultSet&& Mails)
+	{
+		CPlayer* pPlayer = GetCurrentMailRequestPlayer(pContext, MENU_MAILBOX);
+		if(!pPlayer)
+			return;
 
-	// unreaded mails
-	VoteWrapper VUnreadList(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE,
-		"\u2709 Unread: {} / {}", (int)Mailbox.m_vUnread.size(), (int)MAIL_MAX_CAPACITY);
-	for(auto& p : Mailbox.m_vUnread)
-		VUnreadList.AddMenu(MENU_MAILBOX_SELECT, p.m_ID, "{} [#{}]", p.m_Name, p.m_ID);
-	VoteWrapper::AddEmptyline(ClientID);
+		const int ClientID = pContext->GetClientID();
+		mystd::freeContainer(VoteWrapper::Data()[ClientID]);
+		if(!Mails.Ok())
+		{
+			const auto& Error = Mails.Error();
+			dbg_msg("Mailbox", "list query failed for account %d, code=%d sqlstate=%s",
+				pContext->Data().m_AccountID, Error.m_Code,
+				Error.m_SqlState.empty() ? "-" : Error.m_SqlState.c_str());
+			BuildMailboxError(ClientID, "Unable to load your mail. Please retry.", true);
+			VoteWrapper::AddBackpage(ClientID);
+			VoteWrapper::RebuildVotes(ClientID);
+			return;
+		}
 
-	// readed mails
-	VoteWrapper VReadList(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE,
-		"\u2709 Read: {} / {}", (int)Mailbox.m_vRead.size(), (int)MAIL_MAX_CAPACITY);
-	for(auto& p : Mailbox.m_vRead)
-		VReadList.AddMenu(MENU_MAILBOX_SELECT, p.m_ID, "{} [#{}]", p.m_Name, p.m_ID);
+		struct SBasicMail
+		{
+			int m_ID {};
+			std::string m_Name {};
+		};
+		std::vector<SBasicMail> vUnread;
+		std::vector<SBasicMail> vRead;
+		while(Mails.Next())
+		{
+			SBasicMail Mail;
+			Mail.m_ID = Mails.GetInt("ID");
+			Mail.m_Name = Mails.GetString("Name");
+			auto& vTarget = Mails.GetBoolean("Readed") ? vRead : vUnread;
+			if(vTarget.size() < MAIL_MAX_CAPACITY)
+				vTarget.push_back(std::move(Mail));
+		}
 
-	if(!Mailbox.m_vRead.empty())
-		VoteWrapper(ClientID).AddOption("MAIL_DELETE_READ", "Delete all read");
-	VoteWrapper::AddEmptyline(ClientID);
+		VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Mailbox help");
+		VInfo.Add("Open mail to read and claim items.");
+		VInfo.Add("Use Claim to get items, Delete to remove.");
+		VoteWrapper::AddEmptyline(ClientID);
+
+		VoteWrapper VUnreadList(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE,
+			"\u2709 Unread: {} / {}", (int)vUnread.size(), (int)MAIL_MAX_CAPACITY);
+		for(const auto& Mail : vUnread)
+			VUnreadList.AddMenu(MENU_MAILBOX_SELECT, Mail.m_ID, "{} [#{}]", Mail.m_Name, Mail.m_ID);
+		VoteWrapper::AddEmptyline(ClientID);
+
+		VoteWrapper VReadList(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE,
+			"\u2709 Read: {} / {}", (int)vRead.size(), (int)MAIL_MAX_CAPACITY);
+		for(const auto& Mail : vRead)
+			VReadList.AddMenu(MENU_MAILBOX_SELECT, Mail.m_ID, "{} [#{}]", Mail.m_Name, Mail.m_ID);
+
+		if(!vRead.empty())
+			VoteWrapper(ClientID).AddOption("MAIL_DELETE_READ", "Delete all read");
+		VoteWrapper::AddEmptyline(ClientID);
+		VoteWrapper::AddBackpage(ClientID);
+		VoteWrapper::RebuildVotes(ClientID);
+	});
 }
 
+// Every entry performs a fresh read. The row data exists only in this callback.
 void CMailboxManager::ShowMail(int MailID, CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 	const int AccountID = pPlayer->Account()->GetID();
-	auto& Mailbox = m_vMailboxes[ClientID];
+	const uint64_t RequestID = ++s_aMailboxRequestID[ClientID];
+	auto pContext = DbAsync::MakeContext<SMailRequestData>(ClientID, SMailRequestData{ AccountID, RequestID });
 
-	MarkReadedMail(MailID);
+	VoteWrapper VLoading(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Mail");
+	VLoading.Add("Loading mail ...");
 
-	// one mail, read the same way as the list: in the background, rendered after
-	if(!Mailbox.m_View.m_Loaded || Mailbox.m_View.m_ID != MailID)
+	const std::string Tag = fmt_default("mail_view_{}_{}_{}", ClientID, MailID, RequestID);
+	auto Request = MailDb::ReadMail(MailID, AccountID, Tag);
+	if(!Request)
 	{
-		const CVoteLoad Load = ViewLoad(AccountID, MailID);
-		VoteWrapper(ClientID).SetLoad(Load);
-		if(!Load.Begin())
-			return;
-
-		Mailbox.m_View.m_ID = MailID;
-		auto pContext = DbAsync::MakeContext(ClientID);
-		MailDb::ReadMail(MailID, AccountID)
-			.Then([pContext, MailID, Load](Db::CResultSet&& Rows)
-		{
-			auto* pPlayer = pContext->GetPlayer();
-			if(!pPlayer || !Rows.HasRows())
-			{
-				Load.Finish();
-				return;
-			}
-
-			auto* pManager = pContext->GS()->Core()->MailboxManager();
-			auto& Cache = pManager->m_vMailboxes[pContext->GetClientID()];
-			Cache.m_View.m_Loaded = true;
-			Cache.m_View.m_ID = MailID;
-			Cache.m_View.m_Name = Rows.GetString("Name");
-			Cache.m_View.m_Sender = Rows.GetString("Sender");
-			Cache.m_View.m_Description = Rows.GetString("Description");
-			Cache.m_View.m_Items = Rows.GetJson("AttachedItems").value("items", CItemsContainer {});
-			Load.Finish();
-		});
+		BuildMailError(ClientID);
 		return;
 	}
 
-	const auto& View = Mailbox.m_View;
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "{}", View.m_Name);
+	Request.Then([pContext, MailID](Db::CResultSet&& Rows)
 	{
-		size_t start, end = 0;
-		while((start = View.m_Description.find_first_not_of("\n", end)) != std::string::npos)
+		CPlayer* pPlayer = GetCurrentMailRequestPlayer(pContext, MENU_MAILBOX_SELECT, MailID);
+		if(!pPlayer)
+			return;
+
+		const int ClientID = pContext->GetClientID();
+		if(!Rows.Ok() || !Rows.HasRows())
 		{
-			end = View.m_Description.find("\n", start);
-			VInfo.Add("{~}", View.m_Description.substr(start, end - start).c_str());
+			if(!Rows.Ok())
+			{
+				const auto& Error = Rows.Error();
+				dbg_msg("Mailbox", "mail %d read failed for account %d, code=%d sqlstate=%s",
+					MailID, pContext->Data().m_AccountID, Error.m_Code,
+					Error.m_SqlState.empty() ? "-" : Error.m_SqlState.c_str());
+			}
+			BuildMailError(ClientID);
+			VoteWrapper::AddBackpage(ClientID);
+			VoteWrapper::RebuildVotes(ClientID);
+			return;
 		}
-	}
-	VInfo.Add("From: {~}", View.m_Sender);
-	VoteWrapper::AddEmptyline(ClientID);
 
-	// show attached item's information
-	if(!View.m_Items.empty())
-	{
-		VoteWrapper VAttached(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Items inside");
-		VAttached.ReinitNumeralDepthStyles({ { DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD } });
-		for(auto& pItem : View.m_Items)
-			VAttached.MarkList().Add("{}x{$} ({$})", pItem.Info()->GetName(), pItem.GetValue(), pPlayer->GetItem(pItem)->GetValue());
-		VoteWrapper::AddEmptyline(ClientID);
-	}
+		const std::string Name = Rows.GetString("Name");
+		const std::string Sender = Rows.GetString("Sender");
+		const std::string Description = Rows.GetString("Description");
+		const CItemsContainer Items = Rows.GetJson("AttachedItems").value("items", CItemsContainer {});
 
-	// add buttons
-	VoteWrapper(ClientID).AddOption("MAIL_ACCEPT", MailID, "Claim");
-	VoteWrapper(ClientID).AddOption("MAIL_DELETE", MailID, "Delete");
-	VoteWrapper::AddEmptyline(ClientID);
+		// Finish the read-mark write before displaying the message. This guarantees
+		// that returning to the list sees the updated Readed value.
+		auto MarkRequest = MailDb::MarkRead(MailID, pContext->Data().m_AccountID);
+		auto RenderMail = [pContext, pPlayer, ClientID, MailID, Name, Sender, Description, Items]()
+		{
+			if(GetCurrentMailRequestPlayer(pContext, MENU_MAILBOX_SELECT, MailID) != pPlayer)
+				return;
+
+			mystd::freeContainer(VoteWrapper::Data()[ClientID]);
+			VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "{}", Name);
+			size_t Start, End = 0;
+			while((Start = Description.find_first_not_of("\n", End)) != std::string::npos)
+			{
+				End = Description.find("\n", Start);
+				VInfo.Add("{~}", Description.substr(Start, End - Start).c_str());
+			}
+			VInfo.Add("From: {~}", Sender);
+			VoteWrapper::AddEmptyline(ClientID);
+
+			if(!Items.empty())
+			{
+				VoteWrapper VAttached(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Items inside");
+				VAttached.ReinitNumeralDepthStyles({ { DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD } });
+				for(const auto& Item : Items)
+				{
+					const CPlayerItem* pItem = pPlayer->GetItem(Item);
+					const int CurrentValue = pItem ? pItem->GetValue() : 0;
+					VAttached.MarkList().Add("{}x{$} ({$})", Item.Info()->GetName(), Item.GetValue(), CurrentValue);
+				}
+				VoteWrapper::AddEmptyline(ClientID);
+			}
+
+			VoteWrapper(ClientID).AddOption("MAIL_ACCEPT", MailID, "Claim");
+			VoteWrapper(ClientID).AddOption("MAIL_DELETE", MailID, "Delete");
+			VoteWrapper::AddEmptyline(ClientID);
+			VoteWrapper::AddBackpage(ClientID);
+			VoteWrapper::RebuildVotes(ClientID);
+		};
+
+		if(MarkRequest)
+			MarkRequest.Then([RenderMail = std::move(RenderMail)](Db::CResultSet&&) mutable { RenderMail(); });
+		else
+			RenderMail();
+	});
 }
 
 void CMailboxManager::AcceptMail(CPlayer* pPlayer, int MailID)
 {
-	// The answer decides what the player gets, so it is applied in the completion:
-	// no item is handed out before the content of the letter is known.
-	auto pContext = DbAsync::MakeContext(pPlayer->GetCID());
-	MailDb::ReadAttachedItems(MailID, pPlayer->Account()->GetID())
-		.Then([pContext, MailID](Db::CResultSet&& Rows)
+	const int ClientID = pPlayer->GetCID();
+	const int AccountID = pPlayer->Account()->GetID();
+	auto pContext = DbAsync::MakeContext(ClientID);
+	auto Request = MailDb::ReadAttachedItems(MailID, AccountID);
+	if(!Request)
+	{
+		GS()->Chat(ClientID, "Unable to load attached items.");
+		return;
+	}
+
+	Request.Then([pContext, MailID, AccountID](Db::CResultSet&& Rows)
 	{
 		auto* pPlayer = pContext->GetPlayer();
 		if(!pPlayer)
 			return;
 
-		auto* pManager = pContext->GS()->Core()->MailboxManager();
-		if(!Rows.HasRows())
+		if(!Rows.Ok() || !Rows.HasRows())
+		{
+			pContext->GS()->Chat(pContext->GetClientID(), "Unable to claim this mail.");
+			return;
+		}
+
+		const auto AttachedItemsJson = Rows.GetJson("AttachedItems");
+		CItemsContainer vAttachedItems = AttachedItemsJson.value("items", CItemsContainer {});
+		CItemsContainer vCannotAccept {};
+		for(const auto& Item : vAttachedItems)
+		{
+			CPlayerItem* pPlayerItem = pPlayer->GetItem(Item);
+			if(!pPlayerItem)
+			{
+				vCannotAccept.push_back(Item);
+				continue;
+			}
+
+			if(pPlayerItem->HasItem() && !Item.Info()->IsStackable())
+			{
+				vCannotAccept.push_back(Item);
+				continue;
+			}
+
+			pPlayerItem->Add(Item.GetValue(), 0, Item.GetEnchant(), Item.GetExpiresAt(), true, Item.GetStringData());
+			pContext->GS()->Chat(pContext->GetClientID(), "Item received: {}.", Item.Info()->GetName());
+		}
+
+		if(!vAttachedItems.empty() && vAttachedItems.size() == vCannotAccept.size())
 		{
 			pContext->GS()->Chat(pContext->GetClientID(), "Can't claim: no free slot for attached items.");
 			return;
 		}
 
-		// parse items
-		const auto attachedItemsJson = Rows.GetJson("AttachedItems");
-		CItemsContainer vAttachedItems = attachedItemsJson.value("items", CItemsContainer {});
-
-		// accept attached items
-		CItemsContainer vCannotAcceptableItems {};
-		for(auto& pItem : vAttachedItems)
+		if(!vCannotAccept.empty())
 		{
-			CPlayerItem* pPlayerItem = pPlayer->GetItem(pItem);
-
-			// check enchantable and has item
-			if(pPlayerItem->HasItem() && !pItem.Info()->IsStackable())
-			{
-				vCannotAcceptableItems.push_back(pItem);
-			}
-			else
-			{
-				pPlayerItem->Add(pItem.GetValue(), 0, pItem.GetEnchant(), pItem.GetExpiresAt(), true, pItem.GetStringData());
-				pContext->GS()->Chat(pContext->GetClientID(), "Item received: {}.", pItem.Info()->GetName());
-			}
-		}
-
-		// not one item can be accepted
-		if(vAttachedItems.size() == vCannotAcceptableItems.size())
-		{
-			pContext->GS()->Chat(pContext->GetClientID(), "Can't claim: no free slot for attached items.");
-			return;
-		}
-
-		// send mail only with the items that could not be taken
-		if(!vCannotAcceptableItems.empty())
-		{
-			MailWrapper Mail("System", pPlayer->Account()->GetID(), "Could not claim all items");
+			MailWrapper Mail("System", AccountID, "Could not claim all items");
 			Mail.AddDescLine("Some items were already owned.");
-			for(const auto& pItem : vCannotAcceptableItems)
-				Mail.AttachItem(pItem);
+			for(const auto& Item : vCannotAccept)
+				Mail.AttachItem(Item);
 			Mail.Send();
 		}
 
-		// the letter is empty now
-		pManager->DeleteMail(MailID);
-		pManager->InvalidateMailbox(pContext->GetClientID());
-		pPlayer->m_VotesData.UpdateVotesIf(MENU_MAILBOX);
+		auto DeleteRequest = MailDb::DeleteMail(MailID, AccountID);
+		if(!DeleteRequest)
+		{
+			pContext->GS()->Chat(pContext->GetClientID(), "Items were received, but the mail could not be removed.");
+			return;
+		}
+
+		DeleteRequest.Then([pContext](Db::CResultSet&& Result)
+		{
+			auto* pPlayer = pContext->GetPlayer();
+			if(!pPlayer)
+				return;
+
+			if(!Result.Ok())
+			{
+				pContext->GS()->Chat(pContext->GetClientID(), "Items were received, but the mail could not be removed.");
+				return;
+			}
+			pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
+		});
 	});
-}
-
-void CMailboxManager::DeleteReadMails(int AccountID) const
-{
-	MailDb::DeleteReadMails(AccountID);
-}
-
-void CMailboxManager::MarkReadedMail(int MailID) const
-{
-	// mark readed mail
-	MailDb::MarkRead(MailID);
-}
-
-void CMailboxManager::DeleteMail(int MailID) const
-{
-	// remove from database
-	MailDb::DeleteMail(MailID);
 }

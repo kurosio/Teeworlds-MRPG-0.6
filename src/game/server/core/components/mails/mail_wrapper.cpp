@@ -17,7 +17,7 @@ void MailWrapper::Send()
 		// the count is a statement of its own: the mail is already written, this
 		// only warns the receiver, so it must not hold up the sender
 		const int AccountID = m_AccountID;
-		pGS->Core()->MailboxManager()->CountMails(AccountID).Then([AccountID](Db::CResultSet&& Result)
+		pGS->Core()->MailboxManager()->GetUnreadMailsNum(AccountID).Then([AccountID](Db::CResultSet&& Result)
 		{
 			if(!Result.HasRows() || Result.GetInt("Letters") < (int)MAIL_MAX_CAPACITY)
 				return;

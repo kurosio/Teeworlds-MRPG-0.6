@@ -37,9 +37,11 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// dungeons
 		VoteWrapper VDungeon(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262C Dungeons ({})", GetWorldsCountByType(WorldType::Dungeon));
-		if(const auto& BestPlayer = GetBestDungeonPlayer())
-			VDungeon.Add("Best player: {~} with {} points.", BestPlayer->first, BestPlayer->second);
-		else if(VDungeon.WaitLoad(BestDungeonLoad()))
+		const auto& BestDungeonPlayer = GetBestDungeonPlayer();
+		const bool LoadingDungeonBest = VDungeon.WaitLoad("duties_best_dungeon", 5);
+		if(BestDungeonPlayer)
+			VDungeon.Add("Best player: {~} with {} points.", BestDungeonPlayer->first, BestDungeonPlayer->second);
+		else if(LoadingDungeonBest)
 			VDungeon.Add("Best player: loading ...");
 		else
 			VDungeon.Add("Best player: not found yet.");
@@ -94,9 +96,11 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// Rhythm
 		VoteWrapper VRhythm(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u266C Rhythm ({})", GetWorldsCountByType(WorldType::Rhythm));
-		if(const auto& BestPlayer = GetBestRhythmPlayer())
-			VRhythm.Add("Best player: {~} with {} points.", BestPlayer->first, BestPlayer->second);
-		else if(VRhythm.WaitLoad(BestRhythmLoad()))
+		const auto& BestRhythmPlayer = GetBestRhythmPlayer();
+		const bool LoadingRhythmBest = VRhythm.WaitLoad("duties_best_rhythm", 5);
+		if(BestRhythmPlayer)
+			VRhythm.Add("Best player: {~} with {} points.", BestRhythmPlayer->first, BestRhythmPlayer->second);
+		else if(LoadingRhythmBest)
 			VRhythm.Add("Best player: loading ...");
 		else
 			VRhythm.Add("Best player: not found yet.");
@@ -404,9 +408,10 @@ void CDutiesManager::ShowDungeonInfo(CPlayer* pPlayer, CDungeonData* pDungeon) c
 	// records
 	VoteWrapper VRecords(ClientID, VWF_SEPARATE_OPEN| VWF_STYLE_SIMPLE, "Records of passing");
 	const auto& vTopRecords = Core()->GetDungeonTopList(pDungeon->GetID(), 5);
+	const bool LoadingRecords = VRecords.WaitLoad(CMmoController::DungeonUpdateTag(pDungeon->GetID()), 5);
 	if(vTopRecords.empty())
 	{
-		if(VRecords.WaitLoad(CMmoController::DungeonLoad(pDungeon->GetID(), 5)))
+		if(LoadingRecords)
 			VRecords.Add("Loading ...");
 		else
 			VRecords.Add("No records yet.");
@@ -510,9 +515,10 @@ void CDutiesManager::ShowRhythmInfo(CPlayer* pPlayer, int WorldID) const
 		// add record list
 		VoteWrapper VOptions(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Rhythm [{~}]", Difficulty);
 		const auto& vTopRecords = Core()->GetRhythmTopList(WorldID, Difficulty, 3);
+		const bool LoadingRecords = VOptions.WaitLoad(CMmoController::RhythmUpdateTag(WorldID, Difficulty), 5);
 		if(vTopRecords.empty())
 		{
-			if(VOptions.WaitLoad(CMmoController::RhythmLoad(WorldID, Difficulty, 3)))
+			if(LoadingRecords)
 				VOptions.Add("Loading ...");
 			else
 				VOptions.Add("No records yet.");
@@ -621,48 +627,31 @@ const std::vector<std::string>& CDutiesManager::GetRhythmDifficulties(int WorldI
 	return m_DifficultiesByWorld.emplace(WorldID, std::move(vDifficulties)).first->second;
 }
 
-CVoteLoad CDutiesManager::BestDungeonLoad()
+bool CDutiesManager::NeedBest(const SBestPlayer& Cache) const
 {
-	return CVoteLoad("best_dungeon");
-}
-
-CVoteLoad CDutiesManager::BestRhythmLoad()
-{
-	return CVoteLoad("best_rhythm");
-}
-
-bool CDutiesManager::NeedBest(const SBestPlayer& Cache, const CVoteLoad& Load) const
-{
-	// the value stays valid for a while, so opening the menu again does not query again
+	// Keep the cached value for a short period to avoid repeated database reads.
 	constexpr int LifetimeSeconds = 20;
-	if(Cache.m_Loaded && GS()->Server()->Tick() - Cache.m_Stamp < LifetimeSeconds * GS()->Server()->TickSpeed())
-		return false;
-
-	return Load.Begin();
+	return !Cache.m_Loaded || GS()->Server()->Tick() - Cache.m_Stamp >= LifetimeSeconds * GS()->Server()->TickSpeed();
 }
 
-void CDutiesManager::SetBest(SBestPlayer& Cache, std::optional<std::pair<std::string, int>>&& Value, const CVoteLoad& Load) const
+void CDutiesManager::SetBest(SBestPlayer& Cache, std::optional<std::pair<std::string, int>>&& Value) const
 {
 	Cache.m_Value = std::move(Value);
 	Cache.m_Stamp = GS()->Server()->Tick();
 	Cache.m_Loaded = true;
-
-	// the menus that showed the waiting state are drawn again with the value
-	Load.Finish();
 }
 
 const std::optional<std::pair<std::string, int>>& CDutiesManager::GetBestDungeonPlayer() const
 {
-	const CVoteLoad Load = BestDungeonLoad();
-	if(NeedBest(m_BestDungeon, Load))
+	constexpr std::string_view Tag = "duties_best_dungeon";
+	if(NeedBest(m_BestDungeon) && !Db::IsTagRunning(Tag))
 	{
-		DutiesDb::ReadBestDungeonPlayer()
-			.Then([this, Load](Db::CResultSet&& Best)
+		DutiesDb::ReadBestDungeonPlayer(Tag).Then([this](Db::CResultSet&& Best)
 		{
 			std::optional<std::pair<std::string, int>> Value {};
 			if(Best.HasRows())
 				Value = std::make_pair(std::string(Instance::Server()->GetAccountNickname(Best.GetInt("UserID"))), Best.GetInt("Points"));
-			SetBest(m_BestDungeon, std::move(Value), Load);
+			SetBest(m_BestDungeon, std::move(Value));
 		});
 	}
 
@@ -671,16 +660,15 @@ const std::optional<std::pair<std::string, int>>& CDutiesManager::GetBestDungeon
 
 const std::optional<std::pair<std::string, int>>& CDutiesManager::GetBestRhythmPlayer() const
 {
-	const CVoteLoad Load = BestRhythmLoad();
-	if(NeedBest(m_BestRhythm, Load))
+	constexpr std::string_view Tag = "duties_best_rhythm";
+	if(NeedBest(m_BestRhythm) && !Db::IsTagRunning(Tag))
 	{
-		DutiesDb::ReadBestRhythmPlayer()
-			.Then([this, Load](Db::CResultSet&& Best)
+		DutiesDb::ReadBestRhythmPlayer(Tag).Then([this](Db::CResultSet&& Best)
 		{
 			std::optional<std::pair<std::string, int>> Value {};
 			if(Best.HasRows())
 				Value = std::make_pair(std::string(Instance::Server()->GetAccountNickname(Best.GetInt("UserID"))), Best.GetInt("Points"));
-			SetBest(m_BestRhythm, std::move(Value), Load);
+			SetBest(m_BestRhythm, std::move(Value));
 		});
 	}
 

@@ -106,6 +106,8 @@ namespace Db
 		{
 			std::mutex m_Mutex;
 			std::condition_variable m_Cv;
+			std::string m_Tag;
+			std::atomic<bool> m_TagActive { false };
 			CResultSet m_Result;
 			CCallback m_Callback;
 			CCancelToken m_CancelToken;
@@ -123,6 +125,7 @@ namespace Db
 		static std::unordered_map<std::string, std::shared_ptr<SCoalescedGroup>> s_Coalesced;
 
 		static CRequest FromState(std::shared_ptr<SState> pState);
+		static void FinishTag(const std::shared_ptr<SState>& pState);
 		static void FinishCoalescedGroup(const std::string& Key, const std::shared_ptr<SCoalescedGroup>& pGroup, const CResultSet& Result);
 		static CRequest Submit(EKind Kind, std::function<CResultSet(IDbConnection&)> Job, const SQueryOptions& Options, int Retries, std::string Sql = {}, std::string DedupeKey = {}, bool RetrySafe = false);
 		void Complete(CResultSet&& Result);
@@ -266,6 +269,12 @@ namespace Db
 	// Runs one statement with bound parameters; the result carries rows, affected
 	// rows or the insert id, and the error if any.
 	CRequest Query(EKind Kind, std::string_view Sql, const CBindings& Bindings = {}, const SQueryOptions& Options = {});
+
+	// Named in-flight query state. WatchTag registers a one-shot notification
+	// when the last request with this tag completes; its callback runs on the
+	// game thread. It returns false if the tag is not active.
+	bool IsTagRunning(std::string_view Tag, int MaxAgeSeconds = 0);
+	bool WatchTag(std::string_view Tag, std::function<void()> Callback);
 
 	// Runs Body atomically on one connection: true commits, false or a failed
 	// statement rolls back. InsertId() is the first generated id.

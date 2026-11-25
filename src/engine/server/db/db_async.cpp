@@ -26,6 +26,59 @@ namespace Db
 			return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
 		}
 
+		struct STaggedQuery
+		{
+			size_t m_Active {};
+			long long m_StartedMs {};
+			std::vector<std::function<void()>> m_vWatchers;
+		};
+		std::mutex s_TaggedQueryMutex;
+		std::unordered_map<std::string, STaggedQuery> s_TaggedQueries;
+
+		void RegisterQueryTag(const std::string& Tag)
+		{
+			if(Tag.empty())
+				return;
+
+			std::lock_guard<std::mutex> Lock(s_TaggedQueryMutex);
+			auto& Query = s_TaggedQueries[Tag];
+			if(Query.m_Active++ == 0)
+				Query.m_StartedMs = NowMs();
+		}
+
+		void CompleteQueryTag(const std::string& Tag)
+		{
+			if(Tag.empty())
+				return;
+
+			std::vector<std::function<void()>> vWatchers;
+			{
+				std::lock_guard<std::mutex> Lock(s_TaggedQueryMutex);
+				const auto It = s_TaggedQueries.find(Tag);
+				if(It == s_TaggedQueries.end() || It->second.m_Active == 0)
+					return;
+
+				if(--It->second.m_Active != 0)
+					return;
+
+				vWatchers = std::move(It->second.m_vWatchers);
+				s_TaggedQueries.erase(It);
+			}
+
+			if(!vWatchers.empty())
+			{
+				Async::PostToMainThread([Watchers = std::move(vWatchers)]() mutable
+				{
+					for(auto& Watcher : Watchers)
+					{
+						try { Watcher(); }
+						catch(const std::exception& e) { dbg_msg("SQL", "tag completion watcher failed: %s", e.what()); }
+						catch(...) { dbg_msg("SQL", "tag completion watcher failed"); }
+					}
+				});
+			}
+		}
+
 		SError TimeoutError()
 		{
 			return SError { 0, "", "request timed out" };
@@ -544,6 +597,13 @@ namespace Db
 		if(Retries < 0)
 			Retries = pExecutor->Config().m_SelectRetries;
 
+		pState->m_Tag = Options.m_Tag;
+		if(!pState->m_Tag.empty())
+		{
+			pState->m_TagActive.store(true);
+			RegisterQueryTag(pState->m_Tag);
+		}
+
 		// Taken before Sql is moved into the completion: the label names the
 		// statement in the slow statement report.
 		const std::string Label = MakeLabel(Sql);
@@ -691,6 +751,7 @@ namespace Db
 		if(!m_pState)
 			return CResultSet();
 
+		CResultSet Result;
 		{
 			std::unique_lock<std::mutex> Lock(m_pState->m_Mutex);
 			if(!m_pState->m_Completed)
@@ -704,8 +765,10 @@ namespace Db
 			// does not run for the same answer. The answer itself is a copy, so
 			// asking twice gives the same result instead of an empty one.
 			m_pState->m_Delivered = true;
-			return m_pState->m_Result;
+			Result = m_pState->m_Result;
 		}
+		FinishTag(m_pState);
+		return Result;
 	}
 
 	CRequest CRequest::FromState(std::shared_ptr<SState> pState)
@@ -730,6 +793,12 @@ namespace Db
 		Async::PostToMainThread([pState = m_pState] { CRequest::FromState(pState).Deliver(); });
 	}
 
+	void CRequest::FinishTag(const std::shared_ptr<SState>& pState)
+	{
+		if(pState && pState->m_TagActive.exchange(false))
+			CompleteQueryTag(pState->m_Tag);
+	}
+
 	void CRequest::Deliver()
 	{
 		CCallback Callback;
@@ -739,16 +808,29 @@ namespace Db
 			// A request may finish before its owner attaches Then() (for example,
 			// account-row prefetch during session takeover). Keep the result
 			// available in that case; Then() will enqueue another delivery attempt.
-			if(m_pState->m_Delivered || !m_pState->m_Completed || !m_pState->m_Callback)
+			if(m_pState->m_Delivered || !m_pState->m_Completed)
 				return;
+			if(!m_pState->m_Callback)
+			{
+				FinishTag(m_pState);
+				return;
+			}
 			m_pState->m_Delivered = true;
 			Callback = std::move(m_pState->m_Callback);
 			// Callback consumption is exclusive with Result(); move the potentially
 			// large row set instead of retaining and copying it in request state.
 			Result = std::move(m_pState->m_Result);
 		}
-		if(Callback)
+		try
+		{
 			Callback(std::move(Result));
+		}
+		catch(...)
+		{
+			FinishTag(m_pState);
+			throw;
+		}
+		FinishTag(m_pState);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -1406,6 +1488,33 @@ namespace Db
 	{
 		auto pExecutor = Executor(Kind);
 		return pExecutor ? pExecutor->Pool() : std::shared_ptr<CDbPool>();
+	}
+
+	bool IsTagRunning(std::string_view Tag, int MaxAgeSeconds)
+	{
+		if(Tag.empty())
+			return false;
+
+		std::lock_guard<std::mutex> Lock(s_TaggedQueryMutex);
+		const auto It = s_TaggedQueries.find(std::string(Tag));
+		if(It == s_TaggedQueries.end() || It->second.m_Active == 0)
+			return false;
+
+		return MaxAgeSeconds <= 0 || NowMs() - It->second.m_StartedMs < static_cast<long long>(MaxAgeSeconds) * 1000;
+	}
+
+	bool WatchTag(std::string_view Tag, std::function<void()> Callback)
+	{
+		if(Tag.empty() || !Callback)
+			return false;
+
+		std::lock_guard<std::mutex> Lock(s_TaggedQueryMutex);
+		const auto It = s_TaggedQueries.find(std::string(Tag));
+		if(It == s_TaggedQueries.end() || It->second.m_Active == 0)
+			return false;
+
+		It->second.m_vWatchers.push_back(std::move(Callback));
+		return true;
 	}
 
 	// ---------------------------------------------------------------------------
