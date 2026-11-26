@@ -180,7 +180,7 @@ void CPlayer::Tick()
 void CPlayer::PostTick()
 {
 	// Check if the user is authenticated
-	if(IsAuthed())
+	if(IsAuthed() && Account()->IsReadyToPlay())
 	{
 		// update latency value
 		if(Server()->ClientIngame(m_ClientID))
@@ -340,7 +340,7 @@ void CPlayer::HandleScoreboardColors()
 void CPlayer::HandlePeriodicActivityReward()
 {
 	// disabled interval activity coin periodic reward
-	if(g_Config.m_SvActivityCoinPeriodicRewardInterval <= 0 || !IsAuthed())
+	if(g_Config.m_SvActivityCoinPeriodicRewardInterval <= 0 || !IsAuthed() || !Account()->IsReadyToPlay())
 		return;
 
 	// initialize variables
@@ -840,6 +840,10 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 ######################################################################### */
 bool CPlayer::ParseVoteOptionResult(int Vote)
 {
+	// votes are handled only after account data is fully loaded.
+	if (!IsAuthed() || !Account()->IsReadyToPlay())
+		return true;
+		
 	// check valid character
 	if(!m_pCharacter)
 	{

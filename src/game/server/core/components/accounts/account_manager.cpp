@@ -104,7 +104,6 @@ bool CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitialize, int64_
 	auto* pManager = this;
 	pAccount->RegisterLoadStages();
 	Core()->RegisterAccountLoadStages(pPlayer);
-	Core()->OnPlayerLogin(pPlayer);
 	pAccount->RunLoadStages([pContext, pManager, ClaimDeadline, OnLoaded = std::move(OnLoaded)](bool Success) mutable
 	{
 		auto* pPlayer = pContext->GetPlayer();
@@ -172,6 +171,9 @@ void CAccountManager::FinishAccountLoad(CPlayer* pPlayer, int64_t ClaimDeadline)
 	const int Rank = Server()->GetAccountRank(pAccount->GetID());
 	GS()->Chat(-1, "'{~}' logged to account. Rank '#{}[{~}]' ({~})", Server()->ClientName(ClientID), Rank,
 		Server()->ClientCountryIsoCode(ClientID), pPlayer->Account()->GetRatingSystem().GetRankName());
+
+	// Login hooks run after account data is fully loaded and ReadyToPlay is set.
+	Core()->OnPlayerLogin(pPlayer);
 
 	// Change player's world ID to the latest correct world ID
 	const int LatestCorrectWorldID = GetLastVisitedWorldID(pPlayer);

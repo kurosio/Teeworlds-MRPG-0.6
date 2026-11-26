@@ -89,7 +89,8 @@ CPlayer* CGS::GetPlayer(int ClientID, bool CheckAuth, bool CheckCharacter) const
 		return nullptr;
 
 	CPlayer* pPlayer = m_apPlayers[ClientID];
-	if(!pPlayer || (CheckAuth && !pPlayer->IsAuthed()) || (CheckCharacter && !pPlayer->GetCharacter()))
+	const bool Authenticated = pPlayer && pPlayer->IsAuthed() && pPlayer->Account()->IsReadyToPlay();
+	if(!pPlayer || (CheckAuth && !Authenticated) || (CheckCharacter && !pPlayer->GetCharacter()))
 		return nullptr;
 
 	return pPlayer;

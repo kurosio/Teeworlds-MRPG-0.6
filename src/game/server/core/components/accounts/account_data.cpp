@@ -305,7 +305,6 @@ void CAccountData::LoadAchievementsProgress()
 					pAccount->m_apAchievements[AchievementID]->Init(ClampedProgress, Completed);
 			}
 
-			pAccount->m_apAchievements.clear();
 			Done(true);
 		});
 	});
