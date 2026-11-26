@@ -3,6 +3,8 @@
 #include "account_data.h"
 #include "account_db.h"
 
+#include <components/achievements/achievement_db.h>
+
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
@@ -34,26 +36,6 @@ namespace
 
 		return FreeSlots;
 	}
-}
-
-namespace
-{
-	struct SAchievementKey
-	{
-		int m_Type {};
-		int m_Criteria {};
-
-		bool operator<(const SAchievementKey& Other) const
-		{
-			return std::tie(m_Type, m_Criteria) < std::tie(Other.m_Type, Other.m_Criteria);
-		}
-	};
-
-	struct SAchievementProgress
-	{
-		int m_Progress {};
-		int m_CompletedLevel {};
-	};
 }
 
 CGS* CAccountData::GS() const
@@ -253,15 +235,11 @@ void CAccountData::SaveEquipmentPresets()
 
 void CAccountData::InitAchievements()
 {
-	// The elements exist as soon as the client is there; their progress is the
-	// statement of LoadAchievementsProgress().
-	m_apAchievements.clear();
-	auto* pPlayer = GetPlayer();
-	for(const auto& pAchievement : CAchievementInfo::Data())
-	{
-		const int AchievementID = pAchievement->GetID();
-		m_apAchievements[AchievementID] = CAchievement::CreateElement(pAchievement, pPlayer->GetCID());
-	}
+	// Runtime progress lives in one place, keyed by client and achievement ID.
+	auto& Achievements = CAchievement::Data()[m_ClientID];
+	mystd::freeContainer(Achievements);
+	for(const auto* pInfo : CAchievementInfo::Data())
+		CAchievement::CreateElement(pInfo, m_ClientID);
 }
 
 void CAccountData::LoadAchievementsProgress()
@@ -271,7 +249,7 @@ void CAccountData::LoadAchievementsProgress()
 	AddLoadStage("achievements", [ClientID, AccountID](CLoadDone Done)
 	{
 		auto pContext = DbAsync::MakeContext(ClientID);
-		AccountDb::LoadAchievements(AccountID).Then([pContext, Done = std::move(Done)](Db::CResultSet&& Rows) mutable
+		AchievementDb::LoadProgress(AccountID).Then([pContext, ClientID, Done = std::move(Done)](Db::CResultSet&& Rows) mutable
 		{
 			auto* pPlayer = pContext->GetPlayer();
 			if(!pPlayer || !Rows.Ok())
@@ -280,29 +258,28 @@ void CAccountData::LoadAchievementsProgress()
 				return;
 			}
 
-			auto* pAccount = pPlayer->Account();
-			std::map<SAchievementKey, SAchievementProgress> vProgress {};
+			// One row per (type, criteria) chain: progress and highest completed ID.
+			std::map<std::pair<int, int>, std::pair<int, int>> ProgressByChain;
 			while(Rows.Next())
 			{
-				const SAchievementKey Key { Rows.GetInt("AchievementType"), Rows.GetInt("Criteria") };
-				const SAchievementProgress Progress { Rows.GetInt("Progress"), Rows.GetInt("CompletedLevel") };
-				vProgress[Key] = Progress;
+				const auto Key = std::make_pair(Rows.GetInt("AchievementType"), Rows.GetInt("Criteria"));
+				ProgressByChain[Key] = { Rows.GetInt("Progress"), Rows.GetInt("CompletedLevel") };
 			}
 
-			for(const auto& pAchievement : CAchievementInfo::Data())
+			auto& Achievements = CAchievement::Data()[ClientID];
+			for(const auto* pInfo : CAchievementInfo::Data())
 			{
-				const int AchievementID = pAchievement->GetID();
-				const SAchievementKey Key { (int)pAchievement->GetType(), pAchievement->GetCriteria() };
-				const auto it = vProgress.find(Key);
-				if(it == vProgress.end())
+				const auto It = Achievements.find(pInfo->GetID());
+				if(It == Achievements.end())
 					continue;
 
-				const SAchievementProgress& ProgressData = it->second;
-				const int Required = pAchievement->GetRequired();
-				const int ClampedProgress = clamp(ProgressData.m_Progress, 0, Required);
-				const bool Completed = ProgressData.m_CompletedLevel >= AchievementID || ClampedProgress >= Required;
-				if(pAccount->m_apAchievements.contains(AchievementID))
-					pAccount->m_apAchievements[AchievementID]->Init(ClampedProgress, Completed);
+				const auto RowIt = ProgressByChain.find({ (int)pInfo->GetType(), pInfo->GetCriteria() });
+				const int Progress = RowIt != ProgressByChain.end()
+					? clamp(RowIt->second.first, 0, pInfo->GetRequired())
+					: 0;
+				const bool Completed = RowIt != ProgressByChain.end()
+					&& (RowIt->second.second >= pInfo->GetID() || pInfo->IsProgressEnough(Progress));
+				It->second->Init(Progress, Completed);
 			}
 
 			Done(true);
@@ -645,19 +622,6 @@ void CAccountData::HandleChair(int ChairLevel)
 		GetGold(), MaxGoldCapacity, GetTotalGold(), goldStr.c_str(), pClassProfession->GetExperience(),
 		pClassProfession->GetExpForNextLevel(), expStr.c_str());
 }
-
-void CAccountData::UpdateAchievementProgress(const CAchievementInfo* pInfo, int Progress, bool Completed)
-{
-	if(!pInfo)
-		return;
-
-	const int AchievementType = (int)pInfo->GetType();
-	const int Criteria = pInfo->GetCriteria();
-	const int CompletedLevel = Completed ? pInfo->GetID() : 0;
-
-	AccountDb::SaveAchievement(m_ID, AchievementType, Criteria, Progress, CompletedLevel);
-}
-
 
 void CAccountData::AutoEquipSlots(bool OnlyEmptySlots)
 {

@@ -165,9 +165,6 @@ namespace AccountDb
 	Db::CRequest CreateProfessions(int AccountID, const std::vector<SProfessionData>& vProfessions);
 	Db::CRequest SaveProfession(int AccountID, int ProfessionID, std::string_view Data);
 
-	Db::CRequest LoadAchievements(int AccountID);
-	Db::CRequest SaveAchievement(int AccountID, int AchievementType, int Criteria, int Progress, int CompletedLevel);
-
 	Db::CRequest SaveEquippedSlots(int AccountID, std::string_view Json);
 	Db::CRequest SaveEquipmentPresets(int AccountID, std::string_view Json);
 	Db::CRequest SaveRating(int AccountID, int Rating);

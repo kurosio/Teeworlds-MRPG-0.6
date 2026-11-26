@@ -9,24 +9,29 @@
 
 class CAchievementManager : public MmoComponent
 {
+	struct SAchievementChain
+	{
+		AchievementType m_Type {};
+		std::vector<int> m_vIDs {};
+	};
+
+	// Shared across worlds: only the initializer world runs OnPreInit().
+	static inline std::vector<SAchievementChain> m_vChains {};
+
 	~CAchievementManager() override
 	{
 		mystd::freeContainer(CAchievement::Data(), CAchievementInfo::Data());
 	};
 
 	void OnPreInit() override;
+	void OnPostInit() override;
 	void OnClientReset(int ClientID) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 
+	void BuildChains();
 	void ShowMenu(CPlayer* pPlayer) const;
 	void ShowTypeList(CPlayer* pPlayer, AchievementType Type) const;
-	void AddAchievementDetails(VoteWrapper& VAchievement, const CAchievementInfo* pInfo, int Progress, int Required, int Level = 0, int TotalLevels = 0) const;
-
-public:
-	int GetCountByType(AchievementType Type) const;
-	int GetCompletedCountByType(int ClientID, AchievementType Type) const;
-	int GetCount() const;
-	int GetCompletedCount(int ClientID) const;
+	void AddAchievementDetails(VoteWrapper& Vote, const CAchievementInfo* pInfo, int Progress, int Level, int TotalLevels) const;
 };
 
 #endif

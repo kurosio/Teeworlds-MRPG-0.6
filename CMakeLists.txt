@@ -942,6 +942,7 @@ if(GTEST_FOUND OR DOWNLOAD_GTEST)
   # game-facing DB adapters are compiled into the test runner.
   set(TESTS_DB_SRC
     src/game/server/core/components/accounts/account_db.cpp
+    src/game/server/core/components/achievements/achievement_db.cpp
   )
   set(TESTS_DB_LIBRARIES)
   if(NOT MARIADB_FOUND OR NOT TARGET mmoteeworlds_db)

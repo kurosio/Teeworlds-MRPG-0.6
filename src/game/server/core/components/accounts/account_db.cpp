@@ -275,6 +275,23 @@ namespace AccountDb
 		if(vKeys.empty())
 			return {};
 
+		// A single UPDATE is already atomic; avoid three transaction round trips
+		// for the common case. Keep the transaction for multiple batches.
+		if (vKeys.size() <= SESSION_BATCH_SIZE)
+		{
+			Db::CBindings Bindings;
+			std::string Conditions;
+			for (const auto& Key : vKeys)
+			{
+				if (!Conditions.empty())
+					Conditions += " OR ";
+				Conditions += "(AccountID = ? AND SessionToken = ?)";
+				Bindings.Add(Key.m_AccountID).Add(Key.m_Token);
+			}
+			return Db::Query(KIND, "UPDATE tw_account_sessions SET Heartbeat = UNIX_TIMESTAMP(), UpdatedAt = NOW() "
+				"WHERE Heartbeat <> 0 AND (" + Conditions + ")", Bindings);
+		}
+
 		// Batched heartbeat updates use the remote endpoint.
 		return Db::Transaction(KIND, [vKeys](Db::CTransaction& Tx)
 		{
@@ -440,21 +457,6 @@ namespace AccountDb
 	{
 		return Db::Query(KIND, "UPDATE tw_accounts_professions SET Data = ? WHERE ProfessionID = ? AND UserID = ?",
 			Db::Bind(Data, ProfessionID, AccountID));
-	}
-
-	Db::CRequest LoadAchievements(int AccountID)
-	{
-		return Db::Query(KIND, "SELECT AchievementType, Criteria, Progress, CompletedLevel FROM tw_accounts_achievements WHERE AccountID = ?",
-			Db::Bind(AccountID));
-	}
-
-	Db::CRequest SaveAchievement(int AccountID, int AchievementType, int Criteria, int Progress, int CompletedLevel)
-	{
-		return Db::Query(KIND,
-			"INSERT INTO tw_accounts_achievements (AccountID, AchievementType, Criteria, Progress, CompletedLevel, UpdatedAt) "
-			"VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) "
-			"ON DUPLICATE KEY UPDATE Progress = ?, CompletedLevel = GREATEST(CompletedLevel, ?), UpdatedAt = CURRENT_TIMESTAMP",
-			Db::Bind(AccountID, AchievementType, Criteria, Progress, CompletedLevel, Progress, CompletedLevel));
 	}
 
 	Db::CRequest SaveEquippedSlots(int AccountID, std::string_view Json)

@@ -3,25 +3,18 @@
 
 #include <game/server/core/tools/event_listener.h>
 
+#include "achievement_data.h"
+
 class CGS;
 class CPlayer;
 class CPlayerItem;
 class CProfession;
-enum class AchievementType;
+class CQuestDescription;
 
 class CAchievementListener : public IEventListener
 {
 public:
-	void Initialize()
-	{
-		g_EventListenerManager.RegisterListener(IEventListener::CharacterDamage, this);
-		g_EventListenerManager.RegisterListener(IEventListener::CharacterDeath, this);
-		g_EventListenerManager.RegisterListener(IEventListener::PlayerGotItem, this);
-		g_EventListenerManager.RegisterListener(IEventListener::PlayerCraftItem, this);
-		g_EventListenerManager.RegisterListener(IEventListener::PlayerEquipItem, this);
-		g_EventListenerManager.RegisterListener(IEventListener::PlayerProfessionLeveling, this);
-		g_EventListenerManager.RegisterListener(IEventListener::PlayerQuestChangeState, this);
-	}
+	void Initialize();
 
 protected:
 	void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) override;
@@ -33,7 +26,11 @@ protected:
 	void OnPlayerQuestChangeState(CPlayer* pPlayer, CPlayerQuest* pQuest, QuestState NewState) override;
 
 private:
-	void UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, int ProgressType) const;
+	void UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, EAchievementProgress Mode);
+
+	// (type, criteria) -> achievement IDs. Built once from the static descriptions.
+	std::map<std::pair<int, int>, std::vector<int>> m_Index;
+	bool m_IndexBuilt {};
 };
 
 extern CAchievementListener g_AchievementListener;

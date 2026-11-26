@@ -11,6 +11,7 @@
 #include <engine/server/db/db_async.h>
 
 #include <game/server/core/components/accounts/account_db.h>
+#include <game/server/core/components/achievements/achievement_db.h>
 
 #include <gtest/gtest.h>
 
@@ -665,16 +666,27 @@ TEST_F(CAccountDbTest, HeartbeatsAreBatched)
 
 	EXPECT_TRUE(RunRequest(AccountDb::RefreshSessionHeartbeats(vKeys)).Ok());
 	const std::vector<SCall> vCalls = m_Driver.Calls();
-	// Transactions first set their isolation level, then issue START TRANSACTION,
-	// one batched UPDATE, and COMMIT. The isolation setup is not another heartbeat.
-	ASSERT_EQ(vCalls.size(), 4u) << "three sessions must be covered by one UPDATE";
-	EXPECT_EQ(vCalls[0].m_Sql, "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
-	EXPECT_EQ(vCalls[1].m_Sql, "START TRANSACTION");
-	EXPECT_EQ(vCalls[2].m_Sql, "UPDATE tw_account_sessions SET Heartbeat = UNIX_TIMESTAMP(), UpdatedAt = NOW() "
+	// One batch needs only a single atomic UPDATE, no transaction round trips.
+	ASSERT_EQ(vCalls.size(), 1u);
+	EXPECT_EQ(vCalls[0].m_Sql, "UPDATE tw_account_sessions SET Heartbeat = UNIX_TIMESTAMP(), UpdatedAt = NOW() "
 		"WHERE Heartbeat <> 0 AND ((AccountID = ? AND SessionToken = ?) OR (AccountID = ? AND SessionToken = ?) "
 		"OR (AccountID = ? AND SessionToken = ?))");
-	EXPECT_EQ(vCalls[2].m_Bindings.Values().size(), 6u);
-	EXPECT_EQ(vCalls[3].m_Sql, "COMMIT");
+	EXPECT_EQ(vCalls[0].m_Bindings.Values().size(), 6u);
+}
+
+TEST_F(CAccountDbTest, LargeHeartbeatSetRemainsTransactional)
+{
+	std::vector<AccountDb::SSessionKey> vKeys;
+	for (int i = 1; i <= 101; ++i)
+		vKeys.push_back({ i, "token-" + std::to_string(i) });
+	ASSERT_TRUE(RunRequest(AccountDb::RefreshSessionHeartbeats(vKeys)).Ok());
+	const auto vCalls = m_Driver.Calls();
+	ASSERT_EQ(vCalls.size(), 5u);
+	EXPECT_EQ(vCalls[0].m_Sql, "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+	EXPECT_EQ(vCalls[1].m_Sql, "START TRANSACTION");
+	EXPECT_EQ(vCalls[2].m_Bindings.Values().size(), 200u);
+	EXPECT_EQ(vCalls[3].m_Bindings.Values().size(), 2u);
+	EXPECT_EQ(vCalls[4].m_Sql, "COMMIT");
 }
 
 TEST_F(CAccountDbTest, NoSessionsMeansNoQuery)
@@ -767,4 +779,72 @@ TEST_F(CAccountDbTest, ConnectionLossIsRetriedWithAFreshConnection)
 	auto Retry = RunRequest(AccountDb::LookupNickname("alice"));
 	ASSERT_TRUE(Retry.Ok()) << Retry.Error().ToString();
 	EXPECT_TRUE(AccountDb::ParseNickname(Retry).m_Found);
+}
+
+
+// ---------------------------------------------------------------------------
+// achievements
+// ---------------------------------------------------------------------------
+TEST_F(CAccountDbTest, AchievementDefinitionsUseExplicitColumns)
+{
+	m_Driver.Rule({ "FROM tw_achievements",
+		{ "ID", "Type", "Criteria", "Required", "Name", "Reward", "AchievementPoint" },
+		{ { std::string("1"), std::string("1"), std::string("0"), std::string("10"),
+			std::string("First kill"), std::string(""), std::string("1") } } });
+
+	auto Rows = AchievementDb::ListAchievements();
+	ASSERT_TRUE(Rows.Ok()) << Rows.Error().ToString();
+	ASSERT_TRUE(Rows.Next());
+	EXPECT_EQ(Rows.GetInt("Required"), 10);
+
+	const std::vector<SCall> vCalls = m_Driver.Calls();
+	ASSERT_EQ(vCalls.size(), 1u);
+	EXPECT_NE(vCalls[0].m_Sql.find("SELECT ID, Type, Criteria, Required, Name, Reward, AchievementPoint"), std::string::npos);
+}
+
+TEST_F(CAccountDbTest, AchievementProgressLoadsByAccountAndKeepsCompletedLevel)
+{
+	m_Driver.Rule({ "FROM tw_accounts_achievements",
+		{ "AchievementType", "Criteria", "Progress", "CompletedLevel" },
+		{ { std::string("9"), std::string("2"), std::string("500"), std::string("114") } } });
+
+	auto Result = RunRequest(AchievementDb::LoadProgress(42));
+	ASSERT_TRUE(Result.Ok()) << Result.Error().ToString();
+	ASSERT_TRUE(Result.Next());
+	EXPECT_EQ(Result.GetInt("Progress"), 500);
+	EXPECT_EQ(Result.GetInt("CompletedLevel"), 114);
+
+	const std::vector<SCall> vCalls = m_Driver.Calls();
+	ASSERT_EQ(vCalls.size(), 1u);
+	EXPECT_NE(vCalls[0].m_Sql.find("WHERE AccountID = ?"), std::string::npos);
+	EXPECT_TRUE(m_Driver.ValueWasNeverSpliced("42"));
+}
+
+TEST_F(CAccountDbTest, AchievementProgressSaveUsesBoundValuesAndMonotonicLevel)
+{
+	m_Driver.Rule({ "INSERT INTO tw_accounts_achievements", {}, {}, 0, "", "", 1 });
+
+	auto Result = RunRequest(AchievementDb::SaveProgress(42, 9, 2, 500, 114));
+	EXPECT_TRUE(Result.Ok()) << Result.Error().ToString();
+
+	const std::vector<SCall> vCalls = m_Driver.Calls();
+	ASSERT_EQ(vCalls.size(), 1u);
+	EXPECT_NE(vCalls[0].m_Sql.find("Progress = GREATEST(Progress, ?)"), std::string::npos);
+	EXPECT_NE(vCalls[0].m_Sql.find("CompletedLevel = GREATEST(CompletedLevel, ?)"), std::string::npos);
+	EXPECT_EQ(vCalls[0].m_Bindings.Values().size(), 7u);
+	EXPECT_TRUE(m_Driver.ValueWasNeverSpliced("500"));
+}
+
+TEST_F(CAccountDbTest, LowerLevelCompletionKeepsChainProgress)
+{
+	m_Driver.Rule({ "INSERT INTO tw_accounts_achievements", {}, {}, 0, "", "", 1 });
+
+	auto Result = RunRequest(AchievementDb::SaveCompletedLevel(42, 8, 7, 81));
+	EXPECT_TRUE(Result.Ok()) << Result.Error().ToString();
+
+	const std::vector<SCall> vCalls = m_Driver.Calls();
+	ASSERT_EQ(vCalls.size(), 1u);
+	EXPECT_NE(vCalls[0].m_Sql.find("VALUES (?, ?, ?, 0, ?, CURRENT_TIMESTAMP)"), std::string::npos);
+	EXPECT_NE(vCalls[0].m_Sql.find("UPDATE CompletedLevel = GREATEST(CompletedLevel, ?)"), std::string::npos);
+	EXPECT_EQ(vCalls[0].m_Bindings.Values().size(), 5u);
 }

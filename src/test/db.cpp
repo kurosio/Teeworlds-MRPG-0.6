@@ -337,6 +337,11 @@ TEST_F(CDbAsyncTest, RowsAffectedRowsAndInsertIdComeWithTheResult)
 	ASSERT_TRUE(Insert.Ok()) << Insert.Error().ToString();
 	EXPECT_GT(Insert.InsertId(), 0);
 
+	// Hot upserts can skip the separate LAST_INSERT_ID lookup.
+	auto NoId = RunSql("INSERT INTO tw_accounts (Username) VALUES (?)", Db::Bind("b"), Db::SQueryOptions().FetchInsertId(false));
+	ASSERT_TRUE(NoId.Ok()) << NoId.Error().ToString();
+	EXPECT_EQ(NoId.InsertId(), 0);
+
 	// a statement without an id does not pay for reading one
 	EXPECT_EQ(Write.InsertId(), 0);
 }

@@ -47,6 +47,6 @@ namespace InventoryDb
 			"VALUES (?, ?, ?, ?, ?, ?, ?, NULLIF(?, '')) "
 			"ON DUPLICATE KEY UPDATE Value = ?, Settings = ?, Enchant = ?, Durability = ?, ExpiresAt = ?, Data = NULLIF(?, '')",
 			Db::Bind(ItemID, AccountID, Value, Settings, Enchant, Durability, (int64_t)ExpiresAt, Db::Blob(Data),
-				Value, Settings, Enchant, Durability, (int64_t)ExpiresAt, Db::Blob(Data)));
+				Value, Settings, Enchant, Durability, (int64_t)ExpiresAt, Db::Blob(Data)), Db::SQueryOptions().FetchInsertId(false));
 	}
 }

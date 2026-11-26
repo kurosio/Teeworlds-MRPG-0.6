@@ -1050,10 +1050,10 @@ namespace Db
 
 		if(Late)
 			dbg_msg("SQL", "A statement finished after its request timed out: %lldms, '%s'%s", ElapsedMs, Label.c_str(),
-				Suppressed > 0 ? fmt_default(" (%d similar statements were not reported)", Suppressed).c_str() : "");
+				Suppressed > 0 ? fmt_default(" ({} similar statements were not reported)", Suppressed).c_str() : "");
 		else
 			dbg_msg("SQL Slow", "A statement took %lldms: '%s'%s", ElapsedMs, Label.c_str(),
-				Suppressed > 0 ? fmt_default(" (%d similar statements were not reported)", Suppressed).c_str() : "");
+				Suppressed > 0 ? fmt_default(" ({} similar statements were not reported)", Suppressed).c_str() : "");
 	}
 
 	void CDbExecutor::Stop(int WaitMs)
@@ -1524,7 +1524,7 @@ namespace Db
 	{
 		SetDebugLoggingEnabled(g_Config.m_SvSqlDebug != 0);
 		std::string Text(Sql);
-		const bool InsertId = WantsInsertId(Text);
+		const bool InsertId = Options.m_FetchInsertId && WantsInsertId(Text);
 		auto Job = [Text, Bindings, InsertId](IDbConnection& Connection) -> CResultSet
 		{
 			return Connection.Execute(Text, Bindings, InsertId);

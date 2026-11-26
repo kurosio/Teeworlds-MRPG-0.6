@@ -1,0 +1,1944 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b48fe89..9d08266 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -942,6 +942,7 @@ if(GTEST_FOUND OR DOWNLOAD_GTEST)
+   # game-facing DB adapters are compiled into the test runner.
+   set(TESTS_DB_SRC
+     src/game/server/core/components/accounts/account_db.cpp
++    src/game/server/core/components/achievements/achievement_db.cpp
+   )
+   set(TESTS_DB_LIBRARIES)
+   if(NOT MARIADB_FOUND OR NOT TARGET mmoteeworlds_db)
+diff --git a/docs/achievements_refactoring_plan.md b/docs/achievements_refactoring_plan.md
+new file mode 100644
+index 0000000..faea47c
+--- /dev/null
++++ b/docs/achievements_refactoring_plan.md
+@@ -0,0 +1,357 @@
++# Achievements: анализ и план упрощения архитектуры
++
++Документ описывает текущее состояние системы достижений (по состоянию на ветку
++`arena/851cbd43-teeworlds-mrpg-0-6`, коммит `472a6d5`) и предлагает план
++рефакторинга **без изменения набора функций**: новые сервисы, интерфейсы и
++слои абстракций не вводятся.
++
++Охват: `achievement_manager.{h,cpp}`, `achievement_data.{h,cpp}`,
++`achievement_listener.{h,cpp}`, `achievement_db.{h,cpp}`, интеграция с
++`account_data.{h,cpp}` / `account_db.{h,cpp}`, схемы `mrpg_shared.sql`.
++
++---
++
++## 1. Как система устроена сейчас
++
++### Данные
++
++- `tw_achievements` — 152 статических описания, 11 типов (`AchievementType`),
++  58 цепочек по паре `(Type, Criteria)`. Уровни цепочки — строки с одним и тем же
++  `(Type, Criteria)` и возрастающим `Required`.
++- `tw_accounts_achievements` — по одной строке на цепочку на аккаунт:
++  `(AccountID, AchievementType, Criteria, Progress, CompletedLevel)`.
++  `CompletedLevel` хранит **ID achievement-а**, а не номер уровня.
++
++### Потоки
++
++1. **Старт сервера.** `CAchievementManager::OnPreInit()` (`achievement_manager.cpp:140`)
++   делает `SELECT * FROM tw_achievements`, создаёт `CAchievementInfo` в
++   `MultiworldIdentifiableData<std::deque<...>>`, затем сортирует все описания
++   **по имени**. `OnPreInit()` вызывается только в initializer-мире, поэтому
++   дублирования описаний при многомировом запуске нет.
++2. **Логин.** `CAccountData::Init()` → `InitAchievements()`
++   (`account_data.cpp:254`) создаёт по `CAchievement` на описание и запоминает
++   их **дважды**: в `CAchievement::Data()[ClientID]` (deque) и в
++   `CAccountData::m_apAchievements` (map по ID). Далее асинхронный этап
++   `LoadAchievementsProgress()` (`account_data.cpp:267`) читает строки прогресса,
++   группирует их по `(Type, Criteria)` и инициализирует каждый `CAchievement`.
++3. **События.** `CAchievementListener` подписан на 7 событий. Общий
++   `UpdateAchievement()` (`achievement_listener.cpp:73`) проходит по **всем**
++   achievement-ам игрока, отбирает совпавшие по типу и criteria и вызывает
++   `CAchievement::UpdateProgress()`. Тот меняет прогресс, проверяет завершение,
++   выдает награду и троттлит запись в БД раз в 5 секунд.
++4. **Меню.** `ShowMenu()` (`achievement_manager.cpp:201`) считает 4 счётчика
++   отдельными проходами. `ShowTypeList()` (`achievement_manager.cpp:236`) на
++   каждое открытие заново строит `map` цепочек, `unordered_map` уровней и
++   `unordered_set` видимых элементов, после чего `AddAchievementDetails()`
++   вторым switch-ом по типу форматирует текст цели и награды.
++5. **Сброс клиента.** `OnClientReset()` (`achievement_manager.cpp:166`) освобождает
++   `CAchievement::Data()[ClientID]`.
++
++Итого в каталоге `achievements/` — 845 строк, из них ~392 строки — менеджер.
++
++---
++
++## 2. Найденные проблемы
++
++Обозначения: **P0** — ошибка поведения/данных, **P1** — дублирование и
++неэффективность, **P2** — мёртвый код и косметика.
++
++### P0. Ошибки, которые стоит вынести в отдельное согласие на изменение поведения
++
++| # | Где | Проблема |
++|---|-----|----------|
++| 1 | `achievement_data.cpp:78` + `mrpg_shared.sql` (тип 10, ID 142/143/144) | У всех трёх достижений `CompleteQuest` в БД `Required = 0`. `UpdateProgress()` делает `clamp(progress, 0, 0)` → прогресс всегда 0, а `CAchievementInfo::IsCompleted()` (`achievement_data.cpp:30-32`) требует `progress > 0`. **Квест-достижения не завершаются в рантайме.** Это не стилистика: для `Equip` тот же switch работает только потому, что `Required = 1`. |
++| 2 | `account_data.cpp:303` | При загрузке `Completed = CompletedLevel >= ID || ClampedProgress >= Required`. Для `Required = 0` второе условие истинно при любом наличии строки → achievement помечается выполненным после релогина даже с `Progress = 0, CompletedLevel = 0`. Прямое противоречие с правилом завершения в п. 1. |
++| 3 | `account_db.cpp:451-458` + `achievement_listener.cpp:73-91` | Все уровни цепочки пишут **одну и ту же строку** БД, но каждый клампит прогресс к своему `Required`. Итоговое значение зависит от порядка обхода. Пример из реальных данных: цепочка `(9, 2)` — ID 109 `Required=1` («Hard-earned iron») и ID 114 `Required=500` («Blacksmith»). `CAchievementInfo::Data()` отсортирован по имени, поэтому «Blacksmith» пишется раньше и значение 500 перезаписывается единицей. Дополнительно `db_async.h` явно говорит, что порядок отправки запросов не гарантирует порядок коммита, а SQL использует обычное `Progress = ?`. Для accumulate-цепочек возможна потеря прогресса и при гонке запросов. |
++
++### P1. Дублирование и неэффективность
++
++| # | Где | Проблема |
++|---|-----|----------|
++| 4 | `account_data.h:40`, `account_data.cpp:254-265,304-305` | Один и тот же набор `CAchievement*` хранится в двух контейнерах: `CAchievement::Data()[ClientID]` и `m_apAchievements`. `m_apAchievements` используется **только** в двух местах внутри загрузки; остальной код ходил через статический deque. Два источника истины для одного набора объектов. |
++| 5 | `achievement_listener.cpp:73-91` | На каждое попадание/смерть/изменение предмета выполняется цикл по 152 achievement-ам; внутри каждого сравнение типа и criteria. Для боевых событий это самый горячий путь системы. Проверка `IsCompleted()` внутри `UpdateProgress()` дублирует фильтрацию, уже сделанную в слушателе (`pAchievement->IsCompleted()`). |
++| 6 | `achievement_manager.cpp:30-100,241-243` | При каждом открытии меню создаются `std::map`, `std::vector`, `unordered_map`, `unordered_set` и делается 4–5 дополнительных проходов только для того, чтобы получить номер уровня, общее число уровней и видимость. Вся информация уже есть в цепочке по индексу. |
++| 7 | `achievement_manager.cpp:363-392` | Четыре публичных метода счётчиков пересчитывают коллекции: 10 групп × 2 прохода по 152 элементам; при этом `GetCount()`/`GetCompletedCount()` дублируют работу, которую можно сделать одним проходом. Вне менеджера эти методы не используются. |
++| 8 | `achievement_manager.cpp:102-137` и `achievement_data.cpp:119-137` | Один и тот же JSON награды разбирается/форматируется дважды: в меню для текста и в `RewardPlayer()` для выдачи. Форматирование «Exp …, item xN, Points …p» фактически дублировано. |
++| 9 | `account_data.cpp:649-659` | `CAccountData::UpdateAchievementProgress()` — чистый pass-through в `AccountDb::SaveAchievement()`, вызываемый из одного места. Лишний уровень. |
++| 10 | `achievement_db.cpp` / `account_db.cpp:445-458` | SQL достижений разнесён по двум модулям: описания загружает `AchievementDb`, прогресс — `AccountDb`. Запросы одной системы находятся в разных файлах. |
++| 11 | `achievement_manager.cpp:295-358` | Второй switch по `AchievementType` для текста цели. Обращения к `GS()->GetItemInfo()` (в debug — assert, в release — вставка nullptr в map), `GetQuestInfo()` (может вернуть nullptr) и `DataBotInfo::ms_aDataBot[botID]` без проверки. Для `CraftItem` при отсутствии рецепта строка прогресса просто исчезает. Правила завершения (`IsCompleted`) и правила подписи к цели заданы двумя независимыми switch-ами и легко расходятся. |
++
++### P2. Мёртвый и избыточный код
++
++| # | Где | Проблема |
++|---|-----|----------|
++| 12 | `achievement_data.cpp:59-60,95-113` | `WasCompleted` всегда `false` из-за раннего `return` на строке 56; `CompletionChanged` тождественно равен `m_Completed`. Поля `m_LastSavedProgress` и `m_LastSavedCompleted` только записываются и нигде не читаются — оптимизации «не писать то, что уже записано» нет. |
++| 13 | `achievement_data.h:41-47` | `CreateElement(ID)` повторно присваивает `m_ID`, уже заданный конструктором. `RewardExists()` не используется. Неконстантная перегрузка `GetRewardData()` не используется. `friend class CAchievementManager` не нужен (менеджер работает только с публичными методами); реально нужен `friend class CAchievementInfo` — он есть. |
++| 14 | `achievement_data.h:6`, `achievement_db.cpp:7` | Макрос `TW_ACHIEVEMENTS` определён, но не используется: в запросе подставлен литерал. `SELECT *` вместо явного списка колонок. |
++| 15 | `achievement_manager.h:17-20` | `ShowMenu()`, `ShowTypeList()`, `AddAchievementDetails()` объявлены публичными, но вызываются только внутри `OnSendMenuVotes()`. Нарушение минимального публичного контракта класса. |
++| 16 | `achievement_data.h:15-16`, `achievement_listener.cpp:14-70` | Глобальный unscoped `AchievementProgressType` и `NOPE = -1` в роли «criteria не задан». Работает, но тип и смысл sentinel нигде не зафиксированы. |
++| 17 | `achievement_data.cpp:147-154` | `m_NotifiedSoonComplete` не сохраняется: после релогина сообщение «will be soon completed» может прийти повторно. Установленный троттль 5 секунд также означает потерю до 5 секунд прогресса при выходе (pending write нет). Это осознанный компромисс текущей реализации, а не ошибка компиляции. |
++
++### Отдельно про скорость
++
++Проблема 5 (152 итерации на событие) в абсолютных числах небольшая: это
++десятки тысяч простых сравнений в секунду даже в бою. Индекс по `(Type, Criteria)`
++уменьшит её до 1–14 итераций, но это **оптимизация по профилировку**, а не
++необходимое условие упрощения. Проблема 6 проявляется только при открытии меню
++и тоже не критична; там важнее убрать три вспомогательных контейнера, а не
++само выделение памяти.
++
++---
++
++## 3. Минимальная целевая архитектура
++
++Сохраняем четыре существующие роли и не добавляем пятой:
++
++```
++tw_achievements ──(OnPreInit, 1 раз)──> CAchievementInfo::Data()   // только описания
++                                             │
++        ┌────────────────────────────────────┼─────────────────────────────┐
++        │                                    │                             │
++CAchievementListener                 CAccountData (load stage)      CAchievementManager
++  (7 адаптеров событий,                 (только загрузка            (только меню и инициализация)
++   один общий Update)                   прогресса из БД)                   │
++        │                                    │                             │
++        └──────────> CAchievement::Data()[ClientID] <───────────────────────┘
++                     (единственный владелец рантайм-состояния)
++                                    │
++                          AchievementDb::SaveProgress()
++```
++
++Правила целевой архитектуры:
++
++1. **Один владелец рантайм-состояния.** `CAchievement::Data()[ClientID]`;
++   `CAccountData::m_apAchievements` удаляется. Порядок deque остаётся порядком
++   `CAchievementInfo::Data()` — от него неявно зависят индексный поиск и порядок
++   выдачи наград.
++2. **Один источник правил завершения.** `CAchievementInfo::IsProgressEnough()`
++   (маленький метод того же класса) используется и в рантайме, и при загрузке
++   из БД. Сейчас правило продублировано switch-ом в `IsCompleted()` и выражением
++   `ClampedProgress >= Required` в `account_data.cpp`.
++3. **Один владелец SQL достижений.** `AchievementDb`: `ListAchievements()`,
++   `LoadProgress()`, `SaveProgress()`.
++4. **Одна точка записи на цепочку.** Записывает только последний уровень
++   цепочки (`m_bIsChainTail`), он же хранит «сырой» прогресс. Остальные уровни
++   в БД не пишут.
++5. **Никаких новых интерфейсов/сервисов/DTO/репозиториев.** `CAchievement`,
++   `CAchievementInfo`, `CAchievementListener`, `CAchievementManager`,
++   `AchievementDb` остаются теми же пятью сущностями.
++
++Сокращение кода ожидается примерно на 80–120 строк в основном за счёт удаления
++трёх помощников меню, четырёх счётчиков и pass-through метода.
++
++---
++
++## 4. План рефакторинга
++
++Шаги идут по возрастанию риска. Шаги 1–3 сохраняют текущее наблюдаемое
++поведение (включая баги). Шаг 4 убирает дублирование правила завершения и
++попутно исправляет баг №2 — без этого объединить правила завершения нельзя. Шаг 5 —
++остальные исправления, требующие отдельного решения.
++
++### Шаг 0. Зафиксировать поведение (до правок)
++
++- Снять скриншоты/текстовый дамп всех 11 групп меню и list-меню для тестового
++  аккаунта с частично выполненными цепочками (в том числе `(9, 2)` и `(11, 0..6)`).
++- Снять строки `tw_accounts_achievements` этого аккаунта до и после набора
++  прогресса, релогина и выхода.
++- Добавить тесты в существующий harness `src/test/db_account.cpp` (scripted
++  driver) на `SaveProgress`: проверка bound-параметров и монотонного `Progress`.
++  Отдельно — тест правила загрузки для `Required = 0` и `CompletedLevel >= ID`.
++
++### Шаг 1. Убрать вторую коллекцию и мёртвый код (чисто механически)
++
++1. Удалить `CAccountData::m_apAchievements` (`account_data.h:40`).
++2. `InitAchievements()` (`account_data.cpp:254`) создаёт элементы напрямую в
++   `CAchievement::Data()[ClientID]`, в том же порядке, что и описания.
++3. `LoadAchievementsProgress()` (`account_data.cpp:292-306`) идёт по
++   `CAchievement::Data()[ClientID]`, получает ID через `pRuntime->Info()->GetID()`
++   и вызываёт `Init()` на самом объекте. Map по ID больше не нужен.
++4. Удалить `WasCompleted`, `CompletionChanged`, `m_LastSavedProgress`,
++   `m_LastSavedCompleted` (`achievement_data.*`); оставить `m_LastSaveTick` как
++   единственный таймер троттлинга.
++5. Убрать повторное присваивание ID в `CreateElement()`, `RewardExists()`,
++   неконстантную `GetRewardData()`, `friend class CAchievementManager`.
++6. Сделать `ShowMenu()`, `ShowTypeList()`, `AddAchievementDetails()` приватными.
++
++Проверка: меню, награды и строки БД совпадают с baseline.
++
++### Шаг 2. Собрать SQL достижений в одном месте
++
++1. Перенести `LoadAchievements()` и `SaveAchievement()` из `account_db.{h,cpp}`
++   в `achievement_db.{h,cpp}`, сохранив текст SQL и bound-параметры.
++2. Удалить `CAccountData::UpdateAchievementProgress()` (`account_data.cpp:649`).
++   `CAchievement::UpdateProgress()` сам вызывает
++   `AchievementDb::SaveProgress(pPlayer->Account()->GetID(), *m_pInfo, ...)`.
++3. Заменить `SELECT *` на явный список колонок; использовать существующий
++   `TW_ACHIEVEMENTS` или удалить макрос (выбрать одно).
++4. Обновить тесты SQL на новый namespace.
++
++Проверка: `LoadAchievements` и `SaveAchievement` вызываются ровно по одному разу
++на логин/сохранение; `#include` в `account_data.cpp` сокращаются.
++
++### Шаг 3. Упростить меню без потери порядка вывода
++
++1. Удалить `BuildLevelInfoByAchievement()` и `BuildVisibleAchievements()`
++   (`achievement_manager.cpp:65-100`). В `ShowTypeList()` для каждой цепочки:
++   - первым проходом найти `lastCompletedIndex`;
++   - вторым проходом по `i` выводить элементы `i <= min(lastCompletedIndex + 1, size - 1)`,
++     подставляя `Level = i + 1` и `TotalLevels = size`.
++   Порядок цепочек (`std::map` по criteria) и внутри цепочки (sort по
++   `Required`, затем ID) остаётся прежним — это важно: порядок group `Leveling`
++   идёт по criteria-профессий, а не по имени.
++2. Удалить четыре метода счётчиков. В `ShowMenu()` одним проходом по
++   `CAchievement::Data()[ClientID]` заполнить массивы `total[11]` /
++   `completed[11]` и суммы; отрендерить группы из этих массивов.
++3. Вынести форматирование награды в `CAchievementInfo`: при `Init()` один раз
++   посчитать `m_RewardText` из того же JSON и использовать его в меню.
++   `CAchievement::RewardPlayer()` продолжает читать JSON для выдачи.
++4. Заменить опасные обращения в `AddAchievementDetails()` на безопасный helper
++   `GetGoalText(pInfo)` с fallback-строкой, если описание предмета/квеста/бота
++   отсутствует. Убрать «тихую» пустую ветку `CraftItem`.
++5. При желании: оставить `BuildAchievementChains()` как есть (он один раз в
++   открытие меню) — это дешевле, чем вводить кэшированный индекс цепочек с
++   неочевидным временем жизни указателей на `CAchievement`.
++
++Проверка: полное совпадение дампов меню с baseline (кроме п. 4 в случае
++отсутствующих описаний).
++
++### Шаг 4. Одна точка записи и введение `IsProgressEnough()`
++
++1. Добавить в `CAchievementInfo` метод `IsProgressEnough(int Progress) const` —
++   тот же switch, что сейчас в `IsCompleted()`, но без проверки criteria.
++   `IsCompleted()` вызывает его после проверки criteria.
++2. Пометить последний уровень каждой цепочки (`m_bIsChainTail`) при загрузке
++   описаний в `OnPreInit()`; это одно bool-поле на описание.
++3. В `CAchievement::UpdateProgress()` запись в БД делать только для
++   `Info()->IsChainTail()`. Логика завершения уровней сохраняется: при
++   повторной загрузке более низкие уровни выводятся как выполненные из
++   сохранённого прогресса старшего уровня.
++4. `account_data.cpp:303` использует
++   `Completed = CompletedLevel >= AchievementID || pInfo->IsProgressEnough(ClampedProgress)`.
++   Это убирает второе определение правила завершения.
++5. Оставить в `SaveProgress` обычное `Progress = ?` — одна точка записи уже
++   убирает основную причину регресса из бага №3.
++
++Проверка: тест из шага 0 для цепочки `(9, 2)` показывает 500, а не 1; число
++INSERT/UPDATE на серию из 14 событий равно числу затронутых цепочек.
++
++### Шаг 5. Исправления ошибок (изменяют наблюдаемое поведение — нужно отдельное согласие)
++
++1. `CompleteQuest`: считать эффективный `Required = max(Required, 1)` в clamp,
++   процентах и правиле завершения. Альтернатива — поправить `Required` на 1 в
++   `mrpg_shared.sql` и написать миграцию для живых БД; в рамках рефакторинга
++   предпочтительнее код.
++2. Исправить условие загрузки для `Required = 0` через тот же
++   `IsProgressEnough()`: строка с нулевым прогрессом больше не означает
++   «выполнено».
++3. Обновить текст цели для квестов: сейчас он показывает `0/0`; после фикса —
++   `0/1` (или оставить отображение `0/0`, если так принято в UI).
++4. По желанию: индекс `(Type, Criteria)` → список индексов в deque для
++   `CAchievementListener::UpdateAchievement()`, если профилирование покажет,
++   что 152 сравнения на удар ощутимы. Индекс строится один раз в `OnPreInit()`
++   и содержит только `int`, не указатели на рантайм-объекты.
++5. Монотонность `GREATEST(Progress, ?)` в `SaveProgress` как страховка от
++   переупорядочивания асинхронных запросов. Оговорка: для абсолютных типов
++   (`HaveItem`, `Leveling`, `Equip`) БД будет хранить пик прогресса, а не текущее
++   значение; это изменение семантики, а не просто рефакторинг.
++6. По желанию: сброс отложенного прогресса на выходе. Требует нового хука и
++   выходит за рамки «упрощения без новых абстракций».
++
++---
++
++## 5. Контрольный список приёмки
++
++- [ ] Все 11 групп меню показывают те же счётчики и тот же порядок цепочек.
++- [ ] Видимость уровней («выполненные + следующий») не изменилась.
++- [ ] Награда за каждый уровень цепочки выдаётся один раз, в том числе когда
++      несколько уровней закрываются одним событием.
++- [ ] После релогина выполненные achievement-ы остаются выполненными, а
++      незавершённые — нет (особенно `CompleteQuest`).
++- [ ] Строка прогресса цепочки `(9, 2)` достигает 500, а не обнуляется до 1.
++- [ ] Прогресс не откатывается при быстрых последовательных событиях и
++      загруженной БД.
++- [ ] Нет утечек/висячих указателей после `OnClientReset()` и повторного логина
++      на том же ClientID.
++- [ ] Сборка и существующий test runner (`run_tests` / `ctest`) проходят.
++
++## 6. Что сознательно НЕ делается
++
++- Не вводятся `IAchievementService`, repository, facade, DTO, шина событий.
++- Не меняется схема БД и формат `CompletedLevel` (ID как номер уровня) — это
++  отдельная задача с миграцией.
++- Не переписывается `GetAchievementTypeName()` и перечисление `AchievementType`:
++  они уже просты и используются повсеместно.
++- Не трогается система меню `VoteWrapper` за пределами achievement-кода.
++- Не добавляется кэш цепочек с указателями на `CAchievement`: время жизни этих
++  указателей привязано к ClientID и сейчас корректно управляется только
++  `OnClientReset()`.
++
++---
++
++## 7. Фактически реализованный вариант
++
++Код приведён к описанной архитектуре с несколькими уточнениями:
++
++- Рантайм-контейнер — `std::map<int, std::map<int, CAchievement*>>`
++  (`ClientID → AchievementID → состояние`) вместо deque. Это позволяет слушателю
++  переходить сразу к нужному уровню цепочки без перебора всех 152 achievement-ов.
++- Индекс `(Type, Criteria) → ID` строится в `CAchievementListener` лениво при
++  первом событии: слушатели регистрируются в `CGS::OnInit()` **до** `OnPreInit()`,
++  где загружаются описания.
++- Описания с `Required == 0` нормализуются к `1` в `CAchievementInfo::Init()`.
++  Вместо switch-а по типу осталось одно правило `Progress >= Required`, а
++  квест-достижения перестали быть невыполнимыми.
++- Цепочки (`BuildChains()`) строятся один раз в `OnPreInit()` и хранятся в
++  менеджере. Меню больше не создаёт `map`/`unordered_map`/`unordered_set` на
++  каждое открытие; порядок групп и уровней сохранён.
++- Текст награды кэшируется в описании; при выдаче награды по-прежнему читается JSON.
++- Все SQL-запросы достижений перенесены в `AchievementDb`; запись идёт
++  fire-and-forget через асинхронный `Db::Query`, как и раньше.
++- Прогресс цепочки пишет только последний уровень — это убирает перезапись
++  прогресса младшими уровнями. Завершение младшего уровня сохраняется отдельным
++  `SaveCompletedLevel()` без изменения `Progress`: абсолютный прогресс может
++  уменьшаться, но выданная награда не должна выдаться повторно после релогина.
++  `CompletedLevel` по-прежнему монотонен (`GREATEST`).
++- Добавлены тесты SQL достижений в `src/test/db_account.cpp`; `achievement_db.cpp`
++  подключён к тестовому таргету в `CMakeLists.txt`.
++
++---
++
++## 8. Проверка интеграции и исправления
++
++Полный проход по интеграции выявил и устранил ещё четыре проблемы:
++
++1. **Порядок загрузки описаний предметов.** Текст наград сначала строился в
++   `CAchievementInfo::Init()` во время `OnPreInit()`, но менеджер достижений
++   инициализируется раньше инвентаря — item-награды в меню пропали бы. Теперь
++   `BuildRewardText()` вызывается из `CAchievementManager::OnPostInit()`, когда
++   все описания уже загружены.
++2. **Многомировость.** `m_vChains` был обычным полем менеджера, хотя
++   `OnPreInit()` выполняется только в initializer-мире. В остальных мирах меню
++   было бы пустым. Контейнер цепочек сделан `static inline`, общим для всех
++   менеджеров.
++3. **Асинхронный порядок записи.** `SaveProgress()` теперь использует
++   `Progress = GREATEST(Progress, ?)` наряду с `CompletedLevel`: все игровые
++   события монотонно увеличивают прогресс, поэтому переупорядочивание запросов
++   больше не может его откатить.
++4. **События до авторизации.** `CAchievementListener::UpdateAchievement()`
++   дополнительно проверяет `IsAuthed()`, чтобы не писать строки с AccountID = 0.
++
++Также индекс слушателя защищён флагом `m_IndexBuilt`: при пустой БД он не
++перестраивается на каждом событии.
++
++**Что проверено**
++
++- Все изменённые `.cpp` компилируются в режиме `g++ -fsyntax-only` с теми же
++  include-путями и precompiled headers, что использует проект.
++- Отдельный исполняемый тест чистой логики: нормализация `Required == 0`,
++  `MatchesCriteria()` для конкретного и обобщённого criteria, `IsProgressEnough()`,
++  форматирование текста награды (в том числе с отсутствующим описанием предмета).
++- Тесты SQL в `src/test/db_account.cpp` проверяют явный список колонок,
++  привязку параметров и монотонные `Progress`/`CompletedLevel`.
++- Пошагово проверены события, загрузка/сохранение, меню и сброс клиента.
++
++**Ограничение проверки:** полный `ctest` и запуск сервера невозможны в песочнице
++из-за отсутствующих системных зависимостей (MariaDB, Curl, OpenSSL, GTest).
+diff --git a/src/game/server/core/components/accounts/account_data.cpp b/src/game/server/core/components/accounts/account_data.cpp
+index bb0306a..976468c 100644
+--- a/src/game/server/core/components/accounts/account_data.cpp
++++ b/src/game/server/core/components/accounts/account_data.cpp
+@@ -3,6 +3,8 @@
+ #include "account_data.h"
+ #include "account_db.h"
+ 
++#include <components/achievements/achievement_db.h>
++
+ #include <game/server/entity_manager.h>
+ #include <game/server/gamecontext.h>
+ 
+@@ -36,26 +38,6 @@ namespace
+ 	}
+ }
+ 
+-namespace
+-{
+-	struct SAchievementKey
+-	{
+-		int m_Type {};
+-		int m_Criteria {};
+-
+-		bool operator<(const SAchievementKey& Other) const
+-		{
+-			return std::tie(m_Type, m_Criteria) < std::tie(Other.m_Type, Other.m_Criteria);
+-		}
+-	};
+-
+-	struct SAchievementProgress
+-	{
+-		int m_Progress {};
+-		int m_CompletedLevel {};
+-	};
+-}
+-
+ CGS* CAccountData::GS() const
+ {
+ 	return (CGS*)Instance::GameServerPlayer(m_ClientID);
+@@ -253,15 +235,11 @@ void CAccountData::SaveEquipmentPresets()
+ 
+ void CAccountData::InitAchievements()
+ {
+-	// The elements exist as soon as the client is there; their progress is the
+-	// statement of LoadAchievementsProgress().
+-	m_apAchievements.clear();
+-	auto* pPlayer = GetPlayer();
+-	for(const auto& pAchievement : CAchievementInfo::Data())
+-	{
+-		const int AchievementID = pAchievement->GetID();
+-		m_apAchievements[AchievementID] = CAchievement::CreateElement(pAchievement, pPlayer->GetCID());
+-	}
++	// Runtime progress lives in one place, keyed by client and achievement ID.
++	auto& Achievements = CAchievement::Data()[m_ClientID];
++	mystd::freeContainer(Achievements);
++	for(const auto* pInfo : CAchievementInfo::Data())
++		CAchievement::CreateElement(pInfo, m_ClientID);
+ }
+ 
+ void CAccountData::LoadAchievementsProgress()
+@@ -271,7 +249,7 @@ void CAccountData::LoadAchievementsProgress()
+ 	AddLoadStage("achievements", [ClientID, AccountID](CLoadDone Done)
+ 	{
+ 		auto pContext = DbAsync::MakeContext(ClientID);
+-		AccountDb::LoadAchievements(AccountID).Then([pContext, Done = std::move(Done)](Db::CResultSet&& Rows) mutable
++		AchievementDb::LoadProgress(AccountID).Then([pContext, ClientID, Done = std::move(Done)](Db::CResultSet&& Rows) mutable
+ 		{
+ 			auto* pPlayer = pContext->GetPlayer();
+ 			if(!pPlayer || !Rows.Ok())
+@@ -280,29 +258,28 @@ void CAccountData::LoadAchievementsProgress()
+ 				return;
+ 			}
+ 
+-			auto* pAccount = pPlayer->Account();
+-			std::map<SAchievementKey, SAchievementProgress> vProgress {};
++			// One row per (type, criteria) chain: progress and highest completed ID.
++			std::map<std::pair<int, int>, std::pair<int, int>> ProgressByChain;
+ 			while(Rows.Next())
+ 			{
+-				const SAchievementKey Key { Rows.GetInt("AchievementType"), Rows.GetInt("Criteria") };
+-				const SAchievementProgress Progress { Rows.GetInt("Progress"), Rows.GetInt("CompletedLevel") };
+-				vProgress[Key] = Progress;
++				const auto Key = std::make_pair(Rows.GetInt("AchievementType"), Rows.GetInt("Criteria"));
++				ProgressByChain[Key] = { Rows.GetInt("Progress"), Rows.GetInt("CompletedLevel") };
+ 			}
+ 
+-			for(const auto& pAchievement : CAchievementInfo::Data())
++			auto& Achievements = CAchievement::Data()[ClientID];
++			for(const auto* pInfo : CAchievementInfo::Data())
+ 			{
+-				const int AchievementID = pAchievement->GetID();
+-				const SAchievementKey Key { (int)pAchievement->GetType(), pAchievement->GetCriteria() };
+-				const auto it = vProgress.find(Key);
+-				if(it == vProgress.end())
++				const auto It = Achievements.find(pInfo->GetID());
++				if(It == Achievements.end())
+ 					continue;
+ 
+-				const SAchievementProgress& ProgressData = it->second;
+-				const int Required = pAchievement->GetRequired();
+-				const int ClampedProgress = clamp(ProgressData.m_Progress, 0, Required);
+-				const bool Completed = ProgressData.m_CompletedLevel >= AchievementID || ClampedProgress >= Required;
+-				if(pAccount->m_apAchievements.contains(AchievementID))
+-					pAccount->m_apAchievements[AchievementID]->Init(ClampedProgress, Completed);
++				const auto RowIt = ProgressByChain.find({ (int)pInfo->GetType(), pInfo->GetCriteria() });
++				const int Progress = RowIt != ProgressByChain.end()
++					? clamp(RowIt->second.first, 0, pInfo->GetRequired())
++					: 0;
++				const bool Completed = RowIt != ProgressByChain.end()
++					&& (RowIt->second.second >= pInfo->GetID() || pInfo->IsProgressEnough(Progress));
++				It->second->Init(Progress, Completed);
+ 			}
+ 
+ 			Done(true);
+@@ -646,19 +623,6 @@ void CAccountData::HandleChair(int ChairLevel)
+ 		pClassProfession->GetExpForNextLevel(), expStr.c_str());
+ }
+ 
+-void CAccountData::UpdateAchievementProgress(const CAchievementInfo* pInfo, int Progress, bool Completed)
+-{
+-	if(!pInfo)
+-		return;
+-
+-	const int AchievementType = (int)pInfo->GetType();
+-	const int Criteria = pInfo->GetCriteria();
+-	const int CompletedLevel = Completed ? pInfo->GetID() : 0;
+-
+-	AccountDb::SaveAchievement(m_ID, AchievementType, Criteria, Progress, CompletedLevel);
+-}
+-
+-
+ void CAccountData::AutoEquipSlots(bool OnlyEmptySlots)
+ {
+ 	auto* pPlayer = GetPlayer();
+diff --git a/src/game/server/core/components/accounts/account_data.h b/src/game/server/core/components/accounts/account_data.h
+index 75c4087..e43719c 100644
+--- a/src/game/server/core/components/accounts/account_data.h
++++ b/src/game/server/core/components/accounts/account_data.h
+@@ -25,8 +25,6 @@ class CHouse;
+ class GroupData;
+ class CGuild;
+ class CGuildMemberData;
+-class CAchievement;
+-class CAchievementInfo;
+ 
+ class CAccountData
+ {
+@@ -37,7 +35,6 @@ class CAccountData
+ 	int m_ID {};
+ 	bool m_ReadyToPlay {};
+ 	CAccountLoadPlan m_LoadPlan;
+-	std::map<int, CAchievement*> m_apAchievements {};
+ 	std::string m_Login{};
+ 	std::string m_LastLoginDate{};
+ 	std::string m_SessionToken{};
+@@ -214,7 +211,6 @@ public:
+ 
+ 	// Achievements
+ 	void InitAchievements();
+-	void UpdateAchievementProgress(const CAchievementInfo* pInfo, int Progress, bool Completed);
+ 
+ 	// Aethers
+ 	bool IsUnlockedAether(int AetherID) const { return m_aAetherLocation.find(AetherID) != m_aAetherLocation.end(); }
+diff --git a/src/game/server/core/components/accounts/account_db.cpp b/src/game/server/core/components/accounts/account_db.cpp
+index 6fde763..1c4bb5d 100644
+--- a/src/game/server/core/components/accounts/account_db.cpp
++++ b/src/game/server/core/components/accounts/account_db.cpp
+@@ -442,21 +442,6 @@ namespace AccountDb
+ 			Db::Bind(Data, ProfessionID, AccountID));
+ 	}
+ 
+-	Db::CRequest LoadAchievements(int AccountID)
+-	{
+-		return Db::Query(KIND, "SELECT AchievementType, Criteria, Progress, CompletedLevel FROM tw_accounts_achievements WHERE AccountID = ?",
+-			Db::Bind(AccountID));
+-	}
+-
+-	Db::CRequest SaveAchievement(int AccountID, int AchievementType, int Criteria, int Progress, int CompletedLevel)
+-	{
+-		return Db::Query(KIND,
+-			"INSERT INTO tw_accounts_achievements (AccountID, AchievementType, Criteria, Progress, CompletedLevel, UpdatedAt) "
+-			"VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) "
+-			"ON DUPLICATE KEY UPDATE Progress = ?, CompletedLevel = GREATEST(CompletedLevel, ?), UpdatedAt = CURRENT_TIMESTAMP",
+-			Db::Bind(AccountID, AchievementType, Criteria, Progress, CompletedLevel, Progress, CompletedLevel));
+-	}
+-
+ 	Db::CRequest SaveEquippedSlots(int AccountID, std::string_view Json)
+ 	{
+ 		return Db::Query(KIND, "UPDATE tw_accounts_data SET EquippedSlots = ? WHERE ID = ?", Db::Bind(Json, AccountID));
+diff --git a/src/game/server/core/components/accounts/account_db.h b/src/game/server/core/components/accounts/account_db.h
+index 949236f..f4c3703 100644
+--- a/src/game/server/core/components/accounts/account_db.h
++++ b/src/game/server/core/components/accounts/account_db.h
+@@ -165,9 +165,6 @@ namespace AccountDb
+ 	Db::CRequest CreateProfessions(int AccountID, const std::vector<SProfessionData>& vProfessions);
+ 	Db::CRequest SaveProfession(int AccountID, int ProfessionID, std::string_view Data);
+ 
+-	Db::CRequest LoadAchievements(int AccountID);
+-	Db::CRequest SaveAchievement(int AccountID, int AchievementType, int Criteria, int Progress, int CompletedLevel);
+-
+ 	Db::CRequest SaveEquippedSlots(int AccountID, std::string_view Json);
+ 	Db::CRequest SaveEquipmentPresets(int AccountID, std::string_view Json);
+ 	Db::CRequest SaveRating(int AccountID, int Rating);
+diff --git a/src/game/server/core/components/achievements/achievement_data.cpp b/src/game/server/core/components/achievements/achievement_data.cpp
+index b761473..ca7aaea 100644
+--- a/src/game/server/core/components/achievements/achievement_data.cpp
++++ b/src/game/server/core/components/achievements/achievement_data.cpp
+@@ -3,145 +3,152 @@
+ #include <game/server/gamecontext.h>
+ #include <generated/server_data.h>
+ 
++#include <components/accounts/account_data.h>
++#include <components/inventory/item_data.h>
++
+ #include "achievement_data.h"
++#include "achievement_db.h"
++
++namespace
++{
++	std::string FormatRewardText(const nlohmann::json& RewardData, int Points)
++	{
++		std::string Text;
++		auto AddEntry = [&](std::string Entry)
++		{
++			if(!Text.empty())
++				Text += ", ";
++			Text += std::move(Entry);
++		};
++
++		if(!RewardData.empty())
++		{
++			if(const int Experience = RewardData.value("exp", 0); Experience > 0)
++				AddEntry("Exp " + std::to_string(Experience));
++
++			const CItemsContainer Items = RewardData.value("items", CItemsContainer {});
++			for(const auto& Item : Items)
++			{
++				if(Item.IsValid())
++					AddEntry(std::string(Item.Info()->GetName()) + " x" + std::to_string(Item.GetValue()));
++			}
++		}
++
++		if(Points > 0)
++			AddEntry("Points " + std::to_string(Points) + "p");
++
++		return Text;
++	}
++}
+ 
+ CGS* CAchievement::GS() const { return (CGS*)Instance::GameServerPlayer(m_ClientID); }
+-CPlayer* CAchievement::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
+ 
+-void CAchievementInfo::InitData(const std::string& RewardData)
++CPlayer* CAchievement::GetPlayer() const
++{
++	auto* pGS = GS();
++	return pGS ? pGS->GetPlayer(m_ClientID) : nullptr;
++}
++
++void CAchievementInfo::Init(const std::string& Name, AchievementType Type, int Criteria, int Required,
++	const std::string& RewardData, int Point)
+ {
+-	// parse the reward data
+-	mystd::json::parse(RewardData, [this](nlohmann::json& pJson)
++	m_Name = Name;
++	m_Type = Type;
++	m_Criteria = Criteria;
++	// Required == 0 is used by the data for "complete once" quests. Normalizing
++	// it here keeps one completion rule for every achievement type.
++	m_Required = maximum(1, Required);
++	m_Point = Point;
++
++	mystd::json::parse(RewardData, [this](nlohmann::json& Json)
+ 	{
+-		m_RewardData = std::move(pJson);
++		m_RewardData = std::move(Json);
+ 	});
+ }
+ 
+-bool CAchievementInfo::IsCompleted(int Criteria, const CAchievement* pAchievement) const
++void CAchievementInfo::BuildRewardText()
+ {
+-	// check if the criteria are met
+-	if(m_Criteria > 0 && m_Criteria != Criteria)
+-		return false;
+-
+-	// logic for checking progress by achievement type
+-	switch(m_Type)
+-	{
+-		// achievements that require minimal progress (just having progress)
+-		case AchievementType::Equip:
+-		case AchievementType::CompleteQuest:
+-			return pAchievement->m_Progress > 0;
+-
+-		// achievements that require a specific number of actions or conditions to be met
+-		case AchievementType::CraftItem:
+-		case AchievementType::DefeatMob:
+-		case AchievementType::ReceiveItem:
+-		case AchievementType::HaveItem:
+-		case AchievementType::DefeatPVE:
+-		case AchievementType::DefeatPVP:
+-		case AchievementType::Death:
+-		case AchievementType::TotalDamage:
+-		case AchievementType::Leveling:
+-			return pAchievement->m_Progress >= m_Required;
+-
+-		// if the type is unknown, print an error and return false
+-		default:
+-			dbg_assert(false, "Unknown achievement type");
+-			return false;
+-	}
++	m_RewardText = FormatRewardText(m_RewardData, m_Point);
+ }
+ 
+-bool CAchievement::UpdateProgress(int Criteria, int Progress, int ProgressType)
++bool CAchievement::UpdateProgress(int Criteria, int Progress, EAchievementProgress Mode)
+ {
+ 	CPlayer* pPlayer = GetPlayer();
+-	if(m_Completed || !pPlayer)
++	if(!pPlayer || m_Completed || !m_pInfo->MatchesCriteria(Criteria))
+ 		return false;
+ 
+ 	const int PreviousProgress = m_Progress;
+-	const bool WasCompleted = m_Completed;
+-
+-	// update the achievement progress
+-	switch(ProgressType)
++	switch(Mode)
+ 	{
+-		case PROGRESS_ABSOLUTE:
+-		{
+-			m_Progress = Progress;
+-			break;
+-		}
+-		case PROGRESS_ACCUMULATE:
+-		{
+-			m_Progress += Progress;
+-			break;
+-		}
+-		default:
+-			return false;
++		case EAchievementProgress::Absolute: m_Progress = Progress; break;
++		case EAchievementProgress::Accumulate: m_Progress += Progress; break;
+ 	}
+ 	m_Progress = clamp(m_Progress, 0, m_pInfo->GetRequired());
++	if(m_Progress == PreviousProgress)
++		return true;
+ 
+-	// check if the achievement is completed
+-	if(m_pInfo->IsCompleted(Criteria, this))
++	bool CompletedNow = false;
++	if(m_pInfo->IsProgressEnough(m_Progress))
+ 	{
+ 		GS()->CreateHammerHit(pPlayer->m_ViewPos);
+ 		GS()->Chat(-1, "'{~}' has completed the achievement '{}'!", Server()->ClientName(m_ClientID), m_pInfo->GetName());
+ 		GS()->CreatePlayerSound(m_ClientID, SOUND_GAME_DONE);
+ 
+ 		m_Completed = true;
+-		RewardPlayer();
++		CompletedNow = true;
++		RewardPlayer(pPlayer);
+ 	}
+ 	else
+ 	{
+ 		NotifyPlayerProgress();
+ 	}
+ 
+-	const bool ProgressChanged = m_Progress != PreviousProgress;
+-	const bool CompletionChanged = m_Completed != WasCompleted;
++	auto* pAccount = pPlayer->Account();
++	if(!pAccount)
++		return true;
+ 
+-	if(ProgressChanged || CompletionChanged)
++	// The whole chain shares one database row. Only its last level writes
++	// progress, so a lower level cannot overwrite it with a smaller clamped
++	// value. Finishing a lower level is stored separately: absolute progress can
++	// legitimately decrease, but its reward must not be granted twice.
++	if(CompletedNow && !m_pInfo->IsChainTail())
+ 	{
+-		const int TickSpeed = Server()->TickSpeed();
+-		const int CurrentTick = Server()->Tick();
+-		constexpr int SaveIntervalSeconds = 5;
+-		const int SaveIntervalTicks = TickSpeed * SaveIntervalSeconds;
+-		const bool ShouldPersist = CompletionChanged
+-			|| m_LastSaveTick == 0
+-			|| (CurrentTick - m_LastSaveTick) >= SaveIntervalTicks;
+-
+-		if(ShouldPersist)
+-		{
+-			pPlayer->Account()->UpdateAchievementProgress(m_pInfo, m_Progress, m_Completed);
+-			m_LastSavedProgress = m_Progress;
+-			m_LastSavedCompleted = m_Completed;
+-			m_LastSaveTick = CurrentTick;
+-		}
++		AchievementDb::SaveCompletedLevel(pAccount->GetID(), (int)m_pInfo->GetType(),
++			m_pInfo->GetCriteria(), m_pInfo->GetID());
++	}
++
++	const int CurrentTick = Server()->Tick();
++	const int SaveIntervalTicks = Server()->TickSpeed() * 5;
++	const bool ShouldPersist = m_pInfo->IsChainTail()
++		&& (CompletedNow || m_LastSaveTick == 0 || CurrentTick - m_LastSaveTick >= SaveIntervalTicks);
++	if(ShouldPersist)
++	{
++		const int CompletedLevel = m_Completed ? m_pInfo->GetID() : 0;
++		AchievementDb::SaveProgress(pAccount->GetID(), (int)m_pInfo->GetType(),
++			m_pInfo->GetCriteria(), m_Progress, CompletedLevel);
++		m_LastSaveTick = CurrentTick;
+ 	}
+ 	return true;
+ }
+ 
+-void CAchievement::RewardPlayer() const
++void CAchievement::RewardPlayer(CPlayer* pPlayer) const
+ {
+-	CPlayer* pPlayer = GetPlayer();
+-	const auto& dataJson = m_pInfo->GetRewardData();
+-
+-	// json reward
+-	if(!dataJson.empty())
++	const auto& RewardData = m_pInfo->GetRewardData();
++	if(!RewardData.empty())
+ 	{
+-		if(const int Experience = dataJson.value("exp", 0); Experience > 0)
++		if(const int Experience = RewardData.value("exp", 0); Experience > 0)
+ 			pPlayer->Account()->AddExperience(Experience);
+ 
+-		// initilize reward items
+-		CItemsContainer vItems = dataJson.value("items", CItemsContainer {});
+-		for(const auto& item : vItems)
++		const CItemsContainer Items = RewardData.value("items", CItemsContainer {});
++		for(const auto& Item : Items)
+ 		{
+-			if(item.IsValid())
+-				pPlayer->GetItem(item)->Add(item.GetValue());
++			if(Item.IsValid())
++				pPlayer->GetItem(Item)->Add(Item.GetValue());
+ 		}
+ 	}
+ 
+-	// achievement points
+-	if(const int AchievementPoints = m_pInfo->GetPoint(); AchievementPoints > 0)
+-	{
+-		auto* pPlayerItem = pPlayer->GetItem(itAchievementPoint);
+-		pPlayerItem->Add(AchievementPoints);
+-	}
++	if(const int Points = m_pInfo->GetPoint(); Points > 0)
++		pPlayer->GetItem(itAchievementPoint)->Add(Points);
+ }
+ 
+ void CAchievement::NotifyPlayerProgress()
+diff --git a/src/game/server/core/components/achievements/achievement_data.h b/src/game/server/core/components/achievements/achievement_data.h
+index f4e0f8f..1a8b146 100644
+--- a/src/game/server/core/components/achievements/achievement_data.h
++++ b/src/game/server/core/components/achievements/achievement_data.h
+@@ -3,110 +3,104 @@
+ #ifndef GAME_SERVER_CORE_COMPONENTS_ACHIEVEMENTS_ACHIEVEMENT_DATA_H
+ #define GAME_SERVER_CORE_COMPONENTS_ACHIEVEMENTS_ACHIEVEMENT_DATA_H
+ 
+-#define TW_ACHIEVEMENTS "tw_achievements"
++#include <game/server/core/mmo_context.h>
++
++#include <map>
++#include <string>
++#include <vector>
+ 
+-// forward declaration
+ class CGS;
+ class CPlayer;
+-class CAchievement;
+ 
+-enum AchievementProgressType
++// How an incoming event changes the stored progress.
++enum class EAchievementProgress
+ {
+-	PROGRESS_ACCUMULATE = 0,
+-	PROGRESS_ABSOLUTE,
++	Accumulate,
++	Absolute,
+ };
+ 
+-// achievement information data
++// Static description loaded from tw_achievements.
+ class CAchievementInfo : public MultiworldIdentifiableData< std::deque<CAchievementInfo*> >
+ {
+ 	int m_ID {};
+ 	AchievementType m_Type {};
+-	std::string m_aName {};
+-	int m_Criteria{};
+-	int m_Required{};
++	std::string m_Name {};
++	int m_Criteria {};
++	int m_Required {};
+ 	int m_Point {};
+ 	nlohmann::json m_RewardData {};
++	std::string m_RewardText {};
++	bool m_IsChainTail {};
+ 
+ public:
+ 	explicit CAchievementInfo(int ID) : m_ID(ID) {}
+-	static CAchievementInfo* CreateElement(const int& ID)
++
++	static CAchievementInfo* CreateElement(int ID)
+ 	{
+-		auto pData = new CAchievementInfo(ID);
+-		pData->m_ID = ID;
+-		return m_pData.emplace_back(pData);
++		return m_pData.emplace_back(new CAchievementInfo(ID));
+ 	}
+ 
++	void Init(const std::string& Name, AchievementType Type, int Criteria, int Required,
++		const std::string& RewardData, int Point);
++	// Called after all item descriptions are loaded, so item names are known.
++	void BuildRewardText();
++
+ 	int GetID() const { return m_ID; }
+ 	int GetCriteria() const { return m_Criteria; }
+ 	int GetRequired() const { return m_Required; }
+ 	int GetPoint() const { return m_Point; }
+-	const char* GetName() const { return m_aName.c_str(); }
++	const char* GetName() const { return m_Name.c_str(); }
+ 	AchievementType GetType() const { return m_Type; }
+-	nlohmann::json& GetRewardData() { return m_RewardData; }
+ 	const nlohmann::json& GetRewardData() const { return m_RewardData; }
+-	bool RewardExists() const { return !m_RewardData.empty(); }
++	const std::string& GetRewardText() const { return m_RewardText; }
+ 
+-	// initalize the Aether data
+-	void Init(const std::string& pName, AchievementType Type, int Criteria, int Required, const std::string& RewardData, int Point)
+-	{
+-		m_aName = pName;
+-		m_Type = Type;
+-		m_Criteria = Criteria;
+-		m_Required = Required;
+-		m_Point = Point;
++	// All achievement types share one rule: reach the required progress.
++	// Criteria <= 0 means "any criteria" and is handled by MatchesCriteria().
++	bool MatchesCriteria(int Criteria) const { return m_Criteria <= 0 || m_Criteria == Criteria; }
++	bool IsProgressEnough(int Progress) const { return Progress >= m_Required; }
+ 
+-		InitData(RewardData);
+-	}
+-	void InitData(const std::string& RewardData);
+-
+-	// check if the achievement is completed
+-	bool IsCompleted(int Criteria, const CAchievement* pAchievement) const;
++	// Only the last level of a chain persists the shared progress row.
++	bool IsChainTail() const { return m_IsChainTail; }
++	void SetChainTail() { m_IsChainTail = true; }
+ };
+ 
+-// achievement data
+-class CAchievement : public MultiworldIdentifiableData< std::map< int, std::deque< CAchievement* > > >
++// Per-client progress. The map is keyed by achievement ID so that events can
++// reach a level directly instead of scanning every achievement of the player.
++class CAchievement : public MultiworldIdentifiableData< std::map< int, std::map< int, CAchievement* > > >
+ {
+-	friend class CAchievementInfo;
+-	friend class CAchievementManager;
+-
+-	CGS* GS() const;
+-	CPlayer* GetPlayer() const;
+-
+-	CAchievementInfo* m_pInfo {};
++	const CAchievementInfo* m_pInfo {};
+ 	int m_ClientID {};
+ 	int m_Progress {};
+ 	bool m_Completed {};
+ 	bool m_NotifiedSoonComplete {};
+-	int m_LastSavedProgress {};
+-	bool m_LastSavedCompleted {};
+ 	int m_LastSaveTick {};
+ 
+ public:
+-	explicit CAchievement(CAchievementInfo* pInfo, int ClientID) : m_pInfo(pInfo), m_ClientID(ClientID) {}
+-	static CAchievement* CreateElement(CAchievementInfo* pInfo, int ClientID)
++	explicit CAchievement(const CAchievementInfo* pInfo, int ClientID) : m_pInfo(pInfo), m_ClientID(ClientID) {}
++
++	static CAchievement* CreateElement(const CAchievementInfo* pInfo, int ClientID)
+ 	{
+-		const auto pData = new CAchievement(pInfo, ClientID);
+-		return m_pData[ClientID].emplace_back(pData);
++		auto* pData = new CAchievement(pInfo, ClientID);
++		return m_pData[ClientID][pInfo->GetID()] = pData;
+ 	}
+ 
+-	// initalize the Aether data
+ 	void Init(int Progress, bool Completed)
+ 	{
+ 		m_Progress = Progress;
+ 		m_Completed = Completed;
+-		m_LastSavedProgress = Progress;
+-		m_LastSavedCompleted = Completed;
+ 		m_LastSaveTick = 0;
+ 	}
+ 
+-	CAchievementInfo* Info() const { return m_pInfo; }
++	const CAchievementInfo* Info() const { return m_pInfo; }
+ 	bool IsCompleted() const { return m_Completed; }
+ 	int GetProgress() const { return m_Progress; }
+-	bool UpdateProgress(int Criteria, int Progress, int ProgressType);
++	bool UpdateProgress(int Criteria, int Progress, EAchievementProgress Mode);
+ 
+ private:
++	CGS* GS() const;
++	CPlayer* GetPlayer() const;
+ 	void NotifyPlayerProgress();
+-	void RewardPlayer() const;
++	void RewardPlayer(CPlayer* pPlayer) const;
+ };
+ 
+ #endif
+diff --git a/src/game/server/core/components/achievements/achievement_db.cpp b/src/game/server/core/components/achievements/achievement_db.cpp
+index 9c5f828..058b2dc 100644
+--- a/src/game/server/core/components/achievements/achievement_db.cpp
++++ b/src/game/server/core/components/achievements/achievement_db.cpp
+@@ -2,8 +2,43 @@
+ 
+ namespace AchievementDb
+ {
++	namespace
++	{
++		constexpr Db::EKind KIND_ACHIEVEMENTS = Db::KindOfTable("tw_achievements");
++		constexpr Db::EKind KIND_PROGRESS = Db::KindOfTable("tw_accounts_achievements");
++	}
++
+ 	Db::CResultSet ListAchievements()
+ 	{
+-		return Db::Query(Db::KindOfTable("tw_achievements"), "SELECT * FROM tw_achievements").Result();
++		return Db::Query(KIND_ACHIEVEMENTS,
++			"SELECT ID, Type, Criteria, Required, Name, Reward, AchievementPoint FROM tw_achievements").Result();
++	}
++
++	Db::CRequest LoadProgress(int AccountID)
++	{
++		return Db::Query(KIND_PROGRESS,
++			"SELECT AchievementType, Criteria, Progress, CompletedLevel FROM tw_accounts_achievements WHERE AccountID = ?",
++			Db::Bind(AccountID));
++	}
++
++	Db::CRequest SaveProgress(int AccountID, int AchievementType, int Criteria, int Progress, int CompletedLevel)
++	{
++		return Db::Query(KIND_PROGRESS,
++			"INSERT INTO tw_accounts_achievements (AccountID, AchievementType, Criteria, Progress, CompletedLevel, UpdatedAt) "
++			"VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) "
++			"ON DUPLICATE KEY UPDATE Progress = GREATEST(Progress, ?), CompletedLevel = GREATEST(CompletedLevel, ?), UpdatedAt = CURRENT_TIMESTAMP",
++			Db::Bind(AccountID, AchievementType, Criteria, Progress, CompletedLevel, Progress, CompletedLevel));
++	}
++
++	Db::CRequest SaveCompletedLevel(int AccountID, int AchievementType, int Criteria, int CompletedLevel)
++	{
++		// A lower level of a chain finished, but the chain is still in progress.
++		// Remember the reward grant without overwriting the progress written by
++		// the last level (absolute progress can legitimately go down).
++		return Db::Query(KIND_PROGRESS,
++			"INSERT INTO tw_accounts_achievements (AccountID, AchievementType, Criteria, Progress, CompletedLevel, UpdatedAt) "
++			"VALUES (?, ?, ?, 0, ?, CURRENT_TIMESTAMP) "
++			"ON DUPLICATE KEY UPDATE CompletedLevel = GREATEST(CompletedLevel, ?), UpdatedAt = CURRENT_TIMESTAMP",
++			Db::Bind(AccountID, AchievementType, Criteria, CompletedLevel, CompletedLevel));
+ 	}
+ }
+diff --git a/src/game/server/core/components/achievements/achievement_db.h b/src/game/server/core/components/achievements/achievement_db.h
+index 57ce696..aba9737 100644
+--- a/src/game/server/core/components/achievements/achievement_db.h
++++ b/src/game/server/core/components/achievements/achievement_db.h
+@@ -6,6 +6,9 @@
+ namespace AchievementDb
+ {
+ 	Db::CResultSet ListAchievements();
++	Db::CRequest LoadProgress(int AccountID);
++	Db::CRequest SaveProgress(int AccountID, int AchievementType, int Criteria, int Progress, int CompletedLevel);
++	Db::CRequest SaveCompletedLevel(int AccountID, int AchievementType, int Criteria, int CompletedLevel);
+ }
+ 
+-#endif // GAME_SERVER_COMPONENT_ACHIEVEMENTS_ACHIEVEMENT_DB_H
++#endif // GAME_SERVER_CORE_COMPONENTS_ACHIEVEMENTS_ACHIEVEMENT_DB_H
+diff --git a/src/game/server/core/components/achievements/achievement_listener.cpp b/src/game/server/core/components/achievements/achievement_listener.cpp
+index 482e5e0..b322209 100644
+--- a/src/game/server/core/components/achievements/achievement_listener.cpp
++++ b/src/game/server/core/components/achievements/achievement_listener.cpp
+@@ -1,5 +1,4 @@
+ #include "achievement_listener.h"
+-#include "achievement_data.h"
+ 
+ #include <game/server/gamecontext.h>
+ 
+@@ -7,88 +6,105 @@
+ 
+ CAchievementListener g_AchievementListener;
+ 
++void CAchievementListener::Initialize()
++{
++	g_EventListenerManager.RegisterListener(IEventListener::CharacterDamage, this);
++	g_EventListenerManager.RegisterListener(IEventListener::CharacterDeath, this);
++	g_EventListenerManager.RegisterListener(IEventListener::PlayerGotItem, this);
++	g_EventListenerManager.RegisterListener(IEventListener::PlayerCraftItem, this);
++	g_EventListenerManager.RegisterListener(IEventListener::PlayerEquipItem, this);
++	g_EventListenerManager.RegisterListener(IEventListener::PlayerProfessionLeveling, this);
++	g_EventListenerManager.RegisterListener(IEventListener::PlayerQuestChangeState, this);
++}
++
+ void CAchievementListener::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage)
+ {
+ 	if(pFrom && pFrom != pTo && !pFrom->IsBot())
+-	{
+-		UpdateAchievement(pFrom, AchievementType::TotalDamage, NOPE, Damage, PROGRESS_ACCUMULATE);
+-	}
++		UpdateAchievement(pFrom, AchievementType::TotalDamage, NOPE, Damage, EAchievementProgress::Accumulate);
+ }
+ 
+ void CAchievementListener::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
+ {
+-	// achievement death
+ 	if(pVictim && !pVictim->IsBot() && Weapon != WEAPON_WORLD)
+-	{
+-		UpdateAchievement(pVictim, AchievementType::Death, NOPE, 1, PROGRESS_ACCUMULATE);
+-	}
++		UpdateAchievement(pVictim, AchievementType::Death, NOPE, 1, EAchievementProgress::Accumulate);
+ 
+ 	if(pKiller && pVictim && pVictim != pKiller)
+ 	{
+-		// achievement defeat mob & pve
+ 		if(pVictim->IsBot() && !pKiller->IsBot())
+ 		{
+ 			const auto VictimBotID = dynamic_cast<CPlayerBot*>(pVictim)->GetBotID();
+-			UpdateAchievement(pKiller, AchievementType::DefeatMob, VictimBotID, 1, PROGRESS_ACCUMULATE);
+-			UpdateAchievement(pKiller, AchievementType::DefeatPVE, NOPE, 1, PROGRESS_ACCUMULATE);
++			UpdateAchievement(pKiller, AchievementType::DefeatMob, VictimBotID, 1, EAchievementProgress::Accumulate);
++			UpdateAchievement(pKiller, AchievementType::DefeatPVE, NOPE, 1, EAchievementProgress::Accumulate);
+ 		}
+ 
+-		// achievement defeat pvp
+ 		if(!pVictim->IsBot() && !pKiller->IsBot())
+-		{
+-			UpdateAchievement(pKiller, AchievementType::DefeatPVP, NOPE, 1, PROGRESS_ACCUMULATE);
+-		}
++			UpdateAchievement(pKiller, AchievementType::DefeatPVP, NOPE, 1, EAchievementProgress::Accumulate);
+ 	}
+ }
+ 
+ void CAchievementListener::OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem)
+ {
+-	UpdateAchievement(pPlayer, AchievementType::Equip, pItem->GetID(), true, PROGRESS_ABSOLUTE);
++	UpdateAchievement(pPlayer, AchievementType::Equip, pItem->GetID(), 1, EAchievementProgress::Absolute);
+ }
+ 
+ void CAchievementListener::OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession* pProfession, int NewLevel)
+ {
+-	UpdateAchievement(pPlayer, AchievementType::Leveling, (int)pProfession->GetProfessionID(), NewLevel, PROGRESS_ABSOLUTE);
++	UpdateAchievement(pPlayer, AchievementType::Leveling, (int)pProfession->GetProfessionID(), NewLevel, EAchievementProgress::Absolute);
+ }
+ 
+ void CAchievementListener::OnPlayerQuestChangeState(CPlayer* pPlayer, CPlayerQuest* pQuest, QuestState NewState)
+ {
+ 	if(pQuest->IsCompleted())
+-	{
+-		UpdateAchievement(pPlayer, AchievementType::CompleteQuest, pQuest->GetID(), true, PROGRESS_ABSOLUTE);
+-	}
++		UpdateAchievement(pPlayer, AchievementType::CompleteQuest, pQuest->GetID(), 1, EAchievementProgress::Absolute);
+ }
+ 
+ void CAchievementListener::OnPlayerGotItem(CPlayer* pPlayer, CPlayerItem* pItem, int Got)
+ {
+-	UpdateAchievement(pPlayer, AchievementType::ReceiveItem, pItem->GetID(), Got, PROGRESS_ACCUMULATE);
+-	UpdateAchievement(pPlayer, AchievementType::HaveItem, pItem->GetID(), pItem->GetValue(), PROGRESS_ABSOLUTE);
++	UpdateAchievement(pPlayer, AchievementType::ReceiveItem, pItem->GetID(), Got, EAchievementProgress::Accumulate);
++	UpdateAchievement(pPlayer, AchievementType::HaveItem, pItem->GetID(), pItem->GetValue(), EAchievementProgress::Absolute);
+ }
+ 
+ void CAchievementListener::OnPlayerCraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Amount, int Extra)
+ {
+-	UpdateAchievement(pPlayer, AchievementType::CraftItem, pCraft->GetID(), Amount + Extra, PROGRESS_ACCUMULATE);
++	UpdateAchievement(pPlayer, AchievementType::CraftItem, pCraft->GetID(), Amount + Extra, EAchievementProgress::Accumulate);
+ }
+ 
+-void CAchievementListener::UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, int ProgressType) const
++void CAchievementListener::UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, EAchievementProgress Mode)
+ {
+-	if(!pPlayer || pPlayer->IsBot())
++	if(!pPlayer || pPlayer->IsBot() || !pPlayer->IsAuthed())
+ 		return;
+ 
+-	auto& pAchievements = CAchievement::Data()[pPlayer->GetCID()];
+-
+-	// search for the achievement
+-	for(const auto& pAchievement : pAchievements)
++	// Listeners are registered before the descriptions are loaded in OnPreInit(),
++	// so the lookup table is built on the first event instead.
++	if(!m_IndexBuilt && !CAchievementInfo::Data().empty())
+ 	{
+-		const auto achievementType = pAchievement->Info()->GetType();
+-		const auto achievementCriteria = pAchievement->Info()->GetCriteria();
++		for(const auto* pInfo : CAchievementInfo::Data())
++			m_Index[{ (int)pInfo->GetType(), pInfo->GetCriteria() }].push_back(pInfo->GetID());
++		m_IndexBuilt = true;
++	}
++
++	const auto ClientIt = CAchievement::Data().find(pPlayer->GetCID());
++	if(ClientIt == CAchievement::Data().end())
++		return;
+ 
+-		if(achievementType != Type || pAchievement->IsCompleted())
+-			continue;
++	const auto& vAchievements = ClientIt->second;
++	const int KeyCriteria = Criteria > 0 ? Criteria : 0;
+ 
+-		if(achievementCriteria <= 0 || achievementCriteria == Criteria)
++	auto UpdateByCriteria = [&](int Criterion)
++	{
++		const auto It = m_Index.find({ (int)Type, Criterion });
++		if(It == m_Index.end())
++			return;
++
++		for(const int AchievementID : It->second)
+ 		{
+-			pAchievement->UpdateProgress(Criteria, Progress, ProgressType);
++			const auto AchievementIt = vAchievements.find(AchievementID);
++			if(AchievementIt != vAchievements.end() && !AchievementIt->second->IsCompleted())
++				AchievementIt->second->UpdateProgress(Criteria, Progress, Mode);
+ 		}
+-	}
++	};
++
++	UpdateByCriteria(KeyCriteria);
++	if(KeyCriteria != 0)
++		UpdateByCriteria(0); // achievements without a concrete criteria match any event
+ }
+diff --git a/src/game/server/core/components/achievements/achievement_listener.h b/src/game/server/core/components/achievements/achievement_listener.h
+index d7d213c..617a154 100644
+--- a/src/game/server/core/components/achievements/achievement_listener.h
++++ b/src/game/server/core/components/achievements/achievement_listener.h
+@@ -3,25 +3,22 @@
+ 
+ #include <game/server/core/tools/event_listener.h>
+ 
++#include <map>
++#include <utility>
++#include <vector>
++
++#include "achievement_data.h"
++
+ class CGS;
+ class CPlayer;
+ class CPlayerItem;
+ class CProfession;
+-enum class AchievementType;
++class CQuestDescription;
+ 
+ class CAchievementListener : public IEventListener
+ {
+ public:
+-	void Initialize()
+-	{
+-		g_EventListenerManager.RegisterListener(IEventListener::CharacterDamage, this);
+-		g_EventListenerManager.RegisterListener(IEventListener::CharacterDeath, this);
+-		g_EventListenerManager.RegisterListener(IEventListener::PlayerGotItem, this);
+-		g_EventListenerManager.RegisterListener(IEventListener::PlayerCraftItem, this);
+-		g_EventListenerManager.RegisterListener(IEventListener::PlayerEquipItem, this);
+-		g_EventListenerManager.RegisterListener(IEventListener::PlayerProfessionLeveling, this);
+-		g_EventListenerManager.RegisterListener(IEventListener::PlayerQuestChangeState, this);
+-	}
++	void Initialize();
+ 
+ protected:
+ 	void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) override;
+@@ -33,9 +30,13 @@ protected:
+ 	void OnPlayerQuestChangeState(CPlayer* pPlayer, CPlayerQuest* pQuest, QuestState NewState) override;
+ 
+ private:
+-	void UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, int ProgressType) const;
++	void UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, EAchievementProgress Mode);
++
++	// (type, criteria) -> achievement IDs. Built once from the static descriptions.
++	std::map<std::pair<int, int>, std::vector<int>> m_Index;
++	bool m_IndexBuilt {};
+ };
+ 
+ extern CAchievementListener g_AchievementListener;
+ 
+-#endif
+\ No newline at end of file
++#endif
+diff --git a/src/game/server/core/components/achievements/achievement_manager.cpp b/src/game/server/core/components/achievements/achievement_manager.cpp
+index 7bb8e28..16877bd 100644
+--- a/src/game/server/core/components/achievements/achievement_manager.cpp
++++ b/src/game/server/core/components/achievements/achievement_manager.cpp
+@@ -4,165 +4,91 @@
+ #include "achievement_db.h"
+ 
+ #include <algorithm>
++#include <array>
+ #include <map>
+-#include <unordered_map>
+-#include <unordered_set>
+-#include <vector>
++#include <string_view>
++#include <utility>
+ 
+-#include <game/server/core/components/crafting/craft_manager.h>
+-#include <game/server/core/components/inventory/item_data.h>
++#include <components/bots/bot_data.h>
++#include <components/crafting/craft_manager.h>
++#include <components/inventory/item_data.h>
++#include <components/quests/quest_data.h>
+ #include <game/server/gamecontext.h>
+ 
+ namespace
+ {
+-	struct SAchievementLevelInfo
+-	{
+-		int m_Level {};
+-		int m_TotalLevels {};
+-	};
++	constexpr int ACHIEVEMENT_TYPE_COUNT = (int)AchievementType::Leveling + 1;
+ 
+-	struct SAchievementChain
+-	{
+-		int m_Criteria {};
+-		std::vector<const CAchievement*> m_vAchievements {};
+-	};
++	using TCounts = std::array<int, ACHIEVEMENT_TYPE_COUNT>;
+ 
+-	std::vector<SAchievementChain> BuildAchievementChains(
+-		const std::deque<CAchievement*>& Achievements,
+-		AchievementType Type)
++	CAchievement* FindAchievement(int ClientID, int AchievementID)
+ 	{
+-		std::map<int, SAchievementChain> groupedByCriteria;
+-		for(const auto* pAchievement : Achievements)
+-		{
+-			const auto* pInfo = pAchievement->Info();
+-			if(pInfo->GetType() != Type)
+-				continue;
++		const auto It = CAchievement::Data().find(ClientID);
++		if(It == CAchievement::Data().end())
++			return nullptr;
+ 
+-			auto& chain = groupedByCriteria[pInfo->GetCriteria()];
+-			chain.m_Criteria = pInfo->GetCriteria();
+-			chain.m_vAchievements.push_back(pAchievement);
+-		}
+-
+-		std::vector<SAchievementChain> vChains;
+-		vChains.reserve(groupedByCriteria.size());
+-		for(auto& [criteria, chain] : groupedByCriteria)
+-		{
+-			std::ranges::sort(chain.m_vAchievements, [](const CAchievement* pLeft, const CAchievement* pRight)
+-			{
+-				const auto* pLeftInfo = pLeft->Info();
+-				const auto* pRightInfo = pRight->Info();
+-				if(pLeftInfo->GetRequired() == pRightInfo->GetRequired())
+-					return pLeftInfo->GetID() < pRightInfo->GetID();
+-				return pLeftInfo->GetRequired() < pRightInfo->GetRequired();
+-			});
+-
+-			vChains.emplace_back(std::move(chain));
+-		}
+-
+-		return vChains;
++		const auto AchievementIt = It->second.find(AchievementID);
++		return AchievementIt != It->second.end() ? AchievementIt->second : nullptr;
+ 	}
++}
+ 
+-	std::unordered_map<const CAchievementInfo*, SAchievementLevelInfo> BuildLevelInfoByAchievement(
+-		const std::vector<SAchievementChain>& vChains)
++void CAchievementManager::OnPreInit()
++{
++	auto Achievements = AchievementDb::ListAchievements();
++	while(Achievements.Next())
+ 	{
+-		std::unordered_map<const CAchievementInfo*, SAchievementLevelInfo> levelInfoByAchievement;
+-		for(const auto& chain : vChains)
+-		{
+-			const int totalLevels = (int)chain.m_vAchievements.size();
+-			for(int i = 0; i < totalLevels; ++i)
+-			{
+-				const auto* pInfo = chain.m_vAchievements[i]->Info();
+-				levelInfoByAchievement[pInfo] = { i + 1, totalLevels };
+-			}
+-		}
+-		return levelInfoByAchievement;
++		auto* pInfo = CAchievementInfo::CreateElement(Achievements.GetInt("ID"));
++		pInfo->Init(Achievements.GetString("Name"), (AchievementType)Achievements.GetInt("Type"),
++			Achievements.GetInt("Criteria"), Achievements.GetInt("Required"),
++			Achievements.GetString("Reward"), Achievements.GetInt("AchievementPoint"));
+ 	}
+ 
+-	std::unordered_set<const CAchievementInfo*> BuildVisibleAchievements(
+-		const std::vector<SAchievementChain>& vChains)
++	std::ranges::sort(CAchievementInfo::Data(), [](const CAchievementInfo* pLeft, const CAchievementInfo* pRight)
+ 	{
+-		std::unordered_set<const CAchievementInfo*> visible;
+-		for(const auto& chain : vChains)
+-		{
+-			int lastCompletedIndex = -1;
+-			for(int i = 0; i < (int)chain.m_vAchievements.size(); ++i)
+-			{
+-				if(chain.m_vAchievements[i]->IsCompleted())
+-					lastCompletedIndex = i;
+-			}
++		return std::string_view(pLeft->GetName()) < std::string_view(pRight->GetName());
++	});
+ 
+-			const int maxVisibleIndex = std::min(lastCompletedIndex + 1, (int)chain.m_vAchievements.size() - 1);
+-			for(int i = 0; i <= maxVisibleIndex; ++i)
+-				visible.insert(chain.m_vAchievements[i]->Info());
+-		}
++	BuildChains();
++}
+ 
+-		return visible;
+-	}
++void CAchievementManager::OnPostInit()
++{
++	// Item descriptions are loaded by other components in OnPreInit(), which
++	// runs after this manager's OnPreInit(). Build reward text only now.
++	for(auto* pInfo : CAchievementInfo::Data())
++		pInfo->BuildRewardText();
++}
+ 
+-	void AddRewardInfo(VoteWrapper& Wrapper, const CAchievementInfo* pInfo)
+-	{
+-		std::vector<std::string> rewardEntries;
+-		rewardEntries.reserve(4);
++void CAchievementManager::BuildChains()
++{
++	std::map<std::pair<int, int>, std::vector<CAchievementInfo*>> Grouped;
++	for(auto* pInfo : CAchievementInfo::Data())
++		Grouped[{ (int)pInfo->GetType(), pInfo->GetCriteria() }].push_back(pInfo);
+ 
+-		const auto& dataJson = pInfo->GetRewardData();
+-		if(!dataJson.empty())
++	m_vChains.clear();
++	m_vChains.reserve(Grouped.size());
++	for(auto& [Key, vInfos] : Grouped)
++	{
++		std::ranges::sort(vInfos, [](const CAchievementInfo* pLeft, const CAchievementInfo* pRight)
+ 		{
+-			if(const int Experience = dataJson.value("exp", 0); Experience > 0)
+-				rewardEntries.push_back("Exp " + std::to_string(Experience));
+-
+-			const CItemsContainer items = dataJson.value("items", CItemsContainer {});
+-			for(const auto& item : items)
+-			{
+-				if(!item.IsValid())
+-					continue;
+-				rewardEntries.push_back(std::string(item.Info()->GetName()) + " x" + std::to_string(item.GetValue()));
+-			}
+-		}
+-
+-		if(const int Points = pInfo->GetPoint(); Points > 0)
+-			rewardEntries.push_back("Points " + std::to_string(Points) + "p");
+-
+-		if(rewardEntries.empty())
+-			return;
+-
+-		std::string rewardText;
+-		for(size_t i = 0; i < rewardEntries.size(); ++i)
++			if(pLeft->GetRequired() != pRight->GetRequired())
++				return pLeft->GetRequired() < pRight->GetRequired();
++			return pLeft->GetID() < pRight->GetID();
++		});
++
++		SAchievementChain Chain;
++		Chain.m_Type = (AchievementType)Key.first;
++		Chain.m_vIDs.reserve(vInfos.size());
++		for(size_t i = 0; i < vInfos.size(); ++i)
+ 		{
+-			if(i > 0)
+-				rewardText += ", ";
+-			rewardText += rewardEntries[i];
++			if(i + 1 == vInfos.size())
++				vInfos[i]->SetChainTail();
++			Chain.m_vIDs.push_back(vInfos[i]->GetID());
+ 		}
+-
+-		Wrapper.Add("Rewards: {~}", rewardText);
++		m_vChains.push_back(std::move(Chain));
+ 	}
+ }
+ 
+-void CAchievementManager::OnPreInit()
+-{
+-	auto Achievements = AchievementDb::ListAchievements();
+-	while(Achievements.Next())
+-	{
+-		// initialize variables
+-		int ID = Achievements.GetInt("ID");
+-		int Type = Achievements.GetInt("Type");
+-		int Criteria = Achievements.GetInt("Criteria");
+-		int Required = Achievements.GetInt("Required");
+-		std::string Name = Achievements.GetString("Name");
+-		std::string Reward = Achievements.GetString("Reward");
+-		int AchievementPoint = Achievements.GetInt("AchievementPoint");
+-
+-		// create element
+-		auto* pAchievement = CAchievementInfo::CreateElement(ID);
+-		pAchievement->Init(Name, (AchievementType)Type, Criteria, Required, Reward, AchievementPoint);
+-	}
+-
+-	// sort achievements by name
+-	std::ranges::sort(CAchievementInfo::Data(), [](const CAchievementInfo* p1, const CAchievementInfo* p2)
+-	{
+-		return std::string_view(p1->GetName()) < std::string_view(p2->GetName());
+-	});
+-}
+-
+ void CAchievementManager::OnClientReset(int ClientID)
+ {
+ 	mystd::freeContainer(CAchievement::Data()[ClientID]);
+@@ -172,7 +98,6 @@ bool CAchievementManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
+ {
+ 	const int ClientID = pPlayer->GetCID();
+ 
+-	// menu achievements
+ 	if(Menulist == MENU_ACHIEVEMENTS)
+ 	{
+ 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
+@@ -181,7 +106,6 @@ bool CAchievementManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
+ 		return true;
+ 	}
+ 
+-	// menu achievements group selected
+ 	if(Menulist == MENU_ACHIEVEMENTS_SELECT)
+ 	{
+ 		pPlayer->m_VotesData.SetLastMenuID(MENU_ACHIEVEMENTS);
+@@ -200,193 +124,194 @@ bool CAchievementManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
+ 
+ void CAchievementManager::ShowMenu(CPlayer* pPlayer) const
+ {
+-	// initialize variables
+ 	const int ClientID = pPlayer->GetCID();
+-	const auto TotalAchievements = GetCount();
+-	const auto TotalCompleted = GetCompletedCount(ClientID);
+-	const auto Percentage = round_to_int(translate_to_percent(TotalAchievements, TotalCompleted));
+-	const auto progressBar = mystd::string::progressBar(100, Percentage, 7, "\u25B0", "\u25B1");
++	TCounts TotalByType {};
++	TCounts CompletedByType {};
++	for(const auto* pInfo : CAchievementInfo::Data())
++	{
++		const int TypeIndex = (int)pInfo->GetType();
++		if(TypeIndex > 0 && TypeIndex < ACHIEVEMENT_TYPE_COUNT)
++			TotalByType[TypeIndex]++;
++	}
+ 
++	const auto ClientIt = CAchievement::Data().find(ClientID);
++	if(ClientIt != CAchievement::Data().end())
++	{
++		for(const auto& Entry : ClientIt->second)
++		{
++			const int TypeIndex = (int)Entry.second->Info()->GetType();
++			if(Entry.second->IsCompleted() && TypeIndex > 0 && TypeIndex < ACHIEVEMENT_TYPE_COUNT)
++				CompletedByType[TypeIndex]++;
++		}
++	}
++
++	int TotalAchievements = 0;
++	int TotalCompleted = 0;
++	for(int i = 0; i < ACHIEVEMENT_TYPE_COUNT; ++i)
++	{
++		TotalAchievements += TotalByType[i];
++		TotalCompleted += CompletedByType[i];
++	}
+ 
+-	// info
+-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Achievements (Information)");
++	const auto Percentage = round_to_int(translate_to_percent(TotalAchievements, TotalCompleted));
++	const auto progressBar = mystd::string::progressBar(100, Percentage, 7, "\\u25B0", "\\u25B1");
++
++	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\\u2324 Achievements (Information)");
+ 	VInfo.Add("You can complete achievements and earn rewards.");
+ 	VoteWrapper::AddEmptyline(ClientID);
+ 
+-
+-	// main
+-	VoteWrapper VMain(ClientID, VWF_STYLE_STRICT | VWF_ALIGN_TITLE | VWF_SEPARATE, "\u2654 Main information");
++	VoteWrapper VMain(ClientID, VWF_STYLE_STRICT | VWF_ALIGN_TITLE | VWF_SEPARATE, "\\u2654 Main information");
+ 	VMain.Add("Overall: {} of {} completed", TotalCompleted, TotalAchievements);
+ 	VMain.Add("Progress: {} {}%", progressBar, Percentage);
+ 	VMain.Add("Achievement points: {}p", pPlayer->GetItem(itAchievementPoint)->GetValue());
+ 	VoteWrapper::AddEmptyline(ClientID);
+ 
+-
+-	// types
+-	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2059 Achievement groups");
++	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\\u2059 Achievement groups");
+ 	for(int i = (int)AchievementType::DefeatPVP; i <= (int)AchievementType::Leveling; i++)
+ 	{
+-		auto Type = (AchievementType)i;
+-		auto Completed = GetCompletedCountByType(ClientID, Type);
+-		auto Total = GetCountByType(Type);
+-		VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECT, i, "{} ({} of {})", GetAchievementTypeName(Type), Completed, Total);
++		const auto Type = (AchievementType)i;
++		VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECT, i, "{} ({} of {})",
++			GetAchievementTypeName(Type), CompletedByType[i], TotalByType[i]);
+ 	}
+ }
+ 
+ void CAchievementManager::ShowTypeList(CPlayer* pPlayer, AchievementType Type) const
+ {
+-	// initialize variables
+ 	const int ClientID = pPlayer->GetCID();
+-	const auto& achievements = CAchievement::Data()[ClientID];
+-	const auto chains = BuildAchievementChains(achievements, Type);
+-	const auto levelInfoByAchievement = BuildLevelInfoByAchievement(chains);
+-	const auto visibleAchievements = BuildVisibleAchievements(chains);
+ 
+-
+-	// info
+-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE | VWF_ALIGN_TITLE, "\u2324 Achievements (Information)");
++	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE | VWF_ALIGN_TITLE, "\\u2324 Achievements (Information)");
+ 	VInfo.Add("Select an achievement from the list to get conditions.");
+ 	VoteWrapper::AddEmptyline(ClientID);
++	VoteWrapper(ClientID).Add("\\u2263 {} achievements", GetAchievementTypeName(Type));
+ 
+-
+-	// achievements list
+-	VoteWrapper(ClientID).Add("\u2263 {} achievements", GetAchievementTypeName(Type));
+-	for(const auto& chain : chains)
++	for(const auto& Chain : m_vChains)
+ 	{
+-		for(const auto* pAchievement : chain.m_vAchievements)
++		if(Chain.m_Type != Type)
++			continue;
++
++		const int TotalLevels = (int)Chain.m_vIDs.size();
++		int LastCompletedIndex = -1;
++		for(int i = 0; i < TotalLevels; ++i)
+ 		{
+-			const auto* pInfo = pAchievement->Info();
+-			if(!visibleAchievements.contains(pInfo))
++			const auto* pAchievement = FindAchievement(ClientID, Chain.m_vIDs[i]);
++			if(pAchievement && pAchievement->IsCompleted())
++				LastCompletedIndex = i;
++		}
++
++		const int MaxVisibleIndex = std::min(LastCompletedIndex + 1, TotalLevels - 1);
++		for(int i = 0; i <= MaxVisibleIndex; ++i)
++		{
++			const auto* pAchievement = FindAchievement(ClientID, Chain.m_vIDs[i]);
++			if(!pAchievement)
+ 				continue;
+ 
+-			const auto progress = pAchievement->GetProgress();
+-			const auto required = pInfo->GetRequired();
+-			const bool completed = pAchievement->IsCompleted();
+-			const auto levelInfoIt = levelInfoByAchievement.find(pInfo);
+-			const int level = levelInfoIt != levelInfoByAchievement.end() ? levelInfoIt->second.m_Level : 0;
+-			const int totalLevels = levelInfoIt != levelInfoByAchievement.end() ? levelInfoIt->second.m_TotalLevels : 0;
+-			const std::string levelSuffix = totalLevels > 1
+-				? " [Level " + std::to_string(level) + "/" + std::to_string(totalLevels) + "]"
++			const auto* pInfo = pAchievement->Info();
++			const std::string LevelSuffix = TotalLevels > 1
++				? " [Level " + std::to_string(i + 1) + "/" + std::to_string(TotalLevels) + "]"
+ 				: "";
+ 
+ 			VoteWrapper VAchievement(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} {}{~}",
+-				completed ? "✔" : "○", pInfo->GetName(), levelSuffix);
+-			AddAchievementDetails(VAchievement, pInfo, progress, required, level, totalLevels);
++				pAchievement->IsCompleted() ? "✔" : "○", pInfo->GetName(), LevelSuffix);
++			AddAchievementDetails(VAchievement, pInfo, pAchievement->GetProgress(), i + 1, TotalLevels);
+ 		}
+ 	}
+ }
+ 
+-void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const CAchievementInfo* pInfo, int Progress, int Required, int Level, int TotalLevels) const
++void CAchievementManager::AddAchievementDetails(VoteWrapper& Vote, const CAchievementInfo* pInfo, int Progress, int Level, int TotalLevels) const
+ {
+-	auto addProgressInfo = [&](VoteWrapper& wrapper, auto progress, auto required, std::string action, std::string needed = {})
++	const auto Required = pInfo->GetRequired();
++	auto AddProgressInfo = [&](const std::string& Action, const std::string& Needed = {})
+ 	{
+-		const auto progressAchievement = translate_to_percent(required, progress);
+-		const auto progressBar = mystd::string::progressBar(100, (int)progressAchievement, 5, "\u25B0", "\u25B1");
+-		wrapper.Add("Progress: {} - {~.2}%", progressBar, progressAchievement);
+-		if(needed.empty())
+-			wrapper.Add("Goal: {} {}/{}", action, progress, required);
++		const auto Percent = translate_to_percent(Required, Progress);
++		const auto progressBar = mystd::string::progressBar(100, (int)Percent, 5, "\\u25B0", "\\u25B1");
++		Vote.Add("Progress: {} - {~.2}%", progressBar, Percent);
++		if(Needed.empty())
++			Vote.Add("Goal: {} {}/{}", Action, Progress, Required);
+ 		else
+-			wrapper.Add("Goal: {} {}/{} {}", action, progress, required, needed);
++			Vote.Add("Goal: {} {}/{} {}", Action, Progress, Required, Needed);
+ 	};
+ 
+ 	if(TotalLevels > 1)
+-		VAchievement.Add("Level: {}/{}", Level, TotalLevels);
++		Vote.Add("Level: {}/{}", Level, TotalLevels);
+ 
+-	switch(const auto Type = pInfo->GetType())
++	std::string Action;
++	std::string Needed;
++	const auto Type = pInfo->GetType();
++	const int Criteria = pInfo->GetCriteria();
++	switch(Type)
+ 	{
+ 		case AchievementType::ReceiveItem:
+ 		case AchievementType::HaveItem:
+ 		{
+-			const auto* pItem = GS()->GetItemInfo(pInfo->GetCriteria());
+-			const auto Action = Type == AchievementType::ReceiveItem ? "Receive" : "Have";
+-			addProgressInfo(VAchievement, Progress, Required, Action, pItem->GetName());
++			const auto It = CItemDescription::Data().find(Criteria);
++			if(It != CItemDescription::Data().end())
++			{
++				Action = Type == AchievementType::ReceiveItem ? "Receive" : "Have";
++				Needed = It->second.GetName();
++			}
+ 			break;
+ 		}
+ 		case AchievementType::TotalDamage:
+-		{
+-			addProgressInfo(VAchievement, Progress, Required, "Total damage");
++			Action = "Total damage";
+ 			break;
+-		}
+ 		case AchievementType::Death:
+-		{
+-			addProgressInfo(VAchievement, Progress, Required, "Deaths");
++			Action = "Deaths";
+ 			break;
+-		}
+ 		case AchievementType::DefeatMob:
+ 		{
+-			const auto botID = pInfo->GetCriteria();
+-			const auto botName = DataBotInfo::ms_aDataBot[botID].m_aNameBot;
+-			addProgressInfo(VAchievement, Progress, Required, "Defeat", botName);
++			const auto It = DataBotInfo::ms_aDataBot.find(Criteria);
++			if(It != DataBotInfo::ms_aDataBot.end())
++			{
++				Action = "Defeat";
++				Needed = It->second.m_aNameBot;
++			}
+ 			break;
+ 		}
+ 		case AchievementType::DefeatPVE:
+-		{
+-			addProgressInfo(VAchievement, Progress, Required, "Defeat", "enemies");
++			Action = "Defeat";
++			Needed = "enemies";
+ 			break;
+-		}
+ 		case AchievementType::DefeatPVP:
+-		{
+-			addProgressInfo(VAchievement, Progress, Required, "Defeat", "players");
++			Action = "Defeat";
++			Needed = "players";
+ 			break;
+-		}
+ 		case AchievementType::Equip:
+ 		{
+-			CItemDescription* pItem = GS()->GetItemInfo(pInfo->GetCriteria());
+-			addProgressInfo(VAchievement, Progress, Required, "Equip", pItem->GetName());
++			const auto It = CItemDescription::Data().find(Criteria);
++			if(It != CItemDescription::Data().end())
++			{
++				Action = "Equip";
++				Needed = It->second.GetName();
++			}
+ 			break;
+ 		}
+ 		case AchievementType::CompleteQuest:
+ 		{
+-			CQuestDescription* pQuestInfo = GS()->GetQuestInfo(pInfo->GetCriteria());
+-			addProgressInfo(VAchievement, Progress, Required, "Complete", pQuestInfo->GetName());
++			if(const auto* pQuest = GS()->GetQuestInfo(Criteria))
++			{
++				Action = "Complete";
++				Needed = pQuest->GetName();
++			}
+ 			break;
+ 		}
+ 		case AchievementType::Leveling:
+-		{
+-			const auto ProfessionName = std::string(GetProfessionName((ProfessionIdentifier)pInfo->GetCriteria()));
+-			const auto ActionStr = "Reach " + ProfessionName;
+-			addProgressInfo(VAchievement, Progress, Required, ActionStr, "levels");
++			Action = std::string("Reach ") + GetProfessionName((ProfessionIdentifier)Criteria);
++			Needed = "levels";
+ 			break;
+-		}
+ 		case AchievementType::CraftItem:
+ 		{
+-			if(CCraftItem* pItem = Core()->CraftManager()->GetCraftByID(pInfo->GetCriteria()))
++			if(const auto* pCraft = Core()->CraftManager()->GetCraftByID(Criteria))
+ 			{
+-				addProgressInfo(VAchievement, Progress, Required, "Craft", pItem->GetItem()->Info()->GetName());
+-			} break;
++				Action = "Craft";
++				Needed = pCraft->GetItem()->Info()->GetName();
++			}
++			break;
+ 		}
+ 	}
+ 
+-	AddRewardInfo(VAchievement, pInfo);
+-}
+-
+-int CAchievementManager::GetCount() const
+-{
+-	return (int)CAchievementInfo::Data().size();
+-}
+-
+-int CAchievementManager::GetCountByType(AchievementType Type) const
+-{
+-	return (int)std::ranges::count_if(CAchievementInfo::Data(), [Type](const CAchievementInfo* pAchievement)
+-	{
+-		return pAchievement->GetType() == Type;
+-	});
+-}
+-
+-int CAchievementManager::GetCompletedCountByType(int ClientID, AchievementType Type) const
+-{
+-	const auto& pAchievements = CAchievement::Data()[ClientID];
+-	return (int)std::ranges::count_if(pAchievements, [Type](const CAchievement* p)
+-	{
+-		return p->Info()->GetType() == Type && p->IsCompleted();
+-	});
+-}
++	if(!Action.empty())
++		AddProgressInfo(Action, Needed);
+ 
+-int CAchievementManager::GetCompletedCount(int ClientID) const
+-{
+-	const auto& pAchievements = CAchievement::Data()[ClientID];
+-	return (int)std::ranges::count_if(pAchievements, [](const CAchievement* p)
+-	{
+-		return p->IsCompleted();
+-	});
++	if(!pInfo->GetRewardText().empty())
++		Vote.Add("Rewards: {~}", pInfo->GetRewardText());
+ }
+diff --git a/src/game/server/core/components/achievements/achievement_manager.h b/src/game/server/core/components/achievements/achievement_manager.h
+index d1fccbe..b1c736e 100644
+--- a/src/game/server/core/components/achievements/achievement_manager.h
++++ b/src/game/server/core/components/achievements/achievement_manager.h
+@@ -4,29 +4,36 @@
+ #define GAME_SERVER_CORE_COMPONENTS_ACHIEVEMENTS_ACHIEVEMENT_MANAGER_H
+ #include <game/server/core/mmo_component.h>
+ 
++#include <vector>
++
+ #include "achievement_data.h"
+ #include "game/server/core/tools/vote_wrapper.h"
+ 
+ class CAchievementManager : public MmoComponent
+ {
++	struct SAchievementChain
++	{
++		AchievementType m_Type {};
++		std::vector<int> m_vIDs {};
++	};
++
++	// Shared across worlds: only the initializer world runs OnPreInit().
++	static inline std::vector<SAchievementChain> m_vChains {};
++
+ 	~CAchievementManager() override
+ 	{
+ 		mystd::freeContainer(CAchievement::Data(), CAchievementInfo::Data());
+ 	};
+ 
+ 	void OnPreInit() override;
++	void OnPostInit() override;
+ 	void OnClientReset(int ClientID) override;
+ 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
+ 
++	void BuildChains();
+ 	void ShowMenu(CPlayer* pPlayer) const;
+ 	void ShowTypeList(CPlayer* pPlayer, AchievementType Type) const;
+-	void AddAchievementDetails(VoteWrapper& VAchievement, const CAchievementInfo* pInfo, int Progress, int Required, int Level = 0, int TotalLevels = 0) const;
+-
+-public:
+-	int GetCountByType(AchievementType Type) const;
+-	int GetCompletedCountByType(int ClientID, AchievementType Type) const;
+-	int GetCount() const;
+-	int GetCompletedCount(int ClientID) const;
++	void AddAchievementDetails(VoteWrapper& Vote, const CAchievementInfo* pInfo, int Progress, int Level, int TotalLevels) const;
+ };
+ 
+ #endif
+diff --git a/src/test/db_account.cpp b/src/test/db_account.cpp
+index dd6e75d..3d11267 100644
+--- a/src/test/db_account.cpp
++++ b/src/test/db_account.cpp
+@@ -11,6 +11,7 @@
+ #include <engine/server/db/db_async.h>
+ 
+ #include <game/server/core/components/accounts/account_db.h>
++#include <game/server/core/components/achievements/achievement_db.h>
+ 
+ #include <gtest/gtest.h>
+ 
+@@ -768,3 +769,71 @@ TEST_F(CAccountDbTest, ConnectionLossIsRetriedWithAFreshConnection)
+ 	ASSERT_TRUE(Retry.Ok()) << Retry.Error().ToString();
+ 	EXPECT_TRUE(AccountDb::ParseNickname(Retry).m_Found);
+ }
++
++
++// ---------------------------------------------------------------------------
++// achievements
++// ---------------------------------------------------------------------------
++TEST_F(CAccountDbTest, AchievementDefinitionsUseExplicitColumns)
++{
++	m_Driver.Rule({ "FROM tw_achievements",
++		{ "ID", "Type", "Criteria", "Required", "Name", "Reward", "AchievementPoint" },
++		{ { std::string("1"), std::string("1"), std::string("0"), std::string("10"),
++			std::string("First kill"), std::string(""), std::string("1") } } });
++
++	auto Rows = AchievementDb::ListAchievements();
++	ASSERT_TRUE(Rows.Ok()) << Rows.Error().ToString();
++	ASSERT_TRUE(Rows.Next());
++	EXPECT_EQ(Rows.GetInt("Required"), 10);
++
++	const std::vector<SCall> vCalls = m_Driver.Calls();
++	ASSERT_EQ(vCalls.size(), 1u);
++	EXPECT_NE(vCalls[0].m_Sql.find("SELECT ID, Type, Criteria, Required, Name, Reward, AchievementPoint"), std::string::npos);
++}
++
++TEST_F(CAccountDbTest, AchievementProgressLoadsByAccountAndKeepsCompletedLevel)
++{
++	m_Driver.Rule({ "FROM tw_accounts_achievements",
++		{ "AchievementType", "Criteria", "Progress", "CompletedLevel" },
++		{ { std::string("9"), std::string("2"), std::string("500"), std::string("114") } } });
++
++	auto Result = RunRequest(AchievementDb::LoadProgress(42));
++	ASSERT_TRUE(Result.Ok()) << Result.Error().ToString();
++	ASSERT_TRUE(Result.Next());
++	EXPECT_EQ(Result.GetInt("Progress"), 500);
++	EXPECT_EQ(Result.GetInt("CompletedLevel"), 114);
++
++	const std::vector<SCall> vCalls = m_Driver.Calls();
++	ASSERT_EQ(vCalls.size(), 1u);
++	EXPECT_NE(vCalls[0].m_Sql.find("WHERE AccountID = ?"), std::string::npos);
++	EXPECT_TRUE(m_Driver.ValueWasNeverSpliced("42"));
++}
++
++TEST_F(CAccountDbTest, AchievementProgressSaveUsesBoundValuesAndMonotonicLevel)
++{
++	m_Driver.Rule({ "INSERT INTO tw_accounts_achievements", {}, {}, 0, "", "", 1 });
++
++	auto Result = RunRequest(AchievementDb::SaveProgress(42, 9, 2, 500, 114));
++	EXPECT_TRUE(Result.Ok()) << Result.Error().ToString();
++
++	const std::vector<SCall> vCalls = m_Driver.Calls();
++	ASSERT_EQ(vCalls.size(), 1u);
++	EXPECT_NE(vCalls[0].m_Sql.find("Progress = GREATEST(Progress, ?)"), std::string::npos);
++	EXPECT_NE(vCalls[0].m_Sql.find("CompletedLevel = GREATEST(CompletedLevel, ?)"), std::string::npos);
++	EXPECT_EQ(vCalls[0].m_Bindings.Values().size(), 7u);
++	EXPECT_TRUE(m_Driver.ValueWasNeverSpliced("500"));
++}
++
++TEST_F(CAccountDbTest, LowerLevelCompletionKeepsChainProgress)
++{
++	m_Driver.Rule({ "INSERT INTO tw_accounts_achievements", {}, {}, 0, "", "", 1 });
++
++	auto Result = RunRequest(AchievementDb::SaveCompletedLevel(42, 8, 7, 81));
++	EXPECT_TRUE(Result.Ok()) << Result.Error().ToString();
++
++	const std::vector<SCall> vCalls = m_Driver.Calls();
++	ASSERT_EQ(vCalls.size(), 1u);
++	EXPECT_NE(vCalls[0].m_Sql.find("VALUES (?, ?, ?, 0, ?, CURRENT_TIMESTAMP)"), std::string::npos);
++	EXPECT_NE(vCalls[0].m_Sql.find("UPDATE CompletedLevel = GREATEST(CompletedLevel, ?)"), std::string::npos);
++	EXPECT_EQ(vCalls[0].m_Bindings.Values().size(), 5u);
++}

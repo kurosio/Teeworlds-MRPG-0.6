@@ -228,6 +228,9 @@ namespace Db
 		// Optional application-level identity used to expose request state to
 		// menus. This is metadata only; it does not change SQL or deduplication.
 		std::string m_Tag;
+		// INSERTs normally return an id. Disable the additional id lookup when
+		// the caller only needs success or affected rows.
+		bool m_FetchInsertId = true;
 
 		SQueryOptions& Tag(std::string_view Name)
 		{
@@ -253,6 +256,11 @@ namespace Db
 		SQueryOptions& Delay(int Milliseconds)
 		{
 			m_DelayMs = Milliseconds;
+			return *this;
+		}		
+		SQueryOptions& FetchInsertId(bool Enabled = true)
+		{
+			m_FetchInsertId = Enabled;
 			return *this;
 		}
 		SQueryOptions& Coalesce(bool Enabled = true)

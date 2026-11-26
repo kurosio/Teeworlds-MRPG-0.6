@@ -25,8 +25,6 @@ class CHouse;
 class GroupData;
 class CGuild;
 class CGuildMemberData;
-class CAchievement;
-class CAchievementInfo;
 
 class CAccountData
 {
@@ -37,7 +35,6 @@ class CAccountData
 	int m_ID {};
 	bool m_ReadyToPlay {};
 	CAccountLoadPlan m_LoadPlan;
-	std::map<int, CAchievement*> m_apAchievements {};
 	std::string m_Login{};
 	std::string m_LastLoginDate{};
 	std::string m_SessionToken{};
@@ -214,7 +211,6 @@ public:
 
 	// Achievements
 	void InitAchievements();
-	void UpdateAchievementProgress(const CAchievementInfo* pInfo, int Progress, bool Completed);
 
 	// Aethers
 	bool IsUnlockedAether(int AetherID) const { return m_aAetherLocation.find(AetherID) != m_aAetherLocation.end(); }

@@ -3,145 +3,152 @@
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
 
+#include <components/accounts/account_data.h>
+#include <components/inventory/item_data.h>
+
 #include "achievement_data.h"
+#include "achievement_db.h"
+
+namespace
+{
+	std::string FormatRewardText(const nlohmann::json& RewardData, int Points)
+	{
+		std::string Text;
+		auto AddEntry = [&](std::string Entry)
+		{
+			if(!Text.empty())
+				Text += ", ";
+			Text += std::move(Entry);
+		};
+
+		if(!RewardData.empty())
+		{
+			if(const int Experience = RewardData.value("exp", 0); Experience > 0)
+				AddEntry("Exp " + std::to_string(Experience));
+
+			const CItemsContainer Items = RewardData.value("items", CItemsContainer {});
+			for(const auto& Item : Items)
+			{
+				if(Item.IsValid())
+					AddEntry(std::string(Item.Info()->GetName()) + " x" + std::to_string(Item.GetValue()));
+			}
+		}
+
+		if(Points > 0)
+			AddEntry("Points " + std::to_string(Points) + "p");
+
+		return Text;
+	}
+}
 
 CGS* CAchievement::GS() const { return (CGS*)Instance::GameServerPlayer(m_ClientID); }
-CPlayer* CAchievement::GetPlayer() const { return GS()->GetPlayer(m_ClientID); }
 
-void CAchievementInfo::InitData(const std::string& RewardData)
+CPlayer* CAchievement::GetPlayer() const
 {
-	// parse the reward data
-	mystd::json::parse(RewardData, [this](nlohmann::json& pJson)
+	auto* pGS = GS();
+	return pGS ? pGS->GetPlayer(m_ClientID) : nullptr;
+}
+
+void CAchievementInfo::Init(const std::string& Name, AchievementType Type, int Criteria, int Required,
+	const std::string& RewardData, int Point)
+{
+	m_Name = Name;
+	m_Type = Type;
+	m_Criteria = Criteria;
+	// Required == 0 is used by the data for "complete once" quests. Normalizing
+	// it here keeps one completion rule for every achievement type.
+	m_Required = maximum(1, Required);
+	m_Point = Point;
+
+	mystd::json::parse(RewardData, [this](nlohmann::json& Json)
 	{
-		m_RewardData = std::move(pJson);
+		m_RewardData = std::move(Json);
 	});
 }
 
-bool CAchievementInfo::IsCompleted(int Criteria, const CAchievement* pAchievement) const
+void CAchievementInfo::BuildRewardText()
 {
-	// check if the criteria are met
-	if(m_Criteria > 0 && m_Criteria != Criteria)
-		return false;
-
-	// logic for checking progress by achievement type
-	switch(m_Type)
-	{
-		// achievements that require minimal progress (just having progress)
-		case AchievementType::Equip:
-		case AchievementType::CompleteQuest:
-			return pAchievement->m_Progress > 0;
-
-		// achievements that require a specific number of actions or conditions to be met
-		case AchievementType::CraftItem:
-		case AchievementType::DefeatMob:
-		case AchievementType::ReceiveItem:
-		case AchievementType::HaveItem:
-		case AchievementType::DefeatPVE:
-		case AchievementType::DefeatPVP:
-		case AchievementType::Death:
-		case AchievementType::TotalDamage:
-		case AchievementType::Leveling:
-			return pAchievement->m_Progress >= m_Required;
-
-		// if the type is unknown, print an error and return false
-		default:
-			dbg_assert(false, "Unknown achievement type");
-			return false;
-	}
+	m_RewardText = FormatRewardText(m_RewardData, m_Point);
 }
 
-bool CAchievement::UpdateProgress(int Criteria, int Progress, int ProgressType)
+bool CAchievement::UpdateProgress(int Criteria, int Progress, EAchievementProgress Mode)
 {
 	CPlayer* pPlayer = GetPlayer();
-	if(m_Completed || !pPlayer)
+	if(!pPlayer || m_Completed || !m_pInfo->MatchesCriteria(Criteria))
 		return false;
 
 	const int PreviousProgress = m_Progress;
-	const bool WasCompleted = m_Completed;
-
-	// update the achievement progress
-	switch(ProgressType)
+	switch(Mode)
 	{
-		case PROGRESS_ABSOLUTE:
-		{
-			m_Progress = Progress;
-			break;
-		}
-		case PROGRESS_ACCUMULATE:
-		{
-			m_Progress += Progress;
-			break;
-		}
-		default:
-			return false;
+		case EAchievementProgress::Absolute: m_Progress = Progress; break;
+		case EAchievementProgress::Accumulate: m_Progress += Progress; break;
 	}
 	m_Progress = clamp(m_Progress, 0, m_pInfo->GetRequired());
+	if(m_Progress == PreviousProgress)
+		return true;
 
-	// check if the achievement is completed
-	if(m_pInfo->IsCompleted(Criteria, this))
+	bool CompletedNow = false;
+	if(m_pInfo->IsProgressEnough(m_Progress))
 	{
 		GS()->CreateHammerHit(pPlayer->m_ViewPos);
 		GS()->Chat(-1, "'{~}' has completed the achievement '{}'!", Server()->ClientName(m_ClientID), m_pInfo->GetName());
 		GS()->CreatePlayerSound(m_ClientID, SOUND_GAME_DONE);
 
 		m_Completed = true;
-		RewardPlayer();
+		CompletedNow = true;
+		RewardPlayer(pPlayer);
 	}
 	else
 	{
 		NotifyPlayerProgress();
 	}
 
-	const bool ProgressChanged = m_Progress != PreviousProgress;
-	const bool CompletionChanged = m_Completed != WasCompleted;
+	auto* pAccount = pPlayer->Account();
+	if(!pAccount)
+		return true;
 
-	if(ProgressChanged || CompletionChanged)
+	// The whole chain shares one database row. Only its last level writes
+	// progress, so a lower level cannot overwrite it with a smaller clamped
+	// value. Finishing a lower level is stored separately: absolute progress can
+	// legitimately decrease, but its reward must not be granted twice.
+	if(CompletedNow && !m_pInfo->IsChainTail())
 	{
-		const int TickSpeed = Server()->TickSpeed();
-		const int CurrentTick = Server()->Tick();
-		constexpr int SaveIntervalSeconds = 5;
-		const int SaveIntervalTicks = TickSpeed * SaveIntervalSeconds;
-		const bool ShouldPersist = CompletionChanged
-			|| m_LastSaveTick == 0
-			|| (CurrentTick - m_LastSaveTick) >= SaveIntervalTicks;
+		AchievementDb::SaveCompletedLevel(pAccount->GetID(), (int)m_pInfo->GetType(),
+			m_pInfo->GetCriteria(), m_pInfo->GetID());
+	}
 
-		if(ShouldPersist)
-		{
-			pPlayer->Account()->UpdateAchievementProgress(m_pInfo, m_Progress, m_Completed);
-			m_LastSavedProgress = m_Progress;
-			m_LastSavedCompleted = m_Completed;
-			m_LastSaveTick = CurrentTick;
-		}
+	const int CurrentTick = Server()->Tick();
+	const int SaveIntervalTicks = Server()->TickSpeed() * 5;
+	const bool ShouldPersist = m_pInfo->IsChainTail()
+		&& (CompletedNow || m_LastSaveTick == 0 || CurrentTick - m_LastSaveTick >= SaveIntervalTicks);
+	if(ShouldPersist)
+	{
+		const int CompletedLevel = m_Completed ? m_pInfo->GetID() : 0;
+		AchievementDb::SaveProgress(pAccount->GetID(), (int)m_pInfo->GetType(),
+			m_pInfo->GetCriteria(), m_Progress, CompletedLevel);
+		m_LastSaveTick = CurrentTick;
 	}
 	return true;
 }
 
-void CAchievement::RewardPlayer() const
+void CAchievement::RewardPlayer(CPlayer* pPlayer) const
 {
-	CPlayer* pPlayer = GetPlayer();
-	const auto& dataJson = m_pInfo->GetRewardData();
-
-	// json reward
-	if(!dataJson.empty())
+	const auto& RewardData = m_pInfo->GetRewardData();
+	if(!RewardData.empty())
 	{
-		if(const int Experience = dataJson.value("exp", 0); Experience > 0)
+		if(const int Experience = RewardData.value("exp", 0); Experience > 0)
 			pPlayer->Account()->AddExperience(Experience);
 
-		// initilize reward items
-		CItemsContainer vItems = dataJson.value("items", CItemsContainer {});
-		for(const auto& item : vItems)
+		const CItemsContainer Items = RewardData.value("items", CItemsContainer {});
+		for(const auto& Item : Items)
 		{
-			if(item.IsValid())
-				pPlayer->GetItem(item)->Add(item.GetValue());
+			if(Item.IsValid())
+				pPlayer->GetItem(Item)->Add(Item.GetValue());
 		}
 	}
 
-	// achievement points
-	if(const int AchievementPoints = m_pInfo->GetPoint(); AchievementPoints > 0)
-	{
-		auto* pPlayerItem = pPlayer->GetItem(itAchievementPoint);
-		pPlayerItem->Add(AchievementPoints);
-	}
+	if(const int Points = m_pInfo->GetPoint(); Points > 0)
+		pPlayer->GetItem(itAchievementPoint)->Add(Points);
 }
 
 void CAchievement::NotifyPlayerProgress()
