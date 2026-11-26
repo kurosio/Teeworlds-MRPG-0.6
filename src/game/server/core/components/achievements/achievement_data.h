@@ -11,6 +11,7 @@ class CPlayer;
 // How an incoming event changes the stored progress.
 enum class EAchievementProgress
 {
+	Accumulate,
 	Absolute,
 };
 
