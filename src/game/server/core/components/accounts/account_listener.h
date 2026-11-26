@@ -4,77 +4,59 @@
 #include <engine/server/db/db_result.h>
 #include <game/server/core/tools/event_listener.h>
 
+#include <array>
+
 class CGS;
 class CPlayer;
 
+// The best account of one profession.
 struct TrackingLevelingData
 {
 	int AccountID {};
 	int Level {};
 };
 
-inline void to_json(nlohmann::json& j, const TrackingLevelingData& data)
-{
-	j = nlohmann::json::object({
-		{"account_id", data.AccountID},
-		{"level", data.Level}
-	});
-}
-
-inline void from_json(const nlohmann::json& j, TrackingLevelingData& data)
-{
-	if(!j.is_object())
-		return;
-
-	data.AccountID = j.value("account_id", 0);
-	data.Level = j.value("level", 0);
-}
-
-// leveling tracker
+// The specialists, one entry per profession.
 //
-// The file next to the database is a cache of the leaders; the profession rows
-// are the authority. Reading them is a full table walk, so it never happens on
-// the game thread and never replaces the list it could not read: an empty or
-// failed answer keeps the previous state and is retried, instead of leaving the
-// specialists list empty until the server restarts.
+// The profession rows are the only source: the level lives inside the
+// profession document, so the database reduces the rows to one per profession
+// and the tracker merges that answer. An empty answer is not an answer - the
+// list it would replace stays and the read is retried.
 class CLevelingTracker
 {
 	friend class CAccountListener;
-	// The tag every read of this tracker carries, so a menu that shows the
-	// specialists can wait for the answer and tell "loading" from "none".
-	static constexpr const char* TRACKING_TAG = "profession_leaders";
-	bool m_Loaded = false;
-	bool m_RefreshInFlight = false;
-	bool m_Synchronized = false;
-	int m_RefreshFailures = 0;
-	// Remaining ticks until the next refresh. A countdown, not an absolute tick,
-	// because the server tick is an int and wraps.
-	int m_RefreshDelayTicks = 0;
-	std::unordered_map<int, TrackingLevelingData> m_vTrackingData {};
 
-	void UpdateTrackingDataIfNecessary(CPlayer* pPlayer, int ProfessionID, int NewLevel);
-	void LoadTrackingData();
-	void SaveTrackingData();
-	void ApplyDatabaseRows(Db::CResultSet&& Rows);
-	void ScheduleNextRefresh(bool Succeeded);
+	// The tag of every read, so the menu that shows this list can follow it.
+	static constexpr const char* TRACKING_TAG = "profession_leaders";
+	static constexpr int NUM_ENTRIES = (int)ProfessionIdentifier::NUM_PROFESSIONS;
+
+	bool m_Loaded = false;
+	bool m_Refreshing = false;
+	// Ticks until the next refresh: a countdown, because the server tick wraps.
+	int m_RefreshDelay = 0;
+	// Consecutive answers without a leader, for the backoff of the retries.
+	int m_Retries = 0;
+	std::array<TrackingLevelingData, NUM_ENTRIES> m_aLeaders {};
+
+	void UpdateIfNecessary(CPlayer* pPlayer, ProfessionIdentifier Profession, int Level);
+	void Apply(Db::CResultSet&& Rows);
 
 public:
-	// Reads the leaders again in the background; harmless while one read runs.
-	void RefreshFromDatabase();
 	static constexpr const char* UpdateTag() { return TRACKING_TAG; }
-	// Drives the periodic refresh and its retries. Called once per tick by the
-	// initializer world only: the tracker is global, not per world.
+
+	// Reads the league again in the background; harmless while a read runs.
+	void Refresh();
+	// Drives the periodic refresh. Called once per tick by the initializer
+	// world only: the list is global, not per world.
 	void Tick();
 
-	bool IsRefreshing() const { return m_RefreshInFlight; }
-	// True after the first successful read: an empty list is then a real answer.
-	bool IsSynchronized() const { return m_Synchronized; }
-
-	std::optional<TrackingLevelingData> GetTrackingData(int ProfessionID) const;
-	const std::unordered_map<int, TrackingLevelingData>& GetTrackings() const { return m_vTrackingData; }
+	// Null when the profession has no leader yet.
+	const TrackingLevelingData* GetLeader(ProfessionIdentifier Profession) const;
+	// True after an answer that named at least one leader.
+	bool IsLoaded() const { return m_Loaded; }
 };
 
-// inventory listener
+// account and leveling listener
 class CAccountListener : public IEventListener
 {
 	CLevelingTracker m_LevelingTracker;

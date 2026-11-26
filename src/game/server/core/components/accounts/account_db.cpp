@@ -474,21 +474,25 @@ namespace AccountDb
 		return Db::Query(KIND, "UPDATE tw_accounts_data SET Rating = ? WHERE ID = ?", Db::Bind(Rating, AccountID));
 	}
 
-	// The level of a profession is stored inside its document, so the comparison
-	// belongs in the database: every account holds one row per profession and
-	// reading all of them costs a full table transfer on a populated server.
+	// The level of a profession is stored inside its document, so the reduction
+	// has to happen in the database: every account holds one row per profession,
+	// and reading them all would transfer the whole table on a populated server.
 	//
-	// Only rows that hold a level are ordered: a document that lost its number
-	// does not take part (reading it as 0 would put it under every real record)
-	// and no JSON function is involved, so the statement does not depend on the
-	// server version. The trailing ID keeps the order stable for equal levels;
-	// the tracker keeps the first row of every profession.
+	// Expression detail: the level is the text after the last "level": of the
+	// document and CAST reads its leading digits. No JSON function is involved,
+	// so the statement does not depend on the database version.
+	//
+	// MIN() picks an account when several share the same best level - the
+	// deterministic choice, so the leader of a profession does not change while
+	// the level does not.
 	Db::CRequest ListProfessionLeaders(std::string_view Tag)
 	{
 		return Db::Query(KIND,
-			"SELECT UserID, ProfessionID, Data FROM tw_accounts_professions "
-			"WHERE Data LIKE '%\"level\"%' "
-			"ORDER BY CAST(SUBSTRING_INDEX(LOWER(Data), '\"level\":', -1) AS SIGNED) DESC, ID ASC",
+			"SELECT MIN(UserID) AS UserID, ProfessionID, MAX(Level) AS Level FROM ("
+			"SELECT UserID, ProfessionID, "
+			"CAST(SUBSTRING_INDEX(LOWER(Data), '\"level\":', -1) AS SIGNED) AS Level "
+			"FROM tw_accounts_professions WHERE Data LIKE '%\"level\"%'"
+			") AS ranked GROUP BY ProfessionID HAVING Level > 0",
 			{}, Db::SQueryOptions().Coalesce().Tag(Tag));
 	}
 

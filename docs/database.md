@@ -469,33 +469,47 @@ thread, writes leave it at once.
   (`quest_step_data.cpp`), so the write has to answer before the step is
   finished. The files are small; the same code path is the only place that
   depends on the answer of a write.
-* **The start-up file reads that remain.** `CLevelingTracker::LoadTrackingData()`
-  and `CAttributesTracker::LoadTrackingData()` (called from
-  `CAccountListener::Initialize()`), `CGameControllerTutorial::OnInit()` and
-  `CLocalization::Init()` read their files once while the server is coming up;
-  their contents are in memory before the first player can connect, and every
-  later write of the same file is asynchronous. The files are only a cache:
-  `CLevelingTracker` follows them with an asynchronous read of the profession
-  rows (see below), and `CAttributesTracker` is filled by the accounts that log
-  in. A missing or corrupt file therefore leaves the list empty for a moment,
-  not for the whole run.
+* **The start-up file reads that remain.** `CAttributesTracker::LoadTrackingData()`
+  (called from `CInventoryListener::Initialize()`), `CGameControllerTutorial::OnInit()`
+  and `CLocalization::Init()` read their files once while the server is coming
+  up; their contents are in memory before the first player can connect, and
+  every later write of the same file is asynchronous. The attribute file is
+  only a cache of the leaders: the accounts that log in refresh it, and a
+  missing or corrupt file just leaves the list empty for a moment.
+
+The specialists list has no file at all any more: `CLevelingTracker` is filled
+by the database (see below), so there is no second copy that can disagree with
+it or be lost on a restart.
 
 ### The profession leaders
 
 The level of a profession lives inside the profession document, so the ranking
 cannot be read row by row and reduced in memory: on a populated server that is
 a transfer of one row per account per profession. `AccountDb::ListProfessionLeaders`
-computes it in the database instead - one statement, ordered by level, of which
-the tracker keeps the first row of each profession. The read is asynchronous
-(`profession_leaders` tag) and started from `CAccountListener::OnTick()` in the
-initializer world, with a two-minute refresh interval.
+reduces it in the database instead - one statement that returns exactly one row
+per profession (`MAX(Level)`, and `MIN(UserID)` when several accounts share it,
+so the choice stays deterministic). The read is asynchronous, carries the
+`profession_leaders` tag and is repeated every five minutes from
+`CAccountListener::OnTick()` in the initializer world.
 
-The tracker never replaces what it knows with a failed or empty answer: the
-rows are merged by level, an answer without a single profession is retried with
-a growing pause (5 s to 60 s), and a level gained while the read was in flight
-wins over the older row. The leaderboard menu (`Top Specialists in the Realm`)
-waits on the same tag, which is how it tells "loading" from "no records yet" -
-`Db::HasTagCompleted` answers whether a tag ever produced an answer.
+`CLevelingTracker` keeps those rows in a fixed array indexed by profession, so
+lookups are direct and there is nothing to sort or copy:
+
+| Member | Meaning |
+| --- | --- |
+| `Refresh()` | starts the read; a no-op while one runs or a retry is pending |
+| `Tick()` | counts the delay down and starts the read when it reaches zero |
+| `GetLeader(Profession)` | the leader, or null when the profession has none |
+| `IsLoaded()` | an answer named at least one leader |
+
+The list is merged, not replaced: a level gained while the read was in flight
+(`UpdateIfNecessary`, called on login and on every level-up) wins over the older
+row, and a failed or empty answer never drops what is known - it is retried
+with a growing pause (5 s to 60 s). The menu (`Top Specialists in the Realm`)
+waits on the same tag, which is how it tells "loading" from "no records yet";
+`Db::HasTagCompleted` answers whether a tag ever produced an answer. The two
+in-memory leaderboards are derived on every draw, so a fresh answer is visible
+immediately instead of after a cache lifetime.
 * **`reload_localization`.** The command rewrites the language files and rebuilds
   the language table while chat messages read it. Moving it off the game thread
   needs a snapshot-and-swap of the whole localization subsystem; until then the

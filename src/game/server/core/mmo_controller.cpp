@@ -584,13 +584,12 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 	// An empty cache means either "still loading" or "nothing to rank", and the
 	// state of a request does not distinguish them: it is idle before the first
 	// read and after the last one. A list is only reported as empty once
-	// something has actually answered. The two trackers are filled from a file
-	// at start-up rather than by a request of their own.
+	// something has actually answered.
 	bool Loading = false;
 	if(Type == ToplistType::PlayerExpert)
 	{
 		const auto& Tracker = g_AccountListener.LevelingTracker();
-		Loading = !Tracker.IsSynchronized() && !Db::HasTagCompleted(CLevelingTracker::UpdateTag());
+		Loading = !Tracker.IsLoaded() && !Db::HasTagCompleted(CLevelingTracker::UpdateTag());
 	}
 	else if(Type != ToplistType::PlayerAttributes)
 		Loading = !Db::HasTagCompleted(Tag);
@@ -728,25 +727,23 @@ const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(Top
 
 const std::map<int, CMmoController::TempTopData>& CMmoController::BuildTrackedTopList(const std::string& Key) const
 {
-	// tracked in memory: a cold tracker is refreshed in the background and the
-	// answer redraws the menu through the tracker's tag
+	// In memory: a cold tracker is refreshed in the background and the answer
+	// redraws the menu through the tracker's tag.
 	auto& Tracker = g_AccountListener.LevelingTracker();
-	if(!Tracker.IsSynchronized())
-		Tracker.RefreshFromDatabase();
+	if(!Tracker.IsLoaded())
+		Tracker.Refresh();
 
-	// The entries of the tracker are unordered, so the rows are ordered by
-	// level here: a menu that reshuffles itself on every redraw looks like it
-	// is reloading.
 	std::vector<TempTopData> vRows {};
-	for(const auto& [ProfessionID, Data] : Tracker.GetTrackings())
+	for(auto Profession = (int)ProfessionIdentifier::Tank; Profession < (int)ProfessionIdentifier::NUM_PROFESSIONS; ++Profession)
 	{
-		if(ProfessionID < 0 || Data.AccountID <= 0 || Data.Level <= 0)
+		const auto* pLeader = Tracker.GetLeader((ProfessionIdentifier)Profession);
+		if(!pLeader)
 			continue;
 
 		TempTopData Row {};
-		Row.m_Name = GetProfessionName((ProfessionIdentifier)ProfessionID);
-		Row.m_Value = Data.Level;
-		Row.m_Extra = Data.AccountID;
+		Row.m_Name = GetProfessionName((ProfessionIdentifier)Profession);
+		Row.m_Value = pLeader->Level;
+		Row.m_Extra = pLeader->AccountID;
 		vRows.emplace_back(std::move(Row));
 	}
 	std::sort(vRows.begin(), vRows.end(), [](const TempTopData& Left, const TempTopData& Right)
@@ -755,9 +752,10 @@ const std::map<int, CMmoController::TempTopData>& CMmoController::BuildTrackedTo
 	});
 
 	std::map<int, TempTopData> vResult {};
-	int Iter = 0;
+	int Rank = 0;
 	for(auto& Row : vRows)
-		vResult[Iter++] = std::move(Row);
+		vResult[Rank++] = std::move(Row);
+
 	SetTopRows(Key, std::move(vResult));
 	return TopRows(Key);
 }
@@ -765,30 +763,27 @@ const std::map<int, CMmoController::TempTopData>& CMmoController::BuildTrackedTo
 
 const std::map<int, CMmoController::TempTopData>& CMmoController::BuildAttributeTopList(const std::string& Key) const
 {
-	// tracked in memory
-	std::vector<TempTopData> vRows {};
-	const auto& vTrackings = g_InventoryListener.AttributeTracker().GetTrackings();
-	for(const auto& [AttributeID, Data] : vTrackings)
+	// In memory: the tracker is filled by the accounts that log in.
+	std::vector<std::pair<BigInt, TempTopData>> vRows {};
+	for(const auto& [AttributeID, Data] : g_InventoryListener.AttributeTracker().GetTrackings())
 	{
-		auto* pAttributeInfo = GS()->GetAttributeInfo((AttributeIdentifier)AttributeID);
+		const auto* pAttributeInfo = GS()->GetAttributeInfo((AttributeIdentifier)AttributeID);
 		if(!pAttributeInfo || Data.AccountID <= 0)
 			continue;
 
 		TempTopData Row {};
 		Row.m_Name = pAttributeInfo->GetName();
-		Row.m_Value = BigInt((long long)Data.Amount);
+		Row.m_Value = (long long)Data.Amount;
 		Row.m_Extra = Data.AccountID;
-		vRows.emplace_back(std::move(Row));
+		vRows.emplace_back(Row.m_Value, Row);
 	}
-	std::sort(vRows.begin(), vRows.end(), [](const TempTopData& Left, const TempTopData& Right)
-	{
-		return Left.m_Value > Right.m_Value;
-	});
+	std::sort(vRows.begin(), vRows.end(), [](const auto& Left, const auto& Right) { return Left.first > Right.first; });
 
 	std::map<int, TempTopData> vResult {};
-	int Iter = 0;
-	for(auto& Row : vRows)
-		vResult[Iter++] = std::move(Row);
+	int Rank = 0;
+	for(auto& [Value, Row] : vRows)
+		vResult[Rank++] = std::move(Row);
+
 	SetTopRows(Key, std::move(vResult));
 	return TopRows(Key);
 }
