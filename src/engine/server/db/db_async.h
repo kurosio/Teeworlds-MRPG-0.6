@@ -275,6 +275,9 @@ namespace Db
 	// game thread. It returns false if the tag is not active.
 	bool IsTagRunning(std::string_view Tag, int MaxAgeSeconds = 0);
 	bool WatchTag(std::string_view Tag, std::function<void()> Callback);
+	// True once a request with this tag has answered at least once, so a menu can
+	// tell a list that is still loading from one that is legitimately empty.
+	bool HasTagCompleted(std::string_view Tag);
 
 	// Runs Body atomically on one connection: true commits, false or a failed
 	// statement rolls back. InsertId() is the first generated id.

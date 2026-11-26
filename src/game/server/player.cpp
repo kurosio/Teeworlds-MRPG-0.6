@@ -92,16 +92,17 @@ void CPlayer::GetFormatedName(char* aBuffer, int BufferSize)
 		return;
 	}
 
-	// Update nickname leveling tick if player is authenticated and the tick is a multiple of 10 seconds
-	if(isAuthed && currentTick % (tickSpeed * 10) == 0)
+	// Show the level prefix during the first second of every ten-second interval.
+	if(isAuthed && !isChatting && tickSpeed > 0 && currentTick % (tickSpeed * 10) < tickSpeed)
 	{
-		m_aPlayerTick[RefreshNickLeveling] = currentTick + tickSpeed;
-	}
+		char aLevelPrefix[MAX_NAME_LENGTH];
+		char aNickname[MAX_NAME_LENGTH];
+		str_format(aLevelPrefix, sizeof(aLevelPrefix), "Lv%d ", Account()->GetLevel());
 
-	// Player is authenticated, nickname leveling tick is valid, and not chatting
-	if(isAuthed && m_aPlayerTick[RefreshNickLeveling] > currentTick && !isChatting)
-	{
-		str_format(aBuffer, BufferSize, "Lv%d %.4s...", Account()->GetLevel(), Server()->ClientName(m_ClientID));
+		// Reserve space for the prefix and ellipsis, then truncate by UTF-8 codepoints.
+		const int NicknameBufferSize = maximum(1, minimum(BufferSize - str_length(aLevelPrefix) - 3, (int)sizeof(aNickname)));
+		str_utf8_truncate(aNickname, NicknameBufferSize, Server()->ClientName(m_ClientID), 3);
+		str_format(aBuffer, BufferSize, "%s%s...", aLevelPrefix, aNickname);
 	}
 	else
 	{

@@ -784,46 +784,49 @@ void CGS::OnTickGlobal()
 	{
 		const auto RandomType = (ToplistType)(rand() % (int)ToplistType::NUM_TOPLIST_TYPES);
 
-		// the list is read in the background: a cold list is simply skipped this round
+		// The list may still be loading. Skip this announcement without aborting the tick.
 		const auto& vResult = Core()->GetTopList(RandomType, 3);
-		if(vResult.size() < 3)
-			return;
-
-		if(RandomType == ToplistType::PlayerExpert)
+		if(!vResult.empty())
 		{
-			Chat(-1, "-- {}", "Top Specialists in the Realm");
-			for(const auto& [Iter, Top] : vResult)
+			if(RandomType == ToplistType::PlayerExpert)
 			{
-				const auto* pNickname = Server()->GetAccountNickname(Top.m_Extra.to_int());
-				const auto Value = Top.m_Value.to_int();
-				Chat(-1, "{}: '{~} - {}LV'.", Top.m_Name, pNickname, Value);
+				Chat(-1, "-- {}", "Top Specialists in the Realm");
+				int Count = 0;
+				for(const auto& [Rank, Top] : vResult)
+				{
+					if(Count++ == 3)
+						break;
+
+					const auto* pNickname = Server()->GetAccountNickname(Top.m_Extra.to_int());
+					Chat(-1, "{}: '{~} - {}LV'.", Top.m_Name, pNickname, Top.m_Value.to_int());
+				}
 			}
+			else if(vResult.size() >= 2)
+			{
+				const auto& Leader = vResult.begin()->second;
+				const auto& Second = std::next(vResult.begin())->second;
 
-			return;
-		}
-
-		const auto& Leader = vResult.at(1);
-		const auto& Second = vResult.at(2);
-
-		if(RandomType == ToplistType::PlayerRating)
-		{
-			Chat(-1, "Rating leader: '{~} ({})'! In second place is '{~} ({})' — the competition is heating up!",
-				Leader.m_Name, Leader.m_Value.to_int(), Second.m_Name, Second.m_Value.to_int());
-		}
-		else if(RandomType == ToplistType::PlayerWealthy)
-		{
-			Chat(-1, "Wealthiest player: '{~}({$})' is richest! '{~}({$})' close behind!",
-				Leader.m_Name, Leader.m_Value, Second.m_Name, Second.m_Value);
-		}
-		else if(RandomType == ToplistType::GuildLeveling)
-		{
-			Chat(-1, "The most experienced guild: '{~} (Level {})'! Close behind: '{~} (Level {})'.",
-				Leader.m_Name, Leader.m_Value, Second.m_Name, Second.m_Value);
-		}
-		else if(RandomType == ToplistType::GuildWealthy)
-		{
-			Chat(-1, "The richest guild: '{~}({$})'! Second place: '{~}({$})' is catching up!",
-				Leader.m_Name, Leader.m_Value, Second.m_Name, Second.m_Value);
+				if(RandomType == ToplistType::PlayerRating)
+				{
+					Chat(-1, "Rating leader: '{~} ({})'! In second place is '{~} ({})' — the competition is heating up!",
+						Leader.m_Name, Leader.m_Value.to_int(), Second.m_Name, Second.m_Value.to_int());
+				}
+				else if(RandomType == ToplistType::PlayerWealthy)
+				{
+					Chat(-1, "Wealthiest player: '{~}({$})' is richest! '{~}({$})' close behind!",
+						Leader.m_Name, Leader.m_Value, Second.m_Name, Second.m_Value);
+				}
+				else if(RandomType == ToplistType::GuildLeveling)
+				{
+					Chat(-1, "The most experienced guild: '{~} (Level {})'! Close behind: '{~} (Level {})'.",
+						Leader.m_Name, Leader.m_Value, Second.m_Name, Second.m_Value);
+				}
+				else if(RandomType == ToplistType::GuildWealthy)
+				{
+					Chat(-1, "The richest guild: '{~}({$})'! Second place: '{~}({$})' is catching up!",
+						Leader.m_Name, Leader.m_Value, Second.m_Name, Second.m_Value);
+				}
+			}
 		}
 	}
 }

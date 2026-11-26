@@ -164,7 +164,6 @@ enum ETickState
 	ManaPotionRecast,
 	MinerPotionRecast,
 	RefreshClanTitle,
-	RefreshNickLeveling,
 	LastSetSpectatorMode,
 	NUM_TICK,
 };

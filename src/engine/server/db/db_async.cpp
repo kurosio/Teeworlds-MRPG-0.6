@@ -14,6 +14,7 @@
 #include <exception>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 namespace Db
@@ -34,6 +35,7 @@ namespace Db
 		};
 		std::mutex s_TaggedQueryMutex;
 		std::unordered_map<std::string, STaggedQuery> s_TaggedQueries;
+		std::unordered_set<std::string> s_CompletedQueryTags;
 
 		void RegisterQueryTag(const std::string& Tag)
 		{
@@ -61,6 +63,7 @@ namespace Db
 				if(--It->second.m_Active != 0)
 					return;
 
+				s_CompletedQueryTags.insert(Tag);
 				vWatchers = std::move(It->second.m_vWatchers);
 				s_TaggedQueries.erase(It);
 			}
@@ -1501,6 +1504,15 @@ namespace Db
 			return false;
 
 		return MaxAgeSeconds <= 0 || NowMs() - It->second.m_StartedMs < static_cast<long long>(MaxAgeSeconds) * 1000;
+	}
+
+	bool HasTagCompleted(std::string_view Tag)
+	{
+		if(Tag.empty())
+			return false;
+
+		std::lock_guard<std::mutex> Lock(s_TaggedQueryMutex);
+		return s_CompletedQueryTags.contains(std::string(Tag));
 	}
 
 	bool WatchTag(std::string_view Tag, std::function<void()> Callback)

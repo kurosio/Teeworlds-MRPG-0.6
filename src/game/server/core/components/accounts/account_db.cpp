@@ -474,9 +474,17 @@ namespace AccountDb
 		return Db::Query(KIND, "UPDATE tw_accounts_data SET Rating = ? WHERE ID = ?", Db::Bind(Rating, AccountID));
 	}
 
-	Db::CResultSet ListAllProfessions()
+	Db::CRequest ListProfessionLeaders(std::string_view Tag)
 	{
-		return Db::Query(KIND, "SELECT UserID, ProfessionID, Data FROM tw_accounts_professions").Result();
+		return Db::Query(KIND,
+			"SELECT UserID, ProfessionID, Level FROM ("
+			"SELECT UserID, ProfessionID, "
+			"CAST(JSON_UNQUOTE(JSON_EXTRACT(Data, '$.level')) AS SIGNED) AS Level, "
+			"ROW_NUMBER() OVER (PARTITION BY ProfessionID ORDER BY "
+			"CAST(JSON_UNQUOTE(JSON_EXTRACT(Data, '$.level')) AS SIGNED) DESC, UserID ASC) AS RankNumber "
+			"FROM tw_accounts_professions WHERE JSON_EXTRACT(Data, '$.level') IS NOT NULL"
+			") AS ranked WHERE RankNumber = 1 AND Level > 0",
+			{}, Db::SQueryOptions().Coalesce().Tag(Tag));
 	}
 
 	// ---------------------------------------------------------------------------

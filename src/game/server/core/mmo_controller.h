@@ -107,6 +107,8 @@ private:
 	mutable std::map<std::string, STopRows> m_TopRows;
 	mutable bool m_TimePeriodPending = false;
 
+	const std::map<int, TempTopData>& BuildTrackingTopList(ToplistType Type) const;
+
 	// true when the cached rows have expired and should be refreshed
 	bool NeedTopRows(const std::string& Key) const;
 	const std::map<int, TempTopData>& TopRows(const std::string& Key) const

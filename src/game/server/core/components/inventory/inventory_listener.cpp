@@ -1,12 +1,11 @@
 #include "inventory_listener.h"
 
-#include <engine/server/async_file.h>
 #include <game/server/gamecontext.h>
+#include <game/server/core/components/accounts/account_listener.h>
 #include <game/server/worldmodes/dungeon/dungeon.h>
 #include <game/server/core/entities/tools/flying_point.h>
 
 CInventoryListener g_InventoryListener;
-constexpr const char* ATTRIBUTE_TRACKING_FILE_NAME = "server_data/attribute_tracking.json";
 
 // inventory listener
 void CInventoryListener::Initialize()
@@ -22,16 +21,15 @@ void CInventoryListener::Initialize()
 	g_EventListenerManager.RegisterListener(IEventListener::PlayerChangePreset, this);
 	g_EventListenerManager.RegisterListener(IEventListener::CharacterSpawn, this);
 	g_EventListenerManager.RegisterListener(IEventListener::CharacterDamage, this);
-	m_AttributesTracker.LoadTrackingData();
 }
 
 void CInventoryListener::OnPlayerLogin(CPlayer* pPlayer, CAccountData* pAccount)
 {
-	if (pPlayer && pAccount)
-	{
-		pAccount->AutoEquipSlots(true);
-		pPlayer->InvalidateAttributeCache();
-	}
+	if(!pPlayer || !pAccount)
+		return;
+
+	pAccount->AutoEquipSlots(true);
+	UpdateAttributes(pPlayer);
 }
 
 void CInventoryListener::OnPlayerGotItem(CPlayer* pPlayer, CPlayerItem* pItem, int Got)
@@ -59,10 +57,11 @@ void CInventoryListener::OnPlayerProfessionUpgrade(CPlayer* pPlayer, int Attribu
 		return;
 
 	pPlayer->InvalidateAttributeCache();
-	auto attID = static_cast<AttributeIdentifier>(AttributeID);
-	auto totalAttribute = pPlayer->GetTotalRawAttributeValue(attID);
-	pPlayer->UpdateTotalAttributeValue(attID, totalAttribute);
-	m_AttributesTracker.UpdateTrackingDataIfNecessary(pPlayer, AttributeID, totalAttribute);
+	const auto Attribute = static_cast<AttributeIdentifier>(AttributeID);
+	const int Value = pPlayer->GetTotalRawAttributeValue(Attribute);
+	pPlayer->UpdateTotalAttributeValue(Attribute, Value);
+	if(g_AccountListener.TrackingData().UpdateAttribute(pPlayer, Attribute, Value))
+		g_AccountListener.TrackingData().SaveAttributes();
 }
 
 void CInventoryListener::OnPlayerProfessionChange(CPlayer* pPlayer, CProfession* pOldProf, CProfession* pNewProf)
@@ -70,14 +69,13 @@ void CInventoryListener::OnPlayerProfessionChange(CPlayer* pPlayer, CProfession*
 	if(pPlayer && pOldProf != pNewProf)
 	{
 		pPlayer->Account()->AutoEquipSlots(true);
-		pPlayer->InvalidateAttributeCache();
-		UpdateAttributesFull(pPlayer);
+		UpdateAttributes(pPlayer);
 	}
 }
 
 void CInventoryListener::OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem)
 {
-	UpdateAttributesForItem(pPlayer, pItem);
+	UpdateAttributes(pPlayer, pItem);
 }
 
 void CInventoryListener::OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* pItem, int OldDurability)
@@ -90,7 +88,7 @@ void CInventoryListener::OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* p
 		pPlayer->GetSharedData().m_PendingEidolonItemBreaks.erase(pItem->GetID());
 	if ((OldDurability <= 0 && currentDurability > 0) ||
 		(OldDurability > 0 && currentDurability <= 0))
-		UpdateAttributesForItem(pPlayer, pItem);
+		UpdateAttributes(pPlayer, pItem);
 
 	// Module: Repair equipment anywhere (uses materials)
 	auto* pGS = pPlayer->GS();
@@ -102,33 +100,32 @@ void CInventoryListener::OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* p
 			pPlayer->GetItem(itMaterial)->Remove(RepairCost);
 			pItem->SetDurability(100);
 			pGS->Chat(pPlayer->GetCID(), "Your {} has been repaired using {} materials!", pItem->Info()->GetName(), RepairCost);
-			UpdateAttributesForItem(pPlayer, pItem);
+			UpdateAttributes(pPlayer, pItem);
 		}
 	}
 }
 
 void CInventoryListener::OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem)
 {
-	UpdateAttributesForItem(pPlayer, pItem);
+	UpdateAttributes(pPlayer, pItem);
 }
 
 void CInventoryListener::OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pItem)
 {
-	UpdateAttributesForItem(pPlayer, pItem);
+	UpdateAttributes(pPlayer, pItem);
 }
 
 void CInventoryListener::OnPlayerChangePreset(CPlayer* pPlayer, int PresetSlotIndex)
 {
 	if (pPlayer)
 	{
-		pPlayer->InvalidateAttributeCache();
-		UpdateAttributesFull(pPlayer);
+		UpdateAttributes(pPlayer);
 	}
 }
 
 void CInventoryListener::OnCharacterSpawn(CPlayer* pPlayer)
 {
-	UpdateAttributesFull(pPlayer);
+	UpdateAttributes(pPlayer);
 }
 
 void CInventoryListener::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage)
@@ -156,140 +153,33 @@ void CInventoryListener::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Dam
 	}
 }
 
-void CInventoryListener::UpdateAttributesForItem(CPlayer* pPlayer, CPlayerItem* pItem)
-{
-	if(!pPlayer || !pItem || !pItem->Info())
-		return;
-
-	pPlayer->InvalidateAttributeCache();
-
-	// update tracking attributes based on item attributes
-	for(const auto& AttributeInfo : pItem->Info()->GetAttributes())
-	{
-		// update total player stats
-		auto totalAttribute = pPlayer->GetTotalRawAttributeValue(AttributeInfo.GetID());
-		pPlayer->UpdateTotalAttributeValue(AttributeInfo.GetID(), totalAttribute);
-		m_AttributesTracker.UpdateTrackingDataIfNecessary(pPlayer, (int)AttributeInfo.GetID(), totalAttribute);
-	}
-
-	// update player stats when an item is equipped
-	if(auto* pCharacter = pPlayer->GetCharacter())
-	{
-		pCharacter->UpdateEquippedStats(pItem->GetID());
-		pPlayer->GS()->MarkUpdatedBroadcast(pPlayer->GetCID());
-	}
-}
-
-void CInventoryListener::UpdateAttributesFull(CPlayer* pPlayer)
+void CInventoryListener::UpdateAttributes(CPlayer* pPlayer, CPlayerItem* pItem)
 {
 	if(!pPlayer)
 		return;
 
 	pPlayer->InvalidateAttributeCache();
-
-	// update total player stats
-	for(auto& [Id, Info] : CAttributeDescription::Data())
+	bool Changed = false;
+	auto Update = [&](AttributeIdentifier ID)
 	{
-		auto totalAttribute = pPlayer->GetTotalRawAttributeValue(Id);
-		pPlayer->UpdateTotalAttributeValue(Id, totalAttribute);
-		if(!pPlayer->IsBot())
-			m_AttributesTracker.UpdateTrackingDataIfNecessary(pPlayer, (int)Id, totalAttribute);
-	}
+		const int Value = pPlayer->GetTotalRawAttributeValue(ID);
+		pPlayer->UpdateTotalAttributeValue(ID, Value);
+		Changed |= g_AccountListener.TrackingData().UpdateAttribute(pPlayer, ID, Value);
+	};
 
-	// update player stats when an item is equipped
+	if(pItem && pItem->Info())
+		for(const auto& Attribute : pItem->Info()->GetAttributes())
+			Update(Attribute.GetID());
+	else
+		for(const auto& [ID, Info] : CAttributeDescription::Data())
+			Update(ID);
+
+	if(Changed)
+		g_AccountListener.TrackingData().SaveAttributes();
+
 	if(auto* pCharacter = pPlayer->GetCharacter())
 	{
-		pCharacter->UpdateEquippedStats();
+		pItem ? pCharacter->UpdateEquippedStats(pItem->GetID()) : pCharacter->UpdateEquippedStats();
 		pPlayer->GS()->MarkUpdatedBroadcast(pPlayer->GetCID());
 	}
-}
-
-
-// attributes tracker
-void CAttributesTracker::LoadTrackingData()
-{
-	if(m_Loaded)
-		return;
-
-	m_Loaded = true;
-
-	ByteArray RawData;
-	if(!mystd::file::load(ATTRIBUTE_TRACKING_FILE_NAME, &RawData))
-	{
-		SaveTrackingData();
-		return;
-	}
-
-	std::string rawString = (char*)RawData.data();
-	bool hasError = mystd::json::parse(rawString, [this](nlohmann::json& jsonData)
-	{
-		for(const auto& item : jsonData["tracking"])
-		{
-			int attributeID = item.value("attribute_id", -1);
-			TrackingAttributeData data = item.value("detail", TrackingAttributeData {});
-			m_vTrackingData[attributeID] = data;
-		}
-	});
-
-	if(hasError)
-	{
-		dbg_msg("attributes_tracking", "Error with initialized '%s'. Creating new...", ATTRIBUTE_TRACKING_FILE_NAME);
-		m_vTrackingData.clear();
-		SaveTrackingData();
-	}
-}
-
-void CAttributesTracker::SaveTrackingData()
-{
-	nlohmann::json j;
-	for(const auto& [attributeID, data] : m_vTrackingData)
-	{
-		j["tracking"].push_back(
-			{
-				{"attribute_id", attributeID},
-				{"detail", data}
-			});
-	}
-
-	AsyncFile::Write(ATTRIBUTE_TRACKING_FILE_NAME, j.dump(4));
-}
-
-void CAttributesTracker::UpdateTrackingDataIfNecessary(CPlayer* pPlayer, int AttributeID, size_t NewValue)
-{
-	auto& TrackingData = m_vTrackingData[AttributeID];
-	auto* pGS = pPlayer->GS();
-	bool isUpdateNeeded = false;
-
-	// check and update for another player higher amount
-	if(auto* pPlayerHighter = pGS->GetPlayerByUserID(TrackingData.AccountID))
-	{
-		if(pPlayerHighter->GetCID() != pPlayer->GetCID())
-		{
-			auto Current = pPlayerHighter->GetTotalAttributeValue((AttributeIdentifier)AttributeID);
-			TrackingData.Amount = Current;
-			isUpdateNeeded = true;
-		}
-	}
-
-	// update player's personal amount
-	if(TrackingData.Amount < NewValue)
-	{
-		TrackingData.AccountID = pPlayer->Account()->GetID();
-		TrackingData.Amount = NewValue;
-		isUpdateNeeded = true;
-	}
-
-	// save
-	if(isUpdateNeeded)
-	{
-		SaveTrackingData();
-	}
-}
-
-std::optional<TrackingAttributeData> CAttributesTracker::GetTrackingData(int AttributeID) const
-{
-	if(!m_vTrackingData.contains(AttributeID))
-		return std::nullopt;
-
-	return m_vTrackingData.at(AttributeID);
 }

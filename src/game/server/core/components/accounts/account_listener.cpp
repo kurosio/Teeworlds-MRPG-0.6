@@ -1,11 +1,15 @@
 #include "account_listener.h"
 
 #include "account_db.h"
+
 #include <engine/server/async_file.h>
 #include <game/server/gamecontext.h>
 
 CAccountListener g_AccountListener;
-constexpr const char* LEVELING_TRACKING_FILE_NAME = "server_data/leveling_tracking.json";
+
+constexpr const char* ATTRIBUTE_TRACKING_FILE = "server_data/attribute_tracking.json";
+constexpr int TRACKING_REFRESH_SECONDS = 300;
+constexpr int TRACKING_RETRY_SECONDS = 5;
 
 // account listener
 void CAccountListener::Initialize()
@@ -13,7 +17,13 @@ void CAccountListener::Initialize()
 	g_EventListenerManager.RegisterListener(IEventListener::CharacterSpawn, this);
 	g_EventListenerManager.RegisterListener(IEventListener::PlayerLogin, this);
 	g_EventListenerManager.RegisterListener(IEventListener::PlayerProfessionLeveling, this);
-	m_LevelingTracker.LoadTrackingData();
+
+	m_TrackingData.Initialize();
+}
+
+void CAccountListener::OnTick()
+{
+	m_TrackingData.Tick();
 }
 
 void CAccountListener::OnCharacterSpawn(CPlayer* pPlayer)
@@ -41,15 +51,15 @@ void CAccountListener::OnCharacterSpawn(CPlayer* pPlayer)
 	} };
 
 
-	bool IsTopExpert = false;
-	const auto AccountID = pPlayer->Account()->GetID();
 	// Each matching profession gets two aura layers.
+	const auto AccountID = pPlayer->Account()->GetID();
+	bool IsTopExpert = false;
 	for(int Layer = 0; Layer < 2; ++Layer)
 	{
 		for(const auto& Profession : s_aLevelingData)
 		{
-			const auto Leader = m_LevelingTracker.GetTrackingData((int)Profession.m_Identifier);
-			if(Leader && AccountID == Leader->AccountID)
+			const auto* pLeader = m_TrackingData.GetProfessionLeader(Profession.m_Identifier);
+			if(pLeader && pLeader->AccountID == AccountID)
 			{
 				pPlayer->GetCharacter()->AddMultipleOrbit(Profession.m_Projectile, 1, Profession.m_Type, Profession.m_Subtype, Profession.m_OrbitType);
 				IsTopExpert = true;
@@ -64,120 +74,140 @@ void CAccountListener::OnCharacterSpawn(CPlayer* pPlayer)
 
 void CAccountListener::OnPlayerLogin(CPlayer* pPlayer, CAccountData* pAccount)
 {
-	for(auto& Prof : pAccount->GetProfessions())
-		m_LevelingTracker.UpdateTrackingDataIfNecessary(pPlayer, (int)Prof.GetProfessionID(), Prof.GetLevel());
+	if(!pPlayer || !pAccount)
+		return;
+
+	for(const auto& Profession : pAccount->GetProfessions())
+		m_TrackingData.UpdateProfession(pPlayer, Profession.GetProfessionID(), Profession.GetLevel());
 }
 
 
 void CAccountListener::OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession* pProfession, int NewLevel)
 {
-	m_LevelingTracker.UpdateTrackingDataIfNecessary(pPlayer, (int)pProfession->GetProfessionID(), pProfession->GetLevel());
+	if(pProfession)
+		m_TrackingData.UpdateProfession(pPlayer, pProfession->GetProfessionID(), NewLevel);
 }
 
 
-// leveling tracker
-void CLevelingTracker::LoadTrackingData()
+// Shared tracking data
+void CTrackingData::Initialize()
 {
-	if(m_Loaded)
+	LoadAttributes();
+	RefreshProfessions();
+}
+
+void CTrackingData::Tick()
+{
+	if(m_RefreshingProfessions)
 		return;
 
-	m_Loaded = true;
-
-	//  try load datafile
-	ByteArray RawData;
-	if(!mystd::file::load(LEVELING_TRACKING_FILE_NAME, &RawData))
+	if(m_RefreshDelay > 0)
 	{
-		m_vTrackingData.clear();
-	}
-	else
-	{
-		std::string RawString((const char*)RawData.data(), RawData.size());
-		const bool HasError = mystd::json::parse(RawString, [this](nlohmann::json& jsonData)
-		{
-			for(const auto& item : jsonData["tracking"])
-			{
-				const int ProfessionID = item.value("profession_id", -1);
-				if(ProfessionID < 0)
-					continue;
-
-				TrackingLevelingData Data = item.value("detail", TrackingLevelingData {});
-				if(Data.AccountID <= 0 || Data.Level <= 0)
-					continue;
-
-				m_vTrackingData[ProfessionID] = Data;
-			}
-		});
-
-		if(HasError)
-		{
-			dbg_msg("leveling_tracking", "Error with initialized '%s'. Creating new...", LEVELING_TRACKING_FILE_NAME);
-			m_vTrackingData.clear();
-		}
+		--m_RefreshDelay;
+		return;
 	}
 
-	// sync by database
-	auto Rows = AccountDb::ListAllProfessions();
-	std::unordered_map<int, TrackingLevelingData> vFreshTracking {};
+	RefreshProfessions();
+}
+
+void CTrackingData::RefreshProfessions()
+{
+	if(m_RefreshingProfessions)
+		return;
+
+	m_RefreshingProfessions = true;
+	AccountDb::ListProfessionLeaders(PROFESSION_TAG).Then([this](Db::CResultSet&& Rows)
+	{
+		ApplyProfessions(std::move(Rows));
+	});
+}
+
+void CTrackingData::ApplyProfessions(Db::CResultSet&& Rows)
+{
+	m_RefreshingProfessions = false;
+	if(!Rows.Ok())
+	{
+		m_RefreshDelay = TRACKING_RETRY_SECONDS * std::max(1, Instance::Server()->TickSpeed());
+		return;
+	}
+
 	while(Rows.Next())
+		SetProfessionLeader(Rows.GetInt("ProfessionID"), Rows.GetInt("UserID"), Rows.GetInt("Level"));
+
+	m_ProfessionsLoaded = true;
+	m_RefreshDelay = TRACKING_REFRESH_SECONDS * std::max(1, Instance::Server()->TickSpeed());
+}
+
+void CTrackingData::SetProfessionLeader(int ProfessionID, int AccountID, int Level)
+{
+	if(ProfessionID < 0 || ProfessionID >= NUM_PROFESSIONS || AccountID <= 0 || Level <= 0)
+		return;
+
+	auto& Leader = m_aProfessionLeaders[ProfessionID];
+	if(Level > Leader.Level || (Level == Leader.Level && (Leader.AccountID <= 0 || AccountID < Leader.AccountID)))
+		Leader = { AccountID, Level };
+}
+
+void CTrackingData::UpdateProfession(CPlayer* pPlayer, ProfessionIdentifier Profession, int Level)
+{
+	if(pPlayer && pPlayer->IsAuthed())
+		SetProfessionLeader((int)Profession, pPlayer->Account()->GetID(), Level);
+}
+
+const TrackingLevelingData* CTrackingData::GetProfessionLeader(ProfessionIdentifier Profession) const
+{
+	const int ID = (int)Profession;
+	if(ID < 0 || ID >= NUM_PROFESSIONS)
+		return nullptr;
+
+	const auto& Leader = m_aProfessionLeaders[ID];
+	return Leader.AccountID > 0 ? &Leader : nullptr;
+}
+
+void CTrackingData::LoadAttributes()
+{
+	ByteArray RawData;
+	if(!mystd::file::load(ATTRIBUTE_TRACKING_FILE, &RawData))
+		return;
+
+	const std::string Json((const char*)RawData.data(), RawData.size());
+	const bool HasError = mystd::json::parse(Json, [this](nlohmann::json& Data)
 	{
-		const int ProfessionID = Rows.GetInt("ProfessionID");
-		const int AccountID = Rows.GetInt("UserID");
-		if(ProfessionID < 0 || AccountID <= 0)
-			continue;
+		if(!Data.is_object() || !Data.contains("tracking") || !Data["tracking"].is_array())
+			return;
 
-		int Level = 1;
-		const auto Data = Rows.GetString("Data");
-		const bool ParseError = mystd::json::parse(Data, [&Level](nlohmann::json& jsonData)
+		for(const auto& Item : Data["tracking"])
 		{
-			Level = maximum(1, jsonData.value("level", 1));
-		});
-
-		if(ParseError)
-			continue;
-
-		auto& Entry = vFreshTracking[ProfessionID];
-		if(Level > Entry.Level)
-		{
-			Entry.AccountID = AccountID;
-			Entry.Level = Level;
+			const int ID = Item.value("attribute_id", -1);
+			const auto Leader = Item.value("detail", TrackingAttributeData {});
+			if(ID >= 0 && Leader.AccountID > 0 && CAttributeDescription::Data().contains((AttributeIdentifier)ID))
+				m_AttributeLeaders[ID] = Leader;
 		}
-	}
+	});
 
-	m_vTrackingData = std::move(vFreshTracking);
-	SaveTrackingData();
+	if(HasError)
+		dbg_msg("attributes_tracking", "Failed to load '%s'.", ATTRIBUTE_TRACKING_FILE);
 }
 
-
-void CLevelingTracker::SaveTrackingData()
+bool CTrackingData::UpdateAttribute(CPlayer* pPlayer, AttributeIdentifier Attribute, int Value)
 {
-	nlohmann::json j;
-	for(const auto& [professionID, data] : m_vTrackingData)
-	{
-		j["tracking"].push_back(
-		{
-			{"profession_id", professionID},
-			{"detail", data}
-		});
-	}
+	if(!pPlayer || pPlayer->IsBot() || !pPlayer->IsAuthed() || Value <= 0 ||
+		!CAttributeDescription::Data().contains(Attribute))
+		return false;
 
-	AsyncFile::Write(LEVELING_TRACKING_FILE_NAME, j.dump(4));
+	auto& Leader = m_AttributeLeaders[(int)Attribute];
+	if(Value <= Leader.Amount)
+		return false;
+
+	Leader = { pPlayer->Account()->GetID(), Value };
+	return true;
 }
 
-
-void CLevelingTracker::UpdateTrackingDataIfNecessary(CPlayer* pPlayer, int ProfessionID, int NewLevel)
+void CTrackingData::SaveAttributes() const
 {
-	auto& TrackingData = m_vTrackingData[ProfessionID];
-	if(NewLevel > TrackingData.Level)
-	{
-		TrackingData.AccountID = pPlayer->Account()->GetID();
-		TrackingData.Level = NewLevel;
-		SaveTrackingData();
-	}
-}
+	nlohmann::json Data = nlohmann::json::object();
+	for(const auto& [ID, Leader] : m_AttributeLeaders)
+		Data["tracking"].push_back({ {"attribute_id", ID}, {"detail", Leader} });
 
-
-std::optional<TrackingLevelingData> CLevelingTracker::GetTrackingData(int ProfessionID) const
-{
-	const auto It = m_vTrackingData.find(ProfessionID);
-	return It != m_vTrackingData.end() ? std::make_optional(It->second) : std::nullopt;
+	AsyncFile::Write(ATTRIBUTE_TRACKING_FILE, Data.dump());
 }

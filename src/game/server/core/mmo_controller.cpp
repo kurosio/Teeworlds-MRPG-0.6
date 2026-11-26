@@ -29,7 +29,6 @@
 #include "components/worlds/world_manager.h"
 #include "components/events/mini_events_manager.h"
 #include "components/accounts/account_listener.h"
-#include "components/inventory/inventory_listener.h"
 
 #include <engine/server/async_file.h>
 #include <game/server/core/tools/db_async_context.h>
@@ -145,6 +144,10 @@ void CMmoController::OnTick() const
 	{
 		OnHandleGlobalTimePeriod();
 	}
+
+	// The leveling tracker is one global list, so its refresh runs here once and not in every world.
+	if(GS()->GetWorldID() == INITIALIZER_WORLD_ID)
+		g_AccountListener.OnTick();
 
 	// update player time period
 	if(GS()->Server()->Tick() % (GS()->Server()->TickSpeed() * g_Config.m_SvPlayerPeriodCheckInterval) == 0)
@@ -563,8 +566,23 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 	}
 	pWrapper->SetTitle(pTitle);
 
+	const std::string Tag = TopUpdateTag(Type);
 	const auto& vResult = GetTopList(Type, Rows);
-	const bool Loading = pWrapper->WaitLoad(TopUpdateTag(Type), 5);
+	if(Type == ToplistType::PlayerExpert)
+		(void)pWrapper->WaitLoad(CTrackingData::ProfessionTag(), 5);
+	else if(Type != ToplistType::PlayerAttributes)
+		(void)pWrapper->WaitLoad(Tag, 5);
+
+	// An empty cache means either "still loading" or "nothing to rank"
+	bool Loading = false;
+	if(Type == ToplistType::PlayerExpert)
+	{
+		const auto& Tracker = g_AccountListener.TrackingData();
+		Loading = !Tracker.IsProfessionLoaded() && !Db::HasTagCompleted(CTrackingData::ProfessionTag());
+	}
+	else if(Type != ToplistType::PlayerAttributes)
+		Loading = !Db::HasTagCompleted(Tag);
+
 	if(vResult.empty())
 	{
 		if(Loading)
@@ -624,6 +642,10 @@ void CMmoController::SetTopRows(const std::string& Key, std::map<int, TempTopDat
 const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(ToplistType Type, int Rows) const
 {
 	const std::string Tag = TopUpdateTag(Type);
+
+	if(Type == ToplistType::PlayerExpert || Type == ToplistType::PlayerAttributes)
+		return BuildTrackingTopList(Type);
+
 	if(!NeedTopRows(Tag) || Db::IsTagRunning(Tag))
 		return TopRows(Tag);
 
@@ -684,44 +706,62 @@ const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(Top
 			SetTopRows(Tag, std::move(vResult));
 		});
 	}
-	else if(Type == ToplistType::PlayerExpert)
+	return TopRows(Tag);
+}
+
+
+const std::map<int, CMmoController::TempTopData>& CMmoController::BuildTrackingTopList(ToplistType Type) const
+{
+	const auto& Tracking = g_AccountListener.TrackingData();
+	std::vector<TempTopData> Rows {};
+
+	if(Type == ToplistType::PlayerExpert)
 	{
-		// tracked in memory
-		std::map<int, TempTopData> vResult {};
-		int Iter = 0;
-		const auto& vTrackings = g_AccountListener.LevelingTracker().GetTrackings();
-		for(const auto& [professionID, data] : vTrackings)
+		for(int ID = (int)ProfessionIdentifier::Tank; ID < (int)ProfessionIdentifier::NUM_PROFESSIONS; ++ID)
 		{
-			auto& Field = vResult[Iter];
-			Field.m_Name = GetProfessionName((ProfessionIdentifier)professionID);
-			Field.m_Value = data.Level;
-			Field.m_Extra = data.AccountID;
-			Iter++;
-		}
-		SetTopRows(Tag, std::move(vResult));
-	}
-	else if(Type == ToplistType::PlayerAttributes)
-	{
-		// tracked in memory
-		std::map<int, TempTopData> vResult {};
-		int Iter = 0;
-		const auto& vTrackings = g_InventoryListener.AttributeTracker().GetTrackings();
-		for(const auto& [attributeID, data] : vTrackings)
-		{
-			auto* pAttributeInfo = GS()->GetAttributeInfo((AttributeIdentifier)attributeID);
-			if(!pAttributeInfo)
+			const auto* Leader = Tracking.GetProfessionLeader((ProfessionIdentifier)ID);
+			if(!Leader)
 				continue;
 
-			auto& Field = vResult[Iter];
-			Field.m_Name = pAttributeInfo->GetName();
-			Field.m_Value = data.Amount;
-			Field.m_Extra = data.AccountID;
-			Iter++;
+			TempTopData Row {};
+			Row.m_Name = GetProfessionName((ProfessionIdentifier)ID);
+			Row.m_Value = Leader->Level;
+			Row.m_Extra = Leader->AccountID;
+			Rows.push_back(std::move(Row));
 		}
-		SetTopRows(Tag, std::move(vResult));
+	}
+	else
+	{
+		for(const auto& [ID, Leader] : Tracking.GetAttributes())
+		{
+			const auto* Info = GS()->GetAttributeInfo((AttributeIdentifier)ID);
+			if(!Info || Leader.AccountID <= 0 || Leader.Amount <= 0)
+				continue;
+
+			TempTopData Row {};
+			Row.m_Name = Info->GetName();
+			Row.m_Value = Leader.Amount;
+			Row.m_Extra = Leader.AccountID;
+			Rows.push_back(std::move(Row));
+		}
 	}
 
-	return TopRows(Tag);
+	std::sort(Rows.begin(), Rows.end(), [](const TempTopData& Left, const TempTopData& Right)
+	{
+		if(Left.m_Value != Right.m_Value)
+			return Left.m_Value > Right.m_Value;
+		if(Left.m_Name != Right.m_Name)
+			return Left.m_Name < Right.m_Name;
+		return Left.m_Extra < Right.m_Extra;
+	});
+
+	std::map<int, TempTopData> Result {};
+	for(int Rank = 0; Rank < (int)Rows.size(); ++Rank)
+		Result[Rank] = std::move(Rows[Rank]);
+
+	const auto Key = TopUpdateTag(Type);
+	SetTopRows(Key, std::move(Result));
+	return TopRows(Key);
 }
 
 const std::map<int, CMmoController::TempTopData>& CMmoController::GetDungeonTopList(int DungeonID, int Rows) const
