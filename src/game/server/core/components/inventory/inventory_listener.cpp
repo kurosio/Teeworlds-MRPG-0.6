@@ -216,26 +216,34 @@ void CAttributesTracker::LoadTrackingData()
 	ByteArray RawData;
 	if(!mystd::file::load(ATTRIBUTE_TRACKING_FILE_NAME, &RawData))
 	{
-		SaveTrackingData();
+		// Nothing to read is not an error worth rewriting the file for: the list
+		// starts empty and is filled from the accounts that log in.
 		return;
 	}
 
-	std::string rawString = (char*)RawData.data();
+	std::string rawString((const char*)RawData.data(), RawData.size());
 	bool hasError = mystd::json::parse(rawString, [this](nlohmann::json& jsonData)
 	{
+		if(!jsonData.is_object())
+			return;
+
 		for(const auto& item : jsonData["tracking"])
 		{
-			int attributeID = item.value("attribute_id", -1);
+			const int attributeID = item.value("attribute_id", -1);
 			TrackingAttributeData data = item.value("detail", TrackingAttributeData {});
+			if(attributeID < 0 || data.AccountID <= 0)
+				continue;
+
 			m_vTrackingData[attributeID] = data;
 		}
 	});
 
 	if(hasError)
 	{
-		dbg_msg("attributes_tracking", "Error with initialized '%s'. Creating new...", ATTRIBUTE_TRACKING_FILE_NAME);
-		m_vTrackingData.clear();
-		SaveTrackingData();
+		// A corrupt file is reported, not replaced: the leaders of the accounts
+		// that are about to log in are what repopulate it, and clearing the list
+		// here would empty the attribute leaderboard for the whole run.
+		dbg_msg("attributes_tracking", "Error with initialized '%s'. Keeping what was read.", ATTRIBUTE_TRACKING_FILE_NAME);
 	}
 }
 

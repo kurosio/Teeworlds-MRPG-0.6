@@ -474,9 +474,22 @@ namespace AccountDb
 		return Db::Query(KIND, "UPDATE tw_accounts_data SET Rating = ? WHERE ID = ?", Db::Bind(Rating, AccountID));
 	}
 
-	Db::CResultSet ListAllProfessions()
+	// The level of a profession is stored inside its document, so the comparison
+	// belongs in the database: every account holds one row per profession and
+	// reading all of them costs a full table transfer on a populated server.
+	//
+	// Only rows that hold a level are ordered: a document that lost its number
+	// does not take part (reading it as 0 would put it under every real record)
+	// and no JSON function is involved, so the statement does not depend on the
+	// server version. The trailing ID keeps the order stable for equal levels;
+	// the tracker keeps the first row of every profession.
+	Db::CRequest ListProfessionLeaders(std::string_view Tag)
 	{
-		return Db::Query(KIND, "SELECT UserID, ProfessionID, Data FROM tw_accounts_professions").Result();
+		return Db::Query(KIND,
+			"SELECT UserID, ProfessionID, Data FROM tw_accounts_professions "
+			"WHERE Data LIKE '%\"level\"%' "
+			"ORDER BY CAST(SUBSTRING_INDEX(LOWER(Data), '\"level\":', -1) AS SIGNED) DESC, ID ASC",
+			{}, Db::SQueryOptions().Coalesce().Tag(Tag));
 	}
 
 	// ---------------------------------------------------------------------------

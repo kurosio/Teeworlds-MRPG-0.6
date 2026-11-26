@@ -35,6 +35,8 @@
 #include <game/server/core/tools/db_async_context.h>
 #include <teeother/components/localization.h>
 
+#include <algorithm>
+
 namespace
 {
 	std::mutex gs_LocalizationSyncMutex;
@@ -145,6 +147,11 @@ void CMmoController::OnTick() const
 	{
 		OnHandleGlobalTimePeriod();
 	}
+
+	// The leveling tracker is one global list, so its refresh runs here once and
+	// not in every world.
+	if(GS()->GetWorldID() == INITIALIZER_WORLD_ID)
+		g_AccountListener.OnTick();
 
 	// update player time period
 	if(GS()->Server()->Tick() % (GS()->Server()->TickSpeed() * g_Config.m_SvPlayerPeriodCheckInterval) == 0)
@@ -563,8 +570,30 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 	}
 	pWrapper->SetTitle(pTitle);
 
+	const std::string Tag = TopUpdateTag(Type);
 	const auto& vResult = GetTopList(Type, Rows);
-	const bool Loading = pWrapper->WaitLoad(TopUpdateTag(Type), 5);
+
+	// Redraw the menu when the waiting request answers. The attribute list is
+	// built from memory only, so it has no request to wait for; the specialist
+	// list follows the tracker's own read.
+	if(Type == ToplistType::PlayerExpert)
+		(void)pWrapper->WaitLoad(CLevelingTracker::UpdateTag(), 5);
+	else if(Type != ToplistType::PlayerAttributes)
+		(void)pWrapper->WaitLoad(Tag, 5);
+
+	// An empty cache means either "still loading" or "nothing to rank", and the
+	// state of a request does not distinguish them: it is idle before the first
+	// read and after the last one. A list is only reported as empty once
+	// something has actually answered. The two trackers are filled from a file
+	// at start-up rather than by a request of their own.
+	bool Loading = false;
+	if(Type == ToplistType::PlayerExpert)
+	{
+		const auto& Tracker = g_AccountListener.LevelingTracker();
+		Loading = !Tracker.IsSynchronized() && !Db::HasTagCompleted(CLevelingTracker::UpdateTag());
+	}
+	else if(Type != ToplistType::PlayerAttributes)
+		Loading = !Db::HasTagCompleted(Tag);
 	if(vResult.empty())
 	{
 		if(Loading)
@@ -624,6 +653,15 @@ void CMmoController::SetTopRows(const std::string& Key, std::map<int, TempTopDat
 const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(ToplistType Type, int Rows) const
 {
 	const std::string Tag = TopUpdateTag(Type);
+
+	// The two tracked lists are built from memory and are refreshed on every
+	// draw: the cache below would keep an empty list for its lifetime after the
+	// tracker had already been filled.
+	if(Type == ToplistType::PlayerExpert)
+		return BuildTrackedTopList(Tag);
+	if(Type == ToplistType::PlayerAttributes)
+		return BuildAttributeTopList(Tag);
+
 	if(!NeedTopRows(Tag) || Db::IsTagRunning(Tag))
 		return TopRows(Tag);
 
@@ -684,44 +722,75 @@ const std::map<int, CMmoController::TempTopData>& CMmoController::GetTopList(Top
 			SetTopRows(Tag, std::move(vResult));
 		});
 	}
-	else if(Type == ToplistType::PlayerExpert)
-	{
-		// tracked in memory
-		std::map<int, TempTopData> vResult {};
-		int Iter = 0;
-		const auto& vTrackings = g_AccountListener.LevelingTracker().GetTrackings();
-		for(const auto& [professionID, data] : vTrackings)
-		{
-			auto& Field = vResult[Iter];
-			Field.m_Name = GetProfessionName((ProfessionIdentifier)professionID);
-			Field.m_Value = data.Level;
-			Field.m_Extra = data.AccountID;
-			Iter++;
-		}
-		SetTopRows(Tag, std::move(vResult));
-	}
-	else if(Type == ToplistType::PlayerAttributes)
-	{
-		// tracked in memory
-		std::map<int, TempTopData> vResult {};
-		int Iter = 0;
-		const auto& vTrackings = g_InventoryListener.AttributeTracker().GetTrackings();
-		for(const auto& [attributeID, data] : vTrackings)
-		{
-			auto* pAttributeInfo = GS()->GetAttributeInfo((AttributeIdentifier)attributeID);
-			if(!pAttributeInfo)
-				continue;
-
-			auto& Field = vResult[Iter];
-			Field.m_Name = pAttributeInfo->GetName();
-			Field.m_Value = data.Amount;
-			Field.m_Extra = data.AccountID;
-			Iter++;
-		}
-		SetTopRows(Tag, std::move(vResult));
-	}
-
 	return TopRows(Tag);
+}
+
+
+const std::map<int, CMmoController::TempTopData>& CMmoController::BuildTrackedTopList(const std::string& Key) const
+{
+	// tracked in memory: a cold tracker is refreshed in the background and the
+	// answer redraws the menu through the tracker's tag
+	auto& Tracker = g_AccountListener.LevelingTracker();
+	if(!Tracker.IsSynchronized())
+		Tracker.RefreshFromDatabase();
+
+	// The entries of the tracker are unordered, so the rows are ordered by
+	// level here: a menu that reshuffles itself on every redraw looks like it
+	// is reloading.
+	std::vector<TempTopData> vRows {};
+	for(const auto& [ProfessionID, Data] : Tracker.GetTrackings())
+	{
+		if(ProfessionID < 0 || Data.AccountID <= 0 || Data.Level <= 0)
+			continue;
+
+		TempTopData Row {};
+		Row.m_Name = GetProfessionName((ProfessionIdentifier)ProfessionID);
+		Row.m_Value = Data.Level;
+		Row.m_Extra = Data.AccountID;
+		vRows.emplace_back(std::move(Row));
+	}
+	std::sort(vRows.begin(), vRows.end(), [](const TempTopData& Left, const TempTopData& Right)
+	{
+		return Left.m_Value > Right.m_Value;
+	});
+
+	std::map<int, TempTopData> vResult {};
+	int Iter = 0;
+	for(auto& Row : vRows)
+		vResult[Iter++] = std::move(Row);
+	SetTopRows(Key, std::move(vResult));
+	return TopRows(Key);
+}
+
+
+const std::map<int, CMmoController::TempTopData>& CMmoController::BuildAttributeTopList(const std::string& Key) const
+{
+	// tracked in memory
+	std::vector<TempTopData> vRows {};
+	const auto& vTrackings = g_InventoryListener.AttributeTracker().GetTrackings();
+	for(const auto& [AttributeID, Data] : vTrackings)
+	{
+		auto* pAttributeInfo = GS()->GetAttributeInfo((AttributeIdentifier)AttributeID);
+		if(!pAttributeInfo || Data.AccountID <= 0)
+			continue;
+
+		TempTopData Row {};
+		Row.m_Name = pAttributeInfo->GetName();
+		Row.m_Value = BigInt((long long)Data.Amount);
+		Row.m_Extra = Data.AccountID;
+		vRows.emplace_back(std::move(Row));
+	}
+	std::sort(vRows.begin(), vRows.end(), [](const TempTopData& Left, const TempTopData& Right)
+	{
+		return Left.m_Value > Right.m_Value;
+	});
+
+	std::map<int, TempTopData> vResult {};
+	int Iter = 0;
+	for(auto& Row : vRows)
+		vResult[Iter++] = std::move(Row);
+	SetTopRows(Key, std::move(vResult));
+	return TopRows(Key);
 }
 
 const std::map<int, CMmoController::TempTopData>& CMmoController::GetDungeonTopList(int DungeonID, int Rows) const

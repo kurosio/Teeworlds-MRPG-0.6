@@ -107,6 +107,11 @@ private:
 	mutable std::map<std::string, STopRows> m_TopRows;
 	mutable bool m_TimePeriodPending = false;
 
+	// The two lists that are kept in memory (professions and attributes) are
+	// rebuilt on every draw; only the lists read from SQL are cached.
+	const std::map<int, TempTopData>& BuildTrackedTopList(const std::string& Key) const;
+	const std::map<int, TempTopData>& BuildAttributeTopList(const std::string& Key) const;
+
 	// true when the cached rows have expired and should be refreshed
 	bool NeedTopRows(const std::string& Key) const;
 	const std::map<int, TempTopData>& TopRows(const std::string& Key) const

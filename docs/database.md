@@ -399,6 +399,12 @@ rhythm difficulties) are drawn from a cache:
 3. entries have a short lifetime (20 s for record lists) or are invalidated by
    the operation that changes them (mail claim, delete).
 
+A cache that is empty is not the same answer as an empty list: the draw starts
+the read and shows `Loading ...` until `Db::HasTagCompleted` reports that the
+tag answered at least once, and only then falls back to `No records yet.`
+Waiting for the absence of a running request would show the empty state before
+the first request had started.
+
 `CVotePlayerData::UpdateVotes` only requests a redraw; the redraw itself runs
 from the tick in `ApplyVoteUpdaterData()`, so a menu is never built while it is
 being read and no thread is needed to defer it.
@@ -468,7 +474,28 @@ thread, writes leave it at once.
   `CAccountListener::Initialize()`), `CGameControllerTutorial::OnInit()` and
   `CLocalization::Init()` read their files once while the server is coming up;
   their contents are in memory before the first player can connect, and every
-  later write of the same file is asynchronous.
+  later write of the same file is asynchronous. The files are only a cache:
+  `CLevelingTracker` follows them with an asynchronous read of the profession
+  rows (see below), and `CAttributesTracker` is filled by the accounts that log
+  in. A missing or corrupt file therefore leaves the list empty for a moment,
+  not for the whole run.
+
+### The profession leaders
+
+The level of a profession lives inside the profession document, so the ranking
+cannot be read row by row and reduced in memory: on a populated server that is
+a transfer of one row per account per profession. `AccountDb::ListProfessionLeaders`
+computes it in the database instead - one statement, ordered by level, of which
+the tracker keeps the first row of each profession. The read is asynchronous
+(`profession_leaders` tag) and started from `CAccountListener::OnTick()` in the
+initializer world, with a two-minute refresh interval.
+
+The tracker never replaces what it knows with a failed or empty answer: the
+rows are merged by level, an answer without a single profession is retried with
+a growing pause (5 s to 60 s), and a level gained while the read was in flight
+wins over the older row. The leaderboard menu (`Top Specialists in the Realm`)
+waits on the same tag, which is how it tells "loading" from "no records yet" -
+`Db::HasTagCompleted` answers whether a tag ever produced an answer.
 * **`reload_localization`.** The command rewrites the language files and rebuilds
   the language table while chat messages read it. Moving it off the game thread
   needs a snapshot-and-swap of the whole localization subsystem; until then the

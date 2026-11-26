@@ -160,8 +160,11 @@ namespace AccountDb
 	};
 
 	Db::CRequest LoadProfessions(int AccountID);
-	// Every profession of every account, read by the leveling tracker.
-	Db::CResultSet ListAllProfessions();
+	// The best account of every profession: exactly the rows the leveling
+	// tracker and the specialist leaderboard need. The level lives inside the
+	// profession document, so the maximum is computed by the database and only
+	// one row per profession is transferred. Tag names the request for menus.
+	Db::CRequest ListProfessionLeaders(std::string_view Tag);
 	Db::CRequest CreateProfessions(int AccountID, const std::vector<SProfessionData>& vProfessions);
 	Db::CRequest SaveProfession(int AccountID, int ProfessionID, std::string_view Data);
 
