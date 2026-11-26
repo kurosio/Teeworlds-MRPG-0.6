@@ -505,9 +505,6 @@ void RconProcessor::ConBanAcc(IConsole::IResult* pResult, void* pUserData)
 
 void RconProcessor::ConUnBanAcc(IConsole::IResult* pResult, void* pUserData)
 {
-	const auto pServer = (IServer*)pUserData;
-	const auto pSelf = (CGS*)pServer->GameServer();
-
 	// unban account by banid
 	AccountBans::Unban(pResult->GetInteger(0));
 }
