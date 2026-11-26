@@ -165,6 +165,7 @@ namespace Db
 				// Several workers can be waiting for a connection at once. Recheck the
 				// shared back-off after every wakeup: a short polling wait would let all
 				// of them reconnect before the configured delay had elapsed.
+				bool ReuseIdle = false;
 				while(true)
 				{
 					std::unique_lock<std::mutex> Lock(pState->m_Mutex);
@@ -186,10 +187,22 @@ namespace Db
 						return std::nullopt;
 					}
 
+					// A busy connection may have returned while this worker was
+					// waiting to open another one. Prefer it over waiting for a
+					// failed-connect backoff or the serialized connector.
+					if (!pState->m_vIdle.empty())
+					{
+						pState->m_Pending--;
+						pState->m_Busy--;
+						ReuseIdle = true;
+						pState->m_Cv.notify_all();
+						break;
+					}
+
 					if(pState->m_ConnectInProgress)
 					{
 						pState->m_Cv.wait_for(Lock, std::chrono::milliseconds(Deadline - Now),
-							[pState] { return pState->m_Shutdown || !pState->m_ConnectInProgress; });
+							[pState] { return pState->m_Shutdown || !pState->m_vIdle.empty() || !pState->m_ConnectInProgress; });
 						continue;
 					}
 
@@ -197,12 +210,15 @@ namespace Db
 					if(WaitUntil > Now)
 					{
 						pState->m_Cv.wait_for(Lock, std::chrono::milliseconds(std::min<long long>(WaitUntil - Now, Deadline - Now)),
-							[pState, WaitUntil] { return pState->m_Shutdown || pState->m_ConnectBlockedUntil != WaitUntil; });
+							[pState, WaitUntil] { return pState->m_Shutdown || !pState->m_vIdle.empty() || pState->m_ConnectBlockedUntil != WaitUntil; });
 						continue;
 					}
 					pState->m_ConnectInProgress = true;
 					break;
 				}
+
+				if(ReuseIdle)
+					continue;
 
 				const long long ConnectStartedMs = NowMs();
 				const long long Remaining = std::max<long long>(1, Deadline - ConnectStartedMs);
@@ -282,11 +298,11 @@ namespace Db
 						if(pState->m_ConnectFailures < 32)
 							++pState->m_ConnectFailures;
 						if(ConnectError)
-							dbg_msg("SQL", "[%s] connection unavailable (code=%d sqlstate=%s auth-error=%d server-unavailable=%d); credentials and driver message suppressed",
+							dbg_msg("SQL", "[%s] connection unavailable (code=%d sqlstate=%s auth-error=%d server-unavailable=%d connect-elapsed=%lldms connect-budget=%dms); credentials and driver message suppressed",
 								m_Config.m_Endpoint.m_Name.c_str(), ConnectError.m_Code,
 								ConnectError.m_SqlState.empty() ? "-" : ConnectError.m_SqlState.c_str(),
 								IsAuthenticationError(ConnectError.m_Code, ConnectError.m_SqlState),
-								IsServerUnavailableError(ConnectError.m_Code, ConnectError.m_SqlState));
+								IsServerUnavailableError(ConnectError.m_Code, ConnectError.m_SqlState), NowMs() - ConnectStartedMs, ConnectTimeoutMs);
 						if(m_Config.m_ConnectRetryDelayMs > 0)
 						{
 							long long BackoffMs = m_Config.m_ConnectRetryDelayMs;
@@ -322,9 +338,10 @@ namespace Db
 			}
 
 			std::unique_lock<std::mutex> Lock(pState->m_Mutex);
-			if(pState->m_Shutdown)
-				return std::nullopt;
-			pState->m_Cv.wait_for(Lock, std::chrono::milliseconds(std::max<long long>(1, Deadline - Now)));
+			// A release can happen between the earlier capacity check and this
+			// wait. Recheck the condition under the lock to avoid a lost wakeup.
+			pState->m_Cv.wait_for(Lock, std::chrono::milliseconds(std::max<long long>(1, Deadline - Now)),
+				[&] { return pState->m_Shutdown || !pState->m_vIdle.empty() || pState->CanConnect(m_Config); });
 		}
 	}
 
@@ -383,7 +400,7 @@ namespace Db
 				pState->m_Counters.m_Discarded++;
 			else
 				pState->m_Busy = std::max(0, pState->m_Busy - 1);
-			pState->m_Cv.notify_one();
+			pState->m_Cv.notify_all();
 		}
 		if(CloseConnection)
 		{
@@ -393,7 +410,7 @@ namespace Db
 			std::lock_guard<std::mutex> Lock(pState->m_Mutex);
 			pState->m_Open = std::max(0, pState->m_Open - 1);
 			pState->m_Busy = std::max(0, pState->m_Busy - 1);
-			pState->m_Cv.notify_one();
+			pState->m_Cv.notify_all();
 		}
 	}
 

@@ -148,6 +148,37 @@ namespace
 		std::atomic<int> m_Connects { 0 };
 	};
 
+	class CFirstConnectOnlyDriver final : public Db::IDbDriver
+	{
+	public:
+		std::unique_ptr<Db::IDbConnection> Connect(const Db::SEndpoint&, int, Db::SError& Error) override
+		{
+			if (++m_Connects == 1)
+				return std::make_unique<CRecoverableConnection>(std::make_shared<std::atomic<bool>>(true));
+			Error = { 2013, "HY000", "scripted connect failure" };
+			return nullptr;
+		}
+		std::atomic<int> m_Connects{ 0 };
+	};
+
+	class CBlockingSecondConnectDriver final : public Db::IDbDriver
+	{
+	public:
+		std::unique_ptr<Db::IDbConnection> Connect(const Db::SEndpoint&, int, Db::SError& Error) override
+		{
+			if (++m_Connects == 1)
+				return std::make_unique<CRecoverableConnection>(std::make_shared<std::atomic<bool>>(true));
+			m_ConnectStarted = true;
+			while (!m_ReleaseConnect.load())
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			Error = { 2013, "HY000", "scripted connect failure" };
+			return nullptr;
+		}
+		std::atomic<int> m_Connects{ 0 };
+		std::atomic<bool> m_ConnectStarted{ false };
+		std::atomic<bool> m_ReleaseConnect{ false };
+	};
+
 	class CScriptedDriver;
 
 	class CScriptedConnection final : public Db::IDbConnection
@@ -847,6 +878,107 @@ TEST(CDbPoolBackoffTest, RetriesTransientConnectFailureWithinAcquireDeadline)
 	EXPECT_EQ(Pool.Stats().m_Open, 1);
 	EXPECT_EQ(Pool.Stats().m_Busy, 1);
 	Lease->Release();
+}
+
+TEST(CDbPoolBackoffTest, ReusesReturnedConnectionDuringFailedConnectBackoff)
+{
+	CFirstConnectOnlyDriver Driver;
+	Db::SPoolConfig Config;
+	Config.m_MaxConnections = 2;
+	Config.m_ConnectRetryDelayMs = 2000;
+	Config.m_ConnectRetryMaxDelayMs = 2000;
+	Config.m_IdlePingMs = 0;
+	Db::CDbPool Pool(Driver, Config);
+	auto Held = Pool.Acquire(500);
+	ASSERT_TRUE(Held.has_value());
+	std::atomic<bool> Acquired{ false };
+	std::thread Worker([&] { auto Lease = Pool.Acquire(1000); Acquired = Lease.has_value(); });
+	const auto Deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+	// Wait until the failed attempt has completed AND the worker has reserved
+	// a slot for the retry. Otherwise the old implementation could pass if the
+	// connection were returned before it entered the backoff path.
+	while (std::chrono::steady_clock::now() < Deadline)
+	{
+		const auto Stats = Pool.Stats();
+		if (Stats.m_Failed > 0 && Stats.m_Busy == 2)
+			break;
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+	const auto BeforeRelease = Pool.Stats();
+	const bool Failed = BeforeRelease.m_Failed > 0 && BeforeRelease.m_Busy == 2;
+	Held->Release();
+	Worker.join();
+	EXPECT_TRUE(Failed);
+	EXPECT_TRUE(Acquired.load());
+	EXPECT_EQ(Driver.m_Connects.load(), 2);
+	EXPECT_EQ(Pool.Stats().m_Busy, 0);
+	EXPECT_EQ(Pool.Stats().m_Open, 1);
+}
+
+TEST(CDbPoolBackoffTest, ShutdownWakesBackoffWaitersAndReleasesReservations)
+{
+	CFirstConnectOnlyDriver Driver;
+	Db::SPoolConfig Config;
+	Config.m_MaxConnections = 2;
+	Config.m_ConnectRetryDelayMs = 2000;
+	Config.m_ConnectRetryMaxDelayMs = 2000;
+	Config.m_IdlePingMs = 0;
+	Db::CDbPool Pool(Driver, Config);
+	auto Held = Pool.Acquire(500);
+	ASSERT_TRUE(Held.has_value());
+	std::atomic<bool> Acquired{ false };
+	std::thread Worker([&] { auto Lease = Pool.Acquire(1500); Acquired = Lease.has_value(); });
+	const auto Deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+	while (std::chrono::steady_clock::now() < Deadline)
+	{
+		const auto Stats = Pool.Stats();
+		if (Stats.m_Failed > 0 && Stats.m_Busy == 2)
+			break;
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	}
+	const auto BeforeStop = Pool.Stats();
+	Pool.Shutdown(0);
+	Held->Release();
+	Worker.join();
+	EXPECT_TRUE(BeforeStop.m_Failed > 0 && BeforeStop.m_Busy == 2);
+	EXPECT_FALSE(Acquired.load());
+	EXPECT_EQ(Pool.Stats().m_Busy, 0);
+	EXPECT_EQ(Pool.Stats().m_Open, 0);
+}
+
+TEST(CDbPoolBackoffTest, ReusesReturnedConnectionWhileAnotherConnectIsInProgress)
+{
+	CBlockingSecondConnectDriver Driver;
+	Db::SPoolConfig Config;
+	Config.m_MaxConnections = 3;
+	Config.m_ConnectRetryDelayMs = 0;
+	Config.m_IdlePingMs = 0;
+	Db::CDbPool Pool(Driver, Config);
+	auto Held = Pool.Acquire(500);
+	ASSERT_TRUE(Held.has_value());
+	std::thread Connecting([&] { Pool.Acquire(2000); });
+	const auto ConnectDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+	while (!Driver.m_ConnectStarted && std::chrono::steady_clock::now() < ConnectDeadline)
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	std::atomic<bool> Acquired{ false };
+	std::thread Waiting([&] { auto Lease = Pool.Acquire(1500); Acquired = Lease.has_value(); });
+	const auto WaitDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+	while (Pool.Stats().m_Busy < 3 && std::chrono::steady_clock::now() < WaitDeadline)
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	const bool BothWaiting = Driver.m_ConnectStarted && Pool.Stats().m_Busy == 3;
+	Held->Release();
+	const auto ReuseDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(700);
+	while (!Acquired && std::chrono::steady_clock::now() < ReuseDeadline)
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+	const bool ReusedBeforeConnectFinished = Acquired.load();
+	Driver.m_ReleaseConnect = true;
+	Connecting.join();
+	Waiting.join();
+	EXPECT_TRUE(BothWaiting);
+	EXPECT_TRUE(ReusedBeforeConnectFinished);
+	EXPECT_EQ(Driver.m_Connects.load(), 2);
+	EXPECT_EQ(Pool.Stats().m_Busy, 0);
+	EXPECT_EQ(Pool.Stats().m_Open, 1);
 }
 
 TEST(CDbPoolBackoffTest, WaitsForTheConfiguredConnectBackoff)

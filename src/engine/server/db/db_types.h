@@ -225,12 +225,12 @@ namespace Db
 		// for data no one has to see a moment-old write of - a menu that every
 		// player opens at once; never for a read that must see our own writes.
 		bool m_Coalesce = false;
-		// Optional application-level identity used to expose request state to
-		// menus. This is metadata only; it does not change SQL or deduplication.
-		std::string m_Tag;
 		// INSERTs normally return an id. Disable the additional id lookup when
 		// the caller only needs success or affected rows.
 		bool m_FetchInsertId = true;
+		// Optional application-level identity used to expose request state to
+		// menus. This is metadata only; it does not change SQL or deduplication.
+		std::string m_Tag;
 
 		SQueryOptions& Tag(std::string_view Name)
 		{
