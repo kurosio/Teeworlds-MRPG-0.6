@@ -88,7 +88,7 @@ test('безопасность и ACL: api.php остаётся admin-only, vouc
   for (const act of ['openapi', 'manifest', 'resources', 'list', 'get', 'references', 'validate', 'preview', 'propose']) {
     assert.ok(aiPhp.includes(`'${act}'`), `ai.php должен поддерживать действие ${act}`);
   }
-  assert.ok(aiPhp.includes("guard_write_actions($action, ['validate', 'preview', 'apply_patch', 'propose'])"));
+  assert.ok(aiPhp.includes("guard_write_actions($action, ['validate', 'preview', 'apply_patch', 'propose', 'request_reply', 'request_withdraw'])"));
   assert.ok(aiPhp.includes('guest_session_required'), 'propose обязан отклонять администратора кодом guest_session_required');
 
   const aiLib = read('api/ai-lib.php');

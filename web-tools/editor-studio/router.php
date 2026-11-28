@@ -44,6 +44,12 @@ if (preg_match('#^/openapi\.json$#i', $path) === 1) {
     require __DIR__ . '/api/ai.php';
     return true;
 }
+if (preg_match('#^/llms\.txt$#i', $path) === 1) {
+    $_GET['action'] = 'llms_txt';
+    $_SERVER['SCRIPT_NAME'] = '/api/ai.php';
+    require __DIR__ . '/api/ai.php';
+    return true;
+}
 if (preg_match('#^/mcp/?$#i', $path) === 1) {
     $_SERVER['SCRIPT_NAME'] = '/api/mcp.php';
     require __DIR__ . '/api/mcp.php';

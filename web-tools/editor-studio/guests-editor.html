@@ -36,6 +36,10 @@
     .ai-tokens-list { display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed var(--editor-line); padding-top: 10px; }
     .ai-token-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; border-radius: 8px; background: var(--editor-soft-bg); font-size: 12px; }
     .ai-scope-badge { display: inline-block; padding: 1px 6px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid var(--editor-soft-border-strong); color: var(--editor-text-muted); }
+    .ai-snippet-pre { margin-top: 8px; padding: 10px; border-radius: 8px; background: var(--editor-soft-bg); border: 1px solid var(--editor-soft-border); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; white-space: pre-wrap; word-break: break-word; max-height: 180px; overflow: auto; }
+    .ai-snippet-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .ai-snippet-tab { padding: 3px 9px; border-radius: 7px; font-size: 11.5px; font-weight: 600; border: 1px solid var(--editor-soft-border-strong); background: var(--editor-soft-bg); color: var(--editor-text-muted); cursor: pointer; }
+    .ai-snippet-tab.is-active { color: var(--editor-accent); border-color: color-mix(in srgb, var(--editor-accent) 55%, transparent); background: color-mix(in srgb, var(--editor-accent) 10%, transparent); }
   </style>
 </head>
 
@@ -181,8 +185,20 @@
       </label>
 
       <div class="mt-4">
-        <div class="text-sm font-medium mb-2">Allowed AI scopes</div>
+        <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+          <div class="text-sm font-medium">Allowed AI scopes</div>
+          <div class="flex flex-wrap gap-1.5" id="t-scope-presets">
+            <button type="button" class="editor-btn editor-btn-secondary editor-btn--xs" data-preset="readonly">Read only</button>
+            <button type="button" class="editor-btn editor-btn-secondary editor-btn--xs" data-preset="author">Content author</button>
+            <button type="button" class="editor-btn editor-btn-secondary editor-btn--xs" data-preset="full">Full access</button>
+          </div>
+        </div>
         <div class="guest-tabs-grid" id="t-scopes"></div>
+      </div>
+
+      <div class="mt-4" id="t-pages-wrap">
+        <div class="text-sm font-medium mb-1">Limit to specific tabs <span class="editor-muted-text font-normal">(optional subset of guest tabs)</span></div>
+        <div class="guest-tabs-grid" id="t-pages"></div>
       </div>
 
       <label class="block mt-4">
@@ -196,6 +212,15 @@
           <input id="t-secret-val" type="text" readonly class="w-full editor-input form-input font-mono text-xs" />
           <button type="button" class="editor-btn editor-btn-secondary" id="t-copy-secret"><i class="fa-solid fa-copy"></i><span>Copy</span></button>
         </div>
+        <div class="flex items-center justify-between gap-2 mt-3 flex-wrap">
+          <div class="ai-snippet-tabs" id="t-snippet-tabs">
+            <button type="button" class="ai-snippet-tab is-active" data-snippet="mcp-http">HTTP MCP config</button>
+            <button type="button" class="ai-snippet-tab" data-snippet="mcp-stdio">Stdio MCP config</button>
+            <button type="button" class="ai-snippet-tab" data-snippet="prompt">Chat prompt</button>
+          </div>
+          <button type="button" class="editor-btn editor-btn-secondary editor-btn--xs" id="t-copy-snippet"><i class="fa-solid fa-copy"></i><span>Copy config</span></button>
+        </div>
+        <pre class="ai-snippet-pre" id="t-snippet-val"></pre>
       </div>
 
       <div class="flex justify-end gap-2 mt-6">
@@ -598,11 +623,70 @@
       }
     };
 
+    const studioBaseUrl = () => {
+      const path = String(window.location.pathname || '/').replace(/\/[^/]*$/, '');
+      return `${window.location.origin}${path === '/' ? '' : path}`;
+    };
+
+    const renderTokenSnippet = () => {
+      const tok = $('t-secret-val').value || '';
+      const tab = state.tokenSnippetTab || 'mcp-http';
+      const base = studioBaseUrl();
+      const authHeader = ['Bearer', tok].join(' ');
+      let text = '';
+      if (tab === 'mcp-http') {
+        text = JSON.stringify({
+          mcpServers: {
+            'mrpg-editor-studio': {
+              url: [base, '/api/mcp.php'].join(''),
+              headers: { Authorization: authHeader },
+            },
+          },
+        }, null, 2);
+      } else if (tab === 'mcp-stdio') {
+        text = JSON.stringify({
+          mcpServers: {
+            'mrpg-editor-studio': {
+              command: 'node',
+              args: ['tools/mcp-stdio.mjs', '--url', base],
+              env: { EDITOR_STUDIO_TOKEN: tok },
+            },
+          },
+        }, null, 2);
+      } else {
+        const scopesTxt = (state.lastTokenScopes || []).join(', ');
+        text = [
+          'studio_url: ' + base,
+          'llms_txt: ' + base + '/api/ai.php?action=llms_txt',
+          'discovery: ' + base + '/ai/?format=json',
+          'mcp_http: ' + base + '/api/mcp.php',
+          'authorization: ' + authHeader,
+          'scopes: ' + scopesTxt,
+          'workflow: get_manifest -> search_editor -> get_context -> analyze_map/get_map_screenshot -> apply_patch -> validate -> preview -> propose',
+        ].join('\n');
+      }
+      $('t-snippet-val').textContent = text;
+    };
+
+    const applyScopePreset = (preset) => {
+      const wanted = preset === 'readonly'
+        ? ['read']
+        : (preset === 'author' ? ['read', 'create', 'update'] : state.aiScopes.slice());
+      $('t-scopes').querySelectorAll('input[type="checkbox"]').forEach((input) => {
+        input.checked = wanted.includes(input.value);
+        input.closest('.guest-tab-option')?.classList.toggle('is-on', input.checked);
+      });
+    };
+
     const openTokenModal = (user) => {
       state.tokenGuestId = user.id;
+      state.tokenGuestPages = Array.isArray(user.pages) ? user.pages.slice() : [];
+      state.tokenSnippetTab = 'mcp-http';
+      state.lastTokenScopes = [];
       $('t-name').value = '';
       $('t-expires').value = '';
       $('t-secret-val').value = '';
+      $('t-snippet-val').textContent = '';
       $('t-secret-box').classList.add('hidden');
       $('t-modal-status').innerHTML = '';
       $('t-create-btn').disabled = false;
@@ -616,12 +700,26 @@
           input.closest('.guest-tab-option')?.classList.toggle('is-on', input.checked);
         });
       });
+      const allowedPages = state.pages.filter((p) => state.tokenGuestPages.includes(p.key));
+      $('t-pages-wrap').classList.toggle('hidden', allowedPages.length === 0);
+      $('t-pages').innerHTML = allowedPages.map((p) => `
+        <label class="guest-tab-option is-on">
+          <input type="checkbox" value="${esc(p.key)}" checked />
+          <span>${esc(p.title)}</span>
+        </label>`).join('');
+      $('t-pages').querySelectorAll('input[type="checkbox"]').forEach((input) => {
+        input.addEventListener('change', () => {
+          input.closest('.guest-tab-option')?.classList.toggle('is-on', input.checked);
+        });
+      });
       $('token-modal').classList.remove('hidden');
       $('token-modal').classList.add('flex');
       $('t-name').focus();
     };
 
     const closeTokenModal = () => {
+      $('t-secret-val').value = '';
+      $('t-snippet-val').textContent = '';
       $('token-modal').classList.add('hidden');
       $('token-modal').classList.remove('flex');
     };
@@ -629,6 +727,9 @@
     const createToken = async () => {
       const name = $('t-name').value.trim();
       const scopes = Array.from($('t-scopes').querySelectorAll('input[type="checkbox"]:checked')).map(i => i.value);
+      const checkedPages = Array.from($('t-pages').querySelectorAll('input[type="checkbox"]:checked')).map(i => i.value);
+      const allGuestPagesCount = $('t-pages').querySelectorAll('input[type="checkbox"]').length;
+      const pages = (allGuestPagesCount > 0 && checkedPages.length < allGuestPagesCount) ? checkedPages : [];
       const expiresAt = $('t-expires').value || '';
       if (!name) {
         $('t-modal-status').innerHTML = '<span class="editor-tone-danger">Provide a token label.</span>';
@@ -639,18 +740,24 @@
         $('t-modal-status').innerHTML = '<span class="editor-tone-danger">Select at least one scope.</span>';
         return;
       }
+      if (allGuestPagesCount > 0 && !checkedPages.length) {
+        $('t-modal-status').innerHTML = '<span class="editor-tone-danger">Select at least one tab.</span>';
+        return;
+      }
       $('t-create-btn').disabled = true;
       const res = await api('token_create', {
         method: 'POST',
-        body: { guest_id: state.tokenGuestId, name, scopes, expires_at: expiresAt },
+        body: { guest_id: state.tokenGuestId, name, scopes, pages, expires_at: expiresAt },
       });
       $('t-create-btn').disabled = false;
       if (!res.ok) {
         $('t-modal-status').innerHTML = `<span class="editor-tone-danger">${esc(res.error || 'Could not create token')}</span>`;
         return;
       }
+      state.lastTokenScopes = scopes;
       $('t-secret-val').value = res.secret || '';
       $('t-secret-box').classList.remove('hidden');
+      renderTokenSnippet();
       $('t-modal-status').innerHTML = '<span class="editor-tone-success">Token created. Save the secret before closing.</span>';
       await load();
     };
@@ -683,6 +790,23 @@
     $('t-copy-secret').addEventListener('click', async () => {
       const ok = await EditorCore.Page.copyText($('t-secret-val').value);
       toast(ok ? 'Token copied' : 'Copy the token manually', ok ? 'success' : 'info');
+    });
+    $('t-copy-snippet').addEventListener('click', async () => {
+      const ok = await EditorCore.Page.copyText($('t-snippet-val').textContent || '');
+      toast(ok ? 'Config copied' : 'Copy the config manually', ok ? 'success' : 'info');
+    });
+    $('t-scope-presets')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-preset]');
+      if (btn) applyScopePreset(btn.dataset.preset);
+    });
+    $('t-snippet-tabs')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-snippet]');
+      if (!btn) return;
+      state.tokenSnippetTab = btn.dataset.snippet || 'mcp-http';
+      $('t-snippet-tabs').querySelectorAll('[data-snippet]').forEach((b) => {
+        b.classList.toggle('is-active', b === btn);
+      });
+      renderTokenSnippet();
     });
     $('g-save').addEventListener('click', save);
     $('g-enabled').addEventListener('change', () => { $('g-enabled-toggle').dataset.checked = $('g-enabled').checked ? '1' : '0'; });

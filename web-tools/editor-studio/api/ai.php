@@ -5,25 +5,34 @@
 // Endpoint: api/ai.php?action=...
 //
 // GET:
-//   discovery  — публичный дескриптор обнаружения AI (без секретов, /.well-known/ai-plugin.json)
-//   openapi    — машиночитаемая спецификация OpenAPI 3.1.0 (публично)
-//   manifest   — описание возможностей, ограничений, прав и схем AI API
-//   resources  — детальная схема разрешённых ресурсов (&resource=..., &include_examples=1)
-//   list       — постраничный поиск/фильтрация записей БД, сценариев, справочников, карт
-//   get        — чтение одной записи/сценария/карты (с опциями связей и проверки точки)
-//   references — граф входящих и исходящих ссылок или чтение словарей (&source=...)
-//   history    — журнал действий и запросов на изменение текущего актора
-//   analyze    — глубокий анализ сценариев: структура, компоненты, зависимости
-//                (боты/предметы/миры/квесты), входящие ссылки и переиспользование;
-//                без &id= возвращается сводка по всему каталогу сценариев
-//   similar    — поиск похожих существующих записей по названию (ресурс БД или справочник)
+//   discovery      — публичный дескриптор обнаружения AI (без секретов, /.well-known/ai-plugin.json)
+//   openapi        — машиночитаемая спецификация OpenAPI 3.1.0 (публично)
+//   llms_txt       — публичный Markdown-гайд /llms.txt для LLM-клиентов
+//   manifest       — описание возможностей, ограничений, прав и схем AI API
+//   resources      — детальная схема разрешённых ресурсов (&resource=..., &include_examples=1)
+//   search         — сквозной поиск по всем разрешённым ресурсам (&q=..., &resources=...)
+//   context        — композитный снимок мира/квеста/предмета/бота (&resource=..., &id=...)
+//   list           — постраничный поиск/фильтрация (с операторами gte/lte/contains/...) и сортировка (&sort=...)
+//   get            — чтение одной или пакета записей (&id=... или &ids=1,2,3), сценария или карты
+//   references     — граф входящих и исходящих ссылок или чтение словарей (&source=...)
+//   history        — журнал действий и запросов на изменение текущего актора
+//   request        — детали Change Request, решение администратора и переписка (&id=...)
+//   analyze        — глубокий анализ сценариев (структура, компоненты, зависимости)
+//                    или карт (&resource=maps&world=...: визуальные слои, рельеф,
+//                    постройки/дома/замки/пещеры, зоны, объекты БД и ASCII-миникарта)
+//   map_screenshot — визуальный/гибридный/схематичный PNG-скриншот карты или области
+//                    (&world=...&target=overview|spawn|guild_house:1|house:1|zone:1|...
+//                    &mode=hybrid|visual|schematic&format=json|png)
+//   similar        — поиск похожих существующих записей по названию (ресурс БД или справочник)
 //
 // POST (требует Same-Origin JSON POST + X-Editor-CSRF ИЛИ Authorization: Bearer esai_...):
-//   validate    — полная проверка операций (БД + сценарии + patch_json + copy) без записи
-//   preview     — dry-run анализ: diff, затронутые связи, dangerous_actions (без записи)
-//   apply_patch — read-only серверная проверка patch_json: слияние с актуальной записью/файлом,
-//                 before/after/diff и те же ошибки, что вернёт propose (НИЧЕГО не записывает)
-//   propose     — отправка или обновление запроса на изменение в SQLite (только гость/токен)
+//   validate         — полная проверка операций (БД + сценарии + ref/$alias + patch_json + copy) без записи
+//   preview          — dry-run анализ: diff, затронутые связи, dangerous_actions (без записи)
+//   apply_patch      — read-only серверная проверка patch_json: слияние с актуальной записью/файлом,
+//                      before/after/diff и те же ошибки, что вернёт propose (НИЧЕГО не записывает)
+//   propose          — отправка или обновление запроса на изменение в SQLite (только гость/токен)
+//   request_reply    — ответ в переписке по Change Request ({id, body})
+//   request_withdraw — отзыв собственного ожидающего Change Request ({id})
 //
 // Прямая запись в игровую БД или файлы scenarios/ через этот API невозможна.
 
@@ -35,7 +44,7 @@ require_once __DIR__ . '/db-history-lib.php';
 $action = (string)($_GET['action'] ?? '');
 $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 
-if (!in_array($action, ['validate', 'preview', 'apply_patch', 'propose'], true) && $method !== 'GET') {
+if (!in_array($action, ['validate', 'preview', 'apply_patch', 'propose', 'request_reply', 'request_withdraw'], true) && $method !== 'GET') {
     respond(['ok' => false, 'code' => 'method_not_allowed', 'error' => 'Метод запроса не поддерживается'], 405);
 }
 
@@ -48,6 +57,21 @@ if ($action === 'openapi') {
         respond(['ok' => false, 'code' => 'openapi_unavailable', 'error' => 'OpenAPI-спецификация недоступна или повреждена.'], 500);
     }
     respond($decodedSpec);
+}
+
+// Публичный машиночитаемый /llms.txt (без секретов, путей и данных БД).
+if ($action === 'llms_txt') {
+    apply_security_headers();
+    $host = trim((string)($_SERVER['HTTP_HOST'] ?? 'localhost'));
+    $proto = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https'
+        ? 'https' : 'http';
+    $origin = $proto . '://' . $host;
+    $scriptDir = rtrim(str_replace('\\', '/', dirname(dirname((string)($_SERVER['SCRIPT_NAME'] ?? '/api/ai.php')))), '/');
+    $base = $origin . ($scriptDir === '' ? '' : $scriptDir);
+    header('Content-Type: text/markdown; charset=utf-8');
+    echo ai_build_llms_txt($base);
+    exit;
 }
 
 // Публичное машиночитаемое обнаружение возможностей AI (аналог /.well-known/ai-plugin.json, без секретов и локальных путей).
@@ -65,9 +89,11 @@ if ($action === 'discovery') {
         'name_for_human' => 'Teeworlds-MRPG-0.6 Editor Studio',
         'name_for_model' => 'mrpg_editor_studio',
         'description_for_human' => 'AI-assisted content creation and review platform for Teeworlds MRPG 0.6 worlds, quests, items, NPCs, mobs, shops, and JSON scenarios.',
-        'description_for_model' => 'Model-agnostic REST & MCP JSON-RPC 2.0 platform for inspecting schemas/maps/references and submitting safe Change Requests for Teeworlds-MRPG-0.6. Read manifest first (api/ai.php?action=manifest), analyze scenarios (action=analyze) and find duplicates (action=similar) before authoring, verify patch_json with the read-only action=apply_patch, then validate/preview and propose. Prefer patch_json for existing JSON edits, and confirm dangerous_actions explicitly.',
+        'description_for_model' => 'Model-agnostic REST & MCP JSON-RPC 2.0 platform for inspecting schemas/maps/references and submitting safe Change Requests for Teeworlds-MRPG-0.6. Read manifest first (api/ai.php?action=manifest), orient via action=search & action=context, analyze scenarios/maps (action=analyze & action=map_screenshot), find duplicates (action=similar), verify patch_json with read-only action=apply_patch, link new batch records via ref/$alias, then validate/preview and propose. Track/reply/withdraw pending requests via action=request / request_reply / request_withdraw.',
         'api_version' => '2.0',
         'onboarding_url' => $base . '/ai/',
+        'llms_txt_url' => $base . '/api/ai.php?action=llms_txt',
+        'llms_txt_alias' => $base . '/llms.txt',
         'api' => [
             'type' => 'openapi',
             'url' => $base . '/api/ai.php?action=openapi',
@@ -89,13 +115,24 @@ if ($action === 'discovery') {
         'capabilities' => [
             'model_agnostic' => true,
             'auto_resource_discovery' => true,
+            'llms_txt' => true,
+            'global_search' => true,
+            'composite_context' => true,
+            'batch_get' => true,
+            'advanced_filtering_and_sorting' => true,
+            'symbolic_refs' => true,
+            'self_healing_validation_hints' => true,
             'patch_json' => true,
             'copy' => true,
             'dangerous_confirm_gate' => true,
             'safe_change_requests_only' => true,
+            'change_request_lifecycle' => true,
             'scenario_analysis' => true,
             'similar_records_search' => true,
             'verify_before_propose' => true,
+            'map_semantic_analysis' => true,
+            'map_structure_recognition' => true,
+            'map_screenshot_rendering' => true,
         ],
     ]);
 }
@@ -103,7 +140,7 @@ if ($action === 'discovery') {
 $ROLE = bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN, EDITOR_ROLE_GUEST], true);
 $IS_ADMIN = $ROLE === EDITOR_ROLE_ADMIN;
 
-guard_write_actions($action, ['validate', 'preview', 'apply_patch', 'propose']);
+guard_write_actions($action, ['validate', 'preview', 'apply_patch', 'propose', 'request_reply', 'request_withdraw']);
 
 /** Единый формат структурированной ошибки для AI-клиентов. */
 function ai_fail(string $code, string $message, int $status = 400, ?string $field = null, array $extra = []): never
@@ -218,6 +255,41 @@ try {
         respond(['ok' => true, 'resources' => $allowed]);
     }
 
+    // ── GET search (сквозной поиск по всем разрешённым ресурсам) ────────────
+    if ($action === 'search') {
+        $q = trim((string)($_GET['q'] ?? ($_GET['search'] ?? '')));
+        $db = db_connect();
+        try {
+            $res = ai_global_search($db, $q, $ROLE, null, [
+                'resources' => $_GET['resources'] ?? null,
+                'limit_per_resource' => $_GET['limit_per_resource'] ?? null,
+                'max_matches' => $_GET['max_matches'] ?? null,
+            ]);
+            respond(array_merge(['ok' => true], $res));
+        } finally {
+            $db->close();
+        }
+    }
+
+    // ── GET context (композитный снимок контекста мира/квеста/предмета/бота) ─
+    if ($action === 'context') {
+        $resource = trim((string)($_GET['resource'] ?? ''));
+        if ($resource === '') {
+            ai_fail('missing_required_field', 'Укажите параметр resource (worlds, quests, items, bots_info, scenarios, ...).', 400, 'resource');
+        }
+        $rawId = trim((string)($_GET['id'] ?? ($_GET['world'] ?? ($_GET['file'] ?? ''))));
+        if ($rawId === '') {
+            ai_fail('missing_required_field', 'Укажите параметр id (или file для scenarios).', 400, 'id');
+        }
+        $db = db_connect();
+        try {
+            $ctx = ai_build_entity_context($db, $resource, $rawId, $ROLE, null);
+            respond(array_merge(['ok' => true], $ctx));
+        } finally {
+            $db->close();
+        }
+    }
+
     // ── GET list ────────────────────────────────────────────────────────────
     if ($action === 'list') {
         $resource = trim((string)($_GET['resource'] ?? ''));
@@ -308,6 +380,7 @@ try {
             $res = ai_query_db_list($db, $R, [
                 'search' => $search,
                 'filter' => ai_parse_query_filter(),
+                'sort' => isset($_GET['sort']) ? trim((string)$_GET['sort']) : null,
                 'fields' => $_GET['fields'] ?? null,
                 'limit' => $limit,
                 'offset' => $offset,
@@ -320,12 +393,56 @@ try {
         }
     }
 
-    // ── GET analyze (анализ сценариев: структура, зависимости, переиспользование) ─
+    // ── GET analyze (анализ сценариев или карт: постройки, рельеф, зоны, объекты) ─
     if ($action === 'analyze') {
         $resource = trim((string)($_GET['resource'] ?? 'scenarios'));
-        if ($resource !== 'scenarios') {
-            ai_fail('unsupported_resource', 'action=analyze поддерживает только resource=scenarios; для записей БД используйте action=references.', 400, 'resource', ['allowed' => ['scenarios']]);
+        if (!in_array($resource, ['scenarios', 'maps'], true)) {
+            ai_fail('unsupported_resource', 'action=analyze поддерживает resource=scenarios и resource=maps; для записей БД используйте action=references.', 400, 'resource', ['allowed' => ['scenarios', 'maps']]);
         }
+
+        if ($resource === 'maps') {
+            if (!ai_can_read_resource('maps', $ROLE)) {
+                ai_fail('resource_forbidden', 'Доступ к картам не выдан вашей учётной записи.', 403, 'resource');
+            }
+            $worldParam = $_GET['world'] ?? ($_GET['world_id'] ?? ($_GET['id'] ?? null));
+            $pathParam = isset($_GET['path']) ? trim((string)$_GET['path']) : null;
+            $worldId = null;
+            if ($worldParam !== null && (string)$worldParam !== '') {
+                $worldId = crud_record_id((string)$worldParam, 'worlds');
+                if ($worldId === null) {
+                    ai_fail('invalid_id', 'Некорректный ID мира (ожидается целое >= 0).', 400, 'id');
+                }
+            } elseif ($pathParam === null || $pathParam === '') {
+                ai_fail('missing_required_field', 'Укажите world / world_id / id или относительный path карты.', 400, 'id');
+            }
+            $mapOpts = [
+                'include_entities' => ((string)($_GET['include_entities'] ?? '0')) === '1',
+                'include_minimap' => ((string)($_GET['include_minimap'] ?? '1')) !== '0',
+                'compact' => ((string)($_GET['compact'] ?? '0')) === '1',
+                'x' => isset($_GET['x']) && is_numeric($_GET['x']) ? (int)$_GET['x'] : null,
+                'y' => isset($_GET['y']) && is_numeric($_GET['y']) ? (int)$_GET['y'] : null,
+            ];
+            foreach (['target', 'structure_kind'] as $sk) {
+                if (isset($_GET[$sk]) && trim((string)$_GET[$sk]) !== '') {
+                    $mapOpts[$sk] = trim((string)$_GET[$sk]);
+                }
+            }
+            foreach (['radius', 'radius_tiles', 'pad_tiles', 'x0', 'y0', 'x1', 'y1', 'tx0', 'ty0', 'tx1', 'ty1'] as $ik) {
+                if (isset($_GET[$ik]) && is_numeric($_GET[$ik])) {
+                    $mapOpts[$ik] = (int)$_GET[$ik];
+                }
+            }
+            $db = $worldId !== null ? db_connect() : null;
+            try {
+                $res = ai_map_analyze_request($db, $worldId, $pathParam, $ROLE, null, $mapOpts);
+                respond(array_merge(['ok' => true, 'mode' => 'map'], $res));
+            } finally {
+                if ($db !== null) {
+                    $db->close();
+                }
+            }
+        }
+
         if (!ai_can_read_resource('scenarios', $ROLE)) {
             ai_fail('resource_forbidden', 'Доступ к сценариям не выдан вашей учётной записи.', 403, 'resource');
         }
@@ -342,6 +459,79 @@ try {
         } finally {
             $db->close();
         }
+    }
+
+    // ── GET map_screenshot (рендер PNG-скриншота карты или области/постройки) ──
+    if ($action === 'map_screenshot') {
+        if (!ai_can_read_resource('maps', $ROLE)) {
+            ai_fail('resource_forbidden', 'Доступ к картам не выдан вашей учётной записи.', 403, 'resource');
+        }
+        $worldParam = $_GET['world'] ?? ($_GET['world_id'] ?? ($_GET['id'] ?? null));
+        $pathParam = isset($_GET['path']) ? trim((string)$_GET['path']) : null;
+        $worldId = null;
+        if ($worldParam !== null && (string)$worldParam !== '') {
+            $worldId = crud_record_id((string)$worldParam, 'worlds');
+            if ($worldId === null) {
+                ai_fail('invalid_id', 'Некорректный ID мира (ожидается целое >= 0).', 400, 'id');
+            }
+        } elseif ($pathParam === null || $pathParam === '') {
+            ai_fail('missing_required_field', 'Укажите world / world_id / id или относительный path карты.', 400, 'id');
+        }
+
+        $renderOpts = [
+            'mode' => trim((string)($_GET['mode'] ?? 'hybrid')),
+            'target' => trim((string)($_GET['target'] ?? 'overview')),
+        ];
+        foreach (['width', 'height', 'pad_tiles', 'x', 'y', 'radius', 'radius_tiles', 'x0', 'y0', 'x1', 'y1', 'tx0', 'ty0', 'tx1', 'ty1', 'highlight_x', 'highlight_y'] as $ik) {
+            if (isset($_GET[$ik]) && is_numeric($_GET[$ik])) {
+                $renderOpts[$ik] = (int)$_GET[$ik];
+            }
+        }
+        foreach (['show_grid', 'show_structures', 'show_labels', 'show_objects', 'show_collision'] as $bk) {
+            if (isset($_GET[$bk]) && (string)$_GET[$bk] !== '') {
+                $renderOpts[$bk] = ((string)$_GET[$bk]) !== '0' && strtolower((string)$_GET[$bk]) !== 'false';
+            }
+        }
+        $format = strtolower(trim((string)($_GET['format'] ?? 'json')));
+        if (!in_array($format, ['json', 'png'], true)) {
+            ai_fail('invalid_format', 'Поддерживаются только format=json и format=png.', 400, 'format', ['allowed' => ['json', 'png']]);
+        }
+
+        $db = $worldId !== null ? db_connect() : null;
+        try {
+            $res = ai_map_screenshot_request($db, $worldId, $pathParam, $ROLE, null, $renderOpts);
+        } finally {
+            if ($db !== null) {
+                $db->close();
+            }
+        }
+
+        $shot = $res['screenshot'];
+        $pngBytes = (string)$shot['png_bytes'];
+        unset($shot['png_bytes']);
+
+        if ($format === 'png') {
+            apply_security_headers();
+            header('Content-Type: image/png');
+            header('Content-Length: ' . strlen($pngBytes));
+            header('Cache-Control: no-store');
+            header('X-Map-Viewport: ' . sprintf(
+                '%d,%d,%d,%d',
+                (int)$shot['viewport']['tx0'],
+                (int)$shot['viewport']['ty0'],
+                (int)$shot['viewport']['tx1'],
+                (int)$shot['viewport']['ty1']
+            ));
+            header('X-Map-Renderer: ' . (string)$shot['renderer']);
+            echo $pngBytes;
+            exit;
+        }
+
+        $b64 = base64_encode($pngBytes);
+        $shot['image_base64'] = $b64;
+        $shot['data_uri'] = 'data:image/png;base64,' . $b64;
+        $res['screenshot'] = $shot;
+        respond(array_merge(['ok' => true], $res));
     }
 
     // ── GET similar (поиск похожих существующих записей, анти-дубли) ─────────
@@ -460,7 +650,14 @@ try {
                 $incEnt = ((string)($_GET['include_entities'] ?? '0')) === '1';
                 $px = isset($_GET['x']) && is_numeric($_GET['x']) ? (int)$_GET['x'] : null;
                 $py = isset($_GET['y']) && is_numeric($_GET['y']) ? (int)$_GET['y'] : null;
-                $parsed = ai_map_parse_datafile($loaded['bytes'], $incEnt, $px, $py);
+                $extraOpts = [
+                    'include_minimap' => ((string)($_GET['include_minimap'] ?? '0')) === '1',
+                ];
+                if (isset($_GET['target']) && trim((string)$_GET['target']) !== '') {
+                    $extraOpts['viewport_params'] = ['target' => trim((string)$_GET['target'])];
+                }
+                $effectiveWid = $worldId ?? (isset($loaded['world']['ID']) ? (int)$loaded['world']['ID'] : null);
+                $parsed = ai_map_parse_datafile($loaded['bytes'], $incEnt, $px, $py, $db, $effectiveWid, $ROLE, null, $extraOpts);
                 respond([
                     'ok' => true,
                     'resource' => 'maps',
@@ -492,6 +689,19 @@ try {
                 respond(['ok' => true, 'resource' => $resource, 'id' => $recId, 'record' => $row]);
             }
 
+            $rawIdsParam = trim((string)($_GET['ids'] ?? ''));
+            if ($rawIdsParam !== '') {
+                $idTokens = array_values(array_filter(array_map('trim', explode(',', $rawIdsParam)), static fn(string $s): bool => $s !== ''));
+                $R = editor_resources()[$resource] + ['key' => $resource];
+                $decode = ((string)($_GET['decode'] ?? '1')) !== '0';
+                $batch = ai_query_db_batch_get($db, $R, $idTokens, [
+                    'fields' => $_GET['fields'] ?? null,
+                    'decode' => $decode,
+                    'max_bytes' => $_GET['max_bytes'] ?? null,
+                ]);
+                respond(array_merge(['ok' => true, 'resource' => $resource, 'batch' => true], $batch));
+            }
+
             $rawId = (string)($_GET['id'] ?? '');
             $recId = crud_record_id($rawId, $resource);
             if ($recId === null) {
@@ -508,7 +718,7 @@ try {
             $decoded = ai_project_record_fields($decoded, $R, $_GET['fields'] ?? null);
             $out = ['ok' => true, 'resource' => $resource, 'id' => $recId, 'record' => $decoded];
             if ($includeRefs) {
-                $out['references'] = ai_references_inspect($db, $resource, $recId, $ROLE);
+                $out['references'] = ai_references_inspect($db, $resource, $recId, $ROLE, null, null, $row);
             }
             respond($out);
         } finally {
@@ -629,6 +839,85 @@ try {
         ]);
     }
 
+    // ── GET request (детали Change Request, статус, review и переписка) ─────
+    if ($action === 'request') {
+        $reqId = trim((string)($_GET['id'] ?? ($_GET['request_id'] ?? '')));
+        if ($reqId === '') {
+            ai_fail('missing_required_field', 'Укажите параметр id запроса на изменение.', 400, 'id');
+        }
+        $req = cr_load_visible($reqId, $IS_ADMIN);
+        $view = cr_full_view($req, $IS_ADMIN);
+        $msgRole = $IS_ADMIN ? 'admin' : 'guest';
+        $view['messages'] = cr_msg_list((string)$req['id'], $msgRole);
+        $view['unread'] = cr_msg_unread_for((string)$req['id'], $msgRole);
+        respond(['ok' => true, 'request' => $view]);
+    }
+
+    // ── POST request_reply (ответ в переписке по Change Request) ────────────
+    if ($action === 'request_reply') {
+        if (!$IS_ADMIN && !ai_actor_has_scope('create') && !ai_actor_has_scope('update')) {
+            ai_require_scope('update');
+        }
+        $body = ai_read_body();
+        $reqId = trim((string)($body['id'] ?? ($body['request_id'] ?? '')));
+        if ($reqId === '') {
+            ai_fail('missing_required_field', 'Укажите id запроса на изменение.', 400, 'id');
+        }
+        $req = cr_load_visible($reqId, $IS_ADMIN);
+        $text = cr_msg_validate($body['body'] ?? ($body['text'] ?? ($body['message'] ?? '')));
+        $msgRole = $IS_ADMIN ? 'admin' : 'guest';
+        $authorId = $IS_ADMIN
+            ? (string)($_SESSION['editor_studio_user'] ?? 'admin')
+            : (string)($account['id'] ?? '');
+        $authorName = $IS_ADMIN
+            ? ($authorId !== '' ? $authorId : 'admin')
+            : (string)($account['name'] ?? $req['author']['guestName'] ?? 'AI Guest');
+        $rateKey = 'cr-msg|' . $msgRole . '|' . ($authorId !== '' ? $authorId : get_request_ip());
+        $now = time();
+        $last = store_rate_get($rateKey);
+        if ($last > 0 && $last + 3 > $now) {
+            respond_rate_limited($last + 3 - $now, 'Слишком быстро — подождите несколько секунд.');
+        }
+        if (count(cr_msg_list((string)$req['id'], $msgRole)) >= 1000) {
+            ai_fail('thread_limit_reached', 'Диалог по этому запросу достиг предела (1000 сообщений).', 409);
+        }
+        $msg = cr_with_lock(function () use ($req, $msgRole, $authorId, $authorName, $text) {
+            $created = cr_msg_add((string)$req['id'], $msgRole, $authorId, $authorName, $text);
+            cr_msg_mark_read((string)$req['id'], $msgRole);
+            $fresh = cr_load((string)$req['id']) ?? $req;
+            $fresh['updatedAt'] = cr_now();
+            cr_save($fresh);
+            return $created;
+        });
+        store_rate_touch($rateKey, $now);
+        editor_audit('ai.request.reply', (string)$req['id'], ['role' => $msgRole]);
+        respond(['ok' => true, 'request_id' => (string)$req['id'], 'message' => $msg]);
+    }
+
+    // ── POST request_withdraw (отзыв собственного pending Change Request) ───
+    if ($action === 'request_withdraw') {
+        if (!$IS_ADMIN && !ai_actor_has_scope('update') && !ai_actor_has_scope('delete')) {
+            ai_require_scope('delete');
+        }
+        $body = ai_read_body();
+        $reqId = trim((string)($body['id'] ?? ($body['request_id'] ?? '')));
+        if ($reqId === '') {
+            ai_fail('missing_required_field', 'Укажите id запроса на изменение.', 400, 'id');
+        }
+        $updated = cr_with_lock(function () use ($reqId, $IS_ADMIN) {
+            $req = cr_load_visible($reqId, $IS_ADMIN);
+            if ($req['status'] !== 'pending') {
+                throw new CrInputError('Можно отозвать только запрос на рассмотрении.', 409, ['code' => 'request_not_pending']);
+            }
+            $req['status'] = 'withdrawn';
+            $req['updatedAt'] = cr_now();
+            cr_save($req);
+            return $req;
+        });
+        editor_audit('ai.request.withdraw', (string)$updated['id']);
+        respond(['ok' => true, 'request' => cr_full_view($updated, $IS_ADMIN)]);
+    }
+
     // ── POST apply_patch (read-only серверная проверка patch_json) ─────────
     if ($action === 'apply_patch') {
         ai_require_scope('read');
@@ -657,6 +946,7 @@ try {
             'valid' => $res['valid'],
             'errors' => $res['errors'],
             'warnings' => $res['warnings'],
+            'resolved_refs' => $res['resolved_refs'] ?? new stdClass(),
             'required_scopes' => $res['required_scopes'],
             'requires_confirmation' => $res['requires_confirmation'],
             'dangerous_actions' => $res['dangerous_actions'],
@@ -702,6 +992,7 @@ try {
             'valid' => true,
             'analysis' => $analysis,
             'warnings' => $val['warnings'],
+            'resolved_refs' => $val['resolved_refs'] ?? new stdClass(),
             'required_scopes' => $val['required_scopes'],
             'requires_confirmation' => $val['requires_confirmation'],
             'dangerous_actions' => $val['dangerous_actions'],
@@ -879,6 +1170,7 @@ try {
                 'revised' => true,
                 'duplicate' => false,
                 'warnings' => $val['warnings'],
+                'resolved_refs' => $val['resolved_refs'] ?? new stdClass(),
                 'request' => cr_full_view($updated, false),
             ]);
         }
@@ -958,6 +1250,7 @@ try {
             'ok' => true,
             'duplicate' => $res['duplicate'],
             'warnings' => $val['warnings'],
+            'resolved_refs' => $val['resolved_refs'] ?? new stdClass(),
             'request' => cr_full_view($res['req'], false),
         ]);
     }

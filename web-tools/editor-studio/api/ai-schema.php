@@ -17,7 +17,11 @@ require_once __DIR__ . '/scenario-files.php';
  */
 function ai_schema_tables(): array
 {
-    return [
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    $cache = [
         'worlds' => [
             'allow_zero_id' => true,
             'required_on_create' => ['Name', 'Path', 'Type', 'RespawnWorldID', 'JailWorldID'],
@@ -238,12 +242,17 @@ function ai_schema_tables(): array
             ],
         ],
     ];
+    return $cache;
 }
 
 /** Справочники-словари (только чтение). */
 function ai_schema_lookups(): array
 {
-    return [
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    $cache = [
         'attributes' => [
             'table' => 'tw_attributes',
             'pk' => 'ID',
@@ -267,17 +276,22 @@ function ai_schema_lookups(): array
             'readonly' => true,
         ],
     ];
+    return $cache;
 }
 
 /** Схемы сценариев и доступных компонентов (соответствует editor-core/registry.js). */
 function ai_schema_scenario_definitions(): array
 {
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
     $defaultComponents = [
         'branch_random', 'use_chat_code', 'message', 'wait', 'follow_camera',
         'dynamic_condition', 'condition_movement', 'teleport', 'moving_disable',
         'emote', 'quest_action', 'quest_condition', 'defeat_mobs', 'restore_resources',
     ];
-    return [
+    $cache = [
         'modes' => [
             'default' => ['label' => 'Default', 'components' => $defaultComponents],
             'dungeon' => [
@@ -312,12 +326,17 @@ function ai_schema_scenario_definitions(): array
         'legacy_components' => scenario_legacy_component_types(),
         'timing_unit' => 'ticks (50 ticks ≈ 1 second in Teeworlds/DDNet)',
     ];
+    return $cache;
 }
 
 /** Схема тайлов и координат DDNet .map для AI-инспекции карт. */
 function ai_schema_map_definitions(): array
 {
-    return [
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    $cache = [
         'tile_size_px' => 32,
         'tile_center_offset_px' => 16,
         'formula' => 'pixel = tile * 32 + 16; tile = floor(pixel / 32)',
@@ -337,7 +356,30 @@ function ai_schema_map_definitions(): array
             22 => 'swZone', 23 => 'swText', 24 => 'swHouseZone', 25 => 'swActionZone',
             199 => 'plant', 200 => 'ore', 201 => 'fish',
         ],
+        'special_tiles' => [
+            4 => 'fixed_camera', 5 => 'fixed_camera_smooth', 6 => 'water', 8 => 'player_house',
+            11 => 'destroyer_projectile', 14 => 'world_swapper', 15 => 'jail_zone', 16 => 'guild_house',
+            17 => 'auction', 21 => 'quest_board', 28 => 'aether_teleport', 29 => 'shop_zone',
+            30 => 'craft_zone', 32 => 'guild_chair', 33 => 'chair_lv1', 34 => 'chair_lv2',
+            35 => 'chair_lv3', 38 => 'bank_manager', 39 => 'fishing_mode', 40 => 'casino_action',
+            60 => 'stop_all', 61 => 'stop_single', 62 => 'stop_both',
+        ],
+        'tele_tiles' => [
+            10 => 'tele_from_confirm',
+            26 => 'tele_from',
+            27 => 'tele_out',
+        ],
+        'visual_categories' => [
+            'architecture', 'interior', 'terrain', 'nature', 'water', 'props', 'lighting_fx', 'sky_bg', 'other',
+        ],
+        'structure_kinds' => [
+            'castle_or_guild_hall', 'house', 'shop_or_service', 'dungeon_or_ruins', 'cave_or_underground', 'building',
+        ],
+        'screenshot_modes' => [
+            'hybrid', 'visual', 'schematic',
+        ],
     ];
+    return $cache;
 }
 
 /**
@@ -489,7 +531,20 @@ function ai_schema_validate_db_record(
     if ($opType === 'create') {
         foreach ($schema['required_on_create'] ?? [] as $reqCol) {
             if (!array_key_exists($reqCol, $rawData) || $rawData[$reqCol] === null || ($rawData[$reqCol] === '' && (($colSchemas[$reqCol]['type'] ?? '') !== 'string'))) {
-                $addError('missing_required_field', $reqCol, "Обязательное поле «{$reqCol}» не задано для создания записи «{$R['title']}».");
+                $reqDef = $colSchemas[$reqCol] ?? [];
+                $extra = ['expected_type' => (string)($reqDef['type'] ?? 'string')];
+                if (array_key_exists('default', $reqDef)) {
+                    $extra['default'] = $reqDef['default'];
+                }
+                if (!empty($reqDef['enum'])) {
+                    $extra['allowed'] = $reqDef['enum'];
+                } elseif (!empty($reqDef['set'])) {
+                    $extra['allowed'] = $reqDef['set'];
+                }
+                if (!empty($reqDef['description'])) {
+                    $extra['hint'] = (string)$reqDef['description'];
+                }
+                $addError('missing_required_field', $reqCol, "Обязательное поле «{$reqCol}» не задано для создания записи «{$R['title']}».", $extra);
             }
         }
     }
@@ -531,13 +586,29 @@ function ai_schema_validate_db_record(
             }
             $allowed = $colDef['enum'] ?? [];
             if (!in_array($valStr, $allowed, true)) {
-                $addError('invalid_enum_value', $col, "Недопустимое значение «{$valStr}» для поля «{$col}».", ['allowed' => $allowed]);
+                $suggest = ai_schema_suggest_closest($valStr, $allowed, 3);
+                $extra = ['allowed' => $allowed];
+                if ($suggest !== []) {
+                    $extra['did_you_mean'] = $suggest;
+                    $extra['hint'] = 'Возможно, имелось в виду: ' . implode(', ', $suggest) . '.';
+                }
+                $addError('invalid_enum_value', $col, "Недопустимое значение «{$valStr}» для поля «{$col}».", $extra);
             }
         } elseif ($type === 'set') {
             $allowed = $colDef['set'] ?? [];
             $check = ai_validate_set_value($rawVal, $allowed);
             if (!$check['ok']) {
-                $addError('invalid_set_value', $col, 'Недопустимые флаги в поле «' . $col . '»: ' . implode(', ', $check['invalid'] ?? []), ['allowed' => $allowed]);
+                $extra = ['allowed' => $allowed];
+                $sug = [];
+                foreach ($check['invalid'] ?? [] as $inv) {
+                    foreach (ai_schema_suggest_closest((string)$inv, $allowed, 2) as $cand) {
+                        $sug[$cand] = true;
+                    }
+                }
+                if ($sug !== []) {
+                    $extra['did_you_mean'] = array_keys($sug);
+                }
+                $addError('invalid_set_value', $col, 'Недопустимые флаги в поле «' . $col . '»: ' . implode(', ', $check['invalid'] ?? []), $extra);
             }
         } elseif ($type === 'string') {
             if (!is_string($rawVal) && !is_numeric($rawVal)) {
@@ -588,7 +659,10 @@ function ai_schema_validate_db_record(
                 }
                 $decoded = json_decode($trimmed, true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
-                    $addError('invalid_json', $col, "Поле «{$col}» содержит некорректный JSON: " . json_last_error_msg());
+                    $addError('invalid_json', $col, "Поле «{$col}» содержит некорректный JSON: " . json_last_error_msg(), [
+                        'expected_type' => 'json',
+                        'hint' => 'Передайте валидный JSON-объект/массив или JSON-строку (либо используйте patch_json для частичного обновления).',
+                    ]);
                     continue;
                 }
             } else {
@@ -770,21 +844,29 @@ function ai_schema_auto_resource(string $resourceKey, array $R): array
 
 function ai_schema_for_resource(string $resourceKey): ?array
 {
+    static $cache = [];
+    if (array_key_exists($resourceKey, $cache)) {
+        return $cache[$resourceKey];
+    }
     $tables = ai_schema_tables();
     if (isset($tables[$resourceKey])) {
-        return $tables[$resourceKey];
+        return $cache[$resourceKey] = $tables[$resourceKey];
     }
     $R = editor_resources()[$resourceKey] ?? null;
     if ($R === null) {
-        return null;
+        return $cache[$resourceKey] = null;
     }
-    return ai_schema_auto_resource($resourceKey, $R);
+    return $cache[$resourceKey] = ai_schema_auto_resource($resourceKey, $R);
 }
 
 /** Примеры корректных create/update_patch_json/copy операций для MRPG 0.6. */
 function ai_schema_examples(): array
 {
-    return [
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    $cache = [
         'items' => [
             'create' => [
                 'action' => 'create',
@@ -886,6 +968,7 @@ function ai_schema_examples(): array
             ],
         ],
     ];
+    return $cache;
 }
 
 function ai_schema_example_for(string $resourceKey, ?array $R = null, ?array $schema = null): array
@@ -921,3 +1004,145 @@ function ai_schema_example_for(string $resourceKey, ?array $R = null, ?array $sc
         'create' => ['action' => 'create', 'resource' => $resourceKey, 'data' => $sample],
     ];
 }
+
+/**
+ * Подбор ближайших допустимых значений (имена полей, ресурсы, enum/set)
+ * для самовосстанавливающихся подсказок `did_you_mean` в ошибках AI API.
+ *
+ * @param array<int, string> $candidates
+ * @return array<int, string>
+ */
+function ai_schema_suggest_closest(string $input, array $candidates, int $max = 3): array
+{
+    $needle = trim($input);
+    if ($needle === '' || $candidates === []) {
+        return [];
+    }
+    $needleLower = strtolower($needle);
+    $needleCompact = preg_replace('/[^a-z0-9]+/', '', $needleLower) ?? $needleLower;
+
+    // Частые MRPG-путаницы имён полей между таблицами (PositionX vs PosX vs TeleX vs DoorX и т.д.).
+    $aliasGroups = [
+        ['positionx', 'posx', 'telex', 'doorx', 'x'],
+        ['positiony', 'posy', 'teley', 'doory', 'y'],
+        ['worldid', 'world', 'mapid'],
+        ['botid', 'bot'],
+        ['itemid', 'item'],
+        ['questid', 'quest', 'givequestid', 'nextquestid'],
+        ['scenario', 'scenariodata'],
+        ['dialog', 'dialogdata'],
+        ['tasks', 'tasksdata'],
+        ['storage', 'storagedata'],
+    ];
+    $aliasNeighbors = [];
+    foreach ($aliasGroups as $group) {
+        if (in_array($needleCompact, $group, true)) {
+            foreach ($group as $g) {
+                $aliasNeighbors[$g] = true;
+            }
+        }
+    }
+
+    $scored = [];
+    foreach ($candidates as $cand) {
+        $candStr = (string)$cand;
+        if ($candStr === '') {
+            continue;
+        }
+        $candLower = strtolower($candStr);
+        $candCompact = preg_replace('/[^a-z0-9]+/', '', $candLower) ?? $candLower;
+        $score = 0.0;
+
+        if ($candLower === $needleLower || $candCompact === $needleCompact) {
+            $score = 1.0;
+        } elseif (isset($aliasNeighbors[$candCompact])) {
+            $score = 0.92;
+        } else {
+            if (str_contains($candLower, $needleLower) || str_contains($needleLower, $candLower)) {
+                $score = max($score, 0.78);
+            }
+            $maxLen = max(strlen($needleCompact), strlen($candCompact), 1);
+            if ($maxLen <= 120) {
+                $dist = levenshtein($needleCompact, $candCompact);
+                $levScore = 1.0 - ($dist / $maxLen);
+                if ($levScore > $score) {
+                    $score = $levScore;
+                }
+            }
+        }
+
+        if ($score >= 0.45) {
+            $scored[] = ['value' => $candStr, 'score' => $score];
+        }
+    }
+
+    usort($scored, static function (array $a, array $b): int {
+        if ($a['score'] !== $b['score']) {
+            return $b['score'] <=> $a['score'];
+        }
+        return strcmp($a['value'], $b['value']);
+    });
+
+    return array_slice(array_column($scored, 'value'), 0, max(1, $max));
+}
+
+/**
+ * Компактная шпаргалка (cookbook) по правилам и DSL Teeworlds-MRPG-0.6 для AI.
+ * Публикуется в MCP resource `mrpg://cookbook`, в /llms.txt и при необходимости в manifest.
+ */
+function ai_schema_cookbook(): array
+{
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    $cache = [
+        'version' => '2.0',
+        'coordinates' => [
+            'unit' => 'world_pixels',
+            'formula' => 'pixel = tile * 32 + 16 (tile center)',
+            'columns_by_resource' => [
+                'bots_mobs' => ['PositionX', 'PositionY'],
+                'bots_npc' => ['PosX', 'PosY'],
+                'quest_bots' => ['PosX', 'PosY'],
+                'warehouses' => ['PosX', 'PosY'],
+                'quest_boards' => ['PosX', 'PosY'],
+                'aethers' => ['TeleX', 'TeleY'],
+                'dungeons' => ['DoorX', 'DoorY'],
+            ],
+            'tip' => 'Always verify placement with analyze_map (point_check / nearest_standable_point) and visually confirm via get_map_screenshot before proposing NPCs, mobs, quest steps, shops, or teleports.',
+        ],
+        'symbolic_refs' => [
+            'description' => 'Link newly created records inside one atomic Change Request without manually juggling numeric tempIds (2000000001..).',
+            'declare' => 'Add "ref": "my_alias" (letters/digits/_/-) to any DB create/copy operation.',
+            'reference' => 'Use "$my_alias" in FK columns ("ItemID": "$my_sword", "BotID": "$npc_bot"), inside MRPG DSL strings ("RequiredItems": "[$my_ore/3]", "Trades": "*Shop\\n[$my_sword/1(100)]"), or inside JSON fields (TasksData, ScenarioData, Data, scenarios).',
+            'compatibility' => 'Explicit numeric tempId (2000000000..2000999999) remains fully supported.',
+        ],
+        'dsl_cheatsheet' => [
+            'crafts.RequiredItems' => 'Comma-separated [ItemID/Qty] pairs, e.g. "[12/3],[45/1]" or "[$ore/5]"',
+            'crafts.GroupName' => 'Pipe-prefixed hierarchy: "|Smithing|Weapons" or "|Alchemy|Potions:HP"',
+            'warehouses.Trades' => "Multiline groups starting with *GroupName and entries [ItemID/Qty(Price)] or [ItemID/Qty(Price/AltItemID)], e.g.:\n*Weapons\n[12/1(500)]",
+            'nodes_collecting.Properties' => 'One or more [ItemID/Chance] or [ItemID/Qty/Chance] entries, e.g. "[14/100] [15/2/12.5]"',
+            'bots_mobs.it_drop_count' => '5 pipe-delimited integers: "|1|2|0|0|0|"',
+            'bots_mobs.it_drop_chance' => '5 pipe-delimited floats: "|100|15.5|0|0|0|"',
+        ],
+        'filtering_and_sorting' => [
+            'exact' => '{"WorldID": 0, "Group": "Equipment"}',
+            'in_list' => '{"Group": ["Equipment", "Potion"]}',
+            'operators' => '{"Level": {"gte": 5, "lte": 15}, "Name": {"contains": "Iron"}, "NextQuestID": {"not_null": true}}',
+            'supported_operators' => ['eq', 'ne', 'gt', 'gte', 'lt', 'lte', 'contains', 'prefix', 'like', 'in', 'is_null', 'not_null'],
+            'sort' => 'sort="ID:desc" or sort="-Level,Name:asc"',
+        ],
+        'safe_editing_rules' => [
+            '1. Orient quickly using search_editor (cross-resource search) and get_context (complete world/quest/item/bot snapshot).',
+            '2. Check duplicates before creating: find_similar (GET action=similar).',
+            '3. Read multiple IDs at once via get_record with ids=[1,2,3] (GET action=get&ids=1,2,3).',
+            '4. Prefer patch_json (RFC 7396 merge patch) over full replacement; verify read-only via apply_patch before proposing.',
+            '5. Check scenario structure & missing deps via analyze_scenario; inspect maps & buildings via analyze_map + get_map_screenshot.',
+            '6. Submit via validate -> preview -> propose (with confirm_dangerous=true only after reviewing dangerous_actions).',
+            '7. Track review feedback, reply to admins, revise, or withdraw pending drafts via manage_change_request (REST action=request / request_reply / request_withdraw).',
+        ],
+    ];
+    return $cache;
+}
+

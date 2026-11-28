@@ -465,9 +465,9 @@ test('End-to-End 12 AI Modernization Scenarios (Onboarding, Auto-Discovery, MCP/
       urlPath: '/mcp', method: 'POST', headers: authHeaders,
       body: { jsonrpc: '2.0', id: 2, method: 'tools/list' },
     });
-    assert.equal(mcpTools.json.result.tools.length, 14);
+    assert.equal(mcpTools.json.result.tools.length, 19);
     const mcpToolNames = mcpTools.json.result.tools.map((t) => t.name);
-    for (const tool of ['analyze_scenario', 'find_similar', 'apply_patch']) {
+    for (const tool of ['search_editor', 'get_context', 'manage_change_request', 'analyze_scenario', 'analyze_map', 'get_map_screenshot', 'find_similar', 'apply_patch']) {
       assert.ok(mcpToolNames.includes(tool), `tools/list должен включать ${tool}`);
     }
 

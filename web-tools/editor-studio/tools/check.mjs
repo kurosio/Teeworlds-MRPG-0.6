@@ -997,7 +997,7 @@ const DATA_STRINGS = new Set([
   // имена собственные и технические токены
   'Editor Studio', 'English', 'Liberation Mono', 'Backspace', 'use strict', 'unhandled rejection',
   // технические значения, которые не переводятся
-  'NULL', 'OK', 'OUT', 'POST', 'GET', 'PUT', 'SELECT', 'TRUE', 'FALSE', 'Title', 'Skin.', 'text/plain',
+  'NULL', 'OK', 'OUT', 'POST', 'GET', 'PUT', 'SELECT', 'TRUE', 'FALSE', 'Bearer', 'Title', 'Skin.', 'text/plain',
   'Enter', 'Escape', 'Shift', 'Delete', 'Tab', 'Backspace', 'Home', 'End', 'Business', 'Data', 'Personal',
   'Esc', 'Ctrl K', 'Ctrl B', 'Ctrl Tab', 'Ctrl Shift T', 'Alt 1…9', 'Alt ←/→', 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789',
   'Default (components/default.h)', 'application/json', 'NPC • Editor Studio', 'Editor registry requires an id.',
