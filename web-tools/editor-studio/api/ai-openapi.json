@@ -4,7 +4,7 @@
   "info": {
     "title": "Teeworlds-MRPG-0.6 Editor Studio Universal AI & MCP API",
     "version": "2.0.0",
-    "summary": "Model-agnostic AI content creation, inspection, scenario analysis (components, missing dependencies, reuse), similar-record search, safe server-side patch_json verification, dry-run diff preview, MCP JSON-RPC 2.0, and Change Request API for game database tables, scenario JSON files, and DDNet v4 maps.",
+    "summary": "Model-agnostic AI content creation, inspection, scenario analysis, semantic map & structure analysis (buildings, castles, houses, caves, terrain, zones, DB objects) with real PNG map screenshots, similar-record search, safe server-side patch_json verification, dry-run diff preview, MCP JSON-RPC 2.0, and Change Request API for game database tables, scenario JSON files, and DDNet v4 maps.",
     "description": "Autonomous model-agnostic AI integration platform for Teeworlds-MRPG-0.6 Editor Studio. Share a single link (/ai or /) for instant self-discovery via /.well-known/ai-plugin.json (alias api/ai.php?action=discovery), api/ai.php?action=openapi (works on every host, including those blocking static .json; /openapi.json is the same document behind rewrite rules only), /mcp, or /api/ai.php?action=manifest. Recommended read-only preflight: action=analyze (scenario corpus/file analysis) and action=similar (anti-duplicates), then verify edits with action=apply_patch before action=propose. Authenticate with a scoped Bearer AI token (Authorization: Bearer esai_<token>) or guest cookie session. Direct SQL/disk mutations are impossible; writes submit reversible Change Requests reviewed by an administrator."
   },
   "servers": [
@@ -214,6 +214,11 @@
             "minimum": 2000000000,
             "maximum": 2000999999,
             "description": "Optional explicit temporary ID (2000000000..2000999999) on DB create/copy (auto-assigned sequentially if omitted)."
+          },
+          "ref": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_.-]{0,63}$",
+            "description": "Optional symbolic alias on DB create/copy (e.g. \"boss_sword\"). Server assigns a tempId and substitutes \"$boss_sword\" across all subsequent operations' data and patch_json, returning resolved_refs."
           },
           "data": {
             "type": "object",
@@ -449,6 +454,36 @@
             "description": "DB resources only: map of column → expected current value; mismatch fails with 409 version_conflict."
           }
         }
+      },
+      "RequestReplyRequest": {
+        "type": "object",
+        "required": [
+          "id",
+          "text"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Owned Change Request ID (e.g. cr_...)."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Reply text to append to the Change Request discussion thread (alias: message)."
+          }
+        }
+      },
+      "RequestWithdrawRequest": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Owned pending Change Request ID to withdraw."
+          }
+        }
       }
     }
   },
@@ -508,6 +543,20 @@
         }
       }
     },
+    "/llms.txt": {
+      "get": {
+        "tags": [
+          "discovery"
+        ],
+        "operationId": "llmsTxt",
+        "summary": "Public Markdown quickstart guide for LLMs and autonomous agents (also at api/ai.php?action=llms_txt)",
+        "responses": {
+          "200": {
+            "description": "text/markdown quickstart guide"
+          }
+        }
+      }
+    },
     "/mcp": {
       "get": {
         "tags": [
@@ -526,7 +575,7 @@
           "mcp"
         ],
         "operationId": "mcpJsonRpc",
-        "summary": "MCP JSON-RPC 2.0 endpoint (initialize, tools/list, tools/call, resources/list, resources/read, prompts/list, prompts/get)",
+        "summary": "MCP JSON-RPC 2.0 endpoint (initialize with protocol negotiation 2024-11-05/2025-03-26/2025-06-18, tools/list, tools/call, resources/list, resources/templates/list, resources/read, prompts/list, prompts/get)",
         "security": [
           {
             "BearerAuth": []
@@ -694,7 +743,7 @@
           "read"
         ],
         "operationId": "aiGet",
-        "summary": "Discover OpenAPI/manifest schemas or inspect DB tables, scenarios, lookups, maps, references, similar records, and scenario analysis",
+        "summary": "Discover OpenAPI/manifest schemas or inspect DB tables, scenarios, lookups, maps (including semantic building/structure recognition and PNG map screenshots), references, similar records, and scenario/map analysis",
         "security": [
           {
             "BearerAuth": []
@@ -713,17 +762,89 @@
               "enum": [
                 "discovery",
                 "openapi",
+                "llms_txt",
                 "manifest",
                 "resources",
                 "list",
                 "get",
+                "search",
+                "context",
                 "references",
                 "analyze",
+                "map_screenshot",
                 "similar",
-                "history"
+                "history",
+                "request"
               ]
             },
-            "description": "Action to perform. analyze: scenario corpus/file analysis (components, missing dependencies, reuse). similar: find existing records similar to a proposed name (anti-duplicates)."
+            "description": "Action to perform. llms_txt: public Markdown quickstart. search: cross-resource search across all accessible tables/scenarios/maps. context: 360-degree entity neighborhood (record + outbound/inbound relations + scenario links). request: inspect a Change Request with review discussion messages. analyze: scenario corpus/file analysis or deep semantic map analysis. map_screenshot: visual/hybrid/schematic PNG screenshot. similar: anti-duplicate search."
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "For action=get on DB resources: comma-separated list of up to 50 integer IDs for batch retrieval (e.g. 10,20,30)."
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "For action=list on DB resources: column name or -column for descending sort (e.g. -ID, Name, -Price)."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "For action=search: search query string (alias: search)."
+          },
+          {
+            "name": "resources",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "For action=search: optional comma-separated subset of resource keys to scan."
+          },
+          {
+            "name": "per_resource_limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 5
+            },
+            "description": "For action=search: max hits returned per resource."
+          },
+          {
+            "name": "max_relations",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            },
+            "description": "For action=context: max related rows returned per relation bucket."
+          },
+          {
+            "name": "include_messages",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "1"
+            },
+            "description": "For action=request: include review discussion messages (default 1)."
           },
           {
             "name": "include_schemas",
@@ -938,7 +1059,7 @@
             "schema": {
               "type": "integer"
             },
-            "description": "For get&resource=maps: pixel X coordinate for tile walkability probe."
+            "description": "For get|analyze|map_screenshot on maps: world pixel X coordinate for rich point context (enclosure, visual layers, inside_structure, nearest_standable_point) or region center."
           },
           {
             "name": "y",
@@ -946,7 +1067,198 @@
             "schema": {
               "type": "integer"
             },
-            "description": "For get&resource=maps: pixel Y coordinate for tile walkability probe."
+            "description": "For get|analyze|map_screenshot on maps: world pixel Y coordinate for rich point context or region center."
+          },
+          {
+            "name": "target",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "For analyze&resource=maps or map_screenshot: viewport focus (overview, spawn, guild_house:<id>, house:<id>, zone:<num|name>, structure:<id>, warehouse:<id>, aether:<id>, or partial name)."
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "hybrid",
+                "visual",
+                "schematic"
+              ],
+              "default": "hybrid"
+            },
+            "description": "For map_screenshot: hybrid (real visual tilesets + structure/house/castle overlays & labels), visual (clean in-game view), or schematic (collision/interior/terrain blueprint)."
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "png"
+              ],
+              "default": "json"
+            },
+            "description": "For map_screenshot: json returns base64 PNG + coordinate mapping & visible structures; png streams raw image/png bytes."
+          },
+          {
+            "name": "structure_kind",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "castle_or_guild_hall",
+                "house",
+                "shop_or_service",
+                "dungeon_or_ruins",
+                "cave_or_underground",
+                "building"
+              ]
+            },
+            "description": "For analyze&resource=maps: optional filter for structures.items by recognized structure kind."
+          },
+          {
+            "name": "include_minimap",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "1"
+            },
+            "description": "For maps get/analyze: include semantic ASCII minimap in region_analysis."
+          },
+          {
+            "name": "compact",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "0"
+            },
+            "description": "For analyze&resource=maps: trim per-layer and structure lists for compact token usage."
+          },
+          {
+            "name": "width",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 256,
+              "maximum": 1600,
+              "default": 1024
+            },
+            "description": "For map_screenshot: target PNG width in pixels."
+          },
+          {
+            "name": "height",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 256,
+              "maximum": 1200,
+              "default": 768
+            },
+            "description": "For map_screenshot: maximum PNG height in pixels."
+          },
+          {
+            "name": "radius",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 128,
+              "maximum": 6400
+            },
+            "description": "For analyze&resource=maps or map_screenshot with x/y: pixel radius around point."
+          },
+          {
+            "name": "radius_tiles",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 4,
+              "maximum": 200
+            },
+            "description": "For analyze&resource=maps or map_screenshot with x/y: tile radius around point."
+          },
+          {
+            "name": "pad_tiles",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 40,
+              "default": 6
+            },
+            "description": "For map_screenshot: extra padding tiles around targeted structure/zone."
+          },
+          {
+            "name": "show_grid",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "1"
+            },
+            "description": "For map_screenshot: draw tile/pixel coordinate ruler and status bar."
+          },
+          {
+            "name": "show_structures",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            },
+            "description": "For map_screenshot: overlay recognized structure bounding boxes."
+          },
+          {
+            "name": "show_labels",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            },
+            "description": "For map_screenshot: draw labels for structures, spawns, and objects."
+          },
+          {
+            "name": "show_objects",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            },
+            "description": "For map_screenshot: draw spawn and correlated DB world object markers."
+          },
+          {
+            "name": "show_collision",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ]
+            },
+            "description": "For map_screenshot: overlay game/front collision tiles (solid, unhookable, death, water, house/service tiles)."
           },
           {
             "name": "source",
@@ -959,8 +1271,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Success payload (shape depends on action: manifest/openapi/spec, paginated list, get record, references graph, analyze corpus/scenario report, similar candidates).",
+            "description": "Success payload (shape depends on action: manifest/openapi/spec, paginated list, get record, references graph, analyze scenario/map report, map_screenshot JSON or raw PNG, similar candidates).",
             "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
               "application/json": {
                 "examples": {
                   "manifest": {
@@ -1239,10 +1557,12 @@
                 "validate",
                 "preview",
                 "apply_patch",
-                "propose"
+                "propose",
+                "request_reply",
+                "request_withdraw"
               ]
             },
-            "description": "validate: check operations (read-only). preview: dry-run analysis with diff (read-only). apply_patch: read-only server-side verify of patch_json (before/after/diff, same errors as propose). propose: submit/revise a Change Request."
+            "description": "validate: check operations (read-only, resolves symbolic ref/$alias). preview: dry-run analysis with diff (read-only). apply_patch: read-only server-side verify of patch_json. propose: submit/revise a Change Request. request_reply: post a comment to an owned CR discussion thread. request_withdraw: withdraw an owned pending Change Request."
           }
         ],
         "requestBody": {
@@ -1259,6 +1579,12 @@
                   },
                   {
                     "$ref": "#/components/schemas/ApplyPatchRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RequestReplyRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RequestWithdrawRequest"
                   }
                 ]
               },

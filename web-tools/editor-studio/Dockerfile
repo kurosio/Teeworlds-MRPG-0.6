@@ -7,13 +7,16 @@ RUN apt-get update && apt-get install -y \
     unzip \
     pkg-config \
     libsqlite3-dev \
+    libpng-dev \
+    zlib1g-dev \
     git \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
 # pdo_sqlite обязателен: настройки, гостевые аккаунты и запросы живут в
 # data/editor-studio.sqlite (api/store.php). pdo_mysql — для игровой базы.
-RUN docker-php-ext-install -j"$(nproc)" mysqli pdo_mysql pdo_sqlite
+# gd — для серверного рендера PNG-скриншотов карт AI API / MCP (при отсутствии работает pure-PHP fallback).
+RUN docker-php-ext-install -j"$(nproc)" mysqli pdo_mysql pdo_sqlite gd
 
 RUN a2enmod rewrite headers
 

@@ -345,6 +345,61 @@ function scenario_legacy_component_types(): array
 }
 
 /**
+ * Внутренний кэш распарсенных JSON-сценариев в пределах процесса, привязанный к (path, mtime, size, inode).
+ * Исключает повторное чтение/SHA-256/json_decode при связке list -> read -> analyze/references.
+ *
+ * @return array<string, mixed>|null
+ */
+function scenario_file_cache_access(?string $action = null, ?string $path = null, ?string $filename = null): ?array
+{
+    static $cache = [];
+    if ($action === 'clear') {
+        $cache = [];
+        return null;
+    }
+    if ($path === null || $filename === null) {
+        return null;
+    }
+    clearstatcache(true, $path);
+    $st = @stat($path);
+    if (!is_array($st)) {
+        unset($cache[$path]);
+        return null;
+    }
+    $size = (int)$st['size'];
+    $mtime = (int)$st['mtime'];
+    $ino = (int)$st['ino'];
+    $sig = $mtime . ':' . $size . ':' . $ino;
+    if (isset($cache[$path]) && $cache[$path]['sig'] === $sig) {
+        return $cache[$path];
+    }
+
+    $raw = $size <= SCENARIO_MAX_BYTES ? @file_get_contents($path) : false;
+    $sha = is_string($raw) ? hash('sha256', $raw) : (string)(@hash_file('sha256', $path) ?: '');
+    $decoded = is_string($raw) ? json_decode($raw, true) : null;
+    $parseError = is_string($raw) && json_last_error() !== JSON_ERROR_NONE ? json_last_error_msg() : null;
+    $valid = is_array($decoded) && $parseError === null;
+    $entry = [
+        'sig' => $sig,
+        'filename' => $filename,
+        'bytes' => is_string($raw) ? strlen($raw) : $size,
+        'size' => $size,
+        'mtime' => $mtime,
+        'sha256' => $sha,
+        'raw_ok' => is_string($raw),
+        'valid_json' => $valid,
+        'parse_error' => $parseError,
+        'content' => $valid ? $decoded : null,
+        'summary' => $valid ? scenario_extract_summary($decoded) : null,
+        'references' => $valid ? scenario_extract_references($decoded) : [],
+    ];
+    if (count($cache) >= 256) {
+        array_shift($cache);
+    }
+    return $cache[$path] = $entry;
+}
+
+/**
  * Список всех сценариев (.json) в каталоге scenarios/.
  *
  * @return array<int, array<string, mixed>>
@@ -377,13 +432,15 @@ function scenario_list_files(string $search = '', ?string $baseDir = null): arra
         if (is_link($full) || !is_file($full) || !is_readable($full)) {
             continue;
         }
-        $size = (int)(@filesize($full) ?: 0);
-        $mtime = (int)(@filemtime($full) ?: 0);
-        $raw = $size <= SCENARIO_MAX_BYTES ? @file_get_contents($full) : false;
-        $sha = is_string($raw) ? hash('sha256', $raw) : (string)(@hash_file('sha256', $full) ?: '');
-        $decoded = is_string($raw) ? json_decode($raw, true) : null;
-        $parseError = is_string($raw) && json_last_error() !== JSON_ERROR_NONE ? json_last_error_msg() : null;
-        $summary = is_array($decoded) ? scenario_extract_summary($decoded) : null;
+        $entry = scenario_file_cache_access('get', $full, $name);
+        if ($entry === null) {
+            continue;
+        }
+        $size = (int)$entry['size'];
+        $mtime = (int)$entry['mtime'];
+        $sha = (string)$entry['sha256'];
+        $parseError = $entry['parse_error'];
+        $summary = $entry['summary'];
 
         if ($needleLower !== '') {
             $hay = mb_strtolower(implode(' ', array_filter([
@@ -403,7 +460,7 @@ function scenario_list_files(string $search = '', ?string $baseDir = null): arra
             'bytes' => $size,
             'sha256' => $sha,
             'updated_at' => $mtime > 0 ? gmdate('Y-m-d\TH:i:s\Z', $mtime) : null,
-            'valid_json' => is_array($decoded),
+            'valid_json' => (bool)$entry['valid_json'],
             'parse_error' => $parseError,
             'summary' => $summary,
         ];
@@ -433,32 +490,31 @@ function scenario_read_file(mixed $rawFilename, ?string $baseDir = null): array
             'error' => "Файл сценария «{$resolved['filename']}» превышает лимит " . SCENARIO_MAX_BYTES . ' байт.',
         ];
     }
-    $raw = @file_get_contents($path);
-    if (!is_string($raw)) {
+    $entry = scenario_file_cache_access('get', $path, (string)$resolved['filename']);
+    if ($entry === null || !$entry['raw_ok']) {
         return [
             'ok' => false,
             'code' => 'scenario_read_failed',
             'error' => "Не удалось прочитать файл сценария «{$resolved['filename']}».",
         ];
     }
-    $decoded = json_decode($raw, true);
-    if (!is_array($decoded) || json_last_error() !== JSON_ERROR_NONE) {
+    if (!$entry['valid_json'] || !is_array($entry['content'])) {
         return [
             'ok' => false,
             'code' => 'invalid_scenario_json',
-            'error' => "Файл сценария «{$resolved['filename']}» содержит некорректный JSON: " . json_last_error_msg(),
+            'error' => "Файл сценария «{$resolved['filename']}» содержит некорректный JSON: " . (string)($entry['parse_error'] ?? 'invalid JSON'),
         ];
     }
-    $mtime = (int)(@filemtime($path) ?: 0);
+    $mtime = (int)$entry['mtime'];
     return [
         'ok' => true,
         'filename' => (string)$resolved['filename'],
-        'bytes' => strlen($raw),
-        'sha256' => hash('sha256', $raw),
+        'bytes' => (int)$entry['bytes'],
+        'sha256' => (string)$entry['sha256'],
         'updated_at' => $mtime > 0 ? gmdate('Y-m-d\TH:i:s\Z', $mtime) : null,
-        'content' => $decoded,
-        'summary' => scenario_extract_summary($decoded),
-        'references' => scenario_extract_references($decoded),
+        'content' => $entry['content'],
+        'summary' => $entry['summary'],
+        'references' => $entry['references'],
     ];
 }
 
@@ -699,6 +755,7 @@ function scenario_validate_content(
     ];
     $refs = scenario_extract_references($content);
     $existCache = [];
+    $pendingRefs = [];
     foreach ($refs as $ref) {
         $targetTable = $ref['target'];
         $targetRes = $tableToResource[$targetTable] ?? '';
@@ -731,24 +788,47 @@ function scenario_validate_content(
         }
 
         if ($db !== null) {
-            $cacheKey = "{$targetTable}:{$id}";
-            if (!array_key_exists($cacheKey, $existCache)) {
-                $stmt = $db->prepare("SELECT 1 FROM `{$targetTable}` WHERE `ID` = ? LIMIT 1");
+            $pendingRefs[] = ['table' => $targetTable, 'id' => $id, 'path' => (string)$ref['path']];
+        }
+    }
+
+    // Пакетная проверка ссылок сценария: 1 SELECT ID FROM tbl WHERE ID IN (...) на таблицу вместо N.
+    if ($db !== null && $pendingRefs !== []) {
+        $idsByTable = [];
+        foreach ($pendingRefs as $pr) {
+            $idsByTable[$pr['table']][$pr['id']] = true;
+        }
+        foreach ($idsByTable as $targetTable => $idSet) {
+            $ids = array_keys($idSet);
+            $found = [];
+            foreach (array_chunk($ids, 200) as $chunk) {
+                $ph = implode(', ', array_fill(0, count($chunk), '?'));
+                $stmt = $db->prepare("SELECT `ID` FROM `{$targetTable}` WHERE `ID` IN ($ph)");
                 if ($stmt) {
-                    $stmt->bind_param('i', $id);
+                    $stmt->bind_param(str_repeat('i', count($chunk)), ...$chunk);
                     $stmt->execute();
                     $res = $stmt->get_result();
-                    $existCache[$cacheKey] = ($res && $res->fetch_row() !== null);
+                    while ($res && ($row = $res->fetch_row())) {
+                        $found[(int)$row[0]] = true;
+                    }
                     $stmt->close();
                 } else {
-                    $existCache[$cacheKey] = true;
+                    foreach ($chunk as $cid) {
+                        $found[$cid] = true;
+                    }
                 }
             }
-            if (!$existCache[$cacheKey]) {
+            foreach ($ids as $cid) {
+                $existCache["{$targetTable}:{$cid}"] = isset($found[$cid]);
+            }
+        }
+        foreach ($pendingRefs as $pr) {
+            $cacheKey = "{$pr['table']}:{$pr['id']}";
+            if (empty($existCache[$cacheKey])) {
                 $errors[] = [
                     'code' => 'missing_reference',
-                    'field' => 'content.' . $ref['path'],
-                    'message' => "Ссылка на несуществующую запись {$targetTable} #{$id}.",
+                    'field' => 'content.' . $pr['path'],
+                    'message' => "Ссылка на несуществующую запись {$pr['table']} #{$pr['id']}.",
                 ];
             }
         }
@@ -865,6 +945,7 @@ function scenario_apply_file_ops(array $ops, array $idMap = [], ?string $baseDir
                 }
             }
         }
+        scenario_file_cache_access('clear');
         if ($lockFp !== false) {
             flock($lockFp, LOCK_UN);
             fclose($lockFp);
@@ -901,6 +982,7 @@ function scenario_apply_file_ops(array $ops, array $idMap = [], ?string $baseDir
                 if (!@unlink($path)) {
                     throw new RuntimeException("Не удалось удалить файл сценария «{$filename}».");
                 }
+                scenario_file_cache_access('clear');
                 $applied[] = [
                     'type' => 'delete',
                     'resource' => 'scenarios',
@@ -947,6 +1029,7 @@ function scenario_apply_file_ops(array $ops, array $idMap = [], ?string $baseDir
                 @unlink($tmpPath);
                 throw new RuntimeException("Не удалось сохранить файл сценария «{$filename}».");
             }
+            scenario_file_cache_access('clear');
 
             $applied[] = [
                 'type' => $type,
