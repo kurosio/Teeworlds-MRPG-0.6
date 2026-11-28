@@ -6,6 +6,9 @@ services:
     container_name: editor-studio-web
     ports:
       - "${WEB_PORT:-8080}:80"
+    # Production-эталон (mapres ro, maps rw, healthcheck по AI-эндпоинту,
+    # без монтирования apache-config.conf поверх образа):
+    # см. deploy/docker-compose.production.yml
     volumes:
       - ./scenarios:/var/www/html/scenarios
       - ./data:/var/www/html/data
