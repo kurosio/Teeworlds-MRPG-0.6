@@ -1044,7 +1044,7 @@
           };
 
           window.EditorCore?.UI?.openScenarioFieldOverlay?.({
-            title: `Editing:  ${fieldLabel}`,
+            title: `Editing: ${fieldLabel}`,
             mode,
             worldId: readWorldId(),
             scenarioText: String(hidden.value || ''),

@@ -29,6 +29,10 @@ tmp/
 temp/
 *.tmp
 
+# Host deploy keys (mounted read-only at runtime)
+ssh-keys/
+data/ssh-known-hosts
+
 # Node modules
 node_modules/
 

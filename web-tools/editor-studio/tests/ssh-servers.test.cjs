@@ -40,3 +40,39 @@ test('SSH fleet strings are localized in Russian', () => {
     assert.ok(russian.includes(`"${text}"`), `missing ru translation for ${text}`);
   }
 });
+
+test('create-ssh-key.sh creates a passwordless OpenSSH keypair with strict permissions', (t) => {
+  const { execFileSync, spawnSync } = require('node:child_process');
+  const os = require('node:os');
+  const script = path.join(root, 'tools/create-ssh-key.sh');
+  assert.ok(fs.existsSync(script), 'tools/create-ssh-key.sh must exist');
+  assert.ok((fs.statSync(script).mode & 0o111) !== 0, 'tools/create-ssh-key.sh must be executable');
+
+  const helpOut = execFileSync(script, ['--help'], { encoding: 'utf8' });
+  assert.match(helpOut, /Private key path on the web server|--docker|--copy-id/);
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'editor-ssh-key-test-'));
+  t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+  const out = execFileSync(script, ['--dir', tmpDir, '--name', 'test_srv', '--docker'], { encoding: 'utf8' });
+  const priv = path.join(tmpDir, 'test_srv');
+  const pub = `${priv}.pub`;
+  assert.ok(fs.existsSync(priv) && fs.existsSync(pub));
+  assert.equal(fs.statSync(priv).mode & 0o777, 0o600);
+  assert.equal(fs.statSync(pub).mode & 0o777, 0o644);
+  assert.match(out, /\/run\/editor-ssh-keys\/test_srv/);
+  assert.match(fs.readFileSync(pub, 'utf8'), /^ssh-ed25519 /);
+
+  // BatchMode=yes требует ключ без парольной фразы
+  const derived = execFileSync('ssh-keygen', ['-y', '-P', '', '-f', priv], { encoding: 'utf8' }).trim();
+  assert.ok(fs.readFileSync(pub, 'utf8').startsWith(derived));
+
+  // Без --force перезапись запрещена
+  const denied = spawnSync(script, ['--dir', tmpDir, '--name', 'test_srv'], { encoding: 'utf8' });
+  assert.notEqual(denied.status, 0);
+  assert.match(denied.stderr, /уже существует/);
+
+  // С --force перезапись работает
+  execFileSync(script, ['--dir', tmpDir, '--name', 'test_srv', '--force'], { encoding: 'utf8' });
+  assert.equal(fs.statSync(priv).mode & 0o777, 0o600);
+});

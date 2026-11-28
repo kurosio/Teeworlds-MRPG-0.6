@@ -145,7 +145,7 @@
         const wName = worldsMap.get(String(row?.WorldID ?? ''));
         return {
           title: wName ? `Dungeon #${row?.ID || 0} — ${wName}` : `Dungeon #${row?.ID || 0}`,
-          subtitle: `${formatWorldLabel(row?.WorldID)}  · Limit  ${row?.TimeLimit ?? 600}  sec cooldown.`,
+          subtitle: `${formatWorldLabel(row?.WorldID)} · Limit ${row?.TimeLimit ?? 600} sec.`,
         };
       },
       getTitle: (model, id) => {
@@ -156,7 +156,7 @@
       getSubtitle: (model, id) => {
         if (!model) return '';
         const world = formatWorldLabel(model?.WorldID);
-        const limit = `Limit:  ${model?.TimeLimit ?? 600}  sec cooldown.`;
+        const limit = `Limit: ${model?.TimeLimit ?? 600} sec.`;
         return id ? `ID ${id} · ${world} · ${limit}` : `${world} · ${limit}`;
       },
       emptyTitle: 'Select a dungeon',

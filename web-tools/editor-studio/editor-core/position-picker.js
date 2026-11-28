@@ -379,7 +379,7 @@
     if (!pinned) return t('No pinned point');
     const worldId = syncWorldContext(root);
     const world = worldId === null ? '—' : `#${worldId}`;
-    return t('Position pinned · world  {0} · X {1} · Y {2}', [world, formatCoord(x), formatCoord(y)]);
+    return t('Position pinned · world {0} · X {1} · Y {2}', [world, formatCoord(x), formatCoord(y)]);
   };
 
   const updateText = (root) => {

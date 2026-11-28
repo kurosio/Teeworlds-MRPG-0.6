@@ -1,5 +1,13 @@
 {
-  "vouchers": [],
+  "vouchers": [
+    {
+      "column": "Data",
+      "codec": "json",
+      "paths": {
+        "items.*.id": "items"
+      }
+    }
+  ],
   "bots_mobs": [
     {
       "column": "BotID",

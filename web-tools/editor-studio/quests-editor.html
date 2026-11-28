@@ -1153,7 +1153,10 @@
       const siblings = questStepsSorted(step.QuestID);
       const position = siblings.findIndex((s) => s.ID === step.ID) + 1;
       DOM.title.textContent = `Step #${step.ID} — ${botLabel}`;
-      DOM.subtitle.textContent = `${quest?.Name || `Quest ${step.QuestID || '—'}`} · Step ${position || step.Step || 1}${siblings.length ? ` of ${siblings.length}` : ''} · ${worldLabel}`;
+      const questLabel = quest?.Name || `Quest ${step.QuestID || '—'}`;
+      const stepNum = position || step.Step || 1;
+      const stepLabel = siblings.length ? `Step ${stepNum} of ${siblings.length}` : `Step ${stepNum}`;
+      DOM.subtitle.textContent = `${questLabel} · ${stepLabel} · ${worldLabel}`;
       renderNavStrip();
     };
 
@@ -2713,7 +2716,7 @@
       const id = STATE.selected.id;
       const quest = STATE.quests.find((item) => item.ID === id);
       const name = quest?.Name ? `"${quest.Name}"` : `#${id}`;
-      if (!await EditorCore.Page.confirm(`Delete the quest ${name}  and all its steps?`)) return;
+      if (!await EditorCore.Page.confirm(`Delete quest ${name} and all its steps?`)) return;
       setBtn(DOM.deleteBtn, { enabled: false, hidden: false, label: 'Deleting…' });
       try {
         const toRemove = STATE.steps.filter((step) => step.QuestID === id);
@@ -3141,8 +3144,8 @@
         if (!codeEl) return;
         const text = codeEl.textContent?.trim() || '';
         if (!text) return;
-        const ok = await EditorCore.utils.copyToClipboard(text);
-        if (ok) EditorCore.UI.toast(`Copied:  ${text}`, 'success');
+        const ok = await EditorCore.Page.copyText(text);
+        if (ok) EditorCore.UI.toast(`Copied: ${text}`, 'success');
       });
     });
 

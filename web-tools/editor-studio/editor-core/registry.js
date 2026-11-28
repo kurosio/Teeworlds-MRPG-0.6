@@ -233,7 +233,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       fields: {
         code: createField('text', 'Code', 'secret', { ui: { placeholder: 'Enter the code word' } }),
         next_step_id: createField('text', 'Next step', ''),
-        hidden: createField('boolean', 'Hide', false)
+        hidden: createField('boolean', 'Hide', true)
       }
     },
     restore_resources: {
@@ -289,7 +289,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       icon: 'fa-solid fa-flag',
       desc: 'Configure the group respawn point',
       fields: {
-        enable_spawn: createField('boolean', 'Enable respawn at the given position', false),
+        enable_spawn: createField('boolean', 'Enable respawn at the given position', true),
         position: createField('vec2', 'Position', { x: 100, y: 100 }, { ui: { min: -99999, max: 99999, step: 0.1 } })
       }
     },
@@ -432,8 +432,12 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         step: createField('number', 'Step number', 0, { 
           ui: { min: 0, max: 9999, showWhen: { path: 'condition', equals: 'step_finished' } } 
         }),
-        entire_group: createField('boolean', 'Require for the whole group', false)
-      }
+        entire_group: createField('boolean', 'Require for the whole group', false),
+        timeout: createField('number', 'Timeout (seconds; 0 = wait)', 0, { ui: { min: 0, max: 999999 } }),
+        pass_step_id: createField('text', 'Step on success', ''),
+        fail_step_id: createField('text', 'Step on failure or timeout', '')
+      },
+      linkTargets: ['pass_step_id', 'fail_step_id']
     },
     universal_pick_item_task: {
       name: 'Universal: collect objective',
@@ -628,8 +632,12 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       desc: 'Transition on reaching the point',
       fields: {
         position: createField('vec2', 'Position', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
-        entire_group: createField('boolean', 'Whole group', true)
-      }
+        entire_group: createField('boolean', 'Whole group', false),
+        timeout: createField('number', 'Timeout (seconds; 0 = wait)', 0, { ui: { min: 0, max: 999999 } }),
+        pass_step_id: createField('text', 'Step on success', ''),
+        fail_step_id: createField('text', 'Step on failure or timeout', '')
+      },
+      linkTargets: ['pass_step_id', 'fail_step_id']
     },
     teleport: {
       name: 'Teleport',
@@ -667,8 +675,8 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       desc: 'Activation point of a dungeon scenario',
       fields: {
         position: createField('vec2', 'Position', { x: 400, y: 3000 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
-        duration: createField('number', 'Duration', 5, { ui: { min: 1, max: 9999 } }),
-        entire_group: createField('boolean', 'Whole group', true),
+        duration: createField('number', 'Duration', 5, { ui: { min: 0, max: 9999 } }),
+        entire_group: createField('boolean', 'Whole group', false),
         action_text: createField('text', 'Action text', 'Main reactor overload', { ui: { placeholder: 'Action description', format: 'textarea' } })
       }
     },

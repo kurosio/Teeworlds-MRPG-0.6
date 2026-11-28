@@ -28,13 +28,26 @@ declare(strict_types=1);
 require_once __DIR__ . '/change-requests-lib.php';
 require_once __DIR__ . '/db-history-lib.php';
 
-$ROLE = bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN, EDITOR_ROLE_GUEST]);
+$ROLE = bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN, EDITOR_ROLE_GUEST], true);
 $IS_ADMIN = $ROLE === EDITOR_ROLE_ADMIN;
 $action = (string)($_GET['action'] ?? '');
 
 guest_action_guard($ROLE, $action, ['config', 'preview', 'submit', 'mine', 'get', 'messages', 'mark_read', 'message', 'revise', 'withdraw']);
 
 $POST_ACTIONS = ['preview', 'submit', 'revise', 'withdraw', 'approve', 'reject', 'delete', 'bulk', 'save_settings', 'message', 'mark_read'];
+
+function cr_assert_token_scope(string $scope): void
+{
+    if (!ai_actor_has_scope($scope)) {
+        respond([
+            'ok' => false,
+            'code' => 'scope_forbidden',
+            'error' => "AI-токен не имеет права «{$scope}».",
+            'required_scope' => $scope,
+            'granted_scopes' => ai_actor_scopes(),
+        ], 403);
+    }
+}
 
 function cr_read_body(): array
 {
@@ -72,36 +85,16 @@ function cr_pagination(int $defaultLimit = 100, int $maxLimit = 500): array
     return [$limit, $offset];
 }
 
-/** Owner check for guests: returns request or 404 (no information leak). */
-function cr_load_visible(string $id, bool $admin): array
-{
-    $req = cr_load($id);
-    if (!$req) respond(['ok' => false, 'error' => 'Запрос не найден'], 404);
-    if (!$admin && !cr_guest_owns($req)) {
-        respond(['ok' => false, 'error' => 'Запрос не найден'], 404);
-    }
-    return $req;
-}
-
-/** Light throttle for previews (they hit the DB with read queries). */
-function cr_preview_throttle(): void
-{
-    $now = time();
-    $win = $_SESSION['editor_studio_cr_preview'] ?? ['t' => $now, 'n' => 0];
-    if (!is_array($win) || $now - (int)$win['t'] > 60) $win = ['t' => $now, 'n' => 0];
-    $win['n'] = (int)$win['n'] + 1;
-    $_SESSION['editor_studio_cr_preview'] = $win;
-    if ($win['n'] > 30) {
-        respond(['ok' => false, 'error' => 'Слишком много проверок подряд. Подождите минуту.'], 429);
-    }
-}
-
 try {
     if ($action === '') respond(['ok' => false, 'error' => 'Не указано действие'], 400);
     if (in_array($action, $POST_ACTIONS, true)) {
         require_same_origin_json_post();
     } elseif (strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'GET') {
         respond(['ok' => false, 'error' => 'Метод запроса не поддерживается'], 405);
+    }
+
+    if (!$IS_ADMIN && !in_array($action, $POST_ACTIONS, true)) {
+        cr_assert_token_scope('read');
     }
 
     $guest = guest_cfg();
@@ -119,6 +112,13 @@ try {
                 'title' => $R['title'], 'pk' => $R['pk'], 'label' => $R['label'] ?? null,
                 'columns' => $R['columns'], 'json' => $R['json'] ?? [],
                 'refs' => $R['refs'] ?? new stdClass(),
+            ];
+        }
+        if ($IS_ADMIN || in_array('scenarios', $allowedResources, true)) {
+            $resources['scenarios'] = [
+                'title' => 'Сценарии (файлы)', 'pk' => 'filename', 'label' => 'filename',
+                'columns' => ['content'], 'json' => ['content'],
+                'refs' => new stdClass(),
             ];
         }
         $account = $IS_ADMIN ? null : editor_guest_user();
@@ -297,6 +297,9 @@ try {
         $nickname = cr_validate_nickname($body['nickname'] ?? '');
         $message = cr_validate_message($body['message'] ?? '');
         $ops = cr_normalize_ops($body['operations'] ?? null, $limits['max_operations']);
+        foreach ($ops as $opItem) {
+            cr_assert_token_scope((string)($opItem['type'] ?? 'create'));
+        }
         cr_assert_guest_resources($ops);
 
         // Session cooldown (checked early; IP cooldown is checked under lock).
@@ -396,6 +399,9 @@ try {
     }
 
     if ($action === 'withdraw') {
+        if (!$IS_ADMIN && !ai_actor_has_scope('update') && !ai_actor_has_scope('delete')) {
+            cr_assert_token_scope('delete');
+        }
         $body = cr_read_body();
         $id = (string)($body['id'] ?? '');
         $req = cr_with_lock(function () use ($id, $IS_ADMIN) {
@@ -438,7 +444,12 @@ try {
 
             $rawOps = $body['operations'] ?? null;
             $ops = cr_normalize_ops($rawOps, $IS_ADMIN ? 1000 : guest_effective_limits(editor_guest_user())['max_operations']);
-            if (!$IS_ADMIN) cr_assert_guest_resources($ops);
+            if (!$IS_ADMIN) {
+                foreach ($ops as $opItem) {
+                    cr_assert_token_scope((string)($opItem['type'] ?? 'update'));
+                }
+                cr_assert_guest_resources($ops);
+            }
             $db = db_connect();
             try {
                 [$finalOps, $analysis] = cr_prepare_for_submit($db, $ops);
@@ -539,6 +550,27 @@ try {
             $author = is_array($req['author'] ?? null) ? $req['author'] : [];
             foreach (is_array($res['history'] ?? null) ? $res['history'] : [] as $change) {
                 $changedResource = (string)($change['resource'] ?? '');
+                if ($changedResource === 'scenarios') {
+                    db_history_safe_record(
+                        scenario_history_resource(),
+                        'scenarios',
+                        (string)($change['type'] ?? 'update'),
+                        0,
+                        is_array($change['before'] ?? null) ? $change['before'] : [],
+                        is_array($change['after'] ?? null) ? $change['after'] : [],
+                        [
+                            'source' => 'request',
+                            'request_id' => (string)$req['id'],
+                            'actor_role' => 'guest',
+                            'actor_id' => (string)($author['guestId'] ?? ''),
+                            'actor_name' => (string)($author['nickname'] ?? ($author['guestLogin'] ?? '')),
+                            'approved_by' => $adminUser,
+                            'label' => (string)($change['label'] ?? $change['filename'] ?? ''),
+                            'revertable' => false,
+                        ]
+                    );
+                    continue;
+                }
                 $changedR = editor_resources()[$changedResource] ?? null;
                 if ($changedR === null) continue;
                 db_history_safe_record(

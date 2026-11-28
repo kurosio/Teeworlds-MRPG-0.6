@@ -1462,8 +1462,10 @@
                 const pair = broken[0];
                 const from = this.getEventStyle(pair.fromKey).label;
                 const to = this.getEventStyle(pair.toKey).label;
-                const more = broken.length > 1 ? ` (+${broken.length - 1} more)` : '';
-                this.showToast(`Link ignored: «${from}» → «${to}» are different events.${more}`, 'warning');
+                const msg = broken.length > 1
+                    ? `Link ignored: «${from}» → «${to}» are different events (+${broken.length - 1} more).`
+                    : `Link ignored: «${from}» → «${to}» are different events.`;
+                this.showToast(msg, 'warning');
                 return broken.length;
             }
 
@@ -2183,7 +2185,7 @@
                 this.stats.groups && (this.stats.groups.textContent = String(groupsCount));
                 if (this.stats.context) {
                     const eventGroupsCount = (groups || []).filter(group => this.isKnownScenarioEvent(group.event_key)).length;
-                    this.stats.context.textContent = `${modeLabel}  · event groups:  ${eventGroupsCount}  · in groups:  ${groupedStepsCount}`;
+                    this.stats.context.textContent = `${modeLabel} · event groups: ${eventGroupsCount} · in groups: ${groupedStepsCount}`;
                 }
             }
 
@@ -2227,7 +2229,7 @@
                     badge.dataset.logic = logic;
                     badge.classList.add('is-clickable');
                     badge.innerHTML = `<i class="${meta.icon}"></i> ${meta.short}`;
-                    badge.title = `Completion logic:  ${meta.label}. Click to switch (AND → OR → 1·2·3)`;
+                    badge.title = `Completion logic: ${meta.label}. Click to switch (AND → OR → 1·2·3)`;
                 }
             }
             cycleCompletionLogic(stepId) {
@@ -2517,7 +2519,7 @@
 
                 const nextStepInfo = ''; // Removed from navigator view
                 const componentCount = step.components?.length || 0;
-                const componentInfo = `<span class="text-xs font-normal editor-muted-text">(${componentCount}  comp.)</span>`;
+                const componentInfo = `<span class="text-xs font-normal editor-muted-text">(${componentCount} comp.)</span>`;
                 
                 stepLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${step.id}" class="flex items-center p-1.5 rounded-md border-b border-transparent editor-hover"><i class="fa-solid fa-grip-vertical nav-handle editor-muted-text editor-hover-text mr-2 cursor-grab"></i><div class="flex-grow flex justify-between items-center font-semibold editor-text text-sm">
                                             <span class="flex items-center gap-2">${step.id || '<i>No ID</i>'} ${componentInfo}</span>
@@ -2793,7 +2795,7 @@
                     if (!comp) return;
                     const info = this.componentTypes[comp.type] || this.allComponentTypes[comp.type];
                     const label = info?.name || comp.type || 'component';
-                    if (!await EditorCore.Page.confirm(`Delete the component “${label}»?`)) return;
+                    if (!await EditorCore.Page.confirm(`Delete the component “${label}”?`)) return;
                     step.components = step.components.filter(c => c && c.component_id !== componentId);
                 } else {
                     if (!await EditorCore.Page.confirm(`Are you sure you want to delete the step "${stepId}"?`)) return;
@@ -2860,7 +2862,7 @@
                 const step = this.findStep(stepId);
                 this.modal.context = { stepId, componentId, data: JSON.parse(JSON.stringify(component)) };
                 const componentInfo = this.componentTypes[component.type] || { name: component.type };
-                this.modal.title.textContent = `Editing:  ${componentInfo.name}`;
+                this.modal.title.textContent = `Editing: ${componentInfo.name}`;
                 const modalIcon = this.modal.backdrop?.querySelector('#modal-icon');
                 if (modalIcon) modalIcon.className = `editor-modal-icon ${componentInfo.icon || 'fa-solid fa-puzzle-piece'}`;
                 const modalContent = this.modal.backdrop?.querySelector('#modal-content');
@@ -3150,7 +3152,7 @@
                         await this.loadScenario(data.files[0]);
                     } else this.loadScenarioData({ steps: [], editor_data: { groups: [] } }, 'new_scenario.json');
                 } catch (error) {
-                    this.showToast(`Loading the list failed:  ${error.message}`, 'error');
+                    this.showToast(`Loading the list failed: ${error.message}`, 'error');
                 }
             }
             async loadScenario(filename) {
@@ -3163,7 +3165,7 @@
                     this.loadScenarioData(data, filename);
                     this.showToast(`Scenario "${filename}" loaded.`, 'success');
                 } catch (error) {
-                    this.showToast(`Loading the scenario failed:  ${error.message}`, 'error');
+                    this.showToast(`Loading the scenario failed: ${error.message}`, 'error');
                     this.loadScenarioData({ steps: [], editor_data: { groups: [] } }, filename); // Load empty state on error
                 }
             }
@@ -3561,7 +3563,7 @@
                         this.dirty.setClean();
                     } else this.showToast(result.error, 'error');
                 } catch (error) {
-                    this.showToast(`Save failed:  ${error.message}`, 'error');
+                    this.showToast(`Save failed: ${error.message}`, 'error');
                 }
             }
 
@@ -3581,7 +3583,7 @@
                         this.showToast(result.error, 'error');
                     }
                 } catch (error) {
-                    this.showToast(`Delete failed:  ${error.message}`, 'error');
+                    this.showToast(`Delete failed: ${error.message}`, 'error');
                 }
             }
 
@@ -3615,7 +3617,7 @@
 
                     this.showToast('JSON copied.', 'success');
                 } catch (error) {
-                    this.showToast(`Could not copy the JSON:  ${error.message}`, 'error');
+                    this.showToast(`Could not copy the JSON: ${error.message}`, 'error');
                 }
             }
 
@@ -3688,7 +3690,7 @@
                 try {
                     parsed = JSON.parse(text);
                 } catch (error) {
-                    this.showToast(`Invalid JSON:  ${error.message}`, 'error');
+                    this.showToast(`Invalid JSON: ${error.message}`, 'error');
                     return;
                 }
 
@@ -3776,7 +3778,7 @@
                 this.renderAll();
                 this.dirty.markDirty();
                 this.closeJsonImport();
-                this.showToast(`Steps imported:  ${safeImportedSteps.length}.`, 'success');
+                this.showToast(`Steps imported: ${safeImportedSteps.length}.`, 'success');
             }
 
             showToast(message, type = 'success') {
@@ -3868,7 +3870,7 @@
                 select.innerHTML = `<option value="">-- Not selected --</option>` + options
                     .map((s) => {
                         const foreign = eventKey !== null && this.getStepEventKey(s.id) !== eventKey;
-                        return `<option value="${EditorCore.utils.escapeHtml(s.id)}" ${s.id === selectedValue ? 'selected' : ''}>${EditorCore.utils.escapeHtml(optionLabel(s.id))}${foreign ? '  ⚠ other event' : ''}</option>`;
+                        return `<option value="${EditorCore.utils.escapeHtml(s.id)}" ${s.id === selectedValue ? 'selected' : ''}>${EditorCore.utils.escapeHtml(optionLabel(s.id))}${foreign ? ' ⚠ other event' : ''}</option>`;
                     })
                     .join('');
             }
@@ -3954,14 +3956,14 @@
                             };
                             const suffix = this.formatBranchSuffix(data);
                             if (data.condition_type === 'item_count') return T('Condition: <b>{0}</b>, item <b>{1}</b>, <b>{2}</b> {3} <b>{4}</b>', [labels[data.condition_type], data.item_id || '?', data.item_scope || 'any_player', data.compare || '>=', data.value ?? 1]) + suffix;
-                            if (data.condition_type === 'quest_state') return T('Condition: <b>quest  {0}</b>, state <b>{1}</b>{2}', [data.quest_id || '?', data.quest_state || 'accepted', data.entire_group ? T(', the whole group') : '']) + suffix;
+                            if (data.condition_type === 'quest_state') return T('Condition: <b>quest {0}</b>, state <b>{1}</b>{2}', [data.quest_id || '?', data.quest_state || 'accepted', data.entire_group ? T(', the whole group') : '']) + suffix;
                             return T('Condition: <b>{0}</b> {1} <b>{2}</b>{3}', [labels[data.condition_type] || data.condition_type || 'players_count', data.compare || '>=', data.value ?? 1, data.invert ? T(', inverted') : '']) + suffix;
                         }
                         case 'pick_item_task': return T('Pick up item: <b>{0}</b> x <b>{1}</b>', [data.item?.id || '?', data.item?.value || 0]);
                         case 'universal_pick_item_task': return T('Pick up item: <b>{0}</b> x <b>{1}</b>', [data.item?.id || '?', data.item?.value || 0]);
                         case 'shootmarkers': return T('Markers: <b>{0}</b>', [data.markers?.length || 0]);
                         case 'universal_shootmarkers': return T('Markers: <b>{0}</b>', [data.markers?.length || 0]);
-                        case 'defeat_mobs': return T('Mode: <b>{0}</b>, {1}  group(s)', [data.mode || 'annihilation', data.mobs?.length || 0]);
+                        case 'defeat_mobs': return T('Mode: <b>{0}</b>, {1} group(s)', [data.mode || 'annihilation', data.mobs?.length || 0]);
                         case 'wait': return T('Wait: <b>{0}</b> sec.', [data.duration]);
                         case 'follow_camera': return T('To the point (<b>{0}, {1}</b>), {2}', [data.position?.x, data.position?.y, data.smooth ? T('smoothly') : T('instantly')]);
                         case 'condition_movement': return T('Reach the point (<b>{0}, {1}</b>), {2}', [data.position?.x, data.position?.y, data.entire_group ? T('the whole group') : T('one player')]) + this.formatBranchSuffix(data);
@@ -4081,7 +4083,7 @@
                 const newGroup = JSON.parse(JSON.stringify(sourceGroup));
                 
                 newGroup.id = `group_${this.generateUUID()}`;
-                newGroup.name = `${sourceGroup.name}  (copy)`;
+                newGroup.name = `${sourceGroup.name} (copy)`;
                 newGroup.steps = [];
 
                 const idMap = new Map();

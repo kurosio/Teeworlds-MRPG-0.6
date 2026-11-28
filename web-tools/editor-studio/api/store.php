@@ -16,7 +16,7 @@
 
 declare(strict_types=1);
 
-const EDITOR_STORE_SCHEMA = 5;
+const EDITOR_STORE_SCHEMA = 6;
 const EDITOR_STORE_FILE = 'editor-studio.sqlite';
 
 /** Путь к файлу базы редактора (можно переопределить переменной окружения). */
@@ -270,6 +270,26 @@ function store_schema(PDO $pdo): void
             $pdo->exec("ALTER TABLE guest_users ADD COLUMN expires_at TEXT NOT NULL DEFAULT ''");
         }
 
+        // Схема v6: scoped Bearer-токены AI/MCP, привязанные к гостевому аккаунту.
+        $pdo->exec(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS ai_tokens (
+                id           TEXT PRIMARY KEY,
+                token_hash   TEXT NOT NULL UNIQUE,
+                token_prefix TEXT NOT NULL DEFAULT '',
+                guest_id     TEXT NOT NULL,
+                name         TEXT NOT NULL DEFAULT '',
+                scopes       TEXT NOT NULL DEFAULT '["read","create","update","delete"]',
+                pages        TEXT NOT NULL DEFAULT '[]',
+                created_at   TEXT NOT NULL,
+                expires_at   TEXT NOT NULL DEFAULT '',
+                last_used_at TEXT NOT NULL DEFAULT '',
+                revoked_at   TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (guest_id) REFERENCES guest_users(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_tokens_guest ON ai_tokens(guest_id, created_at DESC);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_tokens_hash ON ai_tokens(token_hash);
+            SQL);
+
         $pdo->exec('PRAGMA user_version = ' . EDITOR_STORE_SCHEMA);
     });
 }
@@ -505,6 +525,97 @@ function store_guest_users_count(bool $enabledOnly = false): int
 {
     $sql = 'SELECT COUNT(*) FROM guest_users' . ($enabledOnly ? ' WHERE enabled = 1' : '');
     return (int)store_db()->query($sql)->fetchColumn();
+}
+
+// ── Персональные AI-токены (scoped Bearer access) ───────────────────────────
+
+function store_ai_token_from_row(array $row): array
+{
+    $scopes = json_decode((string)($row['scopes'] ?? '[]'), true);
+    $pages = json_decode((string)($row['pages'] ?? '[]'), true);
+    return [
+        'id'           => (string)$row['id'],
+        'tokenHash'    => (string)$row['token_hash'],
+        'tokenPrefix'  => (string)($row['token_prefix'] ?? ''),
+        'guestId'      => (string)$row['guest_id'],
+        'name'         => (string)($row['name'] ?? ''),
+        'scopes'       => is_array($scopes) ? array_values($scopes) : ['read'],
+        'pages'        => is_array($pages) ? array_values($pages) : [],
+        'createdAt'    => (string)($row['created_at'] ?? ''),
+        'expiresAt'    => (string)($row['expires_at'] ?? ''),
+        'lastUsedAt'   => (string)($row['last_used_at'] ?? ''),
+        'revokedAt'    => (string)($row['revoked_at'] ?? ''),
+    ];
+}
+
+function store_ai_token_insert(array $token): bool
+{
+    $stmt = store_db()->prepare(
+        'INSERT INTO ai_tokens(id, token_hash, token_prefix, guest_id, name, scopes, pages, created_at, expires_at, last_used_at, revoked_at)
+         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    return $stmt->execute([
+        (string)$token['id'],
+        (string)$token['tokenHash'],
+        (string)($token['tokenPrefix'] ?? ''),
+        strtolower(trim((string)$token['guestId'])),
+        (string)($token['name'] ?? ''),
+        json_encode(array_values($token['scopes'] ?? ['read']), JSON_UNESCAPED_UNICODE),
+        json_encode(array_values($token['pages'] ?? []), JSON_UNESCAPED_UNICODE),
+        (string)($token['createdAt'] ?? store_now()),
+        (string)($token['expiresAt'] ?? ''),
+        (string)($token['lastUsedAt'] ?? ''),
+        (string)($token['revokedAt'] ?? ''),
+    ]);
+}
+
+function store_ai_token_find_by_hash(string $hash): ?array
+{
+    $stmt = store_db()->prepare('SELECT * FROM ai_tokens WHERE token_hash = ? LIMIT 1');
+    $stmt->execute([$hash]);
+    $row = $stmt->fetch();
+    return is_array($row) ? store_ai_token_from_row($row) : null;
+}
+
+function store_ai_token_get(string $id): ?array
+{
+    $stmt = store_db()->prepare('SELECT * FROM ai_tokens WHERE id = ? LIMIT 1');
+    $stmt->execute([strtolower(trim($id))]);
+    $row = $stmt->fetch();
+    return is_array($row) ? store_ai_token_from_row($row) : null;
+}
+
+/** @return list<array> */
+function store_ai_token_list(?string $guestId = null): array
+{
+    if ($guestId !== null && $guestId !== '') {
+        $stmt = store_db()->prepare('SELECT * FROM ai_tokens WHERE guest_id = ? ORDER BY created_at DESC, id DESC');
+        $stmt->execute([strtolower(trim($guestId))]);
+        $rows = $stmt->fetchAll();
+    } else {
+        $rows = store_db()->query('SELECT * FROM ai_tokens ORDER BY created_at DESC, id DESC')->fetchAll();
+    }
+    return array_map('store_ai_token_from_row', is_array($rows) ? $rows : []);
+}
+
+function store_ai_token_touch(string $id, string $ts): void
+{
+    $stmt = store_db()->prepare('UPDATE ai_tokens SET last_used_at = ? WHERE id = ?');
+    $stmt->execute([$ts, strtolower(trim($id))]);
+}
+
+function store_ai_token_revoke(string $id, string $ts): bool
+{
+    $stmt = store_db()->prepare('UPDATE ai_tokens SET revoked_at = ? WHERE id = ? AND revoked_at = ""');
+    $stmt->execute([$ts, strtolower(trim($id))]);
+    return $stmt->rowCount() > 0;
+}
+
+function store_ai_token_delete(string $id): bool
+{
+    $stmt = store_db()->prepare('DELETE FROM ai_tokens WHERE id = ?');
+    $stmt->execute([strtolower(trim($id))]);
+    return $stmt->rowCount() > 0;
 }
 
 // ── Счётчики входа ──────────────────────────────────────────────────────────

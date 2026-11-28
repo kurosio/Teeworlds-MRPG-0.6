@@ -118,7 +118,7 @@
     box.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:2147483001;max-width:420px;padding:10px 12px;'
       + 'border-radius:12px;font:13px/1.45 system-ui,sans-serif;color:#ffd7a3;background:#2a1f10;border:1px solid #7c5a25;'
       + 'display:flex;gap:8px;align-items:flex-start';
-    box.innerHTML = '<span aria-hidden="true">⚠</span><span>Failed to load the local styles.  '
+    box.innerHTML = '<span aria-hidden="true">⚠</span><span>Failed to load the local styles. '
       + 'The editor still works, but the interface may look simplified.</span>';
     box.addEventListener('click', () => box.remove());
     document.body?.appendChild(box);

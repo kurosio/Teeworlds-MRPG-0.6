@@ -2,12 +2,16 @@
 // Guest accounts API — administrator only.
 // Endpoint: api/guests.php?action=...
 //
-//   list     (GET)  — guest accounts + editor tab catalogue
-//   create   (POST) — {login, name, password, pages[], enabled, limits?, expires_at?}
-//   update   (POST) — {id, login?, name?, pages[]?, enabled?, limits?, expires_at?}
-//   password (POST) — {id, password}         (also revokes the account sessions)
-//   revoke   (POST) — {id}                   (ends all active sessions of the account)
-//   delete   (POST) — {id}
+//   list         (GET)  — guest accounts + AI tokens + editor tab catalogue
+//   create       (POST) — {login, name, password, pages[], enabled, limits?, expires_at?}
+//   update       (POST) — {id, login?, name?, pages[]?, enabled?, limits?, expires_at?}
+//   password     (POST) — {id, password}         (also revokes the account sessions)
+//   revoke       (POST) — {id}                   (ends all active sessions of the account)
+//   delete       (POST) — {id}
+//   token_list   (GET)  — list scoped AI Bearer tokens (&guest_id=...)
+//   token_create (POST) — {guest_id, name, scopes[], pages[]?, expires_at?}
+//   token_revoke (POST) — {id}                   (immediately invalidates an AI token)
+//   token_delete (POST) — {id}                   (removes token record)
 //
 // A guest account only allows READ access to the assigned tabs and creates
 // change requests — the database is written exclusively by an administrator
@@ -149,7 +153,7 @@ function guests_pages_catalog(): array
 }
 
 try {
-    if (in_array($action, ['create', 'update', 'password', 'revoke', 'delete'], true)) {
+    if (in_array($action, ['create', 'update', 'password', 'revoke', 'delete', 'token_create', 'token_revoke', 'token_delete'], true)) {
         require_same_origin_json_post();
     } elseif (strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'GET') {
         respond(['ok' => false, 'error' => 'Метод запроса не поддерживается'], 405);
@@ -160,10 +164,13 @@ try {
         $guest = guest_cfg($cfg);
         $users = array_values(array_map('guest_user_public', guest_users($cfg)));
         usort($users, fn($a, $b) => strcmp($a['name'] ?: $a['login'], $b['name'] ?: $b['login']));
+        $tokens = array_values(array_map('ai_token_public', store_ai_token_list()));
         respond([
             'ok' => true,
             'users' => $users,
             'pages' => guests_pages_catalog(),
+            'tokens' => $tokens,
+            'ai_scopes' => AI_TOKEN_SCOPES,
             // A leftover shared password of the old single-guest mode is ignored;
             // the UI tells the administrator to create personal accounts.
             'legacy_password' => (string)($cfg['guest_password'] ?? '') !== '',
@@ -301,6 +308,82 @@ try {
             respond(['ok' => false, 'error' => 'Гостевой аккаунт не найден.'], 404);
         }
         editor_audit('guests.delete', '', ['guest_id' => $id]);
+        respond(['ok' => true]);
+    }
+
+    if ($action === 'token_list') {
+        $guestId = strtolower(trim((string)($_GET['guest_id'] ?? '')));
+        $rows = store_ai_token_list($guestId !== '' ? $guestId : null);
+        respond([
+            'ok' => true,
+            'tokens' => array_values(array_map('ai_token_public', $rows)),
+            'ai_scopes' => AI_TOKEN_SCOPES,
+        ]);
+    }
+
+    if ($action === 'token_create') {
+        $body = guests_read_body();
+        $guestId = strtolower(trim((string)($body['guest_id'] ?? '')));
+        $user = store_guest_user_get($guestId);
+        if ($user === null) {
+            respond(['ok' => false, 'error' => 'Гостевой аккаунт не найден.'], 404);
+        }
+        $name = guests_clean_name($body['name'] ?? '');
+        if ($name === '') {
+            respond(['ok' => false, 'error' => 'Укажите название AI-токена.'], 400);
+        }
+        $rawScopes = $body['scopes'] ?? null;
+        if (!is_array($rawScopes) || $rawScopes === []) {
+            respond(['ok' => false, 'error' => 'Выберите хотя бы одно право (scope) для AI-токена.'], 400);
+        }
+        $scopes = ai_token_normalize_scopes($rawScopes);
+        $rawPages = $body['pages'] ?? [];
+        $pages = $rawPages !== [] ? array_values(array_intersect($user['pages'], guests_valid_pages($rawPages))) : [];
+        $expiresAt = guests_valid_expires($body['expires_at'] ?? '');
+
+        $rawSecret = 'esai_' . bin2hex(random_bytes(24));
+        $tok = [
+            'id'          => ai_token_new_id(),
+            'tokenHash'   => hash('sha256', $rawSecret),
+            'tokenPrefix' => substr($rawSecret, 0, 12) . '…',
+            'guestId'     => $guestId,
+            'name'        => $name,
+            'scopes'      => $scopes,
+            'pages'       => $pages,
+            'createdAt'   => gmdate('Y-m-d\TH:i:s\Z'),
+            'expiresAt'   => $expiresAt,
+            'lastUsedAt'  => '',
+            'revokedAt'   => '',
+        ];
+        store_ai_token_insert($tok);
+        editor_audit('ai_tokens.create', '', ['token_id' => $tok['id'], 'guest_id' => $guestId, 'scopes' => $scopes]);
+        respond([
+            'ok' => true,
+            'token' => ai_token_public($tok),
+            'secret' => $rawSecret,
+        ]);
+    }
+
+    if ($action === 'token_revoke') {
+        $body = guests_read_body();
+        $id = strtolower(trim((string)($body['id'] ?? '')));
+        $tok = store_ai_token_get($id);
+        if ($tok === null) {
+            respond(['ok' => false, 'error' => 'AI-токен не найден.'], 404);
+        }
+        store_ai_token_revoke($id, gmdate('Y-m-d\TH:i:s\Z'));
+        editor_audit('ai_tokens.revoke', '', ['token_id' => $id, 'guest_id' => $tok['guestId']]);
+        $updated = store_ai_token_get($id) ?? $tok;
+        respond(['ok' => true, 'token' => ai_token_public($updated)]);
+    }
+
+    if ($action === 'token_delete') {
+        $body = guests_read_body();
+        $id = strtolower(trim((string)($body['id'] ?? '')));
+        if (!store_ai_token_delete($id)) {
+            respond(['ok' => false, 'error' => 'AI-токен не найден.'], 404);
+        }
+        editor_audit('ai_tokens.delete', '', ['token_id' => $id]);
         respond(['ok' => true]);
     }
 

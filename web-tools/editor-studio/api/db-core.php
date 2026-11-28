@@ -326,7 +326,18 @@ function editor_rate_limit_guard(string $scope, string $identity, int $maxAttemp
 function editor_audit(string $action, string $requestId = '', array $detail = []): void
 {
     try {
-        if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['editor_studio_auth'])) {
+        $tokenActor = editor_ai_token_actor();
+        if ($tokenActor !== null) {
+            $role = EDITOR_ROLE_GUEST;
+            $account = $tokenActor['account'];
+            $actorId = (string)($account['id'] ?? '');
+            $actorName = (string)($account['name'] ?? $account['login'] ?? 'guest');
+            $detail = array_merge([
+                'via' => 'ai_token',
+                'token_id' => (string)($tokenActor['token']['id'] ?? ''),
+                'token_name' => (string)($tokenActor['token']['name'] ?? ''),
+            ], $detail);
+        } elseif (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['editor_studio_auth'])) {
             $role = EDITOR_ROLE_ADMIN;
             $actorId = (string)($_SESSION['editor_studio_user'] ?? 'admin');
             $actorName = $actorId;
@@ -661,6 +672,7 @@ function editor_guest_page_catalog(): array
         'bots_info'  => ['title' => 'Боты',               'write' => ['bots_info'],             'read' => ['bots_info']],
         'bots_mobs'  => ['title' => 'Мобы',               'write' => ['bots_mobs'],             'read' => ['bots_mobs']],
         'bots_npc'   => ['title' => 'NPC',                'write' => ['bots_npc'],              'read' => ['bots_npc']],
+        'scenarios'  => ['title' => 'Сценарии (файлы)',   'write' => ['scenarios'],             'read' => ['scenarios']],
     ];
     return $catalog;
 }
@@ -827,9 +839,13 @@ function clear_guest_session(): void
     );
 }
 
-/** Current guest account of the session (validated against the config). */
+/** Current guest account of the session or AI Bearer token (validated against the config). */
 function editor_guest_user(?array $cfg = null): ?array
 {
+    $tokenActor = editor_ai_token_actor();
+    if ($tokenActor !== null) {
+        return $tokenActor['account'];
+    }
     if (session_status() !== PHP_SESSION_ACTIVE) {
         return null;
     }
@@ -850,9 +866,13 @@ function editor_guest_user(?array $cfg = null): ?array
     return $user;
 }
 
-/** Pages of the current guest account (empty for non-guests). */
+/** Pages of the current guest account / scoped AI token (empty for non-guests). */
 function editor_guest_pages(?array $cfg = null): array
 {
+    $tokenActor = editor_ai_token_actor();
+    if ($tokenActor !== null) {
+        return $tokenActor['pages'];
+    }
     return editor_guest_user($cfg)['pages'] ?? [];
 }
 
@@ -897,6 +917,10 @@ function editor_session_role(?array $cfg = null): ?string
 /** Stable random identifier of the guest (used to show "my requests"). */
 function editor_guest_key(): string
 {
+    $tokenActor = editor_ai_token_actor();
+    if ($tokenActor !== null) {
+        return substr(hash('sha256', 'ai-token-guest-key|' . (string)($tokenActor['account']['id'] ?? '')), 0, 48);
+    }
     $key = (string)($_SESSION['editor_studio_guest_key'] ?? '');
     return preg_match('/^[a-f0-9]{48}$/', $key) === 1 ? $key : '';
 }
@@ -963,17 +987,22 @@ function require_same_origin_json_post(): void
 {
     $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
     if ($method !== 'POST') {
-        respond(['ok' => false, 'error' => 'Метод запроса не поддерживается'], 405);
+        respond(['ok' => false, 'code' => 'method_not_allowed', 'error' => 'Метод запроса не поддерживается'], 405);
     }
     $ctype = strtolower((string)($_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? ''));
     if (!str_starts_with($ctype, 'application/json')) {
-        respond(['ok' => false, 'error' => 'Ожидается JSON-запрос'], 415);
+        respond(['ok' => false, 'code' => 'unsupported_media_type', 'error' => 'Ожидается JSON-запрос'], 415);
+    }
+    // Запросы с явным Bearer AI-токеном не зависят от browser cookies, поэтому
+    // защищены самим криптографическим токеном и не требуют cookie-CSRF/Origin.
+    if (editor_ai_token_actor() !== null) {
+        return;
     }
     $origin = trim((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
     // Never trust X-Forwarded-Host here: an untrusted client can supply it.
     // Origin on a different port or scheme is a different security origin.
     if ($origin === '' || strtolower($origin) === 'null') {
-        respond(['ok' => false, 'error' => 'Заголовок Origin обязателен'], 403);
+        respond(['ok' => false, 'code' => 'missing_origin', 'error' => 'Заголовок Origin обязателен'], 403);
     }
     $parts = parse_url($origin);
     $scheme = strtolower((string)($parts['scheme'] ?? ''));
@@ -989,7 +1018,7 @@ function require_same_origin_json_post(): void
     $requestPort = isset($requestParts['port']) ? (int)$requestParts['port'] : $originPort;
     if (!in_array($scheme, ['http', 'https'], true) || $originHost === ''
         || $originHost !== $requestName || $originPort !== $requestPort) {
-        respond(['ok' => false, 'error' => 'Запрос с постороннего сайта отклонён'], 403);
+        respond(['ok' => false, 'code' => 'cross_origin_forbidden', 'error' => 'Запрос с постороннего сайта отклонён'], 403);
     }
     // Второй рубеж: синхронизаторный CSRF-токен сессии (см. editor_csrf_token).
     editor_csrf_verify();
@@ -1183,6 +1212,206 @@ function enforce_network_policy(array $cfg): void
     }
 }
 
+// ── Scoped AI Bearer Tokens ─────────────────────────────────────────────────
+
+const AI_TOKEN_SCOPES = ['read', 'create', 'update', 'delete'];
+
+function ai_token_new_id(): string
+{
+    return 'ait_' . bin2hex(random_bytes(8));
+}
+
+function ai_token_normalize_scopes(mixed $raw): array
+{
+    if (!is_array($raw)) {
+        return ['read'];
+    }
+    $out = [];
+    foreach ($raw as $s) {
+        $v = strtolower(trim((string)$s));
+        if (in_array($v, AI_TOKEN_SCOPES, true) && !in_array($v, $out, true)) {
+            $out[] = $v;
+        }
+    }
+    return $out !== [] ? $out : ['read'];
+}
+
+function ai_token_expired(array $token): bool
+{
+    $expires = trim((string)($token['expiresAt'] ?? ''));
+    if ($expires === '') {
+        return false;
+    }
+    $ts = strtotime($expires);
+    return $ts !== false && $ts <= time();
+}
+
+function ai_token_public(array $token): array
+{
+    return [
+        'id'           => $token['id'],
+        'guest_id'     => $token['guestId'],
+        'name'         => $token['name'],
+        'token_prefix' => $token['tokenPrefix'],
+        'scopes'       => $token['scopes'],
+        'pages'        => $token['pages'],
+        'created_at'   => $token['createdAt'],
+        'expires_at'   => $token['expiresAt'],
+        'last_used_at' => $token['lastUsedAt'],
+        'revoked_at'   => $token['revokedAt'],
+        'expired'      => ai_token_expired($token),
+        'active'       => ($token['revokedAt'] === '' && !ai_token_expired($token)),
+    ];
+}
+
+function editor_request_auth_headers(): array
+{
+    $headers = [];
+    foreach (['HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION', 'HTTP_X_AI_TOKEN'] as $key) {
+        if (isset($_SERVER[$key]) && trim((string)$_SERVER[$key]) !== '') {
+            $headers[$key] = trim((string)$_SERVER[$key]);
+        }
+    }
+    if (function_exists('getallheaders')) {
+        $all = @getallheaders();
+        if (is_array($all)) {
+            foreach ($all as $k => $v) {
+                $lk = strtolower((string)$k);
+                if ($lk === 'authorization' && !isset($headers['HTTP_AUTHORIZATION']) && trim((string)$v) !== '') {
+                    $headers['HTTP_AUTHORIZATION'] = trim((string)$v);
+                } elseif ($lk === 'x-ai-token' && !isset($headers['HTTP_X_AI_TOKEN']) && trim((string)$v) !== '') {
+                    $headers['HTTP_X_AI_TOKEN'] = trim((string)$v);
+                }
+            }
+        }
+    }
+    return $headers;
+}
+
+function editor_has_bearer_header(): bool
+{
+    $h = editor_request_auth_headers();
+    if (isset($h['HTTP_X_AI_TOKEN'])) {
+        return true;
+    }
+    $auth = (string)($h['HTTP_AUTHORIZATION'] ?? $h['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
+    return preg_match('/^Bearer\s+/i', $auth) === 1;
+}
+
+function editor_request_bearer_token(): string
+{
+    $h = editor_request_auth_headers();
+    $auth = (string)($h['HTTP_AUTHORIZATION'] ?? $h['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
+    if (preg_match('/^Bearer\s+(\S+)$/i', $auth, $m) === 1) {
+        return trim($m[1]);
+    }
+    return trim((string)($h['HTTP_X_AI_TOKEN'] ?? ''));
+}
+
+function editor_ai_token_actor(): ?array
+{
+    $actor = $GLOBALS['EDITOR_TOKEN_ACTOR'] ?? null;
+    return is_array($actor) ? $actor : null;
+}
+
+function ai_actor_scopes(): array
+{
+    $actor = editor_ai_token_actor();
+    if ($actor !== null) {
+        return $actor['scopes'];
+    }
+    return AI_TOKEN_SCOPES;
+}
+
+function ai_actor_has_scope(string $scope): bool
+{
+    return in_array($scope, ai_actor_scopes(), true);
+}
+
+/** Authenticates a Bearer AI token or responds 401/403/429 cleanly. */
+function editor_authenticate_bearer_token(?array $cfg = null): array
+{
+    $cfg ??= load_cfg(false);
+    $ip = get_request_ip($cfg);
+    $lock = auth_throttle_left('ai-token', $ip);
+    if ($lock > 0) {
+        respond_rate_limited($lock, 'Слишком много неудачных попыток использования AI-токена.');
+    }
+
+    $raw = editor_request_bearer_token();
+    if (preg_match('/^esai_[A-Za-z0-9_-]{16,120}$/', $raw) !== 1) {
+        auth_throttle_fail('ai-token', $ip, 25, 300, 120);
+        respond([
+            'ok' => false,
+            'code' => 'invalid_token',
+            'error' => 'Неверный формат AI-токена.',
+        ], 401);
+    }
+
+    $hash = hash('sha256', $raw);
+    $tok = store_ai_token_find_by_hash($hash);
+    if ($tok === null) {
+        auth_throttle_fail('ai-token', $ip, 25, 300, 120);
+        editor_audit('auth.token_rejected', '', ['reason' => 'not_found']);
+        respond([
+            'ok' => false,
+            'code' => 'invalid_token',
+            'error' => 'AI-токен недействителен.',
+        ], 401);
+    }
+    if ($tok['revokedAt'] !== '') {
+        editor_audit('auth.token_rejected', '', ['reason' => 'revoked', 'token_id' => $tok['id']]);
+        respond([
+            'ok' => false,
+            'code' => 'token_revoked',
+            'error' => 'AI-токен был отозван администратором.',
+        ], 401);
+    }
+    if (ai_token_expired($tok)) {
+        editor_audit('auth.token_rejected', '', ['reason' => 'expired', 'token_id' => $tok['id']]);
+        respond([
+            'ok' => false,
+            'code' => 'token_expired',
+            'error' => 'Срок действия AI-токена истёк.',
+        ], 401);
+    }
+
+    $guest = guest_cfg($cfg);
+    $user = guest_user_by_id($cfg, $tok['guestId']);
+    if (!$guest['enabled'] || $user === null || !$user['enabled'] || guest_user_expired($user)) {
+        editor_audit('auth.token_rejected', '', ['reason' => 'guest_disabled', 'token_id' => $tok['id']]);
+        respond([
+            'ok' => false,
+            'code' => 'guest_account_disabled',
+            'error' => 'Связанный гостевой аккаунт отключён или просрочен.',
+        ], 403);
+    }
+
+    $pages = $tok['pages'] !== []
+        ? array_values(array_intersect($user['pages'], $tok['pages']))
+        : $user['pages'];
+    $scopes = ai_token_normalize_scopes($tok['scopes']);
+
+    $lastUsedTs = $tok['lastUsedAt'] !== '' ? (int)@strtotime($tok['lastUsedAt']) : 0;
+    if (time() - $lastUsedTs >= 60) {
+        try {
+            store_ai_token_touch($tok['id'], gmdate('Y-m-d\TH:i:s\Z'));
+        } catch (Throwable $e) {
+            editor_log_error($e);
+        }
+    }
+
+    $actor = [
+        'role' => EDITOR_ROLE_GUEST,
+        'account' => $user,
+        'token' => $tok,
+        'scopes' => $scopes,
+        'pages' => $pages,
+    ];
+    $GLOBALS['EDITOR_TOKEN_ACTOR'] = $actor;
+    return $actor;
+}
+
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 
 /**
@@ -1198,12 +1427,14 @@ function bootstrap_editor_api(bool $requireAuth = true): void
  * Role-aware bootstrap.
  *  - $roles === null : no auth required, returns current role (or null)
  *  - otherwise       : session must have one of $roles
+ *  - $allowBearer    : accept Authorization: Bearer / X-AI-Token scoped to EDITOR_ROLE_GUEST
  *
  * Network: requests that fail the admin IP policy are accepted only when guest
- * remote access is enabled, and then ONLY for guest sessions.
+ * remote access is enabled, and then ONLY for guest sessions / AI tokens.
  */
-function bootstrap_editor_api_roles(?array $roles): ?string
+function bootstrap_editor_api_roles(?array $roles, bool $allowBearer = false): ?string
 {
+    $GLOBALS['EDITOR_TOKEN_ACTOR'] = null;
     apply_security_headers();
 
     $cfg = load_cfg(false);
@@ -1217,6 +1448,18 @@ function bootstrap_editor_api_roles(?array $roles): ?string
             respond(['ok' => false, 'error' => $networkError], 403);
         }
         $GLOBALS['EDITOR_NETWORK_GUEST_ONLY'] = true;
+    }
+
+    if ($allowBearer && editor_has_bearer_header()) {
+        if ($roles !== null && !in_array(EDITOR_ROLE_GUEST, $roles, true)) {
+            respond([
+                'ok' => false,
+                'code' => 'guest_forbidden',
+                'error' => 'Доступ запрещён: AI-токен не имеет прав администратора.',
+            ], 403);
+        }
+        editor_authenticate_bearer_token($cfg);
+        return EDITOR_ROLE_GUEST;
     }
 
     start_editor_session($cfg);

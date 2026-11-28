@@ -208,11 +208,11 @@
         title: row?.Name || `World #${row?.ID || 0}`,
         subtitle: `${row?.Path || '—'} · ID ${row?.ID ?? '—'}`
       }),
-      getTitle: (model, id, { existing }) => (existing ? `World:  ${model?.Name || `#${id}`}` : 'New world'),
+      getTitle: (model, id, { existing }) => (existing ? `World: ${model?.Name || `#${id}`}` : 'New world'),
       getSubtitle: (model, id, { existing }) => {
         if (!model) return '';
-        const type = model.Type ? `Type:  ${model.Type}` : 'Type: —';
-        const path = model.Path ? `Path:  ${model.Path}` : 'Path: —';
+        const type = model.Type ? `Type: ${model.Type}` : 'Type: —';
+        const path = model.Path ? `Path: ${model.Path}` : 'Path: —';
         return existing ? `ID ${id} · ${type} · ${path}` : `${type} · ${path}`;
       },
       emptyTitle: 'Select a world',

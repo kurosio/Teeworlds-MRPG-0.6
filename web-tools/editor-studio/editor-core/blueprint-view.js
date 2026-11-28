@@ -504,7 +504,7 @@
       const flag = document.createElement('i');
       flag.className = `bp-group-flag ${eventStyle.icon}`;
       flag.title = eventStyle.isEvent
-        ? `Event:  ${eventStyle.label}  (${group.event_key}) — its steps never link outside this event`
+        ? `Event: ${eventStyle.label} (${group.event_key}) — its steps never link outside this event`
         : 'Group without an event';
       header.appendChild(flag);
 
@@ -781,7 +781,7 @@
       // The first step of an event is where that event starts running — label
       // it, otherwise "this node has no incoming wire" looks like a mistake.
       const eventRootChip = (isRoot && eventStyle.isEvent)
-        ? `<span class="bp-node-event" title="Start of the event:  ${this.esc(eventStyle.label)}"><i class="${eventStyle.icon}"></i><span>${this.esc(eventStyle.label)}</span></span>`
+        ? `<span class="bp-node-event" title="Start of the event: ${this.esc(eventStyle.label)}"><i class="${eventStyle.icon}"></i><span>${this.esc(eventStyle.label)}</span></span>`
         : '';
 
       // completion-logic presentation (shared with the list view)
@@ -801,7 +801,7 @@
         <span class="bp-drag-zone" title="Drag to move the step"><i class="fa-solid fa-grip-vertical"></i></span>
         <span class="bp-node-title" data-role="title" title="Click to rename; double-click for quick settings">${this.esc(step.id)}</span>
         ${eventRootChip}
-        ${showLogic ? `<span class="bp-logic-badge" data-logic="${logic}" title="Completion logic:  ${this.esc(lmeta.short)}  — click to switch">${this.esc(lmeta.short)}</span>` : ''}
+        ${showLogic ? `<span class="bp-logic-badge" data-logic="${logic}" title="Completion logic: ${this.esc(lmeta.short)} — click to switch">${this.esc(lmeta.short)}</span>` : ''}
         <span class="bp-node-actions">
           <button data-bp-action="settings" title="Quick settings"><i class="fa-solid fa-sliders"></i></button>
           <button data-bp-action="edit-step" title="Show in the list"><i class="fa-solid fa-up-right-from-square"></i></button>
@@ -921,9 +921,9 @@
             pin.appendChild(lbl);
           }
           pin.title = pinCrossEvent
-            ? `Link:  ${field} → ${targetId}  — «${targetEvent.label}» is a different event, so this link is ignored (double-click to delete)`
+            ? `Link: ${field} → ${targetId} — «${targetEvent.label}» is a different event, so this link is ignored (double-click to delete)`
             : connected
-              ? `Link:  ${field} → ${targetId}  (drag to redirect; double-click to delete)`
+              ? `Link: ${field} → ${targetId} (drag to redirect; double-click to delete)`
               : `Drag to create a link (${field})`;
           pin.addEventListener('pointerdown', ev => {
             if (ev.button !== 0) return;

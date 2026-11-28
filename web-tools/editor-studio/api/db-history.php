@@ -34,8 +34,10 @@ function history_view(array $row, bool $full): array
         $changed = array_values(array_unique(array_merge($changed, array_keys($after))));
     }
 
+    $resKey = (string)$row['resource'];
     $resources = editor_resources();
-    $known = isset($resources[$row['resource']]);
+    $known = isset($resources[$resKey]);
+    $isScenario = $resKey === 'scenarios';
     $view = [
         'id' => (int)$row['id'],
         'at' => (string)$row['at'],
@@ -45,10 +47,10 @@ function history_view(array $row, bool $full): array
         'approved_by' => (string)$row['approved_by'],
         'source' => (string)$row['source'],
         'request_id' => (string)$row['request_id'],
-        'resource' => (string)$row['resource'],
-        'resource_title' => $known ? (string)$resources[$row['resource']]['title'] : (string)$row['resource'],
+        'resource' => $resKey,
+        'resource_title' => $known ? (string)$resources[$resKey]['title'] : ($isScenario ? 'Сценарии (файлы)' : $resKey),
         'table_name' => (string)$row['table_name'],
-        'pk_col' => (string)$row['pk_col'] !== '' ? (string)$row['pk_col'] : 'ID',
+        'pk_col' => (string)$row['pk_col'] !== '' ? (string)$row['pk_col'] : ($isScenario ? 'filename' : 'ID'),
         'record_id' => (int)$row['record_id'],
         'op' => $op,
         'label' => (string)$row['label'],
@@ -59,7 +61,7 @@ function history_view(array $row, bool $full): array
         'reverted_by' => (int)$row['reverted_by'],
         'revertable' => (bool)$row['revertable'],
         'can_revert' => (bool)$row['revertable'] && (string)$row['reverted_at'] === '' && in_array($op, DB_HISTORY_OPS, true),
-        'known_resource' => $known,
+        'known_resource' => $known || $isScenario,
     ];
     if ($full) {
         $view['before'] = $before;
@@ -113,6 +115,13 @@ try {
         $entry = $id > 0 ? store_history_get($id) : null;
         if ($entry === null) {
             respond(['ok' => false, 'error' => 'Запись истории не найдена', 'code' => 'history_not_found'], 404);
+        }
+        if (empty($entry['revertable'])) {
+            respond([
+                'ok' => false,
+                'error' => 'Эту запись нельзя отменить: для неё нет полных данных или это файловая операция сценария.',
+                'code' => 'history_not_revertable',
+            ], 409);
         }
         $R = db_history_resource((string)$entry['resource']);
         if ($R === null) {

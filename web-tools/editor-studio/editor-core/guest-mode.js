@@ -508,7 +508,7 @@
       writeDraft(d);
       toastInfo(dropped
         ? 'Change removed from the draft — the record matches the database'
-        : `Field ${col}  restored to the database value`);
+        : `Field ${col} restored to the database value`);
       return { ok: true, removed: true, dropped };
     },
 
@@ -1079,9 +1079,9 @@
     const stateEl = bannerEl.querySelector('[data-guest-state]');
     if (stateEl) {
       if (!total) stateEl.textContent = 'No changes';
-      else if (pending && submitted) stateEl.textContent = `${pending}  unsent,  ${submitted}  under review`;
-      else if (pending) stateEl.textContent = `${pending}  awaiting submission`;
-      else stateEl.textContent = `${submitted}  awaiting admin review`;
+      else if (pending && submitted) stateEl.textContent = `${pending} unsent, ${submitted} under review`;
+      else if (pending) stateEl.textContent = `${pending} awaiting submission`;
+      else stateEl.textContent = `${submitted} awaiting admin review`;
     }
     const pendingPill = bannerEl.querySelector('[data-guest-pending-pill]');
     if (pendingPill) pendingPill.hidden = !pending;

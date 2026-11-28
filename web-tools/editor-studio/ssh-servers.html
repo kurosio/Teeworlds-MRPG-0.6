@@ -64,7 +64,7 @@
             <label><span class="editor-label">SSH user</span><input id="f-user" required class="w-full editor-input form-input" placeholder="deploy"></label>
             <label><span class="editor-label">Private key path on the web server</span><input id="f-key" class="w-full editor-input form-input" placeholder="/home/editor/.ssh/id_ed25519"></label>
             <label class="wide"><span class="editor-label">Remote working directory</span><input id="f-directory" required class="w-full editor-input form-input" placeholder="/srv/teeworlds/server-1"></label>
-            <div class="wide editor-section-divider"></div>
+            <div class="wide border-t editor-hairline my-1"></div>
             <div class="wide"><h3 class="font-semibold">Game server commands</h3><div class="editor-muted-text text-xs mt-1">Commands run on the remote host over SSH. Configure your own scripts or systemd commands.</div></div>
             <label class="wide"><span class="editor-label">Update</span><input id="f-update" class="w-full editor-input form-input" placeholder="Example: cd /srv/teeworlds && ./update.sh"></label>
             <label class="wide"><span class="editor-label">Start</span><input id="f-start" class="w-full editor-input form-input" placeholder="systemctl start teeworlds@server-1"></label>
@@ -87,7 +87,6 @@
   const esc = Page.esc;
   let servers = [];
   let selectedId = '';
-  let busy = false;
   const fields = ['id','name','host','port','user','key_path','directory','enabled','update_command','start_command','stop_command'];
   const setStatus = (message, good = false) => { $('form-status').textContent = message; $('form-status').className = `wide text-sm ${good ? 'text-green-600' : 'text-red-500'}`; };
   const call = async (body = null) => {
@@ -156,16 +155,19 @@
   function chosenIds() { return servers.filter(s => s.selected && s.enabled).map(s => s.id); }
   async function run(action, ids = chosenIds()) {
     if (!ids.length) { $('operation-results').innerHTML = '<div class="ssh-result bad">Select at least one enabled server.</div>'; return; }
-    const label = {update:'server update',start:'server start',stop:'server stop'}[action];
-    if (!await EditorCore.Page.confirm(`Run ${label} over SSH on ${ids.length} server(s)?`)) return;
-    busy = true;
+    const confirmPrompt = {
+      update: `Run server update over SSH on ${ids.length} server(s)?`,
+      start: `Run server start over SSH on ${ids.length} server(s)?`,
+      stop: `Run server stop over SSH on ${ids.length} server(s)?`,
+    }[action] || `Run ${action} over SSH on ${ids.length} server(s)?`;
+    if (!await EditorCore.Page.confirm(confirmPrompt)) return;
     document.querySelectorAll('[data-action]').forEach(button => button.disabled = true);
     $('operation-results').innerHTML = '<div class="ssh-result">SSH operation is running…</div>';
     try {
       const response = await call({action,ids});
       $('operation-results').innerHTML = response.results.map(result => `<div class="ssh-result${result.ok?'':' bad'}"><b>${esc(result.name)}</b>: ${esc(result.message)}</div>`).join('');
     } catch (error) { $('operation-results').innerHTML = `<div class="ssh-result bad">${esc(error.message)}</div>`; }
-    finally { busy = false; document.querySelectorAll('[data-action]').forEach(button => button.disabled = false); }
+    finally { document.querySelectorAll('[data-action]').forEach(button => button.disabled = false); }
   }
   $('server-form').addEventListener('submit', event => {event.preventDefault();save();});
   $('btn-add').addEventListener('click', () => {selectedId='';fillForm();renderList();$('f-name').focus();});

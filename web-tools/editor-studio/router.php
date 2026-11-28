@@ -31,5 +31,29 @@ if ($hidden) {
     return true;
 }
 
+// Единая точка входа AI/MCP/OpenAPI/Discovery для встроенного PHP-сервера.
+if (preg_match('#^/\.well-known/ai-plugin\.json$#i', $path) === 1) {
+    $_GET['action'] = 'discovery';
+    $_SERVER['SCRIPT_NAME'] = '/api/ai.php';
+    require __DIR__ . '/api/ai.php';
+    return true;
+}
+if (preg_match('#^/openapi\.json$#i', $path) === 1) {
+    $_GET['action'] = 'openapi';
+    $_SERVER['SCRIPT_NAME'] = '/api/ai.php';
+    require __DIR__ . '/api/ai.php';
+    return true;
+}
+if (preg_match('#^/mcp/?$#i', $path) === 1) {
+    $_SERVER['SCRIPT_NAME'] = '/api/mcp.php';
+    require __DIR__ . '/api/mcp.php';
+    return true;
+}
+if (preg_match('#^/ai/?$#i', $path) === 1) {
+    $_SERVER['SCRIPT_NAME'] = '/ai/index.php';
+    require __DIR__ . '/ai/index.php';
+    return true;
+}
+
 // Всё остальное отдаёт встроенный сервер (PHP-файлы выполняются как обычно).
 return false;
