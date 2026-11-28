@@ -2,6 +2,7 @@
 // Administrator-only, atomic save endpoint for browser-edited DDNet v4 maps.
 declare(strict_types=1);
 require_once __DIR__ . '/db-core.php';
+require_once __DIR__ . '/map-datafile.php';
 bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN]);
 
 // Keep under the project's default PHP post_max_size (50M in Docker).
@@ -47,208 +48,40 @@ function map_edit_guard(): void
 
 function map_edit_maps_dir(): ?string
 {
-    $cfg = load_cfg();
-    $candidates = [];
-    $setting = trim((string)($cfg['maps_dir'] ?? ''));
-    if ($setting !== '') $candidates[] = $setting;
-    $env = getenv('EDITOR_MAPS_DIR');
-    if (is_string($env) && $env !== '') $candidates[] = rtrim($env, '/\\');
-    $repo = dirname(__DIR__, 2);
-    $studio = dirname(__DIR__);
-    foreach ([$repo . '/maps', $repo . '/data/maps', $studio . '/maps'] as $candidate) $candidates[] = $candidate;
-    foreach (array_unique($candidates) as $candidate) {
-        $real = realpath($candidate);
-        if ($real !== false && is_dir($real)) return $real;
-    }
-    return null;
+    return ddnet_map_first_dir(load_cfg(), 'EDITOR_MAPS_DIR', ['maps', 'data/maps'], 'maps_dir');
 }
 
 function map_edit_resolve(string $root, string $relative): ?string
 {
-    $relative = str_replace('\\', '/', trim($relative));
-    if ($relative === '' || str_starts_with($relative, '/') || str_contains($relative, '..')
-        || preg_match('/^[A-Za-z]:/', $relative)) return null;
-    $base = realpath($root);
-    $real = $base === false ? false : realpath($base . '/' . $relative);
-    if ($real === false || !is_file($real) || !is_readable($real)) return null;
-    return $real === $base || str_starts_with($real, $base . DIRECTORY_SEPARATOR) ? $real : null;
+    return ddnet_map_resolve($root, $relative);
 }
 
 function map_edit_u32(string $bytes, int $offset): int
 {
-    if ($offset < 0 || $offset + 4 > strlen($bytes)) throw new EditorUserError('Повреждён заголовок карты.');
-    return (int)unpack('Vvalue', substr($bytes, $offset, 4))['value'];
+    return ddnet_u32($bytes, $offset);
 }
 
 function map_edit_i32(string $bytes, int $offset): int
 {
-    $value = map_edit_u32($bytes, $offset);
-    return $value >= 0x80000000 ? $value - 0x100000000 : $value;
+    return ddnet_i32($bytes, $offset);
 }
 
 /** Expand CTile m_Skip data into semantic [index, flags, reserved] cells. */
 function map_edit_expand_tiles(string $plain, int $count, int $version): string
 {
-    if ($count < 1 || $count > 4000000 || strlen($plain) % 4 !== 0) throw new EditorUserError('Данные игрового слоя повреждены.');
-    $tiles = '';
-    if ($version >= 4) {
-        $written = 0;
-        for ($offset = 0, $length = strlen($plain); $offset < $length && $written < $count; $offset += 4) {
-            $tile = substr($plain, $offset, 2) . $plain[$offset + 3];
-            $repeat = min(ord($plain[$offset + 2]) + 1, $count - $written);
-            $tiles .= str_repeat($tile, $repeat);
-            $written += $repeat;
-        }
-        if ($written !== $count) throw new EditorUserError('Игровой слой обрезан.');
-    } else {
-        if (strlen($plain) < $count * 4) throw new EditorUserError('Игровой слой обрезан.');
-        for ($i = 0; $i < $count; $i++) {
-            $offset = $i * 4;
-            $tiles .= substr($plain, $offset, 2) . $plain[$offset + 3];
-        }
-    }
-    return $tiles;
+    return ddnet_expand_tiles($plain, $count, $version);
 }
 
 /** Switch layer is CSwitchTileExtra per cell: number, type, flags, delay. */
 function map_edit_expand_switch(string $plain, int $count): string
 {
-    if ($count < 1 || $count > 4000000) throw new EditorUserError('Данные switch-слоя повреждены.');
-    if (strlen($plain) < $count * 4) throw new EditorUserError('Switch-слой обрезан.');
-    return substr($plain, 0, $count * 4);
+    return ddnet_expand_switch($plain, $count);
 }
 
 /** Validate a complete datafile and return only its compact structure summary. */
 function map_edit_validate_datafile(string $bytes): array
 {
-    $length = strlen($bytes);
-    if ($length < 36 || $length > MAP_EDIT_MAX_BYTES || substr($bytes, 0, 4) !== 'DATA') {
-        throw new EditorUserError('Файл не является поддерживаемой картой DDNet.');
-    }
-    $version = map_edit_u32($bytes, 4);
-    $size = map_edit_u32($bytes, 8);
-    $swapLen = map_edit_u32($bytes, 12);
-    $numTypes = map_edit_u32($bytes, 16);
-    $numItems = map_edit_u32($bytes, 20);
-    $numData = map_edit_u32($bytes, 24);
-    $itemSize = map_edit_u32($bytes, 28);
-    $dataSize = map_edit_u32($bytes, 32);
-    if ($version !== 4 || $size !== $length - 16 || $numTypes > 65536 || $numItems > 2000000
-        || $numData > 100000 || $itemSize > $length || $dataSize > $length) {
-        throw new EditorUserError('Структура карты повреждена или не поддерживается.');
-    }
-    $typesStart = 36;
-    $typesEnd = $typesStart + $numTypes * 12;
-    $itemOffsetsEnd = $typesEnd + $numItems * 4;
-    $dataOffsetsEnd = $itemOffsetsEnd + $numData * 4;
-    $dataSizesEnd = $dataOffsetsEnd + $numData * 4;
-    $itemStart = $dataSizesEnd;
-    $dataStart = $itemStart + $itemSize;
-    if ($dataStart > $length || $swapLen !== $dataStart - 16 || $dataStart + $dataSize !== $length) {
-        throw new EditorUserError('Таблицы или размеры карты не согласованы.');
-    }
-
-    // Locate the actual game-layer and switch-layer raw-data indexes from the
-    // unmodified item table. Both tables are read from the same $flags field:
-    // TILESLAYERFLAG_GAME (1) marks the gameplay layer, TILESLAYERFLAG_SWITCH
-    // (16) marks the switch layer, whose extra data lives in m_Switch (offset
-    // 84 for current maps, 72 for legacy ones).
-    $game = null;
-    $switch = null;
-    for ($i = 0; $i < $numTypes; $i++) {
-        $type = map_edit_u32($bytes, $typesStart + $i * 12);
-        if ($type !== 5) continue; // MAPITEMTYPE_LAYER
-        $first = map_edit_u32($bytes, $typesStart + $i * 12 + 4);
-        $count = map_edit_u32($bytes, $typesStart + $i * 12 + 8);
-        if ($first + $count > $numItems) throw new EditorUserError('Таблица слоёв карты повреждена.');
-        for ($itemIndex = $first; $itemIndex < $first + $count; $itemIndex++) {
-            $itemOffset = map_edit_u32($bytes, $typesEnd + $itemIndex * 4);
-            if ($itemOffset + 8 > $itemSize) throw new EditorUserError('Слой карты выходит за границы данных.');
-            $typeAndId = map_edit_u32($bytes, $itemStart + $itemOffset);
-            if ((($typeAndId >> 16) & 0xffff) !== 5) continue;
-            $payloadSize = map_edit_u32($bytes, $itemStart + $itemOffset + 4);
-            $payload = $itemStart + $itemOffset + 8;
-            if ($payloadSize < 60 || $payload + $payloadSize > $itemStart + $itemSize) continue;
-            if (map_edit_i32($bytes, $payload + 4) !== 2) continue; // LAYERTYPE_TILES
-            $tileVersion = map_edit_i32($bytes, $payload + 12);
-            $width = map_edit_i32($bytes, $payload + 16);
-            $height = map_edit_i32($bytes, $payload + 20);
-            $flags = map_edit_u32($bytes, $payload + 24);
-            $image = map_edit_i32($bytes, $payload + 52);
-            $rawIndex = map_edit_i32($bytes, $payload + 56);
-            if ($width < 1 || $height < 1 || $width * $height > 4000000) {
-                throw new EditorUserError('Слой карты имеет неверные размеры.');
-            }
-            $switchAt = $tileVersion <= 2 ? 72 : 84;
-            if ($switch === null && ($flags & 16) !== 0 && $payload + $switchAt + 4 <= $payload + $payloadSize) {
-                $switchIndex = map_edit_i32($bytes, $payload + $switchAt);
-                if ($switchIndex >= 0 && $switchIndex < $numData) {
-                    $switch = ['data' => $switchIndex, 'width' => $width, 'height' => $height, 'rows_bytes' => 4];
-                }
-            }
-            if ($game === null && ($flags & 1) !== 0 && $image === -1) {
-                if ($rawIndex < 0 || $rawIndex >= $numData) {
-                    throw new EditorUserError('Игровой слой карты имеет неверные размеры.');
-                }
-                $game = ['data' => $rawIndex, 'width' => $width, 'height' => $height, 'version' => $tileVersion];
-            }
-            if ($game !== null && $switch !== null) break 2;
-        }
-    }
-    if ($game === null) throw new EditorUserError('В карте не найден поддерживаемый игровой слой.');
-
-    $itemOffsetsHash = hash('sha256', substr($bytes, $typesEnd, $numItems * 4));
-    $rawHashes = [];
-    $rawSizes = [];
-    $gamePlain = null;
-    $switchPlain = null;
-    $last = -1;
-    $uncompressedTotal = 0;
-    for ($i = 0; $i < $numData; $i++) {
-        $off = map_edit_u32($bytes, $itemOffsetsEnd + $i * 4);
-        $plainSize = map_edit_u32($bytes, $dataOffsetsEnd + $i * 4);
-        $next = $i + 1 < $numData ? map_edit_u32($bytes, $itemOffsetsEnd + ($i + 1) * 4) : $dataSize;
-        if ($off < 0 || $off < $last || $next < $off || $next > $dataSize || $plainSize > MAP_EDIT_MAX_UNCOMPRESSED) {
-            throw new EditorUserError('Таблица ресурсов карты повреждена.');
-        }
-        $compressed = substr($bytes, $dataStart + $off, $next - $off);
-        $plain = @gzuncompress($compressed, min($plainSize + 1, MAP_EDIT_MAX_UNCOMPRESSED));
-        if (!is_string($plain) || strlen($plain) !== $plainSize) throw new EditorUserError('Сжатый блок карты повреждён.');
-        $rawHashes[] = hash('sha256', $compressed);
-        $rawSizes[] = $plainSize;
-        if ($i === $game['data']) $gamePlain = $plain;
-        if ($switch !== null && $i === $switch['data']) {
-            // A switch layer shorter than width*height*4 is ignored by the game
-            // engine itself, so it is not editable either.
-            if (strlen($plain) >= $switch['width'] * $switch['height'] * $switch['rows_bytes']) {
-                $switchPlain = $plain;
-            } else {
-                $switch = null;
-            }
-        }
-        $uncompressedTotal += $plainSize;
-        if ($uncompressedTotal > MAP_EDIT_MAX_UNCOMPRESSED) throw new EditorUserError('Распакованные данные карты слишком велики.');
-        $last = $off;
-    }
-    if (!is_string($gamePlain)) throw new EditorUserError('Данные игрового слоя не найдены.');
-    $gameTiles = map_edit_expand_tiles($gamePlain, $game['width'] * $game['height'], $game['version']);
-    $switchTiles = null;
-    if ($switch !== null) {
-        if (!is_string($switchPlain)) throw new EditorUserError('Данные switch-слоя не найдены.');
-        $switchTiles = map_edit_expand_switch($switchPlain, $switch['width'] * $switch['height']);
-    }
-    return [
-        'counts' => [$numTypes, $numItems, $numData, $itemSize],
-        'types_hash' => hash('sha256', substr($bytes, $typesStart, $numTypes * 12)),
-        'item_offsets_hash' => $itemOffsetsHash,
-        'items_hash' => hash('sha256', substr($bytes, $itemStart, $itemSize)),
-        'raw_hashes' => $rawHashes,
-        'raw_sizes' => $rawSizes,
-        'game' => $game,
-        'game_tiles' => $gameTiles,
-        'switch' => $switch,
-        'switch_tiles' => $switchTiles,
-    ];
+    return ddnet_parse_datafile($bytes, MAP_EDIT_MAX_BYTES, MAP_EDIT_MAX_UNCOMPRESSED, true);
 }
 
 /**

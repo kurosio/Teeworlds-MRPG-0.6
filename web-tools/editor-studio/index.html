@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Editor Studio</title>
+  <link rel="alternate" type="application/json" title="AI Onboarding JSON" href="ai/?format=json" />
+  <link rel="service-desc" type="application/json" title="OpenAPI 3.1.0" href="openapi.json" />
+  <link rel="ai-plugin" type="application/json" href=".well-known/ai-plugin.json" />
 
   <!-- Icons: локальные файлы из vendor/ (офлайн); шрифты — системные -->
   <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css" />
@@ -65,6 +68,9 @@
           <button id="pinSidebarBtn" class="editor-icon-btn studio-foot-icon" type="button" title="Pin the menu (Ctrl+B)" aria-label="Pin the menu (Ctrl+B)" aria-pressed="false">
             <i class="fa-solid fa-thumbtack"></i>
           </button>
+          <a id="open-ai-guide" class="editor-icon-btn studio-foot-icon" href="ai/" target="_blank" rel="noopener" title="AI / MCP Onboarding (/ai)" aria-label="AI / MCP Onboarding">
+            <i class="fa-solid fa-robot"></i>
+          </a>
           <button id="open-new-tab" class="editor-btn editor-btn-secondary studio-foot-btn" title="Open the current editor in a new tab">
             <i class="fa-solid fa-arrow-up-right-from-square"></i>
             <span class="truncate studio-label">New tab</span>
@@ -166,11 +172,16 @@
     <div class="absolute inset-0 studio-scrim"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4 overflow-y-auto">
       <div class="studio-auth-card my-auto">
-        <div class="flex items-center justify-end gap-2 mb-3">
-          <button type="button" class="editor-icon-btn" data-theme-toggle title="Switch color theme" aria-label="Switch color theme">
-            <i class="fa-solid fa-circle-half-stroke"></i>
-          </button>
-          <div data-i18n-switcher-host></div>
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <a href="ai/" target="_blank" rel="noopener" class="text-xs editor-muted-text underline flex items-center gap-1.5">
+            <i class="fa-solid fa-robot text-accent"></i><span>AI / MCP Setup (/ai)</span>
+          </a>
+          <div class="flex items-center gap-2">
+            <button type="button" class="editor-icon-btn" data-theme-toggle title="Switch color theme" aria-label="Switch color theme">
+              <i class="fa-solid fa-circle-half-stroke"></i>
+            </button>
+            <div data-i18n-switcher-host></div>
+          </div>
         </div>
 
         <div class="studio-auth-head">
@@ -1619,7 +1630,7 @@
       setRole('guest', result.guest?.name || result.guest?.login || loginName);
       const granted = Array.isArray(result.guest?.pages) ? result.guest.pages.length : 0;
       setAuthStatus(granted
-        ? `Guest account activated. Tabs available:  ${granted}.`
+        ? `Guest account activated. Tabs available: ${granted}.`
         : 'The account is activated, but the administrator has not enabled any tab.', granted ? 'ok' : 'err');
       setAuthOverlay(false);
       openEditor(initial());
@@ -1638,8 +1649,8 @@
       if (currentRole === 'guest') {
         const pending = Guest?.Draft?.pendingCount?.() || 0;
         const submitted = Guest?.Draft?.submittedCount?.() || 0;
-        if (pending > 0 && !await EditorCore.Page.confirm(`The draft holds  ${pending}  unsent change(s). They will stay in this browser. Sign out?`)) return;
-        if (pending === 0 && submitted > 0 && !await EditorCore.Page.confirm(`There are  ${submitted}  change(s) in submitted requests. They will stay with the administrator for review. Sign out?`)) return;
+        if (pending > 0 && !await EditorCore.Page.confirm(`The draft holds ${pending} unsent change(s). They will stay in this browser. Sign out?`)) return;
+        if (pending === 0 && submitted > 0 && !await EditorCore.Page.confirm(`There are ${submitted} change(s) in submitted requests. They will stay with the administrator for review. Sign out?`)) return;
       }
       await authRequest('logout', {});
       isAuthorized = false;

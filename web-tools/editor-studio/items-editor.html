@@ -647,7 +647,7 @@
           min: 0,
           step: 1,
           placeholder: String(POTION_RECAST_DEFAULT_SECONDS),
-          help: `Default  ${POTION_RECAST_DEFAULT_SECONDS}  sec.; 0 means no delay.`,
+          help: `Default ${POTION_RECAST_DEFAULT_SECONDS} sec.; 0 means no delay.`,
           showWhen: whenDataEditorIs(DATA_EDITOR_POTION),
         },
       },
@@ -943,8 +943,8 @@
       getTitle: (model, id) => (id ? `Item: ${model?.Name || `#${id}`}` : 'New item'),
       getSubtitle: (model, id) => {
         if (!model) return '';
-        const group = model.Group ? `Group:  ${model.Group}` : 'Group: —';
-        const type = model.Type ? `Type:  ${model.Type}` : 'Type: —';
+        const group = model.Group ? `Group: ${model.Group}` : 'Group: —';
+        const type = model.Type ? `Type: ${model.Type}` : 'Type: —';
         return id ? `ID ${id} · ${group} · ${type}` : `${group} · ${type}`;
       },
       emptyTitle: 'Select an item',

@@ -775,7 +775,8 @@ const unmark = (text) => {
 const markupTexts = (markup) => {
   const found = [];
   const marked = withMarkers(markup);
-  for (const match of marked.matchAll(/>([^<>]+)</g)) {
+  const withoutCode = marked.replace(/<code\b[^>]*>[\s\S]*?<\/code>/gi, '<code/>');
+  for (const match of withoutCode.matchAll(/>([^<>]+)</g)) {
     const text = normalize(unmark(match[1]));
     if (text) found.push(text);
   }
@@ -798,21 +799,148 @@ const decodeEscapes = (value) => value
   .replace(/\\\\/g, '\\');
 
 /** Строки интерфейса из кода: литералы и шаблоны с подстановками. */
+const scanJsLiterals = (code) => {
+  const out = [];
+  const n = code.length;
+  let i = 0;
+  let canStartRegex = true;
+  const REGEX_PRE_WORDS = new Set([
+    'return', 'throw', 'case', 'default', 'delete', 'void', 'typeof', 'yield',
+    'await', 'in', 'instanceof', 'new', 'else', 'do',
+  ]);
+  const skipLineComment = () => { while (i < n && code[i] !== '\n') i++; };
+  const skipBlockComment = () => {
+    i += 2;
+    while (i < n - 1 && !(code[i] === '*' && code[i + 1] === '/')) i++;
+    i += 2;
+  };
+  const skipRegex = () => {
+    i++;
+    let inClass = false;
+    while (i < n && code[i] !== '\n') {
+      const ch = code[i];
+      if (ch === '\\') { i += 2; continue; }
+      if (ch === '[') { inClass = true; i++; continue; }
+      if (ch === ']') { inClass = false; i++; continue; }
+      if (ch === '/' && !inClass) {
+        i++;
+        while (i < n && /[a-z]/i.test(code[i])) i++;
+        break;
+      }
+      i++;
+    }
+    canStartRegex = false;
+  };
+  const readQuoted = (q, start) => {
+    i++;
+    let s = '';
+    while (i < n && code[i] !== '\n') {
+      if (code[i] === '\\') { s += code.slice(i, i + 2); i += 2; continue; }
+      if (code[i] === q) {
+        i++;
+        out.push({ index: start, value: s, template: false });
+        canStartRegex = false;
+        return;
+      }
+      s += code[i++];
+    }
+  };
+  const readTemplate = (start) => {
+    i++;
+    let s = '';
+    while (i < n) {
+      if (code[i] === '\\') { s += code.slice(i, i + 2); i += 2; continue; }
+      if (code[i] === '`') {
+        i++;
+        out.push({ index: start, value: s, template: true });
+        canStartRegex = false;
+        return;
+      }
+      if (code[i] === '$' && code[i + 1] === '{') {
+        s += '${';
+        i += 2;
+        canStartRegex = true;
+        let depth = 1;
+        while (i < n && depth > 0) {
+          const c = code[i];
+          if (c === '/' && code[i + 1] === '/') { skipLineComment(); continue; }
+          if (c === '/' && code[i + 1] === '*') { skipBlockComment(); continue; }
+          if (c === '/' && canStartRegex) { skipRegex(); continue; }
+          if (c === "'" || c === '"') { readQuoted(c, i); continue; }
+          if (c === '`') { readTemplate(i); continue; }
+          if (c === '{') { depth++; s += '{'; i++; canStartRegex = true; continue; }
+          if (c === '}') {
+            depth--;
+            s += '}';
+            i++;
+            if (depth > 0) canStartRegex = false;
+            continue;
+          }
+          if (/[\w$]/.test(c)) {
+            let j = i;
+            while (j < n && /[\w$]/.test(code[j])) j++;
+            const word = code.slice(i, j);
+            s += word;
+            i = j;
+            canStartRegex = REGEX_PRE_WORDS.has(word);
+            continue;
+          }
+          if (!/\s/.test(c)) canStartRegex = /[=(,[!&|?:;~^+-]/.test(c);
+          s += c;
+          i++;
+        }
+        continue;
+      }
+      s += code[i++];
+    }
+  };
+  while (i < n) {
+    const c = code[i];
+    if (c === '/' && code[i + 1] === '/') { skipLineComment(); continue; }
+    if (c === '/' && code[i + 1] === '*') { skipBlockComment(); continue; }
+    if (c === '/' && canStartRegex) { skipRegex(); continue; }
+    if (c === "'" || c === '"') { readQuoted(c, i); continue; }
+    if (c === '`') { readTemplate(i); continue; }
+    if (/[\w$]/.test(c)) {
+      let j = i;
+      while (j < n && /[\w$]/.test(code[j])) j++;
+      canStartRegex = REGEX_PRE_WORDS.has(code.slice(i, j));
+      i = j;
+      continue;
+    }
+    if (!/\s/.test(c)) canStartRegex = /[=(,[!&|?:;{~^+-]/.test(c);
+    i++;
+  }
+  return out;
+};
+
 const codeTexts = (code) => {
   const found = [];
-  const re = /"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`((?:[^`\\]|\\.)*)`/g;
-  let match;
-  while ((match = re.exec(code))) {
+  for (const lit of scanJsLiterals(code)) {
     // Сообщения разработчику (`new Error('…')`, `console.warn('…')`) — не интерфейс.
-    const context = code.slice(Math.max(0, match.index - 40), match.index);
+    const context = code.slice(Math.max(0, lit.index - 40), lit.index);
     if (/(?:Error|console\.(?:\w+)|throw)\s*\(\s*$/.test(context)) continue;
-    const template = match[3] !== undefined;
-    const value = template ? match[3] : (match[1] ?? match[2] ?? '');
+    const template = lit.template;
+    const value = lit.value;
     if (!value.trim()) continue;
     if (/<[a-z!/][^>]*>/i.test(value)) { found.push(...markupTexts(value)); continue; }
     if (!template) { found.push(normalize(decodeEscapes(value))); continue; }
     let index = 0;
-    const candidate = decodeEscapes(value).replace(/\$\{[^}]*\}/g, () => `{${index++}}`);
+    const raw = decodeEscapes(value);
+    let candidate = '';
+    for (let pos = 0; pos < raw.length;) {
+      const start = raw.indexOf('${', pos);
+      if (start === -1) { candidate += raw.slice(pos); break; }
+      candidate += raw.slice(pos, start);
+      let depth = 1, end = start + 2;
+      while (end < raw.length && depth > 0) {
+        if (raw[end] === '{') depth++;
+        else if (raw[end] === '}') depth--;
+        end++;
+      }
+      candidate += `{${index++}}`;
+      pos = end;
+    }
     for (const piece of candidate.split(/[<>]/)) {
       const text = normalize(piece);
       if (text) found.push(text);
@@ -821,15 +949,36 @@ const codeTexts = (code) => {
   return found;
 };
 
-/** Ключ словаря с подстановками: «Found: {0}» → регулярное выражение. */
+/** Ключ словаря с подстановками: «Found: {0}» → префикс/суффикс + регулярное выражение (без ReDoS). */
 const templateKeys = [...dict.keys()]
   .filter((key) => key.includes('{'))
-  .map((key) => new RegExp(`^${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\{\d+\\}/g, '[\\s\\S]*?')}$`));
+  .map((key) => {
+    const parts = key.split(/\{\d+\}/);
+    const hasWord = parts.some((p) => /[A-Za-z]/.test(p));
+    if (!hasWord) return null;
+    const re = new RegExp(`^${parts.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('([\\s\\S]*?)')}$`);
+    return { parts, re };
+  })
+  .filter(Boolean);
 const translatedText = (text) => {
   const core = normalize(text);
   if (!core) return true;
   if (dict.has(core)) return true;
-  return templateKeys.some((re) => re.test(core));
+  return templateKeys.some(({ parts, re }) => {
+    if (parts[0] && !core.startsWith(parts[0])) return false;
+    const last = parts[parts.length - 1];
+    if (last && !core.endsWith(last)) return false;
+    for (let i = 1; i < parts.length - 1; i++) {
+      if (parts[i] && !core.includes(parts[i])) return false;
+    }
+    const match = re.exec(core);
+    if (!match) return false;
+    // Подстановка `{0}` не должна «съедать» чужие английские слова в исходнике.
+    for (let i = 1; i < match.length; i++) {
+      if (/[A-Za-z]{2,}/.test(match[i].replace(/\{\d+\}/g, ''))) return false;
+    }
+    return true;
+  });
 };
 
 /**
@@ -863,40 +1012,49 @@ const DATA_STRINGS = new Set([
  * пробелами или подпись с заглавной буквы — без служебных символов кода.
  */
 const looksLikeProse = (text) => {
+  const plain = text.replace(/\{\d+\}/g, 'X');
   if (text.length < 2 || !/[A-Za-z]/.test(text)) return false;
-  if (/[{}$#@\\_=<>|]/.test(text)) return false;
+  if (/^\{\d+\}(?:\s*(?:[·•:\-–—\/|]|and|or|to|of)\s*\{\d+\})*$/i.test(text)) return false;
+  if (/^(?:\{\d+\}|ID|HTTP|X|Y|[·•:\-–—,/|()])(?:\s*(?:\{\d+\}|ID|HTTP|X|Y|[·•:\-–—,/|()]))*$/.test(text)) return false;
+  if (/^(?:&lt;|&gt;|&amp;|\{\d+\})+$/.test(text)) return false;
+  if (/^\{\d+\}T\d{2}:\d{2}:\d{2}Z$/.test(text)) return false;
+  if (/^(?:\{\d+\}|[a-z]+)[A-Z][A-Za-z]+$/.test(text)) return false;
+  if (/^(?:\{\d+\}|\d+(?:\.\d+)?)(?:px|rem|em|vh|vw|ms|deg)$/.test(text)) return false;
+  if (/[{}$#@\\_=<>|]/.test(plain)) return false;
   // Attribute selectors, optionally in a comma-separated selector list.
-  if (/^[a-z][\w-]*\[[^\]]+\](?:\s*,\s*[a-z][\w-]*\[[^\]]+\])*$/.test(text)) return false;
+  if (/^[a-z][\w-]*\[[^\]]+\](?:\s*,\s*[a-z][\w-]*\[[^\]]+\])*$/.test(plain)) return false;
   // CSS и инлайновые стили: «position:fixed», «padding:4px 10px».
-  if (/[a-z-]+:\s*[-0-9a-z.,()]/.test(text)) return false;
-  if (/\b\d+px\b|\b\d+deg\b|rgba?\(/i.test(text)) return false;
-  // Список css-классов: все слова строчные, без знаков предложения.
-  const tokens = text.split(/\s+/).filter(Boolean);
-  if (tokens.length > 1 && tokens.every((token) => /^[a-z0-9[\].:_-]+$/.test(token))) return false;
-  if (/\.[a-z]{2,5}\b/i.test(text) && /(?:html|js|css|php|json|map|sql|png|svg)/i.test(text)) return false;
-  if (text.includes('var(--')) return false;             // css-выражение с переменной
-  if (/^https?:\/\//.test(text)) return false;            // адрес
-  if (/^var\(/.test(text)) return false;
-  // css-функция: «minmax(0,1fr)»
-  if (/^(?:min|max|minmax|calc|clamp|repeat|rgba?|hsla?)\(/i.test(text)) return false;
+  if (/[a-z-]+:\s*[-0-9a-z.,()]/.test(plain)) return false;
+  if (/\b\d+px\b|\b\d+deg\b|rgba?\(/i.test(plain)) return false;
+  // Список css-классов: все слова строчные, без знаков предложения (в том числе с `{0}` рядом с классами с `-`).
+  const rawTokens = text.split(/\s+/).filter(Boolean);
+  if (rawTokens.length > 1 && rawTokens.some((token) => /-/.test(token)) && rawTokens.every((token) => /^(?:[a-z0-9[\].:_-]|\{\d+\})+$/.test(token))) return false;
+  const tokens = plain.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1 && tokens.every((token) => /^[a-z0-9[\].:_-]+$/i.test(token) && token === token.toLowerCase())) return false;
+  if (/\.[a-z]{2,5}\b/i.test(plain) && /(?:html|js|css|php|json|map|sql|png|svg)/i.test(plain)) return false;
+  if (plain.includes('var(--')) return false;             // css-выражение с переменной
+  if (/^https?:\/\//.test(plain)) return false;            // адрес
+  if (/^var\(/.test(plain)) return false;
+  // css-функция: «minmax(0,1fr)», «translate(10px, 20px) scale(1.2)»
+  if (/^(?:min|max|minmax|calc|clamp|repeat|rgba?|hsla?|translate(?:[XY]|3d)?|scale(?:[XY])?|rotate)\(/i.test(plain)) return false;
   // Технические значения: горячие клавиши, пути, css-селекторы, консольные
   // префиксы, свойства вида `Position.x`, аббревиатуры (ID, JSON, NPC).
-  if (/^(?:Ctrl|Alt|Shift|Meta|Cmd)\+/.test(text)) return false;
-  if (/^[[/.\\]/.test(text)) return false;
-  if (/^[A-Z]{1,5}$/.test(text)) return false;
-  if (/^[A-Za-z]+(?:\.[A-Za-z]+)+$/.test(text)) return false;
-  if (/^[.,#\w-]+(?:, [.#\w-]+)+$/.test(text)) return false;
+  if (/^(?:Ctrl|Alt|Shift|Meta|Cmd)\+/.test(plain)) return false;
+  if (/^[[/.\\]/.test(plain)) return false;
+  if (/^[A-Z]{1,5}$/.test(plain)) return false;
+  if (/^[A-Za-z]+(?:\.[A-Za-z]+)+$/.test(plain)) return false;
+  if (/^[.,#\w-]+(?:, [.#\w-]+)+$/.test(plain)) return false;
   // css-селектор: «input, textarea, select, [contenteditable]»
-  if (/^[a-z][\w-]*(?:\s*,\s*(?:[a-z.#*][\w-]*|\[[^\]]*\]))+$/i.test(text)) return false;
+  if (/^[a-z][\w-]*(?:\s*,\s*(?:[a-z.#*][\w-]*|\[[^\]]*\]))+$/i.test(plain)) return false;
   // фрагмент кода: «lim.message.min ?»
-  if (/^[A-Za-z_$][\w$]*(?:\.[\w$]+)*\s*\?$/.test(text)) return false;
-  if (/[a-z][A-Z]/.test(text)) return false;                 // camelCase-идентификатор
-  if (/^[a-z0-9-]+$/.test(text)) return false;               // слаг или имя поля
-  if (/[A-Za-z]-[A-Za-z]/.test(text) && !/ /.test(text)) return false;
+  if (/^[A-Za-z_$][\w$]*(?:\.[\w$]+)*\s*\?$/.test(plain)) return false;
+  if (/[a-z][A-Z]/.test(plain)) return false;                 // camelCase-идентификатор
+  if (/^[a-z0-9-]+$/.test(plain)) return false;               // слаг или имя поля
+  if (/[A-Za-z]-[A-Za-z]/.test(plain) && !/ /.test(plain)) return false;
   if (/^\d/.test(text)) return false;
-  const words = text.match(/[A-Za-z]{2,}/g) || [];
+  const words = plain.match(/[A-Za-z]{2,}/g) || [];
   if (!words.length) return false;
-  if (words.length === 1 && !/^[A-Z]/.test(text)) return false;
+  if (words.length === 1 && !/^[A-Z]/.test(plain)) return false;
   return true;
 };
 // Служебные слова — тоже не подписи.

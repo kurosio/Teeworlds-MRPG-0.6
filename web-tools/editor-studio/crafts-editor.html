@@ -431,8 +431,8 @@
       const duplicate = !!next && next !== STATE.rename.currentName && (
         STATE.rename.siblingNames.has(next) || (STATE.rename.forceMerge && STATE.rename.forceMergeName === next)
       );
-      const impact = STATE.rowsHaveMore ? `In the loaded list: at least  ${countLabel(STATE.rename.count)}. The server will update every record in this branch.`
-        : `Will be updated  ${countLabel(STATE.rename.count)}.`;
+      const impact = STATE.rowsHaveMore ? `In the loaded list: at least ${countLabel(STATE.rename.count)}. The server will update every record in this branch.`
+        : `Will be updated ${countLabel(STATE.rename.count)}.`;
       els.renameImpact.textContent = impact;
       els.renameExistingWarning.classList.toggle('hidden', !duplicate);
       els.renameInput.disabled = STATE.rename.busy;
@@ -1029,7 +1029,7 @@
         closeRenameDialog({ restoreFocus: false });
         await loadRows();
         if (selectedId && changedIds.has(String(selectedId))) await selectRow(selectedId);
-        EditorCore.UI.toast(`Renamed:  ${countLabel(changed.length)}.`, 'success');
+        EditorCore.UI.toast(`Renamed: ${countLabel(changed.length)}.`, 'success');
       } catch (e) {
         STATE.rename.error = String(e?.message || e || 'Renaming failed.');
         if (STATE.rename.error.includes('is already taken at this level')) {

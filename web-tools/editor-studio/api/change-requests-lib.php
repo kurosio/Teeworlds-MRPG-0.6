@@ -16,6 +16,7 @@ require_once __DIR__ . '/db-core.php';
 require_once __DIR__ . '/db-resources.php';
 require_once __DIR__ . '/reference-data.php';
 require_once __DIR__ . '/db-history-lib.php';
+require_once __DIR__ . '/scenario-files.php';
 
 const CR_NICK_MIN = 2;
 const CR_NICK_MAX = 32;
@@ -166,6 +167,38 @@ function cr_load(string $id): ?array
     }
     $data = json_decode((string)$raw, true);
     return is_array($data) ? $data : null;
+}
+
+/** Owner check for guests: returns request or throws 404 (no information leak). */
+function cr_load_visible(string $id, bool $admin): array
+{
+    $req = cr_load($id);
+    if (!$req) {
+        throw new CrInputError('Запрос не найден', 404, ['code' => 'request_not_found']);
+    }
+    if (!$admin && !cr_guest_owns($req)) {
+        throw new CrInputError('Запрос не найден', 404, ['code' => 'request_not_found']);
+    }
+    return $req;
+}
+
+/** Light throttle for previews (they hit the DB with read queries). */
+function cr_preview_throttle(bool $admin = false): void
+{
+    $now = time();
+    $win = $_SESSION['editor_studio_cr_preview'] ?? ['t' => $now, 'n' => 0];
+    if (!is_array($win) || $now - (int)$win['t'] > 60) {
+        $win = ['t' => $now, 'n' => 0];
+    }
+    $win['n'] = (int)$win['n'] + 1;
+    $_SESSION['editor_studio_cr_preview'] = $win;
+    $limit = $admin ? 120 : 30;
+    if ($win['n'] > $limit) {
+        throw new CrInputError('Слишком много проверок подряд. Подождите минуту.', 429, [
+            'code' => 'rate_limited',
+            'retry_after' => 60,
+        ]);
+    }
 }
 
 function cr_save(array $req): void
@@ -500,6 +533,11 @@ function cr_msg_unread_map(string $role, ?array $guestIds = null): array
 
 // ── Operation validation ─────────────────────────────────────────────────────
 
+function cr_is_scenario_op(array $op): bool
+{
+    return (string)($op['resource'] ?? '') === 'scenarios';
+}
+
 function cr_resource(string $key, bool $guestOnly = true): array
 {
     $resources = editor_resources();
@@ -523,7 +561,7 @@ function cr_assert_guest_resources(array $ops): void
     foreach ($ops as $op) {
         $key = (string)($op['resource'] ?? '');
         if (!in_array($key, $allowed, true)) {
-            $title = $resources[$key]['title'] ?? $key;
+            $title = $key === 'scenarios' ? 'Сценарии (файлы)' : ($resources[$key]['title'] ?? $key);
             throw new CrInputError('Раздел «' . $title . '» не включён для вашего гостевого аккаунта.', 403);
         }
     }
@@ -599,7 +637,16 @@ function cr_normalize_data(array $R, mixed $raw): array
     // JSON-колонки не отклоняются здесь: прямое сохранение администратором
     // (db-crud.php) их тоже не проверяет, а неразобранные значения показывает
     // анализ запроса — см. предупреждение о временных ID ниже.
-    foreach (editor_reference_schema()[$R['key']] ?? [] as $rule) {
+    $resKey = (string)($R['key'] ?? '');
+    if ($resKey === '' && isset($R['table'])) {
+        foreach (editor_resources() as $k => $def) {
+            if (($def['table'] ?? '') === $R['table']) {
+                $resKey = $k;
+                break;
+            }
+        }
+    }
+    foreach (editor_reference_schema()[$resKey] ?? [] as $rule) {
         $value = $data[$rule['column']] ?? null;
         if ($rule['codec'] !== 'csv' || !is_string($value) || trim($value) === '') continue;
         if (!preg_match('/^\s*-?[0-9]*(?:\s*,\s*-?[0-9]*)*\s*$/', $value)) {
@@ -632,6 +679,49 @@ function cr_normalize_ops(mixed $rawOps, int $maxOps): array
         if (!in_array($type, ['create', 'update', 'delete'], true)) {
             throw new CrInputError('Неизвестный тип операции #' . ($n + 1));
         }
+
+        if (($raw['resource'] ?? '') === 'scenarios') {
+            $fnRaw = $raw['filename'] ?? ($raw['id'] ?? null);
+            $fnCheck = scenario_validate_filename($fnRaw);
+            if (!$fnCheck['ok']) {
+                throw new CrInputError((string)$fnCheck['error'], 400, ['code' => $fnCheck['code'] ?? 'invalid_filename']);
+            }
+            $filename = (string)$fnCheck['filename'];
+            $rk = 'scenarios:' . strtolower($filename);
+            if (isset($rowIndex[$rk])) {
+                throw new CrInputError("Файл сценария «{$filename}» указан несколько раз в одном запросе.");
+            }
+            $rowIndex[$rk] = count($ops);
+            $baseHash = isset($raw['baseHash']) && is_string($raw['baseHash']) ? trim($raw['baseHash']) : null;
+            if ($type === 'delete') {
+                $ops[] = [
+                    'type' => 'delete',
+                    'resource' => 'scenarios',
+                    'id' => null,
+                    'tempId' => null,
+                    'filename' => $filename,
+                    'baseHash' => $baseHash,
+                    'data' => [],
+                ];
+                continue;
+            }
+            $rawContent = $raw['content'] ?? ($raw['data']['content'] ?? ($raw['data'] ?? null));
+            $norm = scenario_normalize_content($rawContent);
+            if (!$norm['ok']) {
+                throw new CrInputError("Сценарий «{$filename}»: " . $norm['error'], 400, ['code' => $norm['code'] ?? 'invalid_json']);
+            }
+            $ops[] = [
+                'type' => $type,
+                'resource' => 'scenarios',
+                'id' => null,
+                'tempId' => null,
+                'filename' => $filename,
+                'baseHash' => $baseHash,
+                'data' => ['content' => $norm['content']],
+            ];
+            continue;
+        }
+
         $R = cr_resource((string)($raw['resource'] ?? ''));
         $key = $R['key'];
 
@@ -710,23 +800,49 @@ function cr_scan_temp_ids(mixed $value): array
 /** All typed references, including embedded JSON and serialized lists. */
 function cr_op_temp_refs(array $op): array
 {
+    if (cr_is_scenario_op($op)) {
+        return array_values(array_unique(array_column(array_filter(
+            scenario_extract_references($op['data']['content'] ?? []),
+            static fn($ref) => is_guest_temp_id($ref['id'])
+        ), 'id')));
+    }
     return array_values(array_unique(array_column(array_filter(
         editor_data_references($op['resource'], $op['data']),
         static fn($ref) => is_guest_temp_id($ref['id'])
     ), 'id')));
 }
 
-/** Creates first (dependency ordered), then updates, then deletes. */
+/** Creates first (dependency ordered), then updates, then deletes, then scenario files. */
 function cr_order_ops(array $ops): array
 {
-    $creates = array_values(array_filter($ops, fn($o) => $o['type'] === 'create'));
-    $others = array_values(array_filter($ops, fn($o) => $o['type'] !== 'create'));
+    $creates = array_values(array_filter($ops, fn($o) => !cr_is_scenario_op($o) && $o['type'] === 'create'));
+    $others = array_values(array_filter($ops, fn($o) => !cr_is_scenario_op($o) && $o['type'] !== 'create'));
+    $scenarioOps = array_values(array_filter($ops, fn($o) => cr_is_scenario_op($o)));
     $known = [];
     foreach ($creates as $op) $known[$op['tempId']] = $op['resource'];
 
     $deleted = [];
-    foreach ($ops as $op) if ($op['type'] === 'delete') $deleted[$op['resource'] . ':' . $op['id']] = true;
+    foreach ($ops as $op) if (!cr_is_scenario_op($op) && $op['type'] === 'delete') $deleted[$op['resource'] . ':' . $op['id']] = true;
+    $tableToRes = [];
+    foreach (editor_resources() as $k => $R) $tableToRes[$R['table']] = $k;
     foreach ($ops as $op) {
+        if (cr_is_scenario_op($op)) {
+            foreach (scenario_extract_references($op['data']['content'] ?? []) as $ref) {
+                $t = (int)$ref['id'];
+                $targetRes = $tableToRes[$ref['target']] ?? '';
+                if ($targetRes !== '' && isset($deleted[$targetRes . ':' . $t])) {
+                    throw new CrInputError("Сценарий «{$op['filename']}» ({$ref['path']}) ссылается на запись #$t, удаляемую в этом же запросе");
+                }
+                if (!is_guest_temp_id($t)) continue;
+                if (!isset($known[$t])) {
+                    throw new CrInputError("Сценарий «{$op['filename']}» ({$ref['path']}) ссылается на новую запись #$t, которой нет в этом запросе.");
+                }
+                if ($targetRes !== '' && $known[$t] !== $targetRes) {
+                    throw new CrInputError("Сценарий «{$op['filename']}» ({$ref['path']}): новая запись #$t относится к {$known[$t]}, а требуется {$targetRes}");
+                }
+            }
+            continue;
+        }
         foreach (editor_data_references($op['resource'], $op['data']) as $ref) {
             $t = $ref['id'];
             if (isset($deleted[$ref['target'] . ':' . $t])) throw new CrInputError("Поле {$ref['column']} ссылается на запись #$t, удаляемую в этом же запросе");
@@ -774,7 +890,7 @@ function cr_order_ops(array $ops): array
     }
     $updates = array_filter($others, fn($o) => $o['type'] === 'update');
     $deletes = array_filter($others, fn($o) => $o['type'] === 'delete');
-    return array_values(array_merge($ordered, $updates, $deletes));
+    return array_values(array_merge($ordered, $updates, $deletes, $scenarioOps));
 }
 
 // ── Analysis ─────────────────────────────────────────────────────────────────
@@ -972,9 +1088,15 @@ function cr_analyze(mysqli $db, array $ops): array
 {
     $lookup = new CrLookup($db);
     $tempLabels = [];
+    $tempKnown = [];
+    $deletedMap = [];
     foreach ($ops as $op) {
-        if ($op['type'] !== 'create') continue;
+        if (!cr_is_scenario_op($op) && $op['type'] === 'delete') {
+            $deletedMap[$op['resource'] . ':' . $op['id']] = true;
+        }
+        if (cr_is_scenario_op($op) || $op['type'] !== 'create') continue;
         $R = cr_resource($op['resource'], false);
+        $tempKnown[(int)$op['tempId']] = $op['resource'];
         $tempLabels[$op['tempId']] = cr_row_label($R, $op['data']) ?? ($R['title'] . ' (новая)');
     }
 
@@ -984,6 +1106,87 @@ function cr_analyze(mysqli $db, array $ops): array
     $summary = ['create' => 0, 'update' => 0, 'delete' => 0, 'fields' => 0, 'danger' => 0, 'warning' => 0, 'resources' => []];
 
     foreach ($ops as $i => $op) {
+        if (cr_is_scenario_op($op)) {
+            $filename = (string)($op['filename'] ?? '');
+            $resolved = scenario_resolve_path($filename, null, false);
+            $exists = !empty($resolved['ok']) && !empty($resolved['exists']);
+            $curRead = $exists ? scenario_read_file($filename) : ['ok' => false, 'content' => null, 'sha256' => null];
+            $curContent = !empty($curRead['ok']) ? $curRead['content'] : null;
+            $curSha = !empty($curRead['ok']) ? (string)$curRead['sha256'] : null;
+
+            $entry = [
+                'index' => $i,
+                'type' => $op['type'],
+                'resource' => 'scenarios',
+                'resourceTitle' => 'Сценарии (файлы)',
+                'table' => 'scenarios',
+                'id' => null,
+                'tempId' => null,
+                'filename' => $filename,
+                'baseHash' => $op['baseHash'] ?? null,
+                'label' => $filename,
+                'title' => ($op['type'] === 'create' ? 'Создание' : ($op['type'] === 'delete' ? 'Удаление' : 'Изменение')) . ": Сценарий «{$filename}»",
+                'changes' => [],
+                'impact' => [],
+                'warnings' => [],
+                'noop' => false,
+                'error' => null,
+            ];
+
+            if (!$resolved['ok']) {
+                $entry['error'] = (string)($resolved['error'] ?? 'Некорректное имя файла сценария.');
+                $errors[] = $entry['error'];
+            } elseif ($op['type'] === 'create' && $exists) {
+                $entry['error'] = "Файл сценария «{$filename}» уже существует.";
+                $errors[] = $entry['error'];
+            } elseif ($op['type'] !== 'create' && !$exists) {
+                $entry['error'] = "Файл сценария «{$filename}» не найден (возможно, уже удалён).";
+                $errors[] = $entry['error'];
+            } elseif ($op['type'] !== 'create' && !empty($op['baseHash']) && $curSha !== null && $curSha !== (string)$op['baseHash']) {
+                $entry['error'] = "Файл сценария «{$filename}» изменился с момента загрузки (несовпадение baseHash).";
+                $errors[] = $entry['error'];
+            }
+
+            $snapshots[$i] = ['content' => $curContent, 'sha256' => $curSha, 'exists' => $exists];
+
+            $newContent = $op['data']['content'] ?? null;
+            if ($op['type'] !== 'delete' && !$entry['error']) {
+                $scCheck = scenario_validate_content($newContent, $db, $tempKnown, $deletedMap);
+                foreach ($scCheck['errors'] as $scErr) {
+                    $entry['warnings'][] = ['severity' => 'danger', 'text' => (string)$scErr['message']];
+                }
+                foreach ($scCheck['warnings'] as $scWarn) {
+                    $entry['warnings'][] = ['severity' => 'warning', 'text' => (string)$scWarn['message']];
+                }
+            }
+
+            $beforeJson = $curContent !== null ? json_encode($curContent, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) : null;
+            $afterJson = $op['type'] === 'delete' ? null : json_encode($newContent, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+            if ($op['type'] === 'update' && $curContent !== null && editor_values_equal($curContent, $newContent, true)) {
+                $entry['noop'] = true;
+            } elseif (!$entry['error']) {
+                $entry['changes'][] = [
+                    'column' => 'content',
+                    'before' => $beforeJson,
+                    'after' => $afterJson,
+                    'json' => true,
+                ];
+            }
+
+            if (!$entry['noop'] && !$entry['error']) {
+                $summary[$op['type']]++;
+                $summary['fields'] += $op['type'] === 'delete' ? 0 : count($entry['changes']);
+                $summary['resources']['Сценарии (файлы)'] = ($summary['resources']['Сценарии (файлы)'] ?? 0) + 1;
+                foreach ($entry['warnings'] as $item) {
+                    if (($item['severity'] ?? '') === 'danger') $summary['danger']++;
+                    if (($item['severity'] ?? '') === 'warning') $summary['warning']++;
+                }
+            }
+            $result[] = $entry;
+            continue;
+        }
+
         $R = cr_resource($op['resource'], false);
         $jsonCols = $R['json'] ?? [];
         $refs = $R['refs'] ?? [];
@@ -1129,11 +1332,37 @@ function cr_public_analysis(array $analysis): array
 
 // ── Conflicts & apply (admin only) ───────────────────────────────────────────
 
-/** Compare stored snapshots with the current DB state. */
+/** Compare stored snapshots with the current DB state and scenario files. */
 function cr_detect_conflicts(mysqli $db, array $ops, bool $forUpdate = false): array
 {
     $conflicts = [];
     foreach ($ops as $i => $op) {
+        if (cr_is_scenario_op($op)) {
+            $filename = (string)($op['filename'] ?? '');
+            $resolved = scenario_resolve_path($filename, null, false);
+            $exists = !empty($resolved['ok']) && !empty($resolved['exists']);
+            if ($op['type'] === 'create') {
+                if ($exists) {
+                    $conflicts[] = ['index' => $i, 'kind' => 'exists', 'text' => "Сценарий «{$filename}»: файл уже существует на сервере"];
+                }
+                continue;
+            }
+            if (!$exists) {
+                $conflicts[] = ['index' => $i, 'kind' => 'missing', 'text' => "Сценарий «{$filename}»: файл больше не существует"];
+                continue;
+            }
+            $expectedHash = (string)($op['before']['sha256'] ?? $op['baseHash'] ?? '');
+            if ($expectedHash !== '') {
+                $curSha = (string)(@hash_file('sha256', (string)$resolved['path']) ?: '');
+                if ($curSha !== '' && $curSha !== $expectedHash) {
+                    $conflicts[] = [
+                        'index' => $i, 'kind' => 'changed', 'columns' => ['content'],
+                        'text' => "Сценарий «{$filename}»: файл изменён на сервере с момента создания запроса",
+                    ];
+                }
+            }
+            continue;
+        }
         if ($op['type'] === 'create') continue;
         $R = cr_resource($op['resource'], false);
         $jsonCols = $R['json'] ?? [];
@@ -1279,57 +1508,118 @@ function cr_apply_sequence(array $ops, callable $insert, callable $updateRow, ca
 }
 
 /**
- * Apply a request in ONE transaction (all-or-nothing).
+ * Apply a request in ONE atomic unit (all-or-nothing across game DB and scenarios/).
  * Returns ['idMap'=>[temp=>real], 'applied'=>[...], 'skipped'=>[...]]
  */
 function cr_apply(mysqli $db, array $req, bool $force): array
 {
     // Re-validate stored operations (defence in depth: file could be tampered).
     $rawOps = array_map(fn($o) => [
-        'type' => $o['type'] ?? '', 'resource' => $o['resource'] ?? '', 'id' => $o['id'] ?? null,
-        'tempId' => $o['tempId'] ?? null, 'data' => cr_decode_ops_data($o),
+        'type' => $o['type'] ?? '',
+        'resource' => $o['resource'] ?? '',
+        'id' => $o['id'] ?? null,
+        'tempId' => $o['tempId'] ?? null,
+        'filename' => $o['filename'] ?? null,
+        'baseHash' => $o['baseHash'] ?? null,
+        'data' => cr_decode_ops_data($o),
     ], is_array($req['operations'] ?? null) ? $req['operations'] : []);
     $ops = cr_normalize_ops($rawOps, 1000);
     // Re-attach snapshots by identity.
     $snapByKey = [];
     foreach ($req['operations'] as $o) {
-        $k = ($o['type'] ?? '') . ':' . ($o['resource'] ?? '') . ':' . ($o['id'] ?? $o['tempId'] ?? '');
+        $ident = ($o['resource'] ?? '') === 'scenarios' ? (string)($o['filename'] ?? '') : (string)($o['id'] ?? $o['tempId'] ?? '');
+        $k = ($o['type'] ?? '') . ':' . ($o['resource'] ?? '') . ':' . $ident;
         $snapByKey[$k] = $o['before'] ?? null;
     }
     foreach ($ops as &$op) {
-        $op['before'] = $snapByKey[$op['type'] . ':' . $op['resource'] . ':' . ($op['id'] ?? $op['tempId'])] ?? null;
+        $ident = cr_is_scenario_op($op) ? (string)($op['filename'] ?? '') : (string)($op['id'] ?? $op['tempId'] ?? '');
+        $op['before'] = $snapByKey[$op['type'] . ':' . $op['resource'] . ':' . $ident] ?? null;
     }
     unset($op);
 
+    $scExec = null;
     $db->begin_transaction();
     try {
         $conflicts = cr_detect_conflicts($db, $ops, true);
         if ($conflicts && !$force) {
             $db->rollback();
-            throw new CrInputError('Данные в БД изменились с момента создания запроса. Проверьте конфликты и примените принудительно, если уверены.', 409, ['conflicts' => $conflicts]);
+            throw new CrInputError('Данные в БД или файлах сценариев изменились с момента создания запроса. Проверьте конфликты и примените принудительно, если уверены.', 409, ['conflicts' => $conflicts]);
         }
         $missing = [];
         foreach ($conflicts as $c) {
-            if ($c['kind'] === 'missing') $missing[$c['index']] = true;
+            if ($c['kind'] === 'missing') {
+                $missing[$c['index']] = true;
+            }
+            if ($c['kind'] === 'exists') {
+                $db->rollback();
+                throw new CrInputError($c['text'], 409, ['conflicts' => $conflicts]);
+            }
+        }
+
+        $dbOps = [];
+        $scenarioOps = [];
+        $dbMissing = [];
+        foreach ($ops as $i => $op) {
+            if (cr_is_scenario_op($op)) {
+                $scenarioOps[] = ['index' => $i, 'op' => $op];
+            } else {
+                if (isset($missing[$i])) {
+                    $dbMissing[count($dbOps)] = true;
+                }
+                $dbOps[] = $op;
+            }
         }
 
         $result = cr_apply_sequence(
-            $ops,
+            $dbOps,
             fn(array $R, array $data): int => crud_insert($db, $R, $data),
             function (array $R, int $id, array $data) use ($db): void { crud_update($db, $R, $id, $data); },
             function (array $R, int $id) use ($db): void { crud_delete($db, $R, $id); },
             fn(array $R, int $id): ?array => crud_fetch_row($db, $R, $id, true),
-            $missing,
+            $dbMissing,
         );
         $idMap = $result['idMap'];
         $applied = $result['applied'];
         $skipped = $result['skipped'];
+        $history = $result['history'] ?? [];
+
+        $scenarioBatch = [];
+        foreach ($scenarioOps as $item) {
+            $origIdx = $item['index'];
+            $sop = $item['op'];
+            if (isset($missing[$origIdx])) {
+                $skipped[] = ['index' => $origIdx, 'text' => "Сценарий «{$sop['filename']}»: пропущено — файл не существует"];
+                continue;
+            }
+            $scenarioBatch[] = $sop;
+        }
+        if ($scenarioBatch !== []) {
+            $scExec = scenario_apply_file_ops($scenarioBatch, $idMap);
+            $applied = array_merge($applied, $scExec['applied']);
+            $history = array_merge($history, $scExec['history']);
+        }
+
         $db->commit();
-        return ['idMap' => $idMap, 'applied' => $applied, 'skipped' => $skipped,
-            'history' => $result['history'] ?? [], 'conflicts' => $conflicts];
+        if ($scExec !== null && isset($scExec['commit'])) {
+            ($scExec['commit'])();
+        }
+        return [
+            'idMap' => $idMap,
+            'applied' => $applied,
+            'skipped' => $skipped,
+            'history' => $history,
+            'conflicts' => $conflicts,
+        ];
     } catch (CrInputError $e) {
+        if ($scExec !== null && isset($scExec['rollback'])) {
+            ($scExec['rollback'])();
+        }
+        try { $db->rollback(); } catch (Throwable) {}
         throw $e;
     } catch (Throwable $e) {
+        if ($scExec !== null && isset($scExec['rollback'])) {
+            ($scExec['rollback'])();
+        }
         try { $db->rollback(); } catch (Throwable) {}
         throw new CrInputError('Применение отменено (транзакция откатена): ' . editor_safe_message($e), 500);
     }
@@ -1381,6 +1671,18 @@ function cr_full_view(array $req, bool $admin): array
     // The owner and the administrator may revise the pending request. Return
     // decoded values for the workbench; approval still revalidates everything.
     $view['operations'] = array_map(function (array $o): array {
+        if ((string)($o['resource'] ?? '') === 'scenarios') {
+            return [
+                'type' => $o['type'],
+                'resource' => 'scenarios',
+                'id' => null,
+                'tempId' => null,
+                'filename' => $o['filename'] ?? '',
+                'baseHash' => $o['baseHash'] ?? null,
+                'data' => is_array($o['data'] ?? null) ? $o['data'] : [],
+                'before' => is_array($o['before'] ?? null) ? $o['before'] : null,
+            ];
+        }
         $R = cr_resource((string)$o['resource']);
         $jsonCols = $R['json'] ?? [];
         $before = is_array($o['before'] ?? null) ? $o['before'] : null;

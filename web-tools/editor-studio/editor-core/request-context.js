@@ -83,7 +83,7 @@
       ? esc(loadError)
       : request
         ? `${esc(requestId)} · v${Number(request.version) || 1}${targetOp ? ` · ${esc(typeLabel[targetOp.type] || targetOp.type)} #${operationId(targetOp)}` : ''}${target?.field ? ` · field <code>${esc(target.field)}</code>` : ''}`
-        : `${esc(requestId)}  · loading…`;
+        : `${esc(requestId)} · loading…`;
     const editing = editMode && request?.status === 'pending';
     const hint = editError || (editing
       ? 'The editor\'s regular buttons save a new request version, not the game database.'
@@ -91,7 +91,7 @@
     banner.classList.toggle('request-preview-banner--editing', editing);
     banner.innerHTML = `
       <i class="fa-solid ${loadError || editError ? 'fa-triangle-exclamation' : editing ? 'fa-pen-to-square' : 'fa-code-pull-request'}"></i>
-      <div class="request-preview-banner-text"><b>${loadError ? 'Could not open the request snapshot' : editing ? 'Editing request ' : 'Request view mode'}</b><span>${details}</span><small>${esc(hint)}</small></div>
+      <div class="request-preview-banner-text"><b>${loadError ? 'Could not open the request snapshot' : editing ? 'Editing request' : 'Request view mode'}</b><span>${details}</span><small>${esc(hint)}</small></div>
       <a class="editor-btn editor-btn-secondary editor-btn--sm" href="change-requests.html?request=${encodeURIComponent(requestId)}" data-request-open>Open the request</a>`;
   };
 

@@ -332,6 +332,7 @@ function db_history_resources(): array
     foreach (editor_resources() as $key => $R) {
         $out[] = ['key' => (string)$key, 'title' => (string)($R['title'] ?? $key)];
     }
+    $out[] = ['key' => 'scenarios', 'title' => 'Сценарии (файлы)'];
     usort($out, static fn(array $a, array $b): int => strcmp($a['title'], $b['title']));
     return $out;
 }

@@ -103,3 +103,55 @@ test('scenario timing uses server ticks and saves execution_time for every compo
   assert.equal(result.steps[0].delay, 100);
   assert.equal(result.steps[0].components[0].execution_time, 75);
 });
+
+test('scenario branch components, component defaults, completion_logic, vouchers, and NPC roles match server C++', () => {
+  const context = { window: {} };
+  vm.runInNewContext(read('editor-core/registry.js'), context);
+  const { componentSchemas } = context.window.EditorCore.schemas;
+
+  for (const type of ['quest_condition', 'condition_movement']) {
+    const schema = componentSchemas[type];
+    assert.ok(schema, `missing schema ${type}`);
+    assert.deepEqual(plain(schema.linkTargets), ['pass_step_id', 'fail_step_id'], `${type} must expose pass/fail linkTargets`);
+    for (const field of ['timeout', 'pass_step_id', 'fail_step_id']) {
+      assert.ok(schema.fields[field], `${type} missing field ${field}`);
+    }
+  }
+
+  assert.equal(componentSchemas.use_chat_code.fields.hidden.default, true);
+  assert.equal(componentSchemas.set_group_spawn.fields.enable_spawn.default, true);
+  assert.equal(componentSchemas.condition_movement.fields.entire_group.default, false);
+  assert.equal(componentSchemas.dungeon_activate_point.fields.entire_group.default, false);
+  assert.equal(componentSchemas.dungeon_activate_point.fields.duration.ui.min, 0);
+
+  const scenarioFilesPhp = read('api/scenario-files.php');
+  const aiSchemaPhp = read('api/ai-schema.php');
+  const scenarioBaseCpp = fs.readFileSync(path.join(repo, 'src/game/server/core/scenarios/base/scenario_base.cpp'), 'utf8');
+  for (const logic of ['all_of', 'any_of', 'sequential']) {
+    assert.ok(scenarioBaseCpp.includes(`"${logic}"`), `C++ missing logic ${logic}`);
+    assert.ok(scenarioFilesPhp.includes(`'${logic}'`), `scenario-files.php missing logic ${logic}`);
+    assert.ok(aiSchemaPhp.includes(`'${logic}'`), `ai-schema.php missing logic ${logic}`);
+  }
+  assert.doesNotMatch(scenarioFilesPhp, /'parallel'/);
+  assert.doesNotMatch(aiSchemaPhp, /'parallel'/);
+
+  const vouchersHtml = read('vouchers-editor.html');
+  const voucherFns = vouchersHtml.slice(
+    vouchersHtml.indexOf('    const emptyVoucher = () => ({'),
+    vouchersHtml.indexOf('    const formatUntil = (sec) => {'),
+  );
+  const { fromRow, toPayload } = vm.runInNewContext(`${voucherFns}\n({ fromRow, toPayload })`);
+  const parsedVoucher = fromRow({ ID: 1, Code: 'GIFT', Multiple: 1, ValidUntil: 1800000000, Data: { exp: 250, money: 500, items: [{ id: 1, value: 3 }] } });
+  assert.deepEqual(plain(parsedVoucher), { ID: 1, Code: 'GIFT', Multiple: 1, ValidUntil: 1800000000, exp: 250, money: 500, items: [{ id: 1, value: 3 }] });
+  assert.deepEqual(plain(toPayload(parsedVoucher)), { Code: 'GIFT', Multiple: 1, ValidUntil: 1800000000, Data: { items: [{ id: 1, value: 3 }], exp: 250, money: 500 } });
+  assert.deepEqual(plain(toPayload({ Code: 'ONLY_ITEMS', Multiple: 0, ValidUntil: 0, exp: 0, money: 0, items: [] })), { Code: 'ONLY_ITEMS', Multiple: 0, ValidUntil: 0, Data: { items: [] } });
+  const refSchema = JSON.parse(read('editor-core/reference-schema.json'));
+  assert.deepEqual(refSchema.vouchers, [{ column: 'Data', codec: 'json', paths: { 'items.*.id': 'items' } }]);
+  assert.match(aiSchemaPhp, /'ValidUntil'\s*=>\s*\['type'\s*=>\s*'int'/);
+  assert.match(aiSchemaPhp, /'Function'\s*=>\s*\['type'\s*=>\s*'int',\s*'nullable'\s*=>\s*false,\s*'min'\s*=>\s*-1,\s*'max'\s*=>\s*2/);
+
+  const botsNpcHtml = read('bots-npc-editor.html');
+  const npcOpts = literal(botsNpcHtml, 'FUNCTION_OPTIONS');
+  assert.deepEqual(npcOpts.map(o => o.value), [-1, 0, 1, 2]);
+  assert.match(read('editor-core/field-renderer.js'), /ui\.valueType\s*\?\s*`data-value-type=/);
+});

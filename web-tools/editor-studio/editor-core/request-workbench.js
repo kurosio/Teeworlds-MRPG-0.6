@@ -61,6 +61,7 @@
     });
     return {
       type: op.type, resource: op.resource, id: op.id ?? null, tempId: op.tempId ?? null,
+      filename: op.filename ?? null, baseHash: op.baseHash ?? null,
       before: clone(op.before || null), fields,
     };
   };
@@ -93,7 +94,7 @@
     modal.className = 'fixed inset-0 z-[800] flex items-center justify-center editor-modal-backdrop cr-workbench-modal';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-label', `Editing request  ${request.id}`);
+    modal.setAttribute('aria-label', `Editing request ${request.id}`);
     modal.innerHTML = `
       <div class="editor-modal-content cr-workbench">
         <div class="cr-workbench-head">
@@ -130,6 +131,7 @@
 
     const operationsEl = modal.querySelector('[data-operations]');
     const statusEl = modal.querySelector('[data-status]');
+    const resEl = modal.querySelector('[data-new-resource]');
     const typeEl = modal.querySelector('[data-new-type]');
     const idEl = modal.querySelector('[data-new-id]');
     const setStatus = (text, error = false) => {
@@ -151,7 +153,7 @@
         const missing = resource.columns.filter((column) => !(column in op.fields));
         const fields = Object.entries(op.fields).map(([column, field]) => {
           const before = op.before && Object.prototype.hasOwnProperty.call(op.before, column)
-            ? `<div class="cr-workbench-before">Was:  ${esc(displayValue(op.before[column]))}</div>` : '';
+            ? `<div class="cr-workbench-before">Was: ${esc(displayValue(op.before[column]))}</div>` : '';
           const input = field.json || field.raw.includes('\n') || field.raw.length > 120
             ? `<textarea class="editor-input form-textarea font-mono" rows="${field.json ? 6 : 3}" data-field="${esc(column)}" ${field.isNull ? 'disabled' : ''}>${esc(field.raw)}</textarea>`
             : `<input class="editor-input form-input ${field.numeric || field.json ? 'font-mono' : ''}" data-field="${esc(column)}" value="${esc(field.raw)}" ${field.isNull ? 'disabled' : ''} />`;
@@ -160,13 +162,15 @@
               <div class="min-w-0"><div class="cr-col">${esc(column)}${field.json ? ' <span class="cr-chip">JSON</span>' : ''}</div>${before}</div>
               <div class="flex items-center gap-2">
                 <label class="text-xs cr-muted flex items-center gap-1"><input type="checkbox" data-null="${esc(column)}" ${field.isNull ? 'checked' : ''} /> NULL</label>
-                <button type="button" class="editor-icon-btn" data-remove-field="${esc(column)}" data-index="${index}" title="Remove  field  of  operations"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" class="editor-icon-btn" data-remove-field="${esc(column)}" data-index="${index}" title="Remove field from operation"><i class="fa-solid fa-xmark"></i></button>
               </div>
             </div>
             ${input}
           </div>`;
         }).join('');
-        const record = op.type === 'create' ? `new · temporary #${op.tempId}` : `#${op.id}`;
+        const record = op.resource === 'scenarios'
+          ? (op.filename || op.id || 'scenario.json')
+          : (op.type === 'create' ? `new · temporary #${op.tempId}` : `#${op.id}`);
         return `<article class="cr-workbench-op" data-op="${index}">
           <div class="cr-workbench-op-head">
             <div><b>${esc(TYPE_LABEL[op.type] || op.type)}: ${esc(resource.title)}</b><span class="cr-muted"> · ${esc(record)}</span></div>
@@ -195,7 +199,23 @@
     };
     document.addEventListener('keydown', onKeydown);
 
-    const syncType = () => { idEl.disabled = typeEl.value === 'create'; };
+    const syncType = () => {
+      const isScenario = resEl.value === 'scenarios';
+      idEl.type = isScenario ? 'text' : 'number';
+      idEl.disabled = !isScenario && typeEl.value === 'create';
+      if (isScenario) {
+        idEl.removeAttribute('min');
+        idEl.removeAttribute('step');
+        idEl.placeholder = 'scenario.json';
+        if (idEl.value === '1') idEl.value = '';
+      } else {
+        idEl.min = '1';
+        idEl.step = '1';
+        idEl.placeholder = '';
+        if (!idEl.value || idEl.value.includes('.')) idEl.value = '1';
+      }
+    };
+    resEl.addEventListener('change', syncType);
     typeEl.addEventListener('change', syncType);
     syncType();
     modal.addEventListener('input', (event) => {
@@ -222,10 +242,26 @@
       const closeButton = event.target.closest('[data-close]');
       if (closeButton) return close();
       if (event.target.closest('[data-add-operation]')) {
-        const resource = modal.querySelector('[data-new-resource]').value;
+        const resource = resEl.value;
         const type = typeEl.value;
-        const id = Number(idEl.value);
         if (!resources[resource]) return setStatus('Select a section.', true);
+        if (resource === 'scenarios') {
+          const filename = String(idEl.value || '').trim();
+          if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}\.json$/i.test(filename) || filename.includes('..')) {
+            return setStatus('Enter a valid scenario filename.', true);
+          }
+          if (operations.some((op) => op.resource === 'scenarios' && String(op.filename || '').toLowerCase() === filename.toLowerCase())) {
+            return setStatus('This record is already in the request.', true);
+          }
+          operations.push({
+            type, resource, id: null, tempId: null, filename, baseHash: null, before: null,
+            fields: type === 'delete' ? {} : { content: fieldState('{\n  "steps": {}\n}', true) },
+          });
+          markDirty();
+          render();
+          return;
+        }
+        const id = Number(idEl.value);
         if (type !== 'create' && (!Number.isSafeInteger(id) || id < 0 || (id === 0 && resource !== 'worlds') || id >= 2000000000)) {
           return setStatus('Enter a valid existing record ID.', true);
         }
@@ -235,7 +271,7 @@
         const used = operations.map((op) => Number(op.tempId) || 0);
         const tempId = Math.max(2000000000, ...used) + 1;
         if (type === 'create' && tempId > 2000999999) return setStatus('Temporary IDs are exhausted.', true);
-        operations.push({ type, resource, id: type === 'create' ? null : id, tempId: type === 'create' ? tempId : null, before: null, fields: {} });
+        operations.push({ type, resource, id: type === 'create' ? null : id, tempId: type === 'create' ? tempId : null, filename: null, baseHash: null, before: null, fields: {} });
         markDirty();
         render();
         return;
@@ -290,7 +326,10 @@
               data[column] = field.raw;
             }
           }
-          payload.push({ type: op.type, resource: op.resource, id: op.id, tempId: op.tempId, data });
+          const entry = { type: op.type, resource: op.resource, id: op.id, tempId: op.tempId, data };
+          if (op.resource === 'scenarios' || op.filename) entry.filename = op.filename || '';
+          if (op.baseHash) entry.baseHash = op.baseHash;
+          payload.push(entry);
         }
       } catch (error) {
         setStatus(error.message, true);

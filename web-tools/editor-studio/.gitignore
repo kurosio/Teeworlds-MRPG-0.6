@@ -3,5 +3,7 @@
 data/change-requests/
 data/auth-throttle.json
 data/auth-throttle.json.lock
+data/ssh-known-hosts
 data/*.lock
 data/*.tmp*
+ssh-keys/

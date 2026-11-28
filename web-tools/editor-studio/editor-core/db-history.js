@@ -37,6 +37,7 @@
     nodes_collecting: 'Collecting nodes',
     aethers: 'Aethers (teleports)',
     accounts: 'Player accounts',
+    scenarios: 'Scenarios (files)',
   };
 
   /**

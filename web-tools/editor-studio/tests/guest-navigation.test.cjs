@@ -342,7 +342,7 @@ for (const analysis of [null, { operations: [], summary: {} }]) {
       { type: 'delete', resource: 'items', id: 43, reqId: 'CR-1' },
     ], analysis);
     assert.match(html, /Awaiting admin review/);
-    assert.equal((html.match(/In request  CR-1/g) || []).length, 3);
+    assert.equal((html.match(/In request CR-1/g) || []).length, 3);
     assert.match(html, /href="items-editor\.html\?resource=items&amp;record=42"/);
     assert.match(html, /href="quests-editor\.html\?resource=quests&amp;record=2000000003"/);
     assert.equal((html.match(/data-guest-record="1"/g) || []).length, 2);
@@ -358,5 +358,5 @@ test('mixed guest draft keeps editable draft links and submitted operation links
   assert.match(html, /href="items-editor\.html\?resource=items&amp;record=7"/);
   assert.match(html, /data-remove-op="u1"/);
   assert.match(html, /href="items-editor\.html\?resource=items&amp;record=42"/);
-  assert.match(html, /In request  CR-1/);
+  assert.match(html, /In request CR-1/);
 });

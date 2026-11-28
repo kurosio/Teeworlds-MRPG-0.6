@@ -444,9 +444,13 @@
     const editRequestButton = (r, admin = false) => r?.status === 'pending'
       ? `<button type="button" class="editor-btn editor-btn-secondary" data-edit-request="${esc(r.id)}"><i class="fa-solid fa-pen-to-square"></i><span>${admin ? 'Edit in the editor' : 'Edit the request'}</span></button>` : '';
     const openRequestInEditor = (r) => {
-      const op = r?.operations?.[0] || r?.analysis?.operations?.[0];
+      const ops = r?.operations || r?.analysis?.operations || [];
+      const pages = EditorCore.RequestWorkbench.RESOURCE_PAGES || {};
+      const idx = ops.findIndex((entry) => !!pages[entry?.resource]);
+      const op = idx >= 0 ? ops[idx] : ops[0];
       if (!op) return toast('The request has no operations to edit.', 'warning');
-      const analysisOp = r?.analysis?.operations?.find((entry) => entry.index === 0) || r?.analysis?.operations?.[0];
+      const targetIdx = idx >= 0 ? idx : 0;
+      const analysisOp = r?.analysis?.operations?.find((entry) => entry.index === targetIdx) || r?.analysis?.operations?.[0];
       const record = op.type === 'create' ? op.tempId : op.id;
       return EditorCore.RequestWorkbench.openEditor(op.resource, {
         request: r.id, record, field: analysisOp?.changes?.[0]?.column || '', edit: 1,
@@ -468,7 +472,7 @@
 
     const threadListHtml = (messages, admin) => (messages && messages.length
       ? `<div class="cr-thread">${messages.map((m) => threadRowHtml(m, admin)).join('')}</div>`
-      : `<div class="cr-muted text-sm">No messages yet. Write to${admin ? ' the guest' : ' the administrator'}  — the reply will appear here.</div>`);
+      : `<div class="cr-muted text-sm">No messages yet. Write to${admin ? ' the guest' : ' the administrator'} — the reply will appear here.</div>`);
 
     const threadBlockHtml = (messages, admin, placeholder) => `
       <div class="mt-5">
@@ -581,7 +585,7 @@
     const fieldNameHtml = (op, requestId, column, edit = false, mode = 'request') => {
       const attrs = openRecordAttrs(op, requestId, column, edit, mode);
       return attrs
-        ? `<a class="cr-open-record cr-col" ${attrs} title="Open field  ${esc(column)}  in the editor">${esc(column)} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`
+        ? `<a class="cr-open-record cr-col" ${attrs} title="Open field ${esc(column)} in the editor">${esc(column)} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`
         : `<span class="cr-col">${esc(column)}</span>`;
     };
 
@@ -624,7 +628,9 @@
       return `<div class="cr-notes">${notes.map(n => `<div class="cr-note cr-note--${esc(n.severity || 'info')}"><i class="fa-solid ${SEV_ICON[n.severity] || SEV_ICON.info}"></i><div>${esc(n.text)}</div></div>`).join('')}</div>`;
     };
 
-    const opIdText = (op) => (op.type === 'create' ? 'new record' : `#${op.id}`);
+    const opIdText = (op) => (op.resource === 'scenarios'
+      ? (op.filename || String(op.id || ''))
+      : (op.type === 'create' ? 'new record' : `#${op.id}`));
 
     const renderOp = (op, { actionsHtml = '', extraNotes = [], requestId = '', edit = false, mode = 'request' } = {}) => {
       const t = TYPE[op.type] || TYPE.update;
@@ -651,8 +657,8 @@
       if (summary.update) chips.push(`<span class="cr-chip cr-chip--update"><i class="fa-solid fa-pen"></i>${summary.update} ${plural(summary.update, 'change', 'changes')}</span>`);
       if (summary.delete) chips.push(`<span class="cr-chip cr-chip--delete"><i class="fa-solid fa-trash"></i>${summary.delete} ${plural(summary.delete, 'deletion', 'deletions')}</span>`);
       if (summary.fields) chips.push(`<span class="cr-chip"><i class="fa-solid fa-list"></i>${summary.fields} ${plural(summary.fields, 'field', 'fields')}</span>`);
-      if (summary.danger) chips.push(`<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-triangle-exclamation"></i>${summary.danger}  critical</span>`);
-      if (summary.warning) chips.push(`<span class="cr-chip cr-chip--warning"><i class="fa-solid fa-circle-exclamation"></i>${summary.warning}  warnings</span>`);
+      if (summary.danger) chips.push(`<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-triangle-exclamation"></i>${summary.danger} critical</span>`);
+      if (summary.warning) chips.push(`<span class="cr-chip cr-chip--warning"><i class="fa-solid fa-circle-exclamation"></i>${summary.warning} warnings</span>`);
       Object.entries(summary.resources || {}).forEach(([title, n]) => chips.push(`<span class="cr-chip"><i class="fa-solid fa-table"></i>${esc(title)}: ${n}</span>`));
       return chips.join('');
     };
@@ -676,7 +682,7 @@
     // ═══════════════════════════════════════════════════════════════════
     const G = { config: null, analysis: null, analysisError: '', previewSeq: 0, previewKey: '', mine: [], mineTotal: 0, selected: null, detail: null, tab: 'draft', cooldownUntil: 0, cooldownTimer: null };
 
-    const draftKeyOf = (o) => `${o.type}:${o.resource}:${o.type === 'create' ? o.tempId : o.id}`;
+    const draftKeyOf = (o) => `${o.type}:${o.resource}:${o.resource === 'scenarios' ? (o.filename || '') : (o.type === 'create' ? o.tempId : o.id)}`;
 
     /** Видимый обратный отсчёт кулдауна отправки (ответ 429 с Retry-After). */
     const startCooldown = (seconds) => {
@@ -748,7 +754,7 @@
       }
       const byKey = new Map(draft.ops.map(o => [draftKeyOf(o), o]));
       const removeBtn = (uid) => uid ? `<button type="button" class="editor-icon-btn" data-remove-op="${esc(uid)}" title="Remove from the draft"><i class="fa-solid fa-xmark"></i></button>` : '';
-      const submittedChip = (o) => `<span class="cr-chip cr-chip--pending" title="Sent to the administrator, awaiting review"><i class="fa-solid fa-hourglass-half"></i>In request  ${esc(o.reqId || '')}</span>`;
+      const submittedChip = (o) => `<span class="cr-chip cr-chip--pending" title="Sent to the administrator, awaiting review"><i class="fa-solid fa-hourglass-half"></i>In request ${esc(o.reqId || '')}</span>`;
 
       const drafts = draft.ops.filter(o => !o.reqId);
       const submitted = draft.ops.filter(o => o.reqId);
@@ -765,10 +771,10 @@
 
       if (G.analysis && G.analysis.operations) {
         $('g-summary').innerHTML = renderSummary(G.analysis.summary)
-          + (G.analysis.errors?.length ? `<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-ban"></i>Errors:  ${G.analysis.errors.length}</span>` : '')
-          + (submitted.length ? `<span class="cr-chip cr-chip--pending"><i class="fa-solid fa-hourglass-half"></i>Under review:  ${submitted.length}</span>` : '');
+          + (G.analysis.errors?.length ? `<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-ban"></i>Errors: ${G.analysis.errors.length}</span>` : '')
+          + (submitted.length ? `<span class="cr-chip cr-chip--pending"><i class="fa-solid fa-hourglass-half"></i>Under review: ${submitted.length}</span>` : '');
         box.innerHTML = G.analysis.operations.map((op) => {
-          const d = byKey.get(`${op.type}:${op.resource}:${op.type === 'create' ? op.tempId : op.id}`);
+          const d = byKey.get(`${op.type}:${op.resource}:${op.resource === 'scenarios' ? (op.filename || '') : (op.type === 'create' ? op.tempId : op.id)}`);
           const notes = op.noop ? [{ severity: 'info', text: 'The values match the database — this operation will not be included in the request.' }] : [];
           return renderOp(op, { actionsHtml: removeBtn(d?.uid), extraNotes: notes, mode: 'guest' });
         }).join('') + submittedHtml;
@@ -776,13 +782,14 @@
         $('g-summary').innerHTML = (G.analysisError
           ? `<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-ban"></i>${esc(G.analysisError)}</span>`
           : (drafts.length ? '<span class="cr-chip"><i class="fa-solid fa-spinner fa-spin"></i>Analysing…</span>' : ''))
-          + (submitted.length ? `<span class="cr-chip cr-chip--pending"><i class="fa-solid fa-hourglass-half"></i>Under review:  ${submitted.length}</span>` : '');
+          + (submitted.length ? `<span class="cr-chip cr-chip--pending"><i class="fa-solid fa-hourglass-half"></i>Under review: ${submitted.length}</span>` : '');
         box.innerHTML = drafts.map((o) => {
           const t = TYPE[o.type];
           const fields = Object.keys(o.data || {});
+          const targetLabel = o.resource === 'scenarios' ? esc(o.filename || o.id || '') : (o.type === 'create' ? '(new record)' : `#${esc(o.id)}`);
           return `<article class="cr-op cr-op--${esc(o.type)}"><div class="cr-op-head">
             <div class="cr-op-icon"><i class="fa-solid ${t.icon}"></i></div>
-            <div class="min-w-0 flex-1"><div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${o.type === 'create' ? '(new record)' : `#${esc(o.id)}`}${o.label ? ` «${esc(o.label)}»` : ''}</div>
+            <div class="min-w-0 flex-1"><div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${targetLabel}${o.label ? ` «${esc(o.label)}»` : ''}</div>
             <div class="cr-op-meta">${fields.length ? `Fields: ${esc(fields.join(', '))}` : ''}</div></div>
             <div class="cr-op-actions">${guestRecordLink(o)}${removeBtn(o.uid)}</div></div></article>`;
         }).join('') + submittedHtml;
@@ -794,12 +801,13 @@
     const renderSubmittedOp = (o, chipHtml = '') => {
       const t = TYPE[o.type] || TYPE.update;
       const fields = Object.keys(o.data || {});
+      const targetLabel = o.resource === 'scenarios' ? esc(o.filename || o.id || '') : (o.type === 'create' ? '(new record)' : `#${esc(o.id)}`);
       return `<article class="cr-op cr-op--${esc(o.type)}">
         <div class="cr-op-head">
           <div class="cr-op-icon"><i class="fa-solid ${t.icon}"></i></div>
           <div class="min-w-0 flex-1">
-            <div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${o.type === 'create' ? '(new record)' : `#${esc(o.id)}`}${o.label ? ` «${esc(o.label)}»` : ''}</div>
-            <div class="cr-op-meta">${fields.length ? `Fields: ${esc(fields.join(', '))}` : ''}${o.submittedAt ? ` · sent ${esc(fmtDate(o.submittedAt))}` : ''}</div>
+            <div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${targetLabel}${o.label ? ` «${esc(o.label)}»` : ''}</div>
+            <div class="cr-op-meta">${fields.length ? `<span>Fields: ${esc(fields.join(', '))}</span>` : ''}${o.submittedAt ? `<span> · sent ${esc(fmtDate(o.submittedAt))}</span>` : ''}</div>
           </div>
           <div class="cr-op-actions">${guestRecordLink(o)}${chipHtml}</div>
         </div>
@@ -863,7 +871,7 @@
       G.detail = r;
       box.innerHTML = `
         <div class="flex items-start justify-between gap-3 flex-wrap">
-          <div><div class="text-lg font-semibold">Request ${esc(r.id)}</div><div class="text-sm cr-muted">Sent  ${esc(fmtDate(r.createdAt))} from <b>${esc(r.nickname)}</b></div></div>
+          <div><div class="text-lg font-semibold">Request ${esc(r.id)}</div><div class="text-sm cr-muted">Sent ${esc(fmtDate(r.createdAt))} from <b>${esc(r.nickname)}</b></div></div>
           <div class="flex gap-2 items-center flex-wrap">${revisionChip(r)}${statusChip(r.status)}
             ${editRequestButton(r)}
             ${r.status === 'pending' ? `<button type="button" class="editor-btn editor-btn-secondary" data-withdraw="${esc(r.id)}"><i class="fa-solid fa-rotate-left"></i><span>Withdraw</span></button>` : ''}</div>
@@ -903,12 +911,12 @@
       const account = Guest.account?.() || {};
       const granted = Array.isArray(account.pages) ? account.pages : [];
       $('page-title').textContent = 'My change requests';
-      $('page-sub').textContent = `Account:  ${account.name || account.login || 'guest'}  · tabs available:  ${granted.length}. `
+      $('page-sub').textContent = `Account: ${account.name || account.login || 'guest'} · tabs available: ${granted.length}. `
         + 'Changes are saved in this browser and applied to the database only after administrator approval.';
       $('view-guest').classList.remove('cr-hidden');
       G.config = await Guest.loadConfig();
       const lim = G.config?.limits;
-      if (lim) $('g-limits').textContent = `Limits: up to  ${lim.max_operations}  operations per request · up to  ${lim.max_pending}  under review ·  ${lim.cooldown}  sec cooldown.`;
+      if (lim) $('g-limits').textContent = `Limits: up to ${lim.max_operations} operations per request · up to ${lim.max_pending} under review · ${lim.cooldown} sec cooldown.`;
       $('g-nickname').maxLength = lim?.nickname?.max || 32;
       $('g-message').maxLength = lim?.message?.max || 2000;
       try { $('g-nickname').value = localStorage.getItem(NICK_KEY) || ''; } catch {}
@@ -934,7 +942,11 @@
         if (!file) return;
         try {
           const result = await Guest.Draft.importDraft(await file.text());
-          toast(`Imported ${result.imported} ${plural(result.imported, 'change', 'changes')}${result.skipped ? `, skipped ${result.skipped}` : ''}`, result.imported ? 'success' : 'warning');
+          const opsWord = plural(result.imported, 'change', 'changes');
+          const msg = result.skipped
+            ? `Imported ${result.imported} ${opsWord}, skipped ${result.skipped}`
+            : `Imported ${result.imported} ${opsWord}`;
+          toast(msg, result.imported ? 'success' : 'warning');
         } catch (err) {
           toast(err?.message || 'Import failed', 'error');
         }
@@ -943,7 +955,7 @@
       $('g-btn-clear').addEventListener('click', async () => {
         const n = Guest.Draft.pendingCount();
         if (!n) return toast('No unsent changes', 'info');
-        if (!await EditorCore.Page.confirm(`Remove  ${n}  unsent change(s) from the draft? Submitted requests stay under review.`)) return;
+        if (!await EditorCore.Page.confirm(`Remove ${n} unsent change(s) from the draft? Submitted requests stay under review.`)) return;
         Guest.Draft.clear();
       });
       $('g-ops').addEventListener('click', (e) => {
@@ -1026,7 +1038,7 @@
           renderGuestDraft();
           loadMine();
           if (res?.revised?.length && G.selected && G.tab === 'mine') showMineDetail(G.selected);
-          if (res?.resolved?.length) toast(`Request statuses updated:  ${res.resolved.length}`, 'info');
+          if (res?.resolved?.length) toast(`Request statuses updated: ${res.resolved.length}`, 'info');
         }
       };
       await reconcile();
@@ -1230,7 +1242,7 @@
       const r = A.detail;
       $('review-title').textContent = mode === 'approve' ? (reviewForce ? 'Apply forcibly?' : 'Approve and apply the request?') : 'Reject the request?';
       $('review-text').textContent = mode === 'approve'
-        ? T('Changes from “{0}” will be applied to the database in one transaction (all or nothing). Operations:  {1}.', [r.author?.nickname || '', (r.operations || []).length])
+        ? T('Changes from “{0}” will be applied to the database in one transaction (all or nothing). Operations: {1}.', [r.author?.nickname || '', (r.operations || []).length])
         : T('The request from “{0}” will be rejected. The guest will see the status and your comment.', [r.author?.nickname || '']);
       $('review-conflicts').innerHTML = conflicts.map(c => `<div class="cr-note cr-note--warning"><i class="fa-solid fa-code-merge"></i><div>${esc(c.text)}</div></div>`).join('')
         + (reviewForce ? '<div class="cr-note cr-note--danger"><i class="fa-solid fa-triangle-exclamation"></i><div>The database values changed after the request was sent. Forcing the apply overwrites them with the guest\'s changes; deleted records are skipped.</div></div>' : '');
@@ -1250,11 +1262,13 @@
       const Sync = EditorCore.Sync;
       if (!Sync?.record || !Array.isArray(applied)) return;
       try {
-        applied.forEach((a) => Sync.record(a.resource, a.type, {
-          id: a.id,
-          data: a.type === 'delete' ? undefined : a.data,
-          label: T('Request {0}: {1} {2} #{3}', [A.detail?.id || '', TYPE[a.type]?.label || a.type, a.resource, a.id]),
-        }));
+        applied
+          .filter((a) => a.resource !== 'scenarios')
+          .forEach((a) => Sync.record(a.resource, a.type, {
+            id: a.id,
+            data: a.type === 'delete' ? undefined : a.data,
+            label: T('Request {0}: {1} {2} #{3}', [A.detail?.id || '', TYPE[a.type]?.label || a.type, a.resource, a.id]),
+          }));
         Sync.updateAllBadges?.();
       } catch (e) { console.warn('[requests] sync record failed', e); }
     };
@@ -1293,7 +1307,12 @@
       $('review-comment').value = '';
       if (reviewMode === 'approve') {
         recordSync(res.applied);
-        toast(`Request applied:  ${res.applied?.length || 0} ${plural(res.applied?.length || 0, 'operation', 'operations')}${res.skipped?.length ? `, skipped ${res.skipped.length}` : ''}`, 'success');
+        const appliedCount = res.applied?.length || 0;
+        const opsLabel = plural(appliedCount, 'operation', 'operations');
+        const msg = res.skipped?.length
+          ? `Request applied: ${appliedCount} ${opsLabel}, skipped ${res.skipped.length}`
+          : `Request applied: ${appliedCount} ${opsLabel}`;
+        toast(msg, 'success');
         // The database changed: the editor in the shell must not keep stale rows.
         EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:reload-editor' });
       } else {
@@ -1364,12 +1383,19 @@
       const runBulk = async (op) => {
         const ids = [...A.checked];
         if (!ids.length) return;
-        const label = op === 'reject' ? 'Reject' : 'Delete';
-        if (!await EditorCore.Page.confirm(`${label} ${ids.length} selected ${plural(ids.length, 'request', 'requests')}?${op === 'delete' ? ' This does not revert changes that were already applied.' : ''}`)) return;
+        const reqsWord = plural(ids.length, 'request', 'requests');
+        const confirmMsg = op === 'reject'
+          ? `Reject ${ids.length} selected ${reqsWord}?`
+          : `Delete ${ids.length} selected ${reqsWord}? This does not revert changes that were already applied.`;
+        if (!await EditorCore.Page.confirm(confirmMsg)) return;
         const res = await api('bulk', { method: 'POST', body: { op, ids } });
         if (!res.ok) return toast(res.error || 'Error', 'error');
         const failed = (res.results || []).filter(x => !x.ok);
-        toast(`${label}: done ${res.done ?? 0}${failed.length ? `, failed ${failed.length}` : ''}`, failed.length ? 'warning' : 'success');
+        const done = res.done ?? 0;
+        const doneMsg = op === 'reject'
+          ? (failed.length ? `Reject: done ${done}, failed ${failed.length}` : `Reject: done ${done}`)
+          : (failed.length ? `Delete: done ${done}, failed ${failed.length}` : `Delete: done ${done}`);
+        toast(doneMsg, failed.length ? 'warning' : 'success');
         A.checked.clear();
         await loadAdminList();
         if (A.selected && ids.includes(A.selected)) showAdminDetail(A.selected);
@@ -1407,7 +1433,7 @@
         if (b.dataset.act === 'approve') openReview('approve', A.detail.conflicts || []);
         if (b.dataset.act === 'reject') openReview('reject');
         if (b.dataset.act === 'delete') {
-          if (!await EditorCore.Page.confirm(`Delete request  ${A.detail.id}  from the history? This does not revert changes that were already applied.`)) return;
+          if (!await EditorCore.Page.confirm(`Delete request ${A.detail.id} from the history? This does not revert changes that were already applied.`)) return;
           const res = await api('delete', { method: 'POST', body: { id: A.detail.id } });
           if (!res.ok) return toast(res.error || 'Error', 'error');
           A.detail = null; A.selected = null;

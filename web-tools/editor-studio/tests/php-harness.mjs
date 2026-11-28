@@ -685,6 +685,35 @@ echo $failed === 0 ? 'db history: ok' : "db history: {$failed} failed";
   console.log(output.trim());
 }
 
+// ── Lookup permissions parity (api/db.php SOURCE_TABS vs ai_lookup_tabs) and table metadata ──
+{
+  const dbPhpSrc = fs.readFileSync(path.join(ROOT, 'api/db.php'), 'utf8');
+  const m = dbPhpSrc.match(/const\s+SOURCE_TABS\s*=\s*(\[[\s\S]*?\]);/);
+  const sourceTabsExpr = m ? m[1] : '[]';
+  const { output } = await run(`<?php
+require_once '${VFS_ROOT}/api/ai-lib.php';
+$failed = 0;
+$check = function (string $label, bool $ok) use (&$failed) {
+    if (!$ok) { $failed++; echo "FAIL $label\\n"; }
+};
+$sourceTabs = ${sourceTabsExpr};
+$aiTabs = ai_lookup_tabs();
+$check('SOURCE_TABS == ai_lookup_tabs', $sourceTabs === $aiTabs);
+$check('quests lookup includes bots_npc, quest_boards, scenarios',
+    empty(array_diff(['quests', 'bots_npc', 'quest_boards', 'scenarios'], $sourceTabs['quests'] ?? [])));
+$check('items & worlds lookup include scenarios',
+    in_array('scenarios', $sourceTabs['items'] ?? [], true) && in_array('scenarios', $sourceTabs['worlds'] ?? [], true));
+$check('bots lookup includes dungeons & scenarios',
+    in_array('dungeons', $sourceTabs['bots'] ?? [], true) && in_array('scenarios', $sourceTabs['bots'] ?? [], true));
+$check('EDITOR_TABLE_META tw_quest_boards', (EDITOR_TABLE_META['tw_quest_boards']['label'] ?? null) === 'Name');
+$check('EDITOR_TABLE_META tw_quests_board_list', isset(EDITOR_TABLE_META['tw_quests_board_list']['title']));
+$check('EDITOR_TABLE_META tw_voucher Code', (EDITOR_TABLE_META['tw_voucher']['label'] ?? null) === 'Code');
+echo $failed === 0 ? "lookup parity & meta: ok\\n" : "lookup parity & meta: {$failed} failed\\n";
+`);
+  if (!output.includes('lookup parity & meta: ok')) errors.push(output.trim() || 'lookup parity & meta failed');
+  console.log(output.trim());
+}
+
 if (errors.length) {
   console.log(`\n${errors.length} problem(s):`);
   errors.forEach((line) => console.log(' - ' + line));

@@ -178,6 +178,13 @@
       { value:  0, label: 'This mob' },
     ];
 
+    const FUNCTION_OPTIONS = [
+      { value: -1, label: '— none —' },
+      { value: 0,  label: 'Nurse (healing)' },
+      { value: 1,  label: 'Give quest' },
+      { value: 2,  label: 'Guardian' },
+    ];
+
     const BASIC_FIELDS = {
       BotID: {
         type: 'db_select',
@@ -212,9 +219,8 @@
         ui: { dbKey: 'quest', placeholder: '— no quest —', searchPlaceholder: 'Search a quest…' },
       },
       Function: {
-        type: 'number',
         label: 'Function',
-        ui: { step: 1, placeholder: '-1' },
+        ui: { type: 'select', options: FUNCTION_OPTIONS, valueType: 'number' },
       },
       Static: {
         type: 'toggle',
@@ -400,7 +406,7 @@
 
         if (DOM.title)    DOM.title.textContent    = botName;
         if (DOM.subtitle) DOM.subtitle.textContent =
-          `${idLabel}  · World:  ${world} · X ${m.PosX}, Y ${m.PosY}`;
+          `${idLabel} · World: ${world} · X ${m.PosX}, Y ${m.PosY}`;
       },
 
       /** Skin preview */
@@ -446,7 +452,7 @@
 
         if (DOM.count) {
           DOM.count.textContent = filtered.length < rows.length
-            ? `${filtered.length}  of  ${rows.length}`
+            ? `${filtered.length} of ${rows.length}`
             : `${rows.length}`;
         }
 
@@ -486,7 +492,7 @@
         const quest   = lookupLabel(state.lookups.quests, row.GiveQuestID, '');
         const skin    = this._skinThumb(row.BotID);
         const activeCls = active ? 'editor-row-active' : '';
-        const questSuffix = quest ? ` · Quest:  ${quest}` : '';
+        const questSuffix = quest ? ` · Quest: ${quest}` : '';
 
         return `
           <button type="button"
@@ -497,7 +503,7 @@
               <div class="min-w-0">
                 <div class="font-semibold truncate">${esc(bot)}</div>
                 <div class="text-xs editor-muted-text truncate">
-                  ID ${esc(row.ID)}  · World:  ${esc(world)}${esc(questSuffix)}
+                  ID ${esc(row.ID)} · World: ${esc(world)}${esc(questSuffix)}
                 </div>
               </div>
             </div>

@@ -165,7 +165,7 @@
       try {
         const json = await fetchJson(`${API}?action=list&limit=50&search=${encodeURIComponent(q)}`);
         renderRows(json.rows || []);
-        setStatus(json.has_more ? 'The first 50 records are shown. Narrow the search.' : `Found:  ${(json.rows || []).length}`, json.has_more ? 'warning' : 'success');
+        setStatus(json.has_more ? 'The first 50 records are shown. Narrow the search.' : `Found: ${(json.rows || []).length}`, json.has_more ? 'warning' : 'success');
       } catch (err) {
         listEl.innerHTML = '<tr><td colspan="6" class="px-3 py-6 text-center editor-tone-danger">Loading failed.</td></tr>';
         setStatus(err.message, 'error');
@@ -209,7 +209,7 @@
         await fetchJson(`${API}?action=change_password`, { method: 'POST', body: { account_id: account.ID, password } });
         await refreshAfterChange(account.ID);
         $('new-password').value = '';
-        setStatus(`Password for  ${accountLabel(state.selected || account)}  changed.`, 'success');
+        setStatus(`Password for ${accountLabel(state.selected || account)} changed.`, 'success');
       } catch (err) {
         setStatus(err.message, 'error');
       }
@@ -226,33 +226,33 @@
       try {
         await fetchJson(`${API}?action=change_login`, { method: 'POST', body: { account_id: account.ID, login } });
         await refreshAfterChange(account.ID);
-        setStatus(`Login for  ${accountLabel(state.selected || account)}  changed.`, 'success');
+        setStatus(`Login for ${accountLabel(state.selected || account)} changed.`, 'success');
       } catch (err) {
         setStatus(err.message, 'error');
       }
     };
 
     const resetPassword = async (account) => {
-      if (!await EditorCore.Page.confirm(`Reset the password for  ${accountLabel(account)}? A new password will be generated automatically.`)) return;
+      if (!await EditorCore.Page.confirm(`Reset the password for ${accountLabel(account)}? A new password will be generated automatically.`)) return;
       try {
         const json = await fetchJson(`${API}?action=reset_password`, { method: 'POST', body: { account_id: account.ID } });
         const password = json.password || '';
         await navigator.clipboard?.writeText(password).catch(() => {});
         const T = EditorCore.Page.t;
-        await EditorCore.Page.alert(`${T('New password for  {0}:', [accountLabel(account)])}\n\n${password}\n\n${T('Copy it and pass it to the user.')}`);
+        await EditorCore.Page.alert(`${T('New password for {0}:', [accountLabel(account)])}\n\n${password}\n\n${T('Copy it and pass it to the user.')}`);
         await loadAccounts();
-        setStatus(`Password for  ${accountLabel(account)}  has been reset. The new password is shown in the dialog.`, 'success');
+        setStatus(`The password for ${accountLabel(account)} has been reset. The new password is shown in the dialog.`, 'success');
       } catch (err) {
         setStatus(err.message, 'error');
       }
     };
 
     const resetTimeout = async (account) => {
-      if (!await EditorCore.Page.confirm(`Reset the session timeout for  ${accountLabel(account)}?`)) return;
+      if (!await EditorCore.Page.confirm(`Reset the session timeout for ${accountLabel(account)}?`)) return;
       try {
         await fetchJson(`${API}?action=reset_timeout_code`, { method: 'POST', body: { account_id: account.ID } });
         await loadAccounts();
-        setStatus(`The timeout code for  ${accountLabel(account)}  has been reset.`, 'success');
+        setStatus(`The timeout code for ${accountLabel(account)} has been reset.`, 'success');
       } catch (err) {
         setStatus(err.message, 'error');
       }
@@ -269,7 +269,7 @@
       if (btn.dataset.action === 'copy-password') {
         try {
           await navigator.clipboard.writeText(account.Password || '');
-          setStatus(`The current password for  ${accountLabel(account)}  has been copied.`, 'success');
+          setStatus(`The current password for ${accountLabel(account)} has been copied.`, 'success');
         } catch {
           setStatus('Could not copy the password to the clipboard.', 'error');
         }

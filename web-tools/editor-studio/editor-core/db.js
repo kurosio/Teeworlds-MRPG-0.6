@@ -322,7 +322,7 @@
       if (!metaEl) return;
       if (!state.loaded) { metaEl.textContent = ''; return; }
       if (state.total == null) metaEl.textContent = `Shown: ${state.loaded}`;
-      else metaEl.textContent = `Shown: ${state.loaded}  of  ${state.total}`;
+      else metaEl.textContent = `Shown: ${state.loaded} of ${state.total}`;
     };
 
     const renderOptions = (items, { append = false } = {}) => {

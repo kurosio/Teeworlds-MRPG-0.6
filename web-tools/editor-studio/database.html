@@ -253,7 +253,7 @@
         return;
       }
       EditorCore.UI.toast('Connection established', 'success');
-      setStatus(els.status, `Connection established. Server:  ${res.server || 'unknown'}`, 'ok');
+      setStatus(els.status, `Connection established. Server: ${res.server || 'unknown'}`, 'ok');
     };
 
     const loadDumps = async () => {
@@ -266,7 +266,7 @@
       }
       cachedDumps = res.items || [];
       renderDumpList();
-      setStatus(els.dumpStatus, `Dumps found:  ${cachedDumps.length}.`, 'ok');
+      setStatus(els.dumpStatus, `Dumps found: ${cachedDumps.length}.`, 'ok');
     };
 
     const createDump = async () => {
@@ -286,7 +286,7 @@
         return;
       }
       EditorCore.UI.toast('Dump created', 'success');
-      setStatus(els.dumpStatus, `Dump created:  ${res.file || 'done'}.`, 'ok');
+      setStatus(els.dumpStatus, `Dump created: ${res.file || 'done'}.`, 'ok');
       await loadDumps();
     };
 
@@ -308,7 +308,7 @@
         setStatus(els.restoreStatus, 'Type the confirmation word.', 'err');
         return;
       }
-      const confirmed = await EditorCore.Page.confirm(`Restore the database from dump  ${file}? All current data will be overwritten.`);
+      const confirmed = await EditorCore.Page.confirm(`Restore the database from dump ${file}? All current data will be overwritten.`);
       if (!confirmed) return;
 
       const res = await EditorCore.DB.restoreDump({
@@ -332,7 +332,7 @@
         setStatus(els.dumpStatus, 'Type the database name in the confirmation field.', 'err');
         return;
       }
-      const confirmed = await EditorCore.Page.confirm(`Delete dump  ${file}?`);
+      const confirmed = await EditorCore.Page.confirm(`Delete dump ${file}?`);
       if (!confirmed) return;
       const res = await EditorCore.DB.deleteDump({
         confirm_db: confirmDb,

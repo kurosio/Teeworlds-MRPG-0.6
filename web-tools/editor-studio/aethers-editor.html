@@ -152,7 +152,7 @@
         title: row?.Name || `Teleport #${row?.ID || 0}`,
         subtitle: `ID ${row?.ID ?? '—'} · ${formatWorldLabel(row?.WorldID)} · X ${row?.TeleX ?? '—'}, Y ${row?.TeleY ?? '—'}`
       }),
-      getTitle: (model, id) => (id ? `Teleport:  ${model?.Name || `#${id}`}` : 'New teleport'),
+      getTitle: (model, id) => (id ? `Teleport: ${model?.Name || `#${id}`}` : 'New teleport'),
       getSubtitle: (model, id) => {
         if (!model) return '';
         const world = formatWorldLabel(model.WorldID);

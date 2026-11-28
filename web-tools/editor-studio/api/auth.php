@@ -15,9 +15,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db-core.php';
 
-$currentRole = bootstrap_editor_api_roles(null);
-
 $action = (string)($_GET['action'] ?? 'status');
+$currentRole = bootstrap_editor_api_roles(null, $action === 'status');
 
 function auth_credentials(?array $cfg = null): array {
   $cfg ??= load_cfg(false);
@@ -153,7 +152,7 @@ function auth_status_payload(?string $role): array {
       return $payload;
     }
     $payload['user'] = $account['name'];
-    $payload['guest']['pages'] = $account['pages'];
+    $payload['guest']['pages'] = editor_guest_pages($cfg);
     $payload['guest']['login'] = $account['login'];
     $payload['guest']['name'] = $account['name'];
     $payload['guest']['id'] = $account['id'];
@@ -164,6 +163,12 @@ function auth_status_payload(?string $role): array {
       'max_operations' => $effective['max_operations'],
       'custom' => $effective['custom'],
     ];
+    $tokenActor = editor_ai_token_actor();
+    $payload['auth_method'] = $tokenActor !== null ? 'bearer_token' : 'session';
+    $payload['scopes'] = ai_actor_scopes();
+    if ($tokenActor !== null) {
+      $payload['token'] = ai_token_public($tokenActor['token']);
+    }
   }
   return $payload;
 }

@@ -280,7 +280,7 @@
       if (fields.length <= 3) {
         return fields.join(', ');
       }
-      return `${fields.slice(0, 3).join(', ')}  and  ${fields.length - 3}`;
+      return `${fields.slice(0, 3).join(', ')} and ${fields.length - 3}`;
     }
     return '';
   };
@@ -479,7 +479,7 @@
           btnApply.disabled = true;
         }
       } catch (err) {
-        $('target-info').innerHTML = `<div class="text-red-400 text-sm">Load failed:  ${escapeHtml(err.message)}</div>`;
+        $('target-info').innerHTML = `<div class="text-red-400 text-sm">Load failed: ${escapeHtml(err.message)}</div>`;
       }
     };
 
@@ -719,7 +719,7 @@
         const entryIds = entries.map(e => e.id);
         markAsApplied(entryIds);
 
-        toast(`Applied successfully:  ${res.success}  operations in “${res.target?.name || 'Target'}»`, 'success');
+        toast(`Applied successfully: ${res.success} operations in “${res.target?.name || 'Target'}”`, 'success');
 
         // Update UI
         renderOperations();
@@ -731,7 +731,7 @@
             <div>
               <div class="font-semibold text-emerald-300">Changes applied</div>
               <div class="text-xs editor-muted-text">
-                Success:  ${res.success}  | Target:  ${escapeHtml(res.target?.database || '')}
+                Success: ${res.success} | Target: ${escapeHtml(res.target?.database || '')}
               </div>
             </div>
           </div>
@@ -741,7 +741,7 @@
         toast(err.message || 'Apply failed', 'error');
       } finally {
         btnApply.disabled = false;
-        btnApply.innerHTML = `<i class="fa-solid fa-play"></i><span>Apply to  ${escapeHtml(targetInfo?.name || 'Target')}</span>`;
+        btnApply.innerHTML = `<i class="fa-solid fa-play"></i><span>Apply to ${escapeHtml(targetInfo?.name || 'Target')}</span>`;
       }
     });
 
@@ -792,7 +792,7 @@
       btnPullApply.disabled = pullBusy || !canApply || !confirmOk;
 
       const applyLabel = btnPullApply.querySelector('span');
-      if (applyLabel) applyLabel.textContent = `Load from  ${targetInfo?.name || 'target database'}`;
+      if (applyLabel) applyLabel.textContent = `Load from ${targetInfo?.name || 'target database'}`;
     };
 
     const renderPullPreview = (res) => {
@@ -881,7 +881,7 @@
       }
 
       if (localOnly.length) {
-        html += `<div class="text-xs editor-muted-text">Only in the current database (unchanged):  ${localOnly.map(escapeHtml).join(', ')}</div>`;
+        html += `<div class="text-xs editor-muted-text">Only in the current database (unchanged): ${localOnly.map(escapeHtml).join(', ')}</div>`;
       }
 
       setPullResult(html);
@@ -943,13 +943,13 @@
             <div>
               <div class="font-semibold text-emerald-300">Current database updated from the target</div>
               <div class="text-xs editor-muted-text">
-                Tables:  ${(res.tables || []).length}, rows:  ${res.total_rows ?? 0}. Backup:  ${escapeHtml(backupFile || '—')}. The page will be reloaded.
+                Tables: ${(res.tables || []).length}, rows: ${res.total_rows ?? 0}. Backup: ${escapeHtml(backupFile || '—')}. The page will be reloaded.
               </div>
             </div>
           </div>
           ${warnings}
         `);
-        toast(`Load complete:  ${res.total_rows ?? 0}  rows`, 'success');
+        toast(`Load complete: ${res.total_rows ?? 0} rows`, 'success');
         pullData = null;
         setTimeout(() => window.location.reload(), 1500);
       } catch (err) {

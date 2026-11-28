@@ -338,6 +338,7 @@
 
     const renderSelect = (multiple = false) => {
       const styleAttr = buildControlStyleAttr(ui);
+      const valueTypeAttr = ui.valueType ? `data-value-type="${escapeAttr(ui.valueType)}"` : '';
       const attrs = buildInputAttributes({
         path,
         field,
@@ -345,7 +346,7 @@
         includeName,
         includeDataKey,
         includeDataPath,
-        extraAttrs: `${styleAttr} ${multiple ? 'multiple' : ''}`.trim()
+        extraAttrs: `${styleAttr} ${valueTypeAttr} ${multiple ? 'multiple' : ''}`.trim()
       });
       const selectOptions = (() => {
         const spec = ui.options;

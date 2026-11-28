@@ -37,13 +37,13 @@ const SOURCES = [
 // tabs the administrator granted (otherwise the dropdowns would leak data from
 // editors the account cannot open).
 const SOURCE_TABS = [
-    'quests'     => ['quests'],
+    'quests'       => ['quests', 'bots_npc', 'quest_boards', 'scenarios'],
     'quest_boards' => ['quests', 'quest_boards'],
-    'items'      => ['items', 'crafts', 'warehouses', 'quests', 'bots_info', 'bots_mobs', 'nodes_collecting'],
-    'worlds'     => ['worlds', 'crafts', 'warehouses', 'quests', 'quest_boards', 'bots_mobs', 'bots_npc', 'nodes_collecting', 'dungeons', 'aethers', 'items'],
-    'skills'     => ['items', 'bots_mobs', 'quests'],
-    'bots'       => ['bots_info', 'bots_mobs', 'bots_npc', 'quests'],
-    'attributes' => ['items', 'bots_mobs'],
+    'items'        => ['items', 'crafts', 'warehouses', 'quests', 'bots_info', 'bots_mobs', 'nodes_collecting', 'scenarios'],
+    'worlds'       => ['worlds', 'crafts', 'warehouses', 'quests', 'quest_boards', 'bots_mobs', 'bots_npc', 'nodes_collecting', 'dungeons', 'aethers', 'items', 'scenarios'],
+    'skills'       => ['items', 'bots_mobs', 'quests'],
+    'bots'         => ['bots_info', 'bots_mobs', 'bots_npc', 'quests', 'dungeons', 'scenarios'],
+    'attributes'   => ['items', 'bots_mobs'],
 ];
 
 /** Guest gate for lookup sources. Admins always pass. */

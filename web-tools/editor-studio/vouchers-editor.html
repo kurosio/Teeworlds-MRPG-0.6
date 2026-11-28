@@ -178,6 +178,8 @@
       Code: '',
       Multiple: 0,
       ValidUntil: 0,
+      exp: 0,
+      money: 0,
       items: [],
     });
 
@@ -188,20 +190,31 @@
       v.Multiple = Number(row.Multiple || 0) ? 1 : 0;
       v.ValidUntil = Number(row.ValidUntil || 0);
       const data = row.Data;
-      if (data && typeof data === 'object' && Array.isArray(data.items)) {
-        v.items = data.items.map(x => ({ id: Number(x.id||0), value: Number(x.value||0) }));
+      if (data && typeof data === 'object') {
+        v.exp = Math.max(0, Math.trunc(Number(data.exp || 0) || 0));
+        v.money = Math.max(0, Math.trunc(Number(data.money || 0) || 0));
+        if (Array.isArray(data.items)) {
+          v.items = data.items.map(x => ({ id: Number(x.id || 0), value: Number(x.value || 0) }));
+        }
       }
       return v;
     };
 
-    const toPayload = (v) => ({
-      Code: String(v.Code || ''),
-      Multiple: Number(v.Multiple || 0) ? 1 : 0,
-      ValidUntil: Number(v.ValidUntil || 0),
-      Data: {
-        items: Array.isArray(v.items) ? v.items.map(x => ({ id: Number(x.id||0), value: Number(x.value||0) })) : []
-      }
-    });
+    const toPayload = (v) => {
+      const dataPayload = {
+        items: Array.isArray(v.items) ? v.items.map(x => ({ id: Number(x.id || 0), value: Number(x.value || 0) })) : [],
+      };
+      const exp = Math.max(0, Math.trunc(Number(v.exp || 0) || 0));
+      const money = Math.max(0, Math.trunc(Number(v.money || 0) || 0));
+      if (exp > 0) dataPayload.exp = exp;
+      if (money > 0) dataPayload.money = money;
+      return {
+        Code: String(v.Code || ''),
+        Multiple: Number(v.Multiple || 0) ? 1 : 0,
+        ValidUntil: Number(v.ValidUntil || 0),
+        Data: dataPayload,
+      };
+    };
 
     const formatUntil = (sec) => {
       if (!sec) return '— no expiry —';
@@ -212,6 +225,8 @@
     const voucherFields = {
       Code: { type: 'text', label: 'Code', validate: { required: true }, ui: { placeholder: 'e.g. MMO_LIVE' } },
       Multiple: { type: 'toggle', label: 'Multi-use' },
+      exp: { type: 'number', label: 'Experience', ui: { min: 0, step: 1, placeholder: '0' } },
+      money: { type: 'number', label: 'Gold', ui: { min: 0, step: 1, placeholder: '0' } },
     };
 
     // Items are rendered as compact rows (table-like) for a cleaner UX.
@@ -256,11 +271,12 @@
         return;
       }
       DOM.title.textContent = STATE.voucher.Code
-        ? `Voucher:  ${STATE.voucher.Code}`
+        ? `Voucher: ${STATE.voucher.Code}`
         : (STATE.selectedId ? `Voucher #${STATE.selectedId}` : 'New voucher');
       const untilLabel = formatUntil(STATE.voucher.ValidUntil);
-      const idPrefix = STATE.selectedId ? `ID ${STATE.selectedId} · ` : '';
-      DOM.subtitle.textContent = `${idPrefix}Expires:  ${untilLabel}`;
+      DOM.subtitle.textContent = STATE.selectedId
+        ? `ID ${STATE.selectedId} · Expires: ${untilLabel}`
+        : `Expires: ${untilLabel}`;
       if (DOM.validUntilText) DOM.validUntilText.textContent = untilLabel;
       if (DOM.clearDate) DOM.clearDate.classList.toggle('hidden', !Number(STATE.voucher.ValidUntil || 0));
       setDirtyUi(true);
@@ -295,7 +311,7 @@
       const filtered = applyListFilters(rows);
       if (DOM.count) {
         DOM.count.textContent = filtered.length < rows.length
-          ? `${filtered.length}  of  ${rows.length}`
+          ? `${filtered.length} of ${rows.length}`
           : `${rows.length}`;
       }
       if (!filtered.length) {
@@ -542,7 +558,7 @@
       if (!STATE.selectedId) return;
       const id = STATE.selectedId;
       const label = STATE.voucher?.Code ? `«${STATE.voucher.Code}» (#${id})` : `#${id}`;
-      if (!await EditorCore.Page.confirm(`Delete voucher  ${label}?`)) return;
+      if (!await EditorCore.Page.confirm(`Delete voucher ${label}?`)) return;
       if (STATE.selectedId !== id) return;
       // DBCrud auto-records for sync
       await window.EditorCore.DBCrud.remove(RESOURCE, id);

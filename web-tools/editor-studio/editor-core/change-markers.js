@@ -64,8 +64,8 @@
     badge.dataset.changeRowMarker = kind;
     badge.dataset.key = key;
     badge.title = kind === 'request'
-      ? `${TYPE_LABEL[op.type] || 'Changed'}  in request  ${request?.id || ''}`
-      : op.reqId ? `Sent in request  ${op.reqId}` : 'Local request draft';
+      ? `${TYPE_LABEL[op.type] || 'Changed'} in request ${request?.id || ''}`
+      : op.reqId ? `Sent in request ${op.reqId}` : 'Local request draft';
     badge.innerHTML = `<i class="fa-solid ${kind === 'request' ? 'fa-code-pull-request' : op.reqId ? 'fa-hourglass-half' : 'fa-pen'}"></i>${kind === 'request' ? 'request' : op.reqId ? 'review' : 'draft'}`;
     row.appendChild(badge);
   };
@@ -100,7 +100,7 @@
       if (node.dataset.changeRequestPrevTitle === undefined) {
         node.dataset.changeRequestPrevTitle = node.getAttribute('title') || '';
       }
-      node.title = `Field changed in request  ${request?.id || ''}  · version  ${request?.version || 1}`;
+      node.title = `Field changed in request ${request?.id || ''} · version ${request?.version || 1}`;
     } else {
       node.classList.add('guest-field-changed');
       node.classList.toggle('is-submitted', !!op.reqId);
@@ -175,7 +175,7 @@
 
   const refreshNow = () => {
     frame = 0;
-    if (!document.body) return;
+    if (typeof document !== 'object' || !document?.body) return;
     const rows = Array.from(document.querySelectorAll(ROW_SELECTOR));
     let selectedRow = null;
     for (const row of rows) {

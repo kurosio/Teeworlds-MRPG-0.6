@@ -25,6 +25,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/db-core.php';
+require_once __DIR__ . '/map-datafile.php';
 
 $ROLE = bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN, EDITOR_ROLE_GUEST]);
 
@@ -76,44 +77,12 @@ function map_api_token(): string
 
 function map_candidates(string $env, array $relative, string $settingKey = ''): array
 {
-    $dirs = [];
-
-    // 1. Путь из настроек: главный способ, когда каталог игрового сервера
-    //    смонтирован рядом с редактором.
-    $configured = $settingKey !== '' ? map_setting($settingKey) : '';
-    if ($configured !== '') {
-        $dirs[] = $configured;
-    }
-
-    $custom = getenv($env);
-    if (is_string($custom) && $custom !== '') {
-        $dirs[] = rtrim($custom, '/\\');
-    }
-    $base = dirname(__DIR__);        // web-tools/editor-studio
-    $repo = dirname($base, 2);       // корень репозитория
-    foreach ($relative as $path) {
-        $dirs[] = $repo . '/' . $path;
-        $dirs[] = $base . '/' . $path;
-    }
-    return $dirs;
+    return ddnet_map_candidates(map_config(), $env, $relative, $settingKey);
 }
 
 function map_dir(string $env, array $relative, string $settingKey = ''): ?string
 {
-    static $found = [];
-    $key = $env . '|' . implode(',', $relative) . '|' . $settingKey;
-    if (array_key_exists($key, $found)) {
-        return $found[$key];
-    }
-    $found[$key] = null;
-    foreach (map_candidates($env, $relative, $settingKey) as $dir) {
-        $real = realpath($dir);
-        if ($real !== false && is_dir($real)) {
-            $found[$key] = $real;
-            break;
-        }
-    }
-    return $found[$key];
+    return ddnet_map_first_dir(map_config(), $env, $relative, $settingKey);
 }
 
 function maps_dir(): ?string
@@ -126,28 +95,10 @@ function mapres_dir(): ?string
     return map_dir('EDITOR_MAPRES_DIR', ['data/mapres', 'mapres'], 'mapres_dir');
 }
 
-/**
- * Безопасный путь: только относительный, без «..», и итоговый файл обязан
- * остаться внутри каталога-источника (защита от символических ссылок).
- */
+/** Resolve a relative asset/map path strictly inside $dir. */
 function map_resolve(string $dir, string $relative): ?string
 {
-    $relative = str_replace('\\', '/', $relative);
-    if ($relative === '' || $relative[0] === '/' || str_contains($relative, '..')) {
-        return null;
-    }
-    $base = realpath($dir);
-    if ($base === false) {
-        return null;
-    }
-    $real = realpath($base . '/' . $relative);
-    if ($real === false || !is_file($real) || !is_readable($real)) {
-        return null;
-    }
-    if ($real !== $base && !str_starts_with($real, $base . DIRECTORY_SEPARATOR)) {
-        return null;
-    }
-    return $real;
+    return ddnet_map_resolve($dir, $relative);
 }
 
 /**

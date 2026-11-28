@@ -309,7 +309,7 @@
       const name = STATE.lookups.bots.get(String(STATE.mob.BotID)) || `BotID: ${STATE.mob.BotID}`;
       const world = formatWorld(STATE.mob.WorldID);
       DOM.title.textContent = STATE.mob.ID ? `${name}` : 'New spawn';
-      DOM.subtitle.textContent = `ID: ${STATE.mob.ID || '—'}  • World:  ${world}  • Level:  ${STATE.mob.Level || 1}`;
+      DOM.subtitle.textContent = `ID: ${STATE.mob.ID || '—'} • World: ${world} • Level: ${STATE.mob.Level || 1}`;
       setActionButtons(true);
     };
 
@@ -351,7 +351,7 @@
 
       if (DOM.count) {
         DOM.count.textContent = filtered.length < STATE.list.length
-          ? `${filtered.length}  of  ${STATE.list.length}`
+          ? `${filtered.length} of ${STATE.list.length}`
           : `${STATE.list.length}`;
       }
 

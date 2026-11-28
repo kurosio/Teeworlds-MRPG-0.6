@@ -31,16 +31,11 @@ try {
   console.error('Нужен jsdom: npm install --no-save jsdom');
   process.exit(2);
 }
-const { JSDOM, VirtualConsole, requestInterceptor } = jsdomPkg;
+const { JSDOM, VirtualConsole, ResourceLoader } = jsdomPkg;
 
-const TYPES = {
-  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2',
-};
 const CYRILLIC = /[А-Яа-яЁё]/;
 const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'CODE', 'PRE', 'KBD']);
-const EMPTY_API = '{"ok":true,"rows":[],"data":[],"profiles":[]}';
+const EMPTY_API = '{"ok":true,"rows":[],"data":[],"profiles":[],"servers":[],"files":[]}';
 
 /**
  * Значения из базы (перечисления предметов, эффекты, группы склада) — это не
@@ -61,6 +56,9 @@ const DATA_TERMS = new Set([
   'NPC • Editor Studio',
   // название продукта не переводится
   'Editor Studio',
+  // технические токены и сочетания клавиш
+  'Esc', 'Ctrl K', 'Ctrl B', 'Ctrl Tab', 'Ctrl Shift T', 'Alt 1…9', 'Alt ←/→',
+  'Default (components/default.h)', 'Editor registry requires an id.', 'application/json',
 ]);
 
 // Кнопки и строки, раскрывающие формы: без клика аудит видит половину подписей.
@@ -70,18 +68,32 @@ const ACTIVATORS = [
   '.editor-list-item', 'tbody tr', '[data-id]', '.editor-row', '[role="tab"]', '[data-tab]',
 ];
 
-const interceptor = requestInterceptor(async (request) => {
-  let url;
-  try { url = new URL(request.url); } catch { return new Response('', { status: 404 }); }
-  if (!['localhost', '127.0.0.1'].includes(url.hostname)) {
-    return new Response('', { status: 200, headers: { 'content-type': 'text/css' } });
+class StudioResourceLoader extends ResourceLoader {
+  fetch(urlString, options) {
+    let url;
+    try { url = new URL(urlString); } catch {
+      const p = Promise.resolve(Buffer.alloc(0));
+      p.abort = () => {};
+      return p;
+    }
+    if (url.protocol === 'data:') return super.fetch(urlString, options);
+    const wrap = (promise) => { promise.abort = () => {}; return promise; };
+    if (!['localhost', '127.0.0.1'].includes(url.hostname)) {
+      return wrap(Promise.resolve(Buffer.alloc(0)));
+    }
+    const rel = (url.pathname === '/' ? '/index.html' : url.pathname).replace(/^\/+/, '');
+    if (rel.startsWith('api/')) {
+      return wrap(Promise.resolve(Buffer.from(EMPTY_API)));
+    }
+    const resolved = path.resolve(ROOT, rel);
+    if (!resolved.startsWith(ROOT + path.sep)) {
+      return wrap(Promise.resolve(Buffer.alloc(0)));
+    }
+    return wrap(fs.promises.readFile(resolved).catch(() => Buffer.alloc(0)));
   }
-  const file = url.pathname === '/' ? '/index.html' : url.pathname;
-  if (file.startsWith('/api/')) return new Response(EMPTY_API, { headers: { 'content-type': 'application/json' } });
-  const body = await fs.promises.readFile(path.join(ROOT, file)).catch(() => null);
-  if (!body) return new Response('', { status: 404 });
-  return new Response(body, { headers: { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream' } });
-});
+}
+
+const resources = new StudioResourceLoader();
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -98,7 +110,7 @@ const audit = async (page, lang) => {
     url: `${ORIGIN}/${page}`,
     runScripts: 'dangerously',
     pretendToBeVisual: true,
-    resources: { interceptors: [interceptor] },
+    resources,
     virtualConsole,
     beforeParse(window) {
       window.localStorage.setItem('editorStudio.lang', lang);
@@ -119,7 +131,7 @@ const audit = async (page, lang) => {
 
   const { window } = dom;
   await new Promise((resolve) => window.addEventListener('load', resolve, { once: true }));
-  await wait(400);
+  await wait(120);
   if (window.EditorCore?.I18n && window.EditorCore.I18n.lang !== lang) {
     window.EditorCore.I18n.set(lang, { force: true });
   }
@@ -129,7 +141,7 @@ const audit = async (page, lang) => {
     if (!match[1].trim() || /^\s*import\s/m.test(match[1])) continue;
     try { window.eval(match[1]); } catch { /* блок может зависеть от модулей */ }
   }
-  await wait(500);
+  await wait(80);
   // В браузере page-loader пишет ядро синхронно и скрипт страницы видит
   // EditorCore; в jsdom повторяем скрипт страницы после загрузки ядра.
   for (const match of html.matchAll(/<script(?![^>]*\bsrc=)(?![^>]*type="module")[^>]*>([\s\S]*?)<\/script>/gi)) {
@@ -139,14 +151,14 @@ const audit = async (page, lang) => {
     if (match[1].includes('document.write')) continue;
     try { window.eval(match[1]); } catch { /* «EditorCore is not defined» — артефакт */ }
   }
-  await wait(700);
+  await wait(180);
 
   for (const selector of ACTIVATORS) {
     for (const element of [...window.document.querySelectorAll(selector)].slice(0, 2)) {
       try { element.click(); } catch { /* не интерактивный узел */ }
     }
   }
-  await wait(500);
+  await wait(120);
 
   const doc = window.document;
   const strings = new Map();
@@ -161,7 +173,7 @@ const audit = async (page, lang) => {
   while ((node = walker.nextNode())) {
     const parent = node.parentElement;
     if (!parent || SKIP_TAGS.has(parent.tagName)) continue;
-    if (parent.closest?.('[data-i18n-skip]')) continue;
+    if (parent.closest?.('[data-i18n-skip], .studio-kbd')) continue;
     const context = parent.tagName.toLowerCase() + (parent.className ? `.${String(parent.className).split(' ')[0]}` : '');
     remember(node.nodeValue, context);
   }
@@ -191,6 +203,7 @@ const looksLikeLabel = (raw) => {
   if (/^(?:Ctrl|Alt|Shift|Meta)\+/.test(text)) return false;
   if (/^[./#[]/.test(text)) return false;               // селекторы и пути
   if (/^https?:\/\//.test(text)) return false;
+  if (/^(?:systemctl|cd\s|\S+@\S+)/i.test(text) || /[^\s]@[^\s]/.test(text)) return false;
   if (/^[A-Z]{1,6}$/.test(text)) return false;          // ID, JSON, NPC
   if (/^[A-Za-z_$][\w$]*(?:\.[\w$]+)+$/.test(text)) return false;
   if (/^[a-z0-9._-]+$/.test(text)) return false;        // слаги, имена полей
@@ -233,3 +246,4 @@ for (const page of pages) {
 }
 
 if (failed) process.exit(1);
+process.exit(0);

@@ -176,7 +176,7 @@
         button.className = 'guest-field-revert';
         button.dataset.guestRevert = column;
         button.title = 'Restore the value from the database';
-        button.setAttribute('aria-label', `Restore the original value of field  ${column}`);
+        button.setAttribute('aria-label', `Restore the original value of field ${column}`);
         button.innerHTML = '<i class="fa-solid fa-rotate-left" aria-hidden="true"></i>';
         node.appendChild(button);
       };
@@ -195,7 +195,7 @@
         const submitted = meta?.status === 'submitted';
         const revertable = !!meta && !submitted && meta.state === 'update';
         const note = submitted
-          ? `Field changed in request  ${meta?.reqId || ''}  — awaiting admin review`
+          ? `Field changed in request ${meta?.reqId || ''} — awaiting admin review`
           : 'Field changed in your draft — not written to the database';
         els.form.querySelectorAll('[data-field-path]').forEach((node) => {
           const top = String(node.getAttribute('data-field-path') || '').split('.')[0];
@@ -240,7 +240,7 @@
             renderList();
             setStatus(result?.dropped
               ? 'Field restored: no changes left in the draft.'
-              : `Field ${column}  restored to the database value.`, 'ok');
+              : `Field ${column} restored to the database value.`, 'ok');
             return true;
           } catch (error) {
             const msg = error?.message || 'Could not restore the original field value';
@@ -290,7 +290,7 @@
           ? `submitted in a request <b>${escapeHtml(meta.reqId || '')}</b> and awaits admin review`
           : 'request draft — nothing has been written to the database yet';
         const fields = meta.fields.length
-          ? `<div class="guest-row-hint-fields">Changed fields: ${meta.fields.slice(0, 8).map((f) => `<code>${escapeHtml(f)}</code>`).join(' ')}${meta.fields.length > 8 ? ' …' : ''}</div>`
+          ? `<div class="guest-row-hint-fields"><span>Changed fields:</span> ${meta.fields.slice(0, 8).map((f) => `<code>${escapeHtml(f)}</code>`).join(' ')}${meta.fields.length > 8 ? ' …' : ''}</div>`
           : '';
         el.className = `guest-row-hint ${submitted ? 'is-submitted' : 'is-draft'}`;
         el.innerHTML = `<i class="fa-solid ${submitted ? 'fa-hourglass-half' : 'fa-pen-to-square'}"></i><div><b>${title}</b> — ${note}${fields}</div>`;
@@ -381,7 +381,7 @@
         const rawTotal = Array.isArray(state.rowsRaw) ? state.rowsRaw.length : 0;
         if (els.count) {
           if (state.search && rawTotal > rows.length) {
-            els.count.textContent = `${rows.length}  of  ${rawTotal}`;
+            els.count.textContent = `${rows.length} of ${rawTotal}`;
           } else {
             els.count.textContent = rows.length ? `${rows.length}` : '0';
           }

@@ -117,10 +117,12 @@ $ok(store_history_get($keepId)['id'] === $keepId, 'prune keeps newest entry');
 
 $pdo = store_db();
 $pdo->exec('DROP TABLE db_history');
+$pdo->exec('DROP TABLE IF EXISTS ai_tokens');
 $pdo->exec('PRAGMA user_version = 4');
 store_schema(store_db());
-$ok((int)store_db()->query('PRAGMA user_version')->fetchColumn() === 5, 'migrated to 5');
+$ok((int)store_db()->query('PRAGMA user_version')->fetchColumn() === EDITOR_STORE_SCHEMA, 'migrated to schema ' . EDITOR_STORE_SCHEMA);
 $ok((bool)store_db()->query("SELECT name FROM sqlite_master WHERE type='table' AND name='db_history'")->fetchColumn(), 'history table recreated');
+$ok((bool)store_db()->query("SELECT name FROM sqlite_master WHERE type='table' AND name='ai_tokens'")->fetchColumn(), 'ai_tokens table created');
 
 echo $fail ? ('FAIL: ' . implode(' | ', $fail) . "\\n") : "store history: ok\\n";
 `;
