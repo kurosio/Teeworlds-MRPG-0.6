@@ -8,7 +8,7 @@
 
 1. **Никакой прямой записи в игровую БД или ФС:** гостевой сессии запрещены все мутирующие методы `api/db-crud.php`, `api/db.php`, `api/api.php`, а также админ-действия `approve` / `reject` / `delete` в `api/change-requests.php` (возвращается `403`, `code: "guest_forbidden"`).
 2. **Персональные права по вкладкам (`pages`):** агент видит и может предлагать изменения **только** для ресурсов, включённых его гостевой учётной записи администратором. Доступ к административным разделам (например, `vouchers`) или невыданным вкладкам жёстко блокируется (`403`, `code: "resource_forbidden"`).
-3. **Машиночитаемый контракт без прямого доступа к `.json`/`.md`:** `apache-config.conf` и `router.php` запрещают прямой HTTP-доступ к `.json` и `.md` файлам и каталогу `scenarios/*.json`. Спецификация OpenAPI 3.1 отдаётся безопасно через PHP-точку `GET api/ai.php?action=openapi`, а сценарии читаются исключительно через `api/ai.php` (`action=list|get`) с проверкой имени файла и запретом symlink/path traversal.
+3. **Машиночитаемый контракт без прямого доступа к `.json`/`.md`:** `apache-config.conf` и `router.php` запрещают прямой HTTP-доступ к `.json` и `.md` файлам и каталогу `scenarios/*.json`. **Прямой `GET /openapi.json` работает только там, где активен rewrite на PHP (Docker-образ с `apache-config.conf`, `router.php` для `php -S`): на хостингах без rewrite он тоже закрыт правилом на `*.json` и отвечает `403`. Поэтому каноническая точка спецификации — `GET api/ai.php?action=openapi` (работает везде), а `/openapi.json` — алиас для re-written установок.** Сценарии читаются исключительно через `api/ai.php` (`action=list|get|analyze`) с проверкой имени файла и запретом symlink/path traversal.
 4. **Двойная защита POST-запросов:** каждый `POST` требует cookie PHP-сессии (`PHPSESSID`), совпадающий заголовок `Origin`, `Content-Type: application/json` и актуальный `X-Editor-CSRF`.
 5. **Оптимистичная блокировка и идемпотентность:** изменение сценариев защищено `baseHash` (SHA-256), доработка ожидающей заявки — полем `version`, повторная отправка по сети — ключом `idempotency_key`.
 
@@ -23,17 +23,18 @@
    - `GET /ai?format=json` (или `Accept: application/json`) — машиночитаемый JSON онбординга.
    - `GET /.well-known/ai-plugin.json` (алиас `api/ai.php?action=discovery`) — стандартный дескриптор автообнаружения.
 2. **OpenAPI 3.1.0**:
-   - `GET /openapi.json` (или `api/ai.php?action=openapi`) — публичная спецификация `3.1.0` (версия API `2.0.0`).
+   - `GET api/ai.php?action=openapi` — публичная спецификация `3.1.0` (версия API `2.0.0`), работает на любом хостинге (**рекомендуемый основной URL**).
+   - `GET /openapi.json` — тот же документ, но только при активном rewrite (Docker / `router.php`); без него — `403`.
 3. **MCP Server (JSON-RPC 2.0)**:
-   - `POST /mcp` (или `api/mcp.php`) — 11 типизированных инструментов (`get_manifest`, `get_schema`, `list_records`, `get_record`, `get_references`, `validate_operations`, `preview_operations`, `propose_changes`, `copy_record`, `patch_json_record`, `get_history`), динамические `resources/list`, `resources/read` (`mrpg://manifest`, `mrpg://openapi`, `mrpg://schema/<resource>`) и `prompts/*`.
-   - `node tools/mcp-stdio.mjs --url https://... --token esai_...` — stdio-мост для Claude Desktop, Codex CLI, Cursor, Windsurf и локальных клиентов.
+   - `POST /mcp` (или `api/mcp.php`) — 14 типизированных инструментов (`get_manifest`, `get_schema`, `list_records`, `get_record`, `get_references`, `analyze_scenario`, `find_similar`, `validate_operations`, `preview_operations`, `apply_patch`, `propose_changes`, `copy_record`, `patch_json_record`, `get_history`), динамические `resources/list`, `resources/read` (`mrpg://manifest`, `mrpg://openapi`, `mrpg://schema/<resource>`) и `prompts/*`.
+   - `node tools/mcp-stdio.mjs --url https://... --token esai_...` — stdio-мост для Claude Desktop, Codex CLI, Cursor, Windsurf и локальных клиентов (по умолчанию ходит на `/api/mcp.php`, работает без rewrite; `--url .../mcp` — алиас).
 
 ### Живой `manifest` (v2.0)
 ```http
 GET /editor-studio/api/ai.php?action=manifest
 ```
 После входа (Bearer-токеном или гостевой сессией) возвращает актуальное состояние:
-- `capabilities` и `discovery_urls`: поддерживаемые возможности (`model_agnostic`, `auto_resource_discovery`, `mcp_jsonrpc_2_0`, `bearer_tokens`, `scoped_rbac`, `patch_json_merge`, `copy_records`, `dangerous_confirmation_gate`, `optimistic_concurrency`, `idempotent_propose`).
+- `capabilities` и `discovery_urls`: поддерживаемые возможности (`model_agnostic`, `auto_resource_discovery`, `mcp_jsonrpc_2_0`, `bearer_tokens`, `scoped_rbac`, `patch_json_merge`, `copy_records`, `dangerous_confirmation_gate`, `optimistic_concurrency`, `idempotent_propose`, `scenario_analysis`, `scenario_corpus_dependency_check`, `similar_records_search`, `similar_records_create_warning`, `verify_before_propose`). Поле `recommended_workflow` внутри manifest фиксирует безопасный цикл `analyze → similar → get → apply_patch → validate → preview → propose`.
 - `auth`: роль (`guest` / `admin`), способ входа (`bearer_token` / `session`), активные `token_scopes` (`read`, `create`, `update`, `delete`), `granted_pages`, `direct_db_writes_allowed: false`.
 - `limits`: персональные лимиты аккаунта (`max_operations`, `max_pending`, `cooldown`, длина `nickname`/`message`, `max_scenario_bytes`).
 - `pagination`: `default_limit: 50`, `max_limit: 500`, `default_max_bytes: 524288`, `max_response_bytes: 2097152`.
@@ -165,8 +166,25 @@ GET /editor-studio/api/ai.php?action=list&resource=items&filter={"Type":"Quest"}
 - По справочнику: `?action=references&source=attributes&search=Str&limit=50`.
 - Без параметров: полный граф зависимостей схемы между доступными ресурсами.
 
+### `GET api/ai.php?action=analyze[&resource=scenarios][&id=file.json]`
+Глубокий анализ сценариев (read-only, `scope: read`):
+- **Один файл** (`&id=dungeon_gate.json`): `summary` (шаги/события), инвентарь компонентов `components` (`type`, `count`, `steps`, `status`: `known` | `legacy` | `unknown`), `unknown_component_types`, типобезопасные исходящие `references` с проверкой существования в БД (`exists`, `label`), агрегированные `dependencies` по таблицам (refs/unique/missing) и флаг `dependency_ok`, входящие ссылки `inbound` (кто ссылается на сценарий, включая `items.Data.use_scenario.name`), а также `reuse` — другие сценарии, использующие те же типы компонентов (для переиспользования логики вместо дублирования). Ответ содержит `baseHash` (SHA-256) для последующего `propose`.
+- **Весь каталог** (без `&id=`): сводка `mode=corpus` — `scanned` / `truncated` (до 200 файлов), невалидные JSON (`invalid` с `parse_error`), гистограмма `components` (в каких скольки сценариях встречается каждый тип), `reference_total` и отчёт `missing_references` (до 100 строк: `filename`, `path`, `target`, `id`) по всем ссылкам сценариев на ботов/предметы/миры/квесты — готовая карта битых зависимостей. Параметр `search` фильтрует файлы теми же полями, что и `list`.
+Для записей БД (боты, предметы, миры) используйте `references` — `analyze` сценариев опирается на то же разрешение ссылок.
+
+### `GET api/ai.php?action=similar&resource=<res>&name=<Name>[&limit=5]`
+Поиск похожих **существующих** записей до создания новой (анти-дубли, read-only). Работает по любой таблице БД с человекочитаемой колонкой (`items`, `quests`, `bots_npc`, `worlds`, …) и по справочникам (`skills`, `attributes`, …). Скоринг — Dice-коэффициент по биграммам нормализованного текста (lowercase, «ё»→«е», без пунктуации) + бонус за вхождение; регистронезависим. Ответ: `candidates: [{id, label, score, score_percent}]` (по убыванию score), `scanned` (сколько строк просмотрено предфильтром), `threshold`. Ресурсы без колонки-названия (например, `quest_bots`) возвращают пустой список.
+Дополнительно `validate`/`preview`/`propose` при `create` автоматически добавляют в `warnings` запись `similar_records_found` со списком похожих записей (score ≥ 62%) — агент обязан сверить их перед отправкой заявки.
+
+### `POST api/ai.php?action=apply_patch`
+**Verify-before-propose** (read-only, никаких записей в БД/SQLite/файлы; `scope: read`): прогоняет ровно ту же валидацию, что и `propose`, затем возвращает исходную запись/файл и объединённый результат.
+Тело: `{ "resource": "items", "id": 142, "patch_json": { "Data": { "bonus": { "strength": 8 } } }, "expected_before": { "Name": "Old Sword" } }`
+(для сценария: `{ "resource": "scenarios", "filename": "guard_intro.json", "patch_json": {"scenario_mode": "universal"}, "baseHash": "<sha256>" }`).
+Ответ при успехе: `before`, `after`/`record`, `diff` (попольный для БД, `scenario_json_diff` для сценария), `changed_fields`, `noop`, `sha256_before`/`summary_after` (для сценариев), `normalized_operation`, `warnings`. При невалидном патче — те же `errors[]` / `code`, что вернул бы `propose`, со статусом `400|403|409`.
+Порядок применения операции идентичен `propose`: сначала читается актуальная запись, затем `patch_json` (RFC 7396) накладывается поверх неё. Используйте этот шаг **между `get` и `propose`**: если `noop` или патч невалиден — исправьте до отправки.
+
 ### `POST api/ai.php?action=validate`
-Полная проверка массива `operations` (БД-схемы, JSON-поля, enum, длины, уникальность, конфликт флагов квестов, проверка имён и структуры сценариев `steps` / `on_*`, проверка ссылок и `tempId` `2000000000..2000999999`, проверка `baseHash`). **Ничего не изменяет** и **не тратит cooldown**.
+Полная проверка массива `operations` (БД-схемы, JSON-поля, enum, длины, уникальность, конфликт флагов квестов, проверка имён и структуры сценариев `steps` / `on_*`, проверка ссылок и `tempId` `2000000000..2000999999`, проверка `baseHash`). **Ничего не изменяет** и **не тратит cooldown**. При `create`-операциях дополнительно автоматически ищет похожие существующие записи и добавляет предупреждение `similar_records_found` (см. `action=similar`).
 
 ### `POST api/ai.php?action=preview`
 Dry-run анализ: прогоняет всю валидацию + вычисляет постраничный и попольный `diff`, проверяет `before`, затрагиваемые связи и предупреждения (например, удаление используемого объекта или смену уже существующего сценария). Не записывает в БД/SQLite.
@@ -193,14 +211,19 @@ Dry-run анализ: прогоняет всю валидацию + вычис�
 3. Войти как гость: `POST api/auth.php?action=guest_login` (с заголовками `Origin` и `X-Editor-CSRF`), сохранить новый `csrf` из ответа.
 4. Загрузить живые права и схемы: `GET api/ai.php?action=manifest`.
 
-### Шаг 2. Прочитать объекты и найти проблему
-1. Найти целевого квестового бота и сценарий с помощью `fields` и `search`:
+### Шаг 2. Изучить сценарии и похожие записи, затем прочитать объекты
+1. **Анализ сценариев** (структура, зависимости, переиспользование компонентов):
+   `GET api/ai.php?action=analyze&resource=scenarios` — сводка по всему каталогу (гистограмма компонентов, `missing_references` по ботам/предметам/мирам/квестам, невалидные JSON);
+   `GET api/ai.php?action=analyze&resource=scenarios&id=guard_intro.json` — глубокий разбор одного файла (инвентарь `components` со статусами `known/legacy/unknown`, разрешённые `references`, `dependencies` с `missing`, входящие `inbound`, `reuse` — сценарии с теми же компонентами). Используйте найденные компоненты вместо создания новых с нуля.
+2. **Поиск похожих** перед созданием предмета (анти-дубли):
+   `GET api/ai.php?action=similar&resource=items&name=Ключ Стражника` — кандидаты с `score_percent`; если похожие существуют, дополните заявку или переиспользуйте их. (Валидация также добавит `similar_records_found` в `warnings` автоматически.)
+3. Найти целевого квестового бота и сценарий с помощью `fields` и `search`:
    `GET api/ai.php?action=list&resource=quest_bots&search=Стражник&fields=ID,Name,QuestID,ScenarioData`
-2. Получить детальную запись и входящие/исходящие связи:
+4. Получить детальную запись и входящие/исходящие связи:
    `GET api/ai.php?action=get&resource=quest_bots&id=5&include_references=1`
-3. Прочитать связанный файл сценария и запомнить его `sha256` как будущий `baseHash`:
+5. Прочитать связанный файл сценария и запомнить его `sha256` как будущий `baseHash`:
    `GET api/ai.php?action=get&resource=scenarios&id=guard_intro.json&include_references=1`
-4. Проверить координаты спавна или портала на карте мира:
+6. Проверить координаты спавна или портала на карте мира:
    `GET api/ai.php?action=get&resource=maps&world=1&x=1040&y=784`
    Например, агент обнаруживает: `guard_intro.json` ссылается на несуществующий `item_id: 99999`, а у квеста не хватает нового ключевого предмета.
 
@@ -251,9 +274,25 @@ Content-Type: application/json
 Origin: http://127.0.0.1:8080
 X-Editor-CSRF: <новый_csrf>
 ```
-Если `"valid": false` — исправить операции по точным кодам `errors[].index`, `errors[].code`, `errors[].field`.
+Если `"valid": false` — исправить операции по точным кодам `errors[].index`, `errors[].code`, `errors[].field`. Если в `warnings` есть `similar_records_found` — проверьте `similar[]` и убедитесь, что объекты не дублируются.
 
-### Шаг 5. Проверить diff и связи через `preview`
+### Шаг 5. Проверить патч серверно (`apply_patch`) и diff пакета (`preview`)
+Сначала **read-only** проверка каждого точечного `patch_json` против актуальной записи/файла (ничего не записывается, cooldown не тратится):
+```http
+POST /editor-studio/api/ai.php?action=apply_patch
+Content-Type: application/json
+Origin: http://127.0.0.1:8080
+X-Editor-CSRF: <новый_csrf>
+
+{
+  "resource": "scenarios",
+  "filename": "guard_intro.json",
+  "patch_json": { "steps": [ { "id": "start", "components": [ { "type": "quest_action", "action": "accept", "quest_id": 42 } ] } ] },
+  "baseHash": "4e1243bd22c66e76c2ba9eddc1f91394e57f9f83..."
+}
+```
+Ответ: `before`/`after`, `diff` по путям JSON, `changed_fields`, `noop`, `summary_after` и те же `errors[]`, что вернул бы `propose` (патч применяется сервером к актуальным данным — клиентский merge не нужен). Если `noop: true` или патч невалиден — исправьте до отправки.
+Затем dry-run всего пакета (`analysis.items[].diff`, затронутые связи, `warnings`):
 ```http
 POST /editor-studio/api/ai.php?action=preview
 Content-Type: application/json

@@ -88,7 +88,7 @@ test('безопасность и ACL: api.php остаётся admin-only, vouc
   for (const act of ['openapi', 'manifest', 'resources', 'list', 'get', 'references', 'validate', 'preview', 'propose']) {
     assert.ok(aiPhp.includes(`'${act}'`), `ai.php должен поддерживать действие ${act}`);
   }
-  assert.ok(aiPhp.includes("guard_write_actions($action, ['validate', 'preview', 'propose'])"));
+  assert.ok(aiPhp.includes("guard_write_actions($action, ['validate', 'preview', 'apply_patch', 'propose'])"));
   assert.ok(aiPhp.includes('guest_session_required'), 'propose обязан отклонять администратора кодом guest_session_required');
 
   const aiLib = read('api/ai-lib.php');
@@ -1160,6 +1160,174 @@ test('безопасность AI API: OpenAPI, полные схемы manifest
     assert.equal(g2ValSc.status, 200);
     assert.equal(g2ValSc.body.valid, false);
     assert.equal(g2ValSc.body.errors[0].code, 'resource_forbidden');
+
+    // 7b. analyze / similar / apply_patch (read-only, ничего не изменяют)
+    const corpusAnalyze = await callApi('api/ai.php', { query: { action: 'analyze', resource: 'scenarios' } });
+    assert.equal(corpusAnalyze.status, 200, JSON.stringify(corpusAnalyze.body));
+    assert.equal(corpusAnalyze.body.ok, true);
+    assert.equal(corpusAnalyze.body.mode, 'corpus');
+    assert.ok(corpusAnalyze.body.scanned >= 3, 'каталог должен содержать минимум 3 валидных JSON сценариев');
+    assert.deepEqual(corpusAnalyze.body.invalid, []);
+    const msgCompCorpus = corpusAnalyze.body.components.find((c) => c.type === 'message');
+    assert.ok(msgCompCorpus && msgCompCorpus.scenarios >= 2, 'гистограмма компонентов должна учитывать tutorial_data.json и 4errerer.json');
+    const legacyComp = corpusAnalyze.body.components.find((c) => c.type === 'universal_teleport');
+    assert.ok(legacyComp && legacyComp.status === 'legacy', 'устаревшие типы должны помечаться status=legacy');
+    const knownComp = corpusAnalyze.body.components.find((c) => c.type === 'message');
+    assert.equal(knownComp.status, 'known');
+    assert.ok(corpusAnalyze.body.missing_total >= 3, 'несуществующие item/quest ID должны попасть в missing_references');
+    assert.ok(corpusAnalyze.body.missing_references.every((r) => r.filename && r.target && r.id > 0));
+    assert.equal(corpusAnalyze.body.dependency_ok, false);
+
+    const singleAnalyze = await callApi('api/ai.php', { query: { action: 'analyze', resource: 'scenarios', id: 'tutorial_data.json' } });
+    assert.equal(singleAnalyze.status, 200, JSON.stringify(singleAnalyze.body));
+    assert.equal(singleAnalyze.body.mode, 'scenario');
+    assert.equal(singleAnalyze.body.filename, 'tutorial_data.json');
+    assert.equal(singleAnalyze.body.sha256, singleAnalyze.body.baseHash);
+    assert.ok(singleAnalyze.body.component_total > 10);
+    const msgComp = singleAnalyze.body.components.find((c) => c.type === 'message');
+    assert.ok(msgComp && msgComp.count >= 5 && msgComp.status === 'known');
+    assert.ok(singleAnalyze.body.missing_references.some((r) => r.target === 'tw_items_list' && r.id === 40));
+    assert.ok(singleAnalyze.body.missing_references.some((r) => r.target === 'tw_quests_list' && r.id === 1));
+    const depItems = singleAnalyze.body.dependencies.find((d) => d.table === 'tw_items_list');
+    assert.ok(depItems && depItems.missing >= 2 && depItems.references >= 2);
+    assert.equal(singleAnalyze.body.dependency_ok, false);
+    assert.ok(Array.isArray(singleAnalyze.body.inbound));
+    assert.ok(Array.isArray(singleAnalyze.body.reuse));
+
+    const analyzeMissing = await callApi('api/ai.php', { query: { action: 'analyze', resource: 'scenarios', id: 'no_such_file.json' } });
+    assert.equal(analyzeMissing.status, 404);
+    assert.equal(analyzeMissing.body.code, 'scenario_not_found');
+
+    const analyzeWrongResource = await callApi('api/ai.php', { query: { action: 'analyze', resource: 'items' } });
+    assert.equal(analyzeWrongResource.status, 400);
+    assert.equal(analyzeWrongResource.body.code, 'unsupported_resource');
+
+    const unknownAnalyze = await callApi('api/ai.php', { role: 'g2', query: { action: 'analyze', resource: 'scenarios' } });
+    assert.equal(unknownAnalyze.status, 403);
+    assert.equal(unknownAnalyze.body.code, 'resource_forbidden');
+
+    // similar: точное совпадение Iron Ore
+    const similarExact = await callApi('api/ai.php', { query: { action: 'similar', resource: 'items', name: 'Iron Ore' } });
+    assert.equal(similarExact.status, 200, JSON.stringify(similarExact.body));
+    assert.equal(similarExact.body.ok, true);
+    assert.equal(similarExact.body.candidates[0].label, 'Iron Ore');
+    assert.ok(similarExact.body.candidates[0].score > 0.9);
+    assert.equal(similarExact.body.candidates[0].score_percent, Math.round(similarExact.body.candidates[0].score * 100));
+
+    const similarTypo = await callApi('api/ai.php', { query: { action: 'similar', resource: 'items', name: 'Iron Or' } });
+    assert.equal(similarTypo.status, 200);
+    assert.ok(similarTypo.body.candidates.some((c) => c.label === 'Iron Ore'), JSON.stringify(similarTypo.body));
+
+    const similarAgainstMissing = await callApi('api/ai.php', { query: { action: 'similar', resource: 'items', name: 'Zzyzx Nonexistent Xylophone' } });
+    assert.equal(similarAgainstMissing.status, 200);
+    assert.deepEqual(similarAgainstMissing.body.candidates, []);
+
+    const similarNoName = await callApi('api/ai.php', { query: { action: 'similar', resource: 'items' } });
+    assert.equal(similarNoName.status, 400);
+    assert.equal(similarNoName.body.code, 'missing_required_field');
+
+    const similarUnknownRes = await callApi('api/ai.php', { query: { action: 'similar', resource: 'no_such_table', name: 'X' } });
+    assert.equal(similarUnknownRes.status, 404);
+    assert.equal(similarUnknownRes.body.code, 'unknown_resource');
+
+    // похожие записи предупреждаются автоматически при validate create
+    const dupVal = await callApi('api/ai.php', {
+      method: 'POST', query: { action: 'validate' },
+      body: { operations: [{ type: 'create', resource: 'items', data: { Name: 'Iron Ore', Group: 'Resource', Type: 'Default' } }] },
+    });
+    assert.equal(dupVal.status, 200);
+    assert.equal(dupVal.body.valid, true);
+    const dupWarning = dupVal.body.warnings.find((w) => w.code === 'similar_records_found');
+    assert.ok(dupWarning, JSON.stringify(dupVal.body.warnings));
+    assert.ok(dupWarning.similar.some((c) => c.label === 'Iron Ore'));
+
+    // apply_patch: сценарий — read-only проверка и noop для совпадающего значения
+    const emptySc = await callApi('api/ai.php', { query: { action: 'get', resource: 'scenarios', id: 'empty.json', summary_only: '1' } });
+    assert.equal(emptySc.status, 200);
+    const emptyHash = emptySc.body.sha256;
+    const apScenario = await callApi('api/ai.php', {
+      method: 'POST', query: { action: 'apply_patch' },
+      body: { resource: 'scenarios', filename: 'empty.json', patch_json: { scenario_mode: 'default' }, baseHash: emptyHash },
+    });
+    assert.equal(apScenario.status, 200, JSON.stringify(apScenario.body));
+    assert.equal(apScenario.body.ok, true);
+    assert.equal(apScenario.body.noop, true);
+    assert.deepEqual(apScenario.body.diff, []);
+    assert.equal(apScenario.body.sha256_before, emptyHash);
+    assert.ok(!php.fileExists('/studio/scenarios/empty.json.bak'));
+
+    const apScenarioChange = await callApi('api/ai.php', {
+      method: 'POST', query: { action: 'apply_patch' },
+      body: { resource: 'scenarios', filename: 'empty.json', patch_json: { scenario_mode: 'universal' }, baseHash: emptyHash },
+    });
+    assert.equal(apScenarioChange.status, 200, JSON.stringify(apScenarioChange.body));
+    assert.equal(apScenarioChange.body.noop, false);
+    assert.ok(apScenarioChange.body.changed_fields >= 1);
+    assert.equal(apScenarioChange.body.after.scenario_mode, 'universal');
+    assert.ok(!php.fileExists('/studio/scenarios/empty.json.bak'));
+    const emptyScAfter = await callApi('api/ai.php', { query: { action: 'get', resource: 'scenarios', id: 'empty.json' } });
+    assert.equal(emptyScAfter.body.content.scenario_mode, 'default', 'apply_patch не должен изменять файл сценария');
+
+    // apply_patch: несовпадающий baseHash -> 409 base_hash_mismatch (как propose)
+    const apStale = await callApi('api/ai.php', {
+      method: 'POST', query: { action: 'apply_patch' },
+      body: { resource: 'scenarios', filename: 'empty.json', patch_json: { scenario_mode: 'universal' }, baseHash: '0'.repeat(64) },
+    });
+    assert.equal(apStale.status, 409);
+    assert.equal(apStale.body.code, 'base_hash_mismatch');
+
+    // apply_patch: сценарий с битыми ссылками отдаёт те же ошибки, что propose (missing_reference)
+    const apBroken = await callApi('api/ai.php', {
+      method: 'POST', query: { action: 'apply_patch' },
+      body: { resource: 'scenarios', filename: 'tutorial_data.json', patch_json: {}, baseHash: getScSummaryOnly.body.sha256 },
+    });
+    assert.equal(apBroken.status, 400);
+    assert.equal(apBroken.body.valid, false);
+    assert.equal(apBroken.body.code, 'missing_reference');
+    assert.ok(apBroken.body.errors.some((e) => e.field.includes('quest_id')));
+
+    // apply_patch: невалидный сценарный патч -> те же коды ошибок, что и propose
+    const apInvalid = await callApi('api/ai.php', {
+      method: 'POST', query: { action: 'apply_patch' },
+      body: { resource: 'scenarios', filename: 'empty.json', patch_json: { steps: 'not-an-array' }, baseHash: emptyHash },
+    });
+    assert.equal(apInvalid.status, 400);
+    assert.equal(apInvalid.body.valid, false);
+    assert.ok(apInvalid.body.code);
+
+    // apply_patch: БД-ресурс — серверный merge + попольный diff, без записи в БД
+    const apItem = await callApi('api/ai.php', {
+      method: 'POST', query: { action: 'apply_patch' },
+      body: { resource: 'items', id: 1, patch_json: { Data: { use_scenario: { name: 'tutorial_data.json', world_id: 0 }, bonus: { strength: 8 } } }, expected_before: { Name: 'Iron Ore' } },
+    });
+    assert.equal(apItem.status, 200, JSON.stringify(apItem.body));
+    assert.equal(apItem.body.ok, true);
+    assert.equal(apItem.body.changed_fields, 1);
+    const dataDiff = apItem.body.diff.find((d) => d.column === 'Data');
+    assert.ok(dataDiff && dataDiff.json === true);
+    assert.equal(apItem.body.record.Data.bonus.strength, 8);
+    const itemAfter = await callApi('api/ai.php', { query: { action: 'get', resource: 'items', id: '1' } });
+    assert.equal(itemAfter.body.record.Data.bonus, undefined, 'apply_patch не должен изменять БД');
+
+    // apply_patch: expected_before mismatch -> 409
+    const apConflict = await callApi('api/ai.php', {
+      method: 'POST', query: { action: 'apply_patch' },
+      body: { resource: 'items', id: 1, patch_json: { Data: { bonus: { strength: 1 } } }, expected_before: { Name: 'Someone Else' } },
+    });
+    assert.equal(apConflict.status, 409, JSON.stringify(apConflict.body));
+    assert.equal(apConflict.body.code, 'version_conflict');
+
+    // apply_patch: невалидный вход
+    const apBadPatch = await callApi('api/ai.php', {
+      method: 'POST', query: { action: 'apply_patch' },
+      body: { resource: 'items', id: 1, patch_json: 'not-an-object' },
+    });
+    assert.equal(apBadPatch.status, 400);
+    assert.equal(apBadPatch.body.code, 'invalid_patch_json');
+
+    const apReadonlyScenario = await callApi('api/ai.php', { role: 'g2', method: 'POST', query: { action: 'apply_patch' }, body: { resource: 'scenarios', filename: 'tutorial_data.json', patch_json: {} } });
+    assert.equal(apReadonlyScenario.status, 403);
+    assert.equal(apReadonlyScenario.body.code, 'resource_forbidden');
 
     // 8. Валидация JSON/структуры объектов + превышение max_operations
     const valDomainErrors = await callApi('api/ai.php', {

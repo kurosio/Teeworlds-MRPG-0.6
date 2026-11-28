@@ -1,0 +1,64 @@
+# Production docker-compose для Editor Studio с полной AI-интеграцией.
+# Запускать из каталога деплоя (рядом с каталогами scenarios/, data/, source/).
+#
+# Что отличается от минимальной версии:
+#   1. Apache-конфиг — из образа (Dockerfile копирует apache-config.conf из репозитория);
+#      перемонтирование ./apache-config.conf поверх НЕ используется — один источник правды.
+#   2. mapres монтируется read-only; maps — read-write (студия умеет загружать карты);
+#      scenarios/ и data/ — read-write (PHP пишет их напрямую с диска).
+#   3. Healthcheck бьёт по AI-эндпоинту: если PHP или AI-контракт сломан —
+#      контейнер считается unhealthy, а не «живой, но отдающий 500».
+#   4. EDITOR_MAPRES_DIR / EDITOR_MAPS_DIR читаются кодом (карты DDNet v4);
+#      EDITOR_STUDIO_TRUSTED_PROXIES — только если студия за TLS-терминатором.
+#
+# После правки: `docker compose up -d --force-recreate web` и проверить:
+#   curl -fsS http://localhost:8080/api/ai.php?action=openapi | head -c 120
+#   curl -fsS -o /dev/null -w '%{http_code}\n' http://localhost:8080/scenarios/tutorial_data.json   # 403
+
+services:
+  web:
+    build:
+      context: source/web-tools/editor-studio/
+      dockerfile: Dockerfile
+    container_name: editor-studio-web
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      - ./scenarios:/var/www/html/scenarios
+      - ./data:/var/www/html/data
+      - /root/Teeworlds-MRPG-0.6/data/mapres:/var/www/html/mapres:ro
+      - /root/mmorpg/maps:/var/www/html/maps:rw
+      # НЕ монтируем ./apache-config.conf поверх: образ собирается с
+      # web-tools/editor-studio/apache-config.conf (единый источник правды из репозитория).
+      # Если всё же нужен конфиг без пересборки образа, добавьте:
+      # - ./apache-config.conf:/etc/apache2/sites-available/editor-studio.conf:ro
+    environment:
+      - EDITOR_MAPRES_DIR=/var/www/html/mapres
+      - EDITOR_MAPS_DIR=/var/www/html/maps
+      # Только если перед студией стоит доверенный обратный прокси/Cloudflare:
+      # - EDITOR_STUDIO_TRUSTED_PROXIES=172.16.0.0/12
+      - PHP_MEMORY_LIMIT=${PHP_MEMORY_LIMIT:-512M}
+      - PHP_UPLOAD_MAX_FILESIZE=${PHP_UPLOAD_MAX_FILESIZE:-100M}
+      - PHP_POST_MAX_SIZE=${PHP_POST_MAX_SIZE:-100M}
+      - PHP_MAX_EXECUTION_TIME=${PHP_MAX_EXECUTION_TIME:-600}
+    networks:
+      - editor-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+    healthcheck:
+      # Проверяем и веб-сервер, и AI-контракт (PHP + манифест OpenAPI).
+      test: ["CMD", "sh", "-c", "curl -fsS http://localhost/api/ai.php?action=openapi >/dev/null"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  editor-network:
+    driver: bridge

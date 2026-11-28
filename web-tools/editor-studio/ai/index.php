@@ -36,12 +36,12 @@ $doc = [
         'studio' => $baseUrl . '/',
         'onboarding_html' => $baseUrl . '/ai/',
         'onboarding_json' => $baseUrl . '/ai/?format=json',
-        'discovery_manifest' => $baseUrl . '/.well-known/ai-plugin.json',
         'discovery_api' => $baseUrl . '/api/ai.php?action=discovery',
-        'openapi_3_1' => $baseUrl . '/openapi.json',
-        'openapi_api' => $baseUrl . '/api/ai.php?action=openapi',
-        'mcp_http' => $baseUrl . '/mcp',
+        'discovery_manifest' => $baseUrl . '/.well-known/ai-plugin.json', // alias, requires rewrite
+        'openapi_3_1' => $baseUrl . '/api/ai.php?action=openapi',
+        'openapi_direct' => $baseUrl . '/openapi.json', // alias, requires rewrite
         'mcp_api' => $baseUrl . '/api/mcp.php',
+        'mcp_http' => $baseUrl . '/mcp', // alias, requires rewrite
         'rest_api' => $baseUrl . '/api/ai.php',
         'auth_status' => $baseUrl . '/api/auth.php?action=status',
         'guest_login' => $baseUrl . '/api/auth.php?action=guest_login',
@@ -57,28 +57,32 @@ $doc = [
     'quickstart_steps' => [
         '1. Authenticate with Authorization: Bearer esai_<token> (or guest cookie session).',
         '2. Fetch capability manifest: GET api/ai.php?action=manifest (or MCP tool get_manifest).',
-        '3. Inspect resource schemas & examples: GET api/ai.php?action=resources&resource=<name> (or MCP tool get_schema).',
-        '4. Read existing records/scenarios/maps: list, get, and references endpoints.',
-        '5. Validate & dry-run changes: POST api/ai.php?action=validate and action=preview.',
-        '6. Edit existing JSON safely with patch_json (RFC 7396 merge patch) or duplicate objects via type="copy".',
-        '7. Submit Change Request: POST api/ai.php?action=propose with descriptive message and optional idempotency_key.',
-        '8. For deletions, clearing non-empty JSON, bulk >10 ops, or editing worlds/dungeons/vouchers, inspect dangerous_actions from preview and confirm explicitly with confirm_dangerous=true.',
+        '3. Analyze before authoring: GET api/ai.php?action=analyze&resource=scenarios (corpus: component histogram, missing dependencies, invalid files; &id=file.json for one scenario) — reuse existing components instead of cloning, and fix missing_references.',
+        '4. Find duplicates before creating: GET api/ai.php?action=similar&resource=<res>&name=<Name> (or MCP find_similar). Creates also return warning similar_records_found when similar rows exist.',
+        '5. Read existing records/scenarios/maps: list, get (with include_references=1), references endpoints. For scenario updates remember sha256 from get — it is the baseHash for propose.',
+        '6. Draft minimal patch_json (RFC 7396 merge patch) instead of full data replacement; duplicate objects via type="copy".',
+        '7. Verify the merged result server-side (writes nothing): POST api/ai.php?action=apply_patch {resource, id|filename, patch_json, baseHash?} — it returns before/after/diff plus the exact errors propose would emit (or MCP apply_patch).',
+        '8. Validate & dry-run: POST api/ai.php?action=validate and action=preview.',
+        '9. Submit Change Request: POST api/ai.php?action=propose with descriptive message and optional idempotency_key.',
+        '10. For deletions, clearing non-empty JSON, bulk >10 ops, or editing worlds/dungeons/vouchers, inspect dangerous_actions from preview and confirm explicitly with confirm_dangerous=true.',
     ],
     'operation_formats' => [
         'supported_types' => ['create', 'update', 'copy', 'delete'],
         'type_alias' => 'Either "type" or "action" may be supplied on each operation object.',
         'patch_json' => 'On update/copy, supply patch_json: {"Data": {"bonus": {...}}} (DB) or patch_json: {...} (scenarios) to preserve unrelated existing fields.',
         'temp_id' => 'Omit tempId on DB create/copy for automatic 2000000001+ assignment, or pass explicit tempId (2000000000..2000999999) for cross-references in the same batch.',
+        'verify_before_propose' => 'POST action=apply_patch {resource, id|filename, patch_json, baseHash?} — server-side merge of patch_json against the live record/file (read-only). Returns before/after/diff/noop and the same errors action=propose would emit. Never propose an unverified patch.',
     ],
     'mcp' => [
         'protocolVersion' => '2024-11-05',
         'transports' => [
-            'http_json_rpc_2_0' => $baseUrl . '/mcp',
+            'http_json_rpc_2_0' => $baseUrl . '/api/mcp.php', // alias: /mcp (requires rewrite)
             'stdio_bridge_command' => 'node tools/mcp-stdio.mjs --url ' . $baseUrl . ' --token <AI_TOKEN>',
         ],
         'tools' => [
             'get_manifest', 'get_schema', 'list_records', 'get_record', 'get_references',
-            'validate_operations', 'preview_operations', 'propose_changes',
+            'analyze_scenario', 'find_similar',
+            'validate_operations', 'preview_operations', 'apply_patch', 'propose_changes',
             'copy_record', 'patch_json_record', 'get_history',
         ],
     ],
@@ -103,8 +107,8 @@ header('Content-Type: text/html; charset=utf-8');
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI &amp; MCP Onboarding • Teeworlds-MRPG-0.6 Editor Studio</title>
   <link rel="alternate" type="application/json" title="AI Onboarding JSON" href="?format=json" />
-  <link rel="service-desc" type="application/json" title="OpenAPI 3.1.0" href="../openapi.json" />
-  <link rel="ai-plugin" type="application/json" href="../.well-known/ai-plugin.json" />
+  <link rel="service-desc" type="application/json" title="OpenAPI 3.1.0" href="../api/ai.php?action=openapi" />
+  <link rel="ai-plugin" type="application/json" href="../api/ai.php?action=discovery" />
   <link rel="stylesheet" href="../vendor/fontawesome/css/all.min.css" />
   <link rel="stylesheet" href="../editor-core/editor-theme.css" />
   <link rel="stylesheet" href="../editor-core/editor-template.css" />
@@ -129,7 +133,7 @@ header('Content-Type: text/html; charset=utf-8');
         <span class="ai-pill"><i class="fa-solid fa-robot"></i> Model-Agnostic Universal AI &amp; MCP Entrypoint</span>
         <div class="flex flex-wrap gap-2">
           <a class="editor-btn editor-btn-secondary" href="?format=json"><i class="fa-solid fa-code"></i><span>JSON Discovery</span></a>
-          <a class="editor-btn editor-btn-secondary" href="../openapi.json"><i class="fa-solid fa-file-code"></i><span>OpenAPI 3.1.0</span></a>
+          <a class="editor-btn editor-btn-secondary" href="../api/ai.php?action=openapi"><i class="fa-solid fa-file-code"></i><span>OpenAPI 3.1.0</span></a>
           <a class="editor-btn editor-btn-secondary" href="../"><i class="fa-solid fa-arrow-left"></i><span>Open Studio</span></a>
         </div>
       </div>
@@ -144,9 +148,9 @@ header('Content-Type: text/html; charset=utf-8');
         <h2 class="font-bold text-base mb-3"><i class="fa-solid fa-compass text-accent mr-1.5"></i> Discovery &amp; Endpoints</h2>
         <dl class="ai-kv">
           <dt>JSON Onboarding</dt><dd><a class="underline" href="?format=json"><?= $h($baseUrl . '/ai/?format=json') ?></a></dd>
-          <dt>Plugin Descriptor</dt><dd><a class="underline" href="../.well-known/ai-plugin.json"><?= $h($baseUrl . '/.well-known/ai-plugin.json') ?></a></dd>
-          <dt>OpenAPI 3.1.0</dt><dd><a class="underline" href="../openapi.json"><?= $h($baseUrl . '/openapi.json') ?></a></dd>
-          <dt>MCP (HTTP RPC 2.0)</dt><dd><a class="underline" href="../mcp"><?= $h($baseUrl . '/mcp') ?></a></dd>
+          <dt>Plugin Descriptor</dt><dd><a class="underline" href="../api/ai.php?action=discovery"><?= $h($baseUrl . '/api/ai.php?action=discovery') ?></a> <span class="editor-muted-text">(alias: /.well-known/ai-plugin.json)</span></dd>
+          <dt>OpenAPI 3.1.0</dt><dd><a class="underline" href="../api/ai.php?action=openapi"><?= $h($baseUrl . '/api/ai.php?action=openapi') ?></a> <span class="editor-muted-text">(alias: /openapi.json — only with rewrite)</span></dd>
+          <dt>MCP (HTTP RPC 2.0)</dt><dd><a class="underline" href="../api/mcp.php"><?= $h($baseUrl . '/api/mcp.php') ?></a> <span class="editor-muted-text">(alias: /mcp — only with rewrite)</span></dd>
           <dt>REST API</dt><dd><?= $h($baseUrl . '/api/ai.php?action=manifest') ?></dd>
         </dl>
       </section>
@@ -170,11 +174,13 @@ header('Content-Type: text/html; charset=utf-8');
           <button type="button" class="editor-btn editor-btn-secondary editor-btn--xs" id="copy-prompt"><i class="fa-solid fa-copy"></i><span>Copy</span></button>
         </div>
         <pre class="ai-pre" id="prompt-snippet">Connect to Teeworlds-MRPG-0.6 Editor Studio at <?= $h($baseUrl) ?>:
-1. Discovery: GET <?= $h($baseUrl . '/ai/?format=json') ?> and GET <?= $h($baseUrl . '/openapi.json') ?>.
+1. Discovery: GET <?= $h($baseUrl . '/ai/?format=json') ?> and GET <?= $h($baseUrl . '/api/ai.php?action=openapi') ?>.
 2. Auth header: Authorization: Bearer &lt;YOUR_AI_TOKEN&gt;
-3. First inspect GET api/ai.php?action=manifest and action=resources&amp;resource=&lt;name&gt;.
-4. Read existing items/worlds/scenarios via action=list and action=get before proposing changes.
-5. Always call action=validate and action=preview first, use patch_json for partial JSON edits, and submit via action=propose.</pre>
+3. Inspect GET api/ai.php?action=manifest and action=resources&amp;resource=&lt;name&gt;.
+4. Analyze first: GET action=analyze&amp;resource=scenarios (structure, missing dependencies, reusable components) and find duplicates with GET action=similar&amp;resource=&lt;res&gt;&amp;name=&lt;Name&gt;.
+5. Read existing items/worlds/scenarios via action=list and action=get before proposing changes.
+6. Prefer patch_json for edits; verify it server-side with POST action=apply_patch (read-only before/after/diff).
+7. Then call action=validate and action=preview; submit only a clean package via action=propose.</pre>
       </section>
 
       <section class="ai-card">
@@ -185,7 +191,7 @@ header('Content-Type: text/html; charset=utf-8');
         <pre class="ai-pre" id="mcp-snippet"><?= $h((string)json_encode([
             'mcpServers' => [
                 'mrpg-editor-studio' => [
-                    'url' => $baseUrl . '/mcp',
+                    'url' => $baseUrl . '/api/mcp.php',
                     'headers' => ['Authorization' => 'Bearer esai_<YOUR_TOKEN>'],
                     'stdioFallback' => [
                         'command' => 'node',

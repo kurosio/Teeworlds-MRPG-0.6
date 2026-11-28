@@ -38,7 +38,7 @@ if (!rawBaseUrl) {
 const baseUrl = rawBaseUrl.replace(/\/+$/, '');
 const primaryEndpoint = baseUrl.endsWith('/mcp') || baseUrl.endsWith('/mcp.php')
   ? baseUrl
-  : `${baseUrl}/mcp`;
+  : `${baseUrl}/api/mcp.php`;
 const fallbackEndpoint = baseUrl.endsWith('/api/mcp.php')
   ? baseUrl
   : `${baseUrl.replace(/\/(mcp|ai)\/?$/, '')}/api/mcp.php`;

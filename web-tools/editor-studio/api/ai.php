@@ -13,11 +13,17 @@
 //   get        — чтение одной записи/сценария/карты (с опциями связей и проверки точки)
 //   references — граф входящих и исходящих ссылок или чтение словарей (&source=...)
 //   history    — журнал действий и запросов на изменение текущего актора
+//   analyze    — глубокий анализ сценариев: структура, компоненты, зависимости
+//                (боты/предметы/миры/квесты), входящие ссылки и переиспользование;
+//                без &id= возвращается сводка по всему каталогу сценариев
+//   similar    — поиск похожих существующих записей по названию (ресурс БД или справочник)
 //
 // POST (требует Same-Origin JSON POST + X-Editor-CSRF ИЛИ Authorization: Bearer esai_...):
-//   validate   — полная проверка операций (БД + сценарии + patch_json + copy) без записи
-//   preview    — dry-run анализ: diff, затронутые связи, dangerous_actions (без записи)
-//   propose    — отправка или обновление запроса на изменение в SQLite (только гость/токен)
+//   validate    — полная проверка операций (БД + сценарии + patch_json + copy) без записи
+//   preview     — dry-run анализ: diff, затронутые связи, dangerous_actions (без записи)
+//   apply_patch — read-only серверная проверка patch_json: слияние с актуальной записью/файлом,
+//                 before/after/diff и те же ошибки, что вернёт propose (НИЧЕГО не записывает)
+//   propose     — отправка или обновление запроса на изменение в SQLite (только гость/токен)
 //
 // Прямая запись в игровую БД или файлы scenarios/ через этот API невозможна.
 
@@ -29,7 +35,7 @@ require_once __DIR__ . '/db-history-lib.php';
 $action = (string)($_GET['action'] ?? '');
 $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 
-if (!in_array($action, ['validate', 'preview', 'propose'], true) && $method !== 'GET') {
+if (!in_array($action, ['validate', 'preview', 'apply_patch', 'propose'], true) && $method !== 'GET') {
     respond(['ok' => false, 'code' => 'method_not_allowed', 'error' => 'Метод запроса не поддерживается'], 405);
 }
 
@@ -59,19 +65,19 @@ if ($action === 'discovery') {
         'name_for_human' => 'Teeworlds-MRPG-0.6 Editor Studio',
         'name_for_model' => 'mrpg_editor_studio',
         'description_for_human' => 'AI-assisted content creation and review platform for Teeworlds MRPG 0.6 worlds, quests, items, NPCs, mobs, shops, and JSON scenarios.',
-        'description_for_model' => 'Model-agnostic REST & MCP JSON-RPC 2.0 platform for inspecting schemas/maps/references and submitting safe Change Requests for Teeworlds-MRPG-0.6. Read manifest first (api/ai.php?action=manifest), validate/preview operations before propose, prefer patch_json for existing JSON edits, and confirm dangerous_actions explicitly.',
+        'description_for_model' => 'Model-agnostic REST & MCP JSON-RPC 2.0 platform for inspecting schemas/maps/references and submitting safe Change Requests for Teeworlds-MRPG-0.6. Read manifest first (api/ai.php?action=manifest), analyze scenarios (action=analyze) and find duplicates (action=similar) before authoring, verify patch_json with the read-only action=apply_patch, then validate/preview and propose. Prefer patch_json for existing JSON edits, and confirm dangerous_actions explicitly.',
         'api_version' => '2.0',
         'onboarding_url' => $base . '/ai/',
         'api' => [
             'type' => 'openapi',
-            'url' => $base . '/openapi.json',
-            'fallback_url' => $base . '/api/ai.php?action=openapi',
+            'url' => $base . '/api/ai.php?action=openapi',
+            'fallback_url' => $base . '/openapi.json',
         ],
         'mcp' => [
             'protocol' => '2024-11-05',
             'transport' => 'http_json_rpc_2_0',
-            'endpoint' => $base . '/mcp',
-            'fallback_endpoint' => $base . '/api/mcp.php',
+            'endpoint' => $base . '/api/mcp.php',
+            'alias_endpoint' => $base . '/mcp', // only with rewrite rules
         ],
         'auth' => [
             'type' => 'bearer_or_guest_session',
@@ -87,6 +93,9 @@ if ($action === 'discovery') {
             'copy' => true,
             'dangerous_confirm_gate' => true,
             'safe_change_requests_only' => true,
+            'scenario_analysis' => true,
+            'similar_records_search' => true,
+            'verify_before_propose' => true,
         ],
     ]);
 }
@@ -94,7 +103,7 @@ if ($action === 'discovery') {
 $ROLE = bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN, EDITOR_ROLE_GUEST], true);
 $IS_ADMIN = $ROLE === EDITOR_ROLE_ADMIN;
 
-guard_write_actions($action, ['validate', 'preview', 'propose']);
+guard_write_actions($action, ['validate', 'preview', 'apply_patch', 'propose']);
 
 /** Единый формат структурированной ошибки для AI-клиентов. */
 function ai_fail(string $code, string $message, int $status = 400, ?string $field = null, array $extra = []): never
@@ -157,17 +166,7 @@ function ai_parse_query_filter(): array
 
 function ai_validation_http_status(array $errors): int
 {
-    foreach ($errors as $e) {
-        if (($e['code'] ?? '') === 'resource_forbidden') {
-            return 403;
-        }
-    }
-    foreach ($errors as $e) {
-        if (in_array((string)($e['code'] ?? ''), ['record_not_found', 'scenario_exists', 'scenario_not_found', 'base_hash_mismatch', 'version_conflict'], true)) {
-            return 409;
-        }
-    }
-    return 400;
+    return ai_http_status_for_validation_errors($errors);
 }
 
 try {
@@ -319,6 +318,68 @@ try {
         } finally {
             $db->close();
         }
+    }
+
+    // ── GET analyze (анализ сценариев: структура, зависимости, переиспользование) ─
+    if ($action === 'analyze') {
+        $resource = trim((string)($_GET['resource'] ?? 'scenarios'));
+        if ($resource !== 'scenarios') {
+            ai_fail('unsupported_resource', 'action=analyze поддерживает только resource=scenarios; для записей БД используйте action=references.', 400, 'resource', ['allowed' => ['scenarios']]);
+        }
+        if (!ai_can_read_resource('scenarios', $ROLE)) {
+            ai_fail('resource_forbidden', 'Доступ к сценариям не выдан вашей учётной записи.', 403, 'resource');
+        }
+        $id = trim((string)($_GET['id'] ?? ($_GET['file'] ?? '')));
+        $search = trim((string)($_GET['search'] ?? ($_GET['q'] ?? '')));
+        $db = db_connect();
+        try {
+            if ($id !== '') {
+                $result = ai_analyze_scenario($db, $id, $ROLE, null);
+                respond(array_merge(['ok' => true, 'mode' => 'scenario', 'resource' => 'scenarios'], $result));
+            }
+            $result = ai_analyze_scenario_corpus($db, $ROLE, null, null, $search);
+            respond(array_merge(['ok' => true, 'mode' => 'corpus', 'resource' => 'scenarios'], $result));
+        } finally {
+            $db->close();
+        }
+    }
+
+    // ── GET similar (поиск похожих существующих записей, анти-дубли) ─────────
+    if ($action === 'similar') {
+        $resource = trim((string)($_GET['resource'] ?? ''));
+        if ($resource === '') {
+            ai_fail('missing_required_field', 'Укажите параметр resource.', 400, 'resource');
+        }
+        $known = isset(editor_resources()[$resource]) || isset(ai_schema_lookups()[$resource]);
+        if (!$known) {
+            ai_fail('unknown_resource', "Неизвестный ресурс «{$resource}».", 404, 'resource');
+        }
+        if (!ai_can_read_resource($resource, $ROLE)) {
+            ai_fail('resource_forbidden', "Доступ к ресурсу «{$resource}» запрещён вашей учётной записи.", 403, 'resource');
+        }
+        $query = trim((string)($_GET['name'] ?? ($_GET['q'] ?? ($_GET['search'] ?? ''))));
+        if ($query === '') {
+            ai_fail('missing_required_field', 'Укажите название для сравнения (параметр name или q).', 400, 'name');
+        }
+        $limit = clamp_int($_GET['limit'] ?? null, 1, 25, 5);
+        $db = db_connect();
+        try {
+            $similar = ai_find_similar_records($db, $resource, $query, $limit, $ROLE);
+        } finally {
+            $db->close();
+        }
+        if (!is_array($similar)) {
+            ai_fail('resource_forbidden', "Доступ к ресурсу «{$resource}» запрещён вашей учётной записи.", 403, 'resource');
+        }
+        respond([
+            'ok' => true,
+            'resource' => $resource,
+            'query' => $query,
+            'candidates' => $similar['candidates'],
+            'scanned' => $similar['scanned'],
+            'threshold' => $similar['threshold'],
+            'note' => 'score — похожесть 0..1 (Dice по биграммам с бонусом за вхождение); score_percent — то же в процентах.',
+        ]);
     }
 
     // ── GET get ─────────────────────────────────────────────────────────────
@@ -566,6 +627,19 @@ try {
             'audit' => $auditSafe,
             'audit_total' => $auditList['total'],
         ]);
+    }
+
+    // ── POST apply_patch (read-only серверная проверка patch_json) ─────────
+    if ($action === 'apply_patch') {
+        ai_require_scope('read');
+        $body = ai_read_body();
+        $db = db_connect();
+        try {
+            $res = ai_apply_patch_verify($db, $body, $ROLE);
+        } finally {
+            $db->close();
+        }
+        respond($res['payload'], $res['status']);
     }
 
     // ── POST validate ───────────────────────────────────────────────────────

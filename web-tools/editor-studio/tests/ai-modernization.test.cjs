@@ -324,8 +324,13 @@ test('End-to-End 12 AI Modernization Scenarios (Onboarding, Auto-Discovery, MCP/
     assert.equal(aiJson.status, 200);
     assert.equal(aiJson.json.api_version, '2.0');
     assert.equal(aiJson.json.model_agnostic, true);
-    assert.ok(aiJson.json.urls.openapi_3_1.endsWith('/openapi.json'));
+    // OpenAPI primary URL must be the API fallback (works without rewrite rules;
+    // /openapi.json is kept as a documented alias for rewritten deployments).
+    assert.ok(aiJson.json.urls.openapi_3_1.endsWith('/api/ai.php?action=openapi'));
+    assert.ok(aiJson.json.urls.openapi_direct.endsWith('/openapi.json'));
+    assert.ok(aiJson.json.urls.mcp_api.endsWith('/api/mcp.php'));
     assert.ok(aiJson.json.urls.mcp_http.endsWith('/mcp'));
+    assert.ok(aiJson.json.urls.discovery_api.endsWith('/api/ai.php?action=discovery'));
 
     const aiAccept = await execRoute(php, { urlPath: '/ai/', headers: { Accept: 'application/json' } });
     assert.equal(aiAccept.status, 200);
@@ -350,7 +355,7 @@ test('End-to-End 12 AI Modernization Scenarios (Onboarding, Auto-Discovery, MCP/
       assert.equal(blocked.status, 404, `router.php must block ${secretPath}`);
     }
     const indexHtml = read('index.html');
-    assert.ok(indexHtml.includes('href="ai/?format=json"') && indexHtml.includes('href="openapi.json"'));
+    assert.ok(indexHtml.includes('href="ai/?format=json"') && indexHtml.includes('href="api/ai.php?action=openapi"'));
     const apacheConf = read('apache-config.conf');
     assert.ok(apacheConf.includes('RewriteRule ^/\\.well-known/ai-plugin\\.json$') && apacheConf.includes('RewriteRule ^/mcp/?$'));
 
@@ -445,7 +450,9 @@ test('End-to-End 12 AI Modernization Scenarios (Onboarding, Auto-Discovery, MCP/
     const mcpGet = await execRoute(php, { urlPath: '/mcp', method: 'GET' });
     assert.equal(mcpGet.status, 200);
     assert.equal(mcpGet.json.protocol, 'mcp');
-    assert.ok(mcpGet.json.tools.includes('patch_json_record') && mcpGet.json.tools.includes('copy_record'));
+    for (const tool of ['patch_json_record', 'copy_record', 'analyze_scenario', 'find_similar', 'apply_patch']) {
+      assert.ok(mcpGet.json.tools.includes(tool), `MCP GET tools list должен включать ${tool}`);
+    }
 
     const mcpInit = await execRoute(php, {
       urlPath: '/mcp', method: 'POST', headers: authHeaders,
@@ -458,7 +465,11 @@ test('End-to-End 12 AI Modernization Scenarios (Onboarding, Auto-Discovery, MCP/
       urlPath: '/mcp', method: 'POST', headers: authHeaders,
       body: { jsonrpc: '2.0', id: 2, method: 'tools/list' },
     });
-    assert.equal(mcpTools.json.result.tools.length, 11);
+    assert.equal(mcpTools.json.result.tools.length, 14);
+    const mcpToolNames = mcpTools.json.result.tools.map((t) => t.name);
+    for (const tool of ['analyze_scenario', 'find_similar', 'apply_patch']) {
+      assert.ok(mcpToolNames.includes(tool), `tools/list должен включать ${tool}`);
+    }
 
     const mcpResList = await execRoute(php, {
       urlPath: '/mcp', method: 'POST', headers: authHeaders,
@@ -630,6 +641,51 @@ test('End-to-End 12 AI Modernization Scenarios (Onboarding, Auto-Discovery, MCP/
     const writtenScene = JSON.parse(php.readFileAsText('/studio/scenarios/valley_welcome.json'));
     const remappedPassId = writtenScene.steps[1].components[0].item_id;
     assert.ok(remappedPassId > 0 && remappedPassId < 2000000000, `tempId must remap to real ID, got ${remappedPassId}`);
+
+    // ── SCENARIO 7c: MCP read-only verify tools (analyze_scenario, find_similar, apply_patch) ─
+    const mcpAnalyze = await execRoute(php, {
+      urlPath: '/mcp', method: 'POST', headers: authHeaders,
+      body: { jsonrpc: '2.0', id: 21, method: 'tools/call', params: { name: 'analyze_scenario', arguments: { id: 'valley_welcome.json' } } },
+    });
+    assert.equal(mcpAnalyze.json.result.isError, false, JSON.stringify(mcpAnalyze.json));
+    assert.equal(mcpAnalyze.json.result.structuredContent.filename, 'valley_welcome.json');
+    assert.ok(mcpAnalyze.json.result.structuredContent.component_total >= 2);
+    assert.ok(Array.isArray(mcpAnalyze.json.result.structuredContent.dependencies));
+
+    const mcpCorpus = await execRoute(php, {
+      urlPath: '/mcp', method: 'POST', headers: authHeaders,
+      body: { jsonrpc: '2.0', id: 22, method: 'tools/call', params: { name: 'analyze_scenario', arguments: {} } },
+    });
+    assert.equal(mcpCorpus.json.result.isError, false);
+    assert.equal(mcpCorpus.json.result.structuredContent.mode, 'corpus');
+    assert.ok(mcpCorpus.json.result.structuredContent.scanned >= 2);
+    assert.ok(mcpCorpus.json.result.structuredContent.components.some((c) => c.type === 'message'));
+
+    const mcpSimilar = await execRoute(php, {
+      urlPath: '/mcp', method: 'POST', headers: authHeaders,
+      body: { jsonrpc: '2.0', id: 23, method: 'tools/call', params: { name: 'find_similar', arguments: { resource: 'items', name: 'Valley Pass' } } },
+    });
+    assert.equal(mcpSimilar.json.result.isError, false, JSON.stringify(mcpSimilar.json));
+    assert.ok(mcpSimilar.json.result.structuredContent.candidates.some((c) => c.label === 'Valley Pass'),
+      JSON.stringify(mcpSimilar.json.result.structuredContent));
+
+    const mcpApplyPatch = await execRoute(php, {
+      urlPath: '/mcp', method: 'POST', headers: authHeaders,
+      body: {
+        jsonrpc: '2.0', id: 24, method: 'tools/call',
+        params: { name: 'apply_patch', arguments: { resource: 'items', id: 1, patch_json: { Data: { bonus: { strength: 7 } } } } },
+      },
+    });
+    assert.equal(mcpApplyPatch.json.result.isError, false, JSON.stringify(mcpApplyPatch.json));
+    assert.equal(mcpApplyPatch.json.result.structuredContent.changed_fields, 1);
+    assert.equal(mcpApplyPatch.json.result.structuredContent.record.Data.bonus.strength, 7);
+
+    const itemStillUnpatched = await execRoute(php, {
+      urlPath: '/api/ai.php', headers: authHeaders,
+      query: { action: 'get', resource: 'items', id: '1' },
+    });
+    const bonusStrength = itemStillUnpatched.json.record.Data?.bonus?.strength;
+    assert.equal(bonusStrength, 5, 'apply_patch не должен изменять БД (SCENARIO 8 позднее поставит 9 через propose)');
 
     // ── SCENARIO 8: Safe improvement via RFC 7396 patch_json & copy ──────────────────
     const patchRes = await execRoute(php, {

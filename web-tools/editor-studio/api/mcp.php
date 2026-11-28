@@ -4,7 +4,7 @@
 //
 // Supports MCP protocol 2024-11-05:
 //   - initialize, ping
-//   - tools/list, tools/call (11 typed MRPG tools)
+//   - tools/list, tools/call (14 typed MRPG tools)
 //   - resources/list, resources/read (dynamic schemas + manifest + OpenAPI)
 //   - prompts/list, prompts/get (model-agnostic workflow prompts)
 //
@@ -198,6 +198,50 @@ function mcp_tool_catalog(): array
             ],
         ],
         [
+            'name' => 'analyze_scenario',
+            'description' => 'Deep analysis of scenario JSON files: per-step component inventory (known/legacy/unknown), outbound references resolved against the game DB (missing items/quests/bots/worlds are flagged), inbound links, and which other scenarios reuse the same components. Omit id for a corpus-wide overview (component histogram + missing dependencies across all scenarios).',
+            'inputSchema' => [
+                'type' => 'object',
+                'properties' => [
+                    'id' => ['type' => 'string', 'description' => 'Scenario filename to analyze. Omit for corpus-wide analysis.'],
+                    'search' => ['type' => 'string', 'description' => 'Corpus mode only: filter scenario files by filename/component/event substring.'],
+                ],
+                'additionalProperties' => false,
+            ],
+        ],
+        [
+            'name' => 'find_similar',
+            'description' => 'Find existing records similar to a proposed name (Dice bigram similarity on normalized text) to avoid duplicates before creating an item/quest/NPC/world. Returns scored candidates (id, label, score/score_percent).',
+            'inputSchema' => [
+                'type' => 'object',
+                'required' => ['resource', 'name'],
+                'properties' => [
+                    'resource' => ['type' => 'string', 'description' => 'DB resource key (items, quests, bots_npc, ...) or lookup (skills, attributes, worlds, ...)'],
+                    'name' => ['type' => 'string', 'description' => 'Proposed label to compare against existing records'],
+                    'limit' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 25, 'default' => 5],
+                ],
+                'additionalProperties' => false,
+            ],
+        ],
+        [
+            'name' => 'apply_patch',
+            'description' => 'Read-only server-side verify of patch_json against the live record/file: merges RFC 7396 patch, returns before/after/diff and the exact errors action=propose would emit. Writes nothing; does not consume cooldown or confirm_dangerous. Call this before propose_changes.',
+            'inputSchema' => [
+                'type' => 'object',
+                'required' => ['resource', 'patch_json'],
+                'properties' => [
+                    'resource' => ['type' => 'string'],
+                    'id' => ['anyOf' => [['type' => 'integer'], ['type' => 'string']]],
+                    'filename' => ['type' => 'string'],
+                    'patch_json' => ['type' => 'object'],
+                    'data' => ['type' => 'object'],
+                    'baseHash' => ['type' => 'string'],
+                    'expected_before' => ['type' => 'object'],
+                ],
+                'additionalProperties' => false,
+            ],
+        ],
+        [
             'name' => 'get_history',
             'description' => 'Read the recent action audit log and Change Requests visible to the current AI token or session.',
             'inputSchema' => [
@@ -322,7 +366,7 @@ if (in_array($rpcMethod, $publicMethods, true)) {
                 'name' => MCP_SERVER_NAME,
                 'version' => MCP_SERVER_VERSION,
             ],
-            'instructions' => 'Call get_manifest and get_schema first, use list_records/get_record to inspect existing world/item/scenario IDs, validate/preview changes before propose_changes, and set confirm_dangerous=true after reviewing dangerous_actions.',
+            'instructions' => 'Call get_manifest and get_schema first. Reuse existing content: analyze_scenario (structure, missing dependencies, shared components) and find_similar (duplicate candidates before create). Inspect IDs with list_records/get_record, verify patch_json with apply_patch, then validate_operations/preview_operations and finally propose_changes with confirm_dangerous=true only after reviewing dangerous_actions.',
         ]);
     }
     if ($rpcMethod === 'ping') {
@@ -346,7 +390,7 @@ if (in_array($rpcMethod, $publicMethods, true)) {
                         'role' => 'user',
                         'content' => [
                             'type' => 'text',
-                            'text' => "Follow MRPG Editor Studio safety workflow ({$pName}): 1) Call get_schema + list_records/get_references; 2) Draft valid operations using tempId / patch_json; 3) Call preview_operations; 4) Call propose_changes. Arguments: {$argTxt}",
+                            'text' => "Follow MRPG Editor Studio safety workflow ({$pName}): 1) Call get_schema + list_records/find_similar (and analyze_scenario for scenario work) to reuse existing content; 2) Draft valid operations using tempId / patch_json; 3) Verify with apply_patch, then preview_operations; 4) Call propose_changes. Arguments: {$argTxt}",
                         ],
                     ]],
                 ]);
@@ -603,6 +647,69 @@ try {
         }
         $allowed = ai_allowed_resources($ROLE, null, false);
         mcp_respond_rpc($rpcId, mcp_tool_result(['ok' => true, 'mode' => 'schema', 'resources' => array_keys($allowed)]));
+    }
+
+    if ($toolName === 'analyze_scenario') {
+        ai_require_scope('read');
+        if (!ai_can_read_resource('scenarios', $ROLE)) {
+            mcp_respond_rpc($rpcId, mcp_tool_result(['ok' => false, 'code' => 'resource_forbidden', 'error' => 'Доступ к сценариям не выдан вашей учётной записи.'], true));
+        }
+        $search = trim((string)($args['search'] ?? ''));
+        $id = trim((string)($args['id'] ?? ''));
+        $db = db_connect();
+        try {
+            if ($id !== '') {
+                $result = ai_analyze_scenario($db, $id, $ROLE, null);
+                mcp_respond_rpc($rpcId, mcp_tool_result(array_merge(['ok' => true, 'mode' => 'scenario', 'resource' => 'scenarios'], $result)));
+            }
+            $result = ai_analyze_scenario_corpus($db, $ROLE, null, null, $search);
+            mcp_respond_rpc($rpcId, mcp_tool_result(array_merge(['ok' => true, 'mode' => 'corpus', 'resource' => 'scenarios'], $result)));
+        } finally {
+            $db->close();
+        }
+    }
+
+    if ($toolName === 'find_similar') {
+        ai_require_scope('read');
+        $resource = trim((string)($args['resource'] ?? ''));
+        $known = isset(editor_resources()[$resource]) || isset(ai_schema_lookups()[$resource]);
+        if ($resource === '' || !$known) {
+            mcp_respond_rpc($rpcId, mcp_tool_result(['ok' => false, 'code' => 'unknown_resource', 'error' => "Неизвестный ресурс «{$resource}»."], true));
+        }
+        if (!ai_can_read_resource($resource, $ROLE)) {
+            mcp_respond_rpc($rpcId, mcp_tool_result(['ok' => false, 'code' => 'resource_forbidden', 'error' => "Ресурс «{$resource}» недоступен для чтения."], true));
+        }
+        $query = trim((string)($args['name'] ?? ($args['q'] ?? '')));
+        if ($query === '') {
+            mcp_respond_rpc($rpcId, mcp_tool_result(['ok' => false, 'code' => 'missing_required_field', 'error' => 'Укажите name для сравнения.'], true));
+        }
+        $limit = clamp_int($args['limit'] ?? null, 1, 25, 5);
+        $db = db_connect();
+        try {
+            $similar = ai_find_similar_records($db, $resource, $query, $limit, $ROLE);
+        } finally {
+            $db->close();
+        }
+        mcp_respond_rpc($rpcId, mcp_tool_result([
+            'ok' => true,
+            'resource' => $resource,
+            'query' => $query,
+            'candidates' => $similar['candidates'] ?? [],
+            'scanned' => $similar['scanned'] ?? 0,
+            'threshold' => $similar['threshold'] ?? 0.35,
+        ]));
+    }
+
+    if ($toolName === 'apply_patch') {
+        ai_require_scope('read');
+        $db = db_connect();
+        try {
+            $res = ai_apply_patch_verify($db, $args, $ROLE);
+        } finally {
+            $db->close();
+        }
+        $payload = $res['payload'];
+        mcp_respond_rpc($rpcId, mcp_tool_result($payload, empty($payload['ok'])));
     }
 
     if (in_array($toolName, ['validate_operations', 'preview_operations', 'propose_changes', 'copy_record', 'patch_json_record'], true)) {

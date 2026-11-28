@@ -4,8 +4,8 @@
   "info": {
     "title": "Teeworlds-MRPG-0.6 Editor Studio Universal AI & MCP API",
     "version": "2.0.0",
-    "summary": "Model-agnostic universal AI content creation, inspection, validation, dry-run diff preview, MCP JSON-RPC 2.0, and Change Request API for game database tables, scenario JSON files, and DDNet v4 maps.",
-    "description": "Autonomous model-agnostic AI integration platform for Teeworlds-MRPG-0.6 Editor Studio. Share a single link (/ai or /) for instant self-discovery via /.well-known/ai-plugin.json, /openapi.json, /mcp, or /api/ai.php?action=manifest. Authenticate with a scoped Bearer AI token (Authorization: Bearer esai_<token>) or guest cookie session. Direct SQL/disk mutations are impossible; writes submit reversible Change Requests reviewed by an administrator."
+    "summary": "Model-agnostic AI content creation, inspection, scenario analysis (components, missing dependencies, reuse), similar-record search, safe server-side patch_json verification, dry-run diff preview, MCP JSON-RPC 2.0, and Change Request API for game database tables, scenario JSON files, and DDNet v4 maps.",
+    "description": "Autonomous model-agnostic AI integration platform for Teeworlds-MRPG-0.6 Editor Studio. Share a single link (/ai or /) for instant self-discovery via /.well-known/ai-plugin.json (alias api/ai.php?action=discovery), api/ai.php?action=openapi (works on every host, including those blocking static .json; /openapi.json is the same document behind rewrite rules only), /mcp, or /api/ai.php?action=manifest. Recommended read-only preflight: action=analyze (scenario corpus/file analysis) and action=similar (anti-duplicates), then verify edits with action=apply_patch before action=propose. Authenticate with a scoped Bearer AI token (Authorization: Bearer esai_<token>) or guest cookie session. Direct SQL/disk mutations are impossible; writes submit reversible Change Requests reviewed by an administrator."
   },
   "servers": [
     {
@@ -14,12 +14,30 @@
     }
   ],
   "tags": [
-    { "name": "discovery", "description": "Single-link AI onboarding (/ai), plugin manifest, OpenAPI schema, and live role-filtered capabilities" },
-    { "name": "auth", "description": "Scoped Bearer AI tokens, guest session login, and CSRF bootstrap" },
-    { "name": "read", "description": "Paginated filtered reads across DB tables, scenarios/*.json, lookup sources, DDNet maps, references, and history" },
-    { "name": "authoring", "description": "Validation, dry-run diff preview, safe JSON patch_json merge, object copy, and Change Request submission" },
-    { "name": "mcp", "description": "Model Context Protocol (JSON-RPC 2.0) HTTP server endpoint" },
-    { "name": "requests", "description": "Guest change-request status polling, withdrawal, and admin review dialog" }
+    {
+      "name": "discovery",
+      "description": "Single-link AI onboarding (/ai), plugin manifest, OpenAPI schema, and live role-filtered capabilities"
+    },
+    {
+      "name": "auth",
+      "description": "Scoped Bearer AI tokens, guest session login, and CSRF bootstrap"
+    },
+    {
+      "name": "read",
+      "description": "Paginated filtered reads across DB tables, scenarios/*.json, lookup sources, DDNet maps, references, and history"
+    },
+    {
+      "name": "authoring",
+      "description": "Validation, dry-run diff preview, safe JSON patch_json merge, object copy, and Change Request submission"
+    },
+    {
+      "name": "mcp",
+      "description": "Model Context Protocol (JSON-RPC 2.0) HTTP server endpoint"
+    },
+    {
+      "name": "requests",
+      "description": "Guest change-request status polling, withdrawal, and admin review dialog"
+    }
   ],
   "components": {
     "securitySchemes": {
@@ -45,67 +63,154 @@
     "schemas": {
       "ErrorResponse": {
         "type": "object",
-        "required": ["ok", "code", "error"],
+        "required": [
+          "ok",
+          "code",
+          "error"
+        ],
         "properties": {
-          "ok": { "const": false },
+          "ok": {
+            "const": false
+          },
           "code": {
             "type": "string",
             "description": "Stable machine-readable error identifier (e.g. auth_required, invalid_token, token_revoked, token_expired, scope_forbidden, confirmation_required, resource_forbidden, guest_forbidden, unknown_resource, unknown_field, unknown_filter_field, invalid_json, validation_failed, version_conflict, base_hash_mismatch, request_not_pending, rate_limited, method_not_allowed, unsupported_media_type, missing_origin, cross_origin_forbidden, csrf_token, payload_too_large)."
           },
-          "error": { "type": "string", "description": "Human-readable error description." },
-          "field": { "type": ["string", "null"] },
+          "error": {
+            "type": "string",
+            "description": "Human-readable error description."
+          },
+          "field": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "errors": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ValidationIssue" }
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            }
           },
           "warnings": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ValidationIssue" }
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            }
           },
           "dangerous_actions": {
             "type": "array",
-            "items": { "type": "object" }
+            "items": {
+              "type": "object"
+            }
           },
-          "requires_confirmation": { "type": "boolean" },
-          "allowed": { "type": "array", "items": { "type": "string" } },
-          "conflicts": { "type": "array", "items": { "type": "object" } },
-          "version": { "type": "integer", "description": "Current pending request version when version_conflict occurs." },
-          "retry_after": { "type": "integer", "description": "Seconds until rate limit clears when rate_limited occurs." }
+          "requires_confirmation": {
+            "type": "boolean"
+          },
+          "allowed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "description": "Current pending request version when version_conflict occurs."
+          },
+          "retry_after": {
+            "type": "integer",
+            "description": "Seconds until rate limit clears when rate_limited occurs."
+          }
         }
       },
       "ValidationIssue": {
         "type": "object",
-        "required": ["code", "message"],
+        "required": [
+          "code",
+          "message"
+        ],
         "properties": {
-          "operationIndex": { "type": ["integer", "null"], "description": "Zero-based index in operations[]" },
-          "resource": { "type": "string" },
-          "code": { "type": "string" },
-          "field": { "type": ["string", "null"] },
-          "message": { "type": "string" }
+          "operationIndex": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Zero-based index in operations[]"
+          },
+          "resource": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "field": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
         }
       },
       "DbOperation": {
         "type": "object",
-        "required": ["resource"],
+        "required": [
+          "resource"
+        ],
         "properties": {
           "resource": {
             "type": "string",
             "description": "Allowed DB resource key from manifest.resources (excluding scenarios/maps)."
           },
-          "type": { "type": "string", "enum": ["create", "update", "copy", "delete"], "description": "Canonical operation type (alias: action)." },
-          "action": { "type": "string", "enum": ["create", "update", "copy", "delete"], "description": "Alias for type." },
+          "type": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "copy",
+              "delete"
+            ],
+            "description": "Canonical operation type (alias: action)."
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "copy",
+              "delete"
+            ],
+            "description": "Alias for type."
+          },
           "id": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 0,
             "description": "Required for update/delete; omit for create/copy."
           },
           "source_id": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 0,
             "description": "Required for copy: existing source DB record ID to clone."
           },
           "tempId": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 2000000000,
             "maximum": 2000999999,
             "description": "Optional explicit temporary ID (2000000000..2000999999) on DB create/copy (auto-assigned sequentially if omitted)."
@@ -126,11 +231,31 @@
       },
       "ScenarioOperation": {
         "type": "object",
-        "required": ["resource"],
+        "required": [
+          "resource"
+        ],
         "properties": {
-          "resource": { "const": "scenarios" },
-          "type": { "type": "string", "enum": ["create", "update", "copy", "delete"] },
-          "action": { "type": "string", "enum": ["create", "update", "copy", "delete"] },
+          "resource": {
+            "const": "scenarios"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "copy",
+              "delete"
+            ]
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "copy",
+              "delete"
+            ]
+          },
           "filename": {
             "type": "string",
             "pattern": "^[A-Za-z0-9_\\p{L}][A-Za-z0-9\\p{L}._ -]*\\.json$",
@@ -145,7 +270,10 @@
             "description": "Source scenario filename for action=copy."
           },
           "baseHash": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "pattern": "^[a-f0-9]{64}$",
             "description": "SHA-256 hex digest from get&resource=scenarios to reject stale updates (409 base_hash_mismatch)."
           },
@@ -161,24 +289,35 @@
       },
       "Operation": {
         "oneOf": [
-          { "$ref": "#/components/schemas/DbOperation" },
-          { "$ref": "#/components/schemas/ScenarioOperation" }
+          {
+            "$ref": "#/components/schemas/DbOperation"
+          },
+          {
+            "$ref": "#/components/schemas/ScenarioOperation"
+          }
         ]
       },
       "OperationsRequest": {
         "type": "object",
-        "required": ["operations"],
+        "required": [
+          "operations"
+        ],
         "properties": {
           "operations": {
             "type": "array",
             "minItems": 1,
-            "items": { "$ref": "#/components/schemas/Operation" }
+            "items": {
+              "$ref": "#/components/schemas/Operation"
+            }
           }
         }
       },
       "ProposeRequest": {
         "type": "object",
-        "required": ["message", "operations"],
+        "required": [
+          "message",
+          "operations"
+        ],
         "properties": {
           "nickname": {
             "type": "string",
@@ -195,7 +334,9 @@
           "operations": {
             "type": "array",
             "minItems": 1,
-            "items": { "$ref": "#/components/schemas/Operation" }
+            "items": {
+              "$ref": "#/components/schemas/Operation"
+            }
           },
           "confirm_dangerous": {
             "type": "boolean",
@@ -220,16 +361,93 @@
       },
       "PaginationMeta": {
         "type": "object",
-        "required": ["total", "limit", "offset", "has_more", "next_offset", "truncated", "max_bytes"],
+        "required": [
+          "total",
+          "limit",
+          "offset",
+          "has_more",
+          "next_offset",
+          "truncated",
+          "max_bytes"
+        ],
         "properties": {
-          "total": { "type": "integer", "minimum": 0 },
-          "limit": { "type": "integer", "minimum": 1 },
-          "offset": { "type": "integer", "minimum": 0 },
-          "has_more": { "type": "boolean" },
-          "next_offset": { "type": ["integer", "null"] },
-          "truncated": { "type": "boolean", "description": "True when rows were capped early to respect max_bytes." },
-          "max_bytes": { "type": "integer" },
-          "bytes": { "type": "integer" }
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_offset": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "True when rows were capped early to respect max_bytes."
+          },
+          "max_bytes": {
+            "type": "integer"
+          },
+          "bytes": {
+            "type": "integer"
+          }
+        }
+      },
+      "ApplyPatchRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "resource",
+          "patch_json"
+        ],
+        "description": "Verify-before-propose: read-only server-side RFC 7396 merge of patch_json against the live record/file. Returns before/after/diff/noop plus the same errors action=propose would emit. Writes nothing and does not consume cooldown.",
+        "properties": {
+          "resource": {
+            "type": "string",
+            "description": "Database resource key (items, quests, bots_npc, quest_bots, worlds, ...) or 'scenarios'."
+          },
+          "id": {
+            "description": "Record primary key for DB resources (integer); scenario filename may also be passed here as a string.",
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "filename": {
+            "type": "string",
+            "description": "Scenario filename when resource=scenarios (alias of id)."
+          },
+          "patch_json": {
+            "type": "object",
+            "description": "RFC 7396 merge patch. For DB resources: an object keyed by JSON column names, e.g. {\"Data\": {\"bonus\": {\"strength\": 8}}}. For scenarios: a plain object merged into the file content, e.g. {\"scenario_mode\": \"universal\"}."
+          },
+          "data": {
+            "type": "object",
+            "description": "Optional explicit field values forming the base the patch is applied on (same semantics as an update operation field data)."
+          },
+          "baseHash": {
+            "type": "string",
+            "description": "scenarios only: SHA-256 of the current file content; mismatch fails with 409 base_hash_mismatch."
+          },
+          "expected_before": {
+            "type": "object",
+            "description": "DB resources only: map of column → expected current value; mismatch fails with 409 version_conflict."
+          }
         }
       }
     }
@@ -237,60 +455,101 @@
   "paths": {
     "/ai": {
       "get": {
-        "tags": ["discovery"],
+        "tags": [
+          "discovery"
+        ],
         "operationId": "aiLanding",
         "summary": "Public single-link onboarding page (HTML or JSON via ?format=json or Accept: application/json)",
         "parameters": [
-          { "name": "format", "in": "query", "schema": { "type": "string", "enum": ["html", "json"] } }
+          {
+            "name": "format",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "html",
+                "json"
+              ]
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Human & model-readable onboarding guide and connection metadata" }
+          "200": {
+            "description": "Human & model-readable onboarding guide and connection metadata"
+          }
         }
       }
     },
     "/.well-known/ai-plugin.json": {
       "get": {
-        "tags": ["discovery"],
+        "tags": [
+          "discovery"
+        ],
         "operationId": "wellKnownPlugin",
         "summary": "Standard machine-readable AI plugin discovery manifest",
         "responses": {
-          "200": { "description": "Plugin metadata linking /ai, /openapi.json, and /mcp" }
+          "200": {
+            "description": "Plugin metadata linking /ai, /openapi.json, and /mcp"
+          }
         }
       }
     },
     "/openapi.json": {
       "get": {
-        "tags": ["discovery"],
+        "tags": [
+          "discovery"
+        ],
         "operationId": "openapiRoot",
         "summary": "Public OpenAPI 3.1.0 schema JSON",
         "responses": {
-          "200": { "description": "OpenAPI 3.1.0 specification" }
+          "200": {
+            "description": "OpenAPI 3.1.0 specification"
+          }
         }
       }
     },
     "/mcp": {
       "get": {
-        "tags": ["mcp"],
+        "tags": [
+          "mcp"
+        ],
         "operationId": "mcpInfo",
         "summary": "Public MCP server transport metadata & tool list",
         "responses": {
-          "200": { "description": "MCP capabilities summary" }
+          "200": {
+            "description": "MCP capabilities summary"
+          }
         }
       },
       "post": {
-        "tags": ["mcp"],
+        "tags": [
+          "mcp"
+        ],
         "operationId": "mcpJsonRpc",
         "summary": "MCP JSON-RPC 2.0 endpoint (initialize, tools/list, tools/call, resources/list, resources/read, prompts/list, prompts/get)",
-        "security": [{ "BearerAuth": [] }, { "SessionCookie": [] }],
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "responses": {
-          "200": { "description": "JSON-RPC 2.0 response" },
-          "204": { "description": "Notification acknowledged" }
+          "200": {
+            "description": "JSON-RPC 2.0 response"
+          },
+          "204": {
+            "description": "Notification acknowledged"
+          }
         }
       }
     },
     "/api/auth.php": {
       "get": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "operationId": "authGet",
         "summary": "Read session auth state and obtain initial CSRF token",
         "parameters": [
@@ -298,7 +557,14 @@
             "name": "action",
             "in": "query",
             "required": false,
-            "schema": { "type": "string", "enum": ["status", "csrf"], "default": "status" }
+            "schema": {
+              "type": "string",
+              "enum": [
+                "status",
+                "csrf"
+              ],
+              "default": "status"
+            }
           }
         ],
         "responses": {
@@ -313,7 +579,10 @@
                       "authorized": false,
                       "role": null,
                       "csrf": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-                      "guest": { "enabled": true, "accounts": 1 }
+                      "guest": {
+                        "enabled": true,
+                        "accounts": 1
+                      }
                     }
                   }
                 }
@@ -323,16 +592,29 @@
         }
       },
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "operationId": "authPost",
         "summary": "Sign in as a guest account or log out",
-        "security": [{ "SessionCookie": [], "CsrfHeader": [] }],
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "schema": { "type": "string", "enum": ["guest_login", "logout"] }
+            "schema": {
+              "type": "string",
+              "enum": [
+                "guest_login",
+                "logout"
+              ]
+            }
           }
         ],
         "requestBody": {
@@ -341,9 +623,14 @@
             "application/json": {
               "examples": {
                 "guestLogin": {
-                  "value": { "login": "ai_bot", "password": "secret-password" }
+                  "value": {
+                    "login": "ai_bot",
+                    "password": "secret-password"
+                  }
                 },
-                "logout": { "value": {} }
+                "logout": {
+                  "value": {}
+                }
               }
             }
           }
@@ -367,18 +654,55 @@
               }
             }
           },
-          "401": { "description": "Invalid credentials", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "403": { "description": "CSRF/Origin failure or guest access disabled", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "429": { "description": "Login throttled", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF/Origin failure or guest access disabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Login throttled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
         }
       }
     },
     "/api/ai.php": {
       "get": {
-        "tags": ["discovery", "read"],
+        "tags": [
+          "discovery",
+          "read"
+        ],
         "operationId": "aiGet",
-        "summary": "Discover OpenAPI/manifest schemas or inspect DB tables, scenarios, lookups, maps, references, and history",
-        "security": [{ "BearerAuth": [] }, { "SessionCookie": [] }],
+        "summary": "Discover OpenAPI/manifest schemas or inspect DB tables, scenarios, lookups, maps, references, similar records, and scenario analysis",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
           {
             "name": "action",
@@ -386,36 +710,256 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["discovery", "openapi", "manifest", "resources", "list", "get", "references", "history"]
+              "enum": [
+                "discovery",
+                "openapi",
+                "manifest",
+                "resources",
+                "list",
+                "get",
+                "references",
+                "analyze",
+                "similar",
+                "history"
+              ]
+            },
+            "description": "Action to perform. analyze: scenario corpus/file analysis (components, missing dependencies, reuse). similar: find existing records similar to a proposed name (anti-duplicates)."
+          },
+          {
+            "name": "include_schemas",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "1"
+            },
+            "description": "For action=manifest: set 0 for a compact summary without per-resource column schemas."
+          },
+          {
+            "name": "include_examples",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "1"
+            },
+            "description": "For action=resources: include realistic create/patch_json/copy examples."
+          },
+          {
+            "name": "resource",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Target resource key (e.g. items, quests, quest_bots, scenarios, maps, or lookup name)."
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Integer primary key for DB/lookup/world records; scenario filename for action=get|references|analyze&resource=scenarios (alias: file)."
+          },
+          {
+            "name": "file",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Alias for id when resource=scenarios."
+          },
+          {
+            "name": "world",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "description": "World ID when resource=maps."
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Relative .map path under data/maps/ or maps/ when resource=maps."
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Case-insensitive text search."
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "JSON object mapping allowed column names to exact scalar, null, or IN-array values (e.g. {\"Type\":\"Quest\"})."
+          },
+          {
+            "name": "filter_key",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Alternative single-column filter name."
+          },
+          {
+            "name": "filter_value",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Exact value for filter_key."
+          },
+          {
+            "name": "filter_values",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated IN-list for filter_key."
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Comma-separated list of allowed columns to project on DB list/get (PK is always included)."
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "description": "For action=similar: proposed label to match against existing records (case-insensitive, accent/ё/punct-insensitive Dice bigram scoring)."
+          },
+          {
+            "name": "decode",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "1"
+            },
+            "description": "Decode DB JSON text columns automatically into JSON values."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50
             }
           },
-          { "name": "include_schemas", "in": "query", "schema": { "type": "string", "enum": ["0", "1"], "default": "1" }, "description": "For action=manifest: set 0 for a compact summary without per-resource column schemas." },
-          { "name": "include_examples", "in": "query", "schema": { "type": "string", "enum": ["0", "1"], "default": "1" }, "description": "For action=resources: include realistic create/patch_json/copy examples." },
-          { "name": "resource", "in": "query", "schema": { "type": "string" }, "description": "Target resource key (e.g. items, quests, quest_bots, scenarios, maps, or lookup name)." },
-          { "name": "id", "in": "query", "schema": { "type": "string" }, "description": "Integer primary key for DB/lookup/world records or scenario filename for scenarios." },
-          { "name": "file", "in": "query", "schema": { "type": "string" }, "description": "Alias for id when resource=scenarios." },
-          { "name": "world", "in": "query", "schema": { "type": "integer", "minimum": 0 }, "description": "World ID when resource=maps." },
-          { "name": "path", "in": "query", "schema": { "type": "string" }, "description": "Relative .map path under data/maps/ or maps/ when resource=maps." },
-          { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "Case-insensitive text search." },
-          { "name": "filter", "in": "query", "schema": { "type": "string" }, "description": "JSON object mapping allowed column names to exact scalar, null, or IN-array values (e.g. {\"Type\":\"Quest\"})." },
-          { "name": "filter_key", "in": "query", "schema": { "type": "string" }, "description": "Alternative single-column filter name." },
-          { "name": "filter_value", "in": "query", "schema": { "type": "string" }, "description": "Exact value for filter_key." },
-          { "name": "filter_values", "in": "query", "schema": { "type": "string" }, "description": "Comma-separated IN-list for filter_key." },
-          { "name": "fields", "in": "query", "schema": { "type": "string" }, "description": "Comma-separated list of allowed columns to project on DB list/get (PK is always included)." },
-          { "name": "decode", "in": "query", "schema": { "type": "string", "enum": ["0", "1"], "default": "1" }, "description": "Decode DB JSON text columns automatically into JSON values." },
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 } },
-          { "name": "offset", "in": "query", "schema": { "type": "integer", "minimum": 0, "default": 0 } },
-          { "name": "max_bytes", "in": "query", "schema": { "type": "integer", "minimum": 4096, "maximum": 2097152, "default": 524288 }, "description": "Response JSON byte budget for paginated lists (sets truncated=true when reached)." },
-          { "name": "summary_only", "in": "query", "schema": { "type": "string", "enum": ["0", "1"], "default": "0" }, "description": "For get&resource=scenarios: omit raw content JSON and return summary + hash + metadata only." },
-          { "name": "include_references", "in": "query", "schema": { "type": "string", "enum": ["0", "1"], "default": "0" }, "description": "For get: include outbound and inbound references permitted for caller." },
-          { "name": "include_entities", "in": "query", "schema": { "type": "string", "enum": ["0", "1"], "default": "0" }, "description": "For get&resource=maps: include extracted entity/switch coordinates." },
-          { "name": "x", "in": "query", "schema": { "type": "integer" }, "description": "For get&resource=maps: pixel X coordinate for tile walkability probe." },
-          { "name": "y", "in": "query", "schema": { "type": "integer" }, "description": "For get&resource=maps: pixel Y coordinate for tile walkability probe." },
-          { "name": "source", "in": "query", "schema": { "type": "string" }, "description": "For action=references: lookup dictionary name (items, quests, quest_boards, worlds, skills, bots, attributes)." }
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          },
+          {
+            "name": "max_bytes",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 4096,
+              "maximum": 2097152,
+              "default": 524288
+            },
+            "description": "Response JSON byte budget for paginated lists (sets truncated=true when reached)."
+          },
+          {
+            "name": "summary_only",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "0"
+            },
+            "description": "For get&resource=scenarios: omit raw content JSON and return summary + hash + metadata only."
+          },
+          {
+            "name": "include_references",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "0"
+            },
+            "description": "For get: include outbound and inbound references permitted for caller."
+          },
+          {
+            "name": "include_entities",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "0"
+            },
+            "description": "For get&resource=maps: include extracted entity/switch coordinates."
+          },
+          {
+            "name": "x",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "For get&resource=maps: pixel X coordinate for tile walkability probe."
+          },
+          {
+            "name": "y",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "For get&resource=maps: pixel Y coordinate for tile walkability probe."
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "For action=references: lookup dictionary name (items, quests, quest_boards, worlds, skills, bots, attributes)."
+          }
         ],
         "responses": {
           "200": {
-            "description": "Requested OpenAPI spec, manifest, list page, single object, or reference inspection",
+            "description": "Success payload (shape depends on action: manifest/openapi/spec, paginated list, get record, references graph, analyze corpus/scenario report, similar candidates).",
             "content": {
               "application/json": {
                 "examples": {
@@ -425,10 +969,34 @@
                       "manifest": {
                         "api_version": "1.0",
                         "openapi": "api/ai.php?action=openapi",
-                        "auth": { "role": "guest", "direct_db_writes_allowed": false, "submission_workflow": "guest_change_request" },
-                        "pagination": { "default_limit": 50, "max_limit": 500, "default_max_bytes": 524288, "max_response_bytes": 2097152 },
-                        "resources_summary": { "items": { "kind": "database", "pk": "ID", "permissions": { "read": true, "propose": true } } },
-                        "resources": { "items": { "kind": "database", "table": "tw_items_list", "pk": "ID" } }
+                        "auth": {
+                          "role": "guest",
+                          "direct_db_writes_allowed": false,
+                          "submission_workflow": "guest_change_request"
+                        },
+                        "pagination": {
+                          "default_limit": 50,
+                          "max_limit": 500,
+                          "default_max_bytes": 524288,
+                          "max_response_bytes": 2097152
+                        },
+                        "resources_summary": {
+                          "items": {
+                            "kind": "database",
+                            "pk": "ID",
+                            "permissions": {
+                              "read": true,
+                              "propose": true
+                            }
+                          }
+                        },
+                        "resources": {
+                          "items": {
+                            "kind": "database",
+                            "table": "tw_items_list",
+                            "pk": "ID"
+                          }
+                        }
                       }
                     }
                   },
@@ -436,7 +1004,13 @@
                     "value": {
                       "ok": true,
                       "resource": "items",
-                      "rows": [{ "ID": 10, "Name": "Bronze Sword", "Type": "Equip weapon" }],
+                      "rows": [
+                        {
+                          "ID": 10,
+                          "Name": "Bronze Sword",
+                          "Type": "Equip weapon"
+                        }
+                      ],
                       "total": 42,
                       "limit": 1,
                       "offset": 0,
@@ -456,31 +1030,219 @@
                         "format": "DDNet v4",
                         "width_tiles": 64,
                         "height_tiles": 48,
-                        "point_check": { "x": 496, "y": 496, "tile_x": 15, "tile_y": 15, "in_bounds": true, "solid": false, "walkable": true }
+                        "point_check": {
+                          "x": 496,
+                          "y": 496,
+                          "tile_x": 15,
+                          "tile_y": 15,
+                          "in_bounds": true,
+                          "solid": false,
+                          "walkable": true
+                        }
                       }
+                    }
+                  },
+                  "analyzeCorpus": {
+                    "summary": "analyze: corpus overview of all scenarios (component histogram + missing dependencies)",
+                    "value": {
+                      "ok": true,
+                      "mode": "corpus",
+                      "resource": "scenarios",
+                      "scanned": 3,
+                      "total_files": 3,
+                      "truncated": false,
+                      "invalid": [],
+                      "components": [
+                        {
+                          "type": "message",
+                          "scenarios": 3,
+                          "status": "known"
+                        }
+                      ],
+                      "reference_total": 14,
+                      "missing_total": 6,
+                      "missing_references": [
+                        {
+                          "filename": "tutorial_data.json",
+                          "path": "steps[8].components[0].quest_id",
+                          "target": "tw_quests_list",
+                          "id": 1
+                        }
+                      ],
+                      "dependencies": [
+                        {
+                          "table": "tw_items_list",
+                          "resource": "items",
+                          "references": 3,
+                          "unique_ids": 3,
+                          "missing": 3
+                        }
+                      ],
+                      "dependency_ok": false
+                    }
+                  },
+                  "analyzeScenario": {
+                    "summary": "analyze: single scenario breakdown with dependencies and reuse",
+                    "value": {
+                      "ok": true,
+                      "mode": "scenario",
+                      "resource": "scenarios",
+                      "filename": "tutorial_data.json",
+                      "baseHash": "4e1243bd22c66e76c2ba9eddc1f91394e57f9f83",
+                      "component_total": 84,
+                      "components": [
+                        {
+                          "type": "message",
+                          "count": 24,
+                          "steps": [
+                            "part_1_1"
+                          ],
+                          "status": "known"
+                        }
+                      ],
+                      "unknown_component_types": [],
+                      "references": [
+                        {
+                          "path": "steps[8].components[0].quest_id",
+                          "target": "tw_quests_list",
+                          "resource": "quests",
+                          "id": 1,
+                          "accessible": true,
+                          "exists": false,
+                          "label": null
+                        }
+                      ],
+                      "missing_references": [
+                        {
+                          "path": "steps[8].components[0].quest_id",
+                          "target": "tw_quests_list",
+                          "id": 1
+                        }
+                      ],
+                      "dependencies": [
+                        {
+                          "table": "tw_quests_list",
+                          "resource": "quests",
+                          "references": 3,
+                          "unique_ids": 1,
+                          "missing": 3
+                        }
+                      ],
+                      "dependency_ok": false,
+                      "inbound": [
+                        {
+                          "source_resource": "items",
+                          "record_id": 1,
+                          "label": "Iron Ore"
+                        }
+                      ],
+                      "reuse": [
+                        {
+                          "filename": "4errerer.json",
+                          "shared_components": [
+                            "message"
+                          ],
+                          "shared_count": 1,
+                          "steps_count": 8
+                        }
+                      ]
+                    }
+                  },
+                  "similarFound": {
+                    "summary": "similar: anti-duplicate candidates before creating an item",
+                    "value": {
+                      "ok": true,
+                      "resource": "items",
+                      "query": "Iron Ore",
+                      "candidates": [
+                        {
+                          "id": 1,
+                          "label": "Iron Ore",
+                          "score": 1.0,
+                          "score_percent": 100
+                        }
+                      ],
+                      "scanned": 1,
+                      "threshold": 0.35
                     }
                   }
                 }
               }
             }
           },
-          "400": { "description": "Invalid parameters, unknown field/filter, or invalid ID", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "401": { "description": "Authentication required (except action=openapi)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "403": { "description": "Resource or lookup not enabled for caller", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "404": { "description": "Unknown resource or record/scenario not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
-        }
+          "400": {
+            "description": "Invalid parameters, unknown field/filter, or invalid ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required (except action=openapi)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Resource or lookup not enabled for caller",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown resource or record/scenario not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "action=analyze&resource=scenarios[&id=file.json|search=...] — read-only scenario analysis: corpus overview (component histogram, invalid files, missing_references/dependencies) without id, or a single file breakdown (components with known/legacy/unknown status, resolved references, inbound links, reuse candidates, baseHash for propose). action=similar&resource=<res>&name=<Name>[&limit=5] — anti-duplicate search across any named DB table or lookup; resources without a label column return empty candidates. All other actions behave as before: discovery/openapi (public), manifest/resources/list/get/references/history (auth)."
       },
       "post": {
-        "tags": ["authoring"],
+        "tags": [
+          "authoring"
+        ],
         "operationId": "aiPost",
-        "summary": "Validate operations, preview diffs/conflicts, or propose/revise a guest change request",
-        "security": [{ "BearerAuth": [] }, { "SessionCookie": [], "CsrfHeader": [] }],
+        "summary": "Validate operations, preview diffs/conflicts, verify patch_json server-side, or propose/revise a guest change request",
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "SessionCookie": [],
+            "CsrfHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "schema": { "type": "string", "enum": ["validate", "preview", "propose"] }
+            "schema": {
+              "type": "string",
+              "enum": [
+                "validate",
+                "preview",
+                "apply_patch",
+                "propose"
+              ]
+            },
+            "description": "validate: check operations (read-only). preview: dry-run analysis with diff (read-only). apply_patch: read-only server-side verify of patch_json (before/after/diff, same errors as propose). propose: submit/revise a Change Request."
           }
         ],
         "requestBody": {
@@ -489,8 +1251,15 @@
             "application/json": {
               "schema": {
                 "oneOf": [
-                  { "$ref": "#/components/schemas/OperationsRequest" },
-                  { "$ref": "#/components/schemas/ProposeRequest" }
+                  {
+                    "$ref": "#/components/schemas/OperationsRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ProposeRequest"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ApplyPatchRequest"
+                  }
                 ]
               },
               "examples": {
@@ -502,7 +1271,11 @@
                         "resource": "items",
                         "action": "create",
                         "tempId": 2000000101,
-                        "data": { "Name": "Rune Key", "Description": "Opens the gate", "Type": "Quest" }
+                        "data": {
+                          "Name": "Rune Key",
+                          "Description": "Opens the gate",
+                          "Type": "Quest"
+                        }
                       },
                       {
                         "resource": "scenarios",
@@ -514,8 +1287,19 @@
                             "steps": [
                               {
                                 "id": "start",
-                                "msg": [{ "text": "You found the Rune Key!", "delay": 0 }],
-                                "components": [{ "type": "player_give_item", "item_id": 2000000101, "value": 1 }]
+                                "msg": [
+                                  {
+                                    "text": "You found the Rune Key!",
+                                    "delay": 0
+                                  }
+                                ],
+                                "components": [
+                                  {
+                                    "type": "player_give_item",
+                                    "item_id": 2000000101,
+                                    "value": 1
+                                  }
+                                ]
                               }
                             ]
                           }
@@ -534,7 +1318,11 @@
                         "resource": "items",
                         "action": "create",
                         "tempId": 2000000101,
-                        "data": { "Name": "Rune Key", "Description": "Opens the gate", "Type": "Quest" }
+                        "data": {
+                          "Name": "Rune Key",
+                          "Description": "Opens the gate",
+                          "Type": "Quest"
+                        }
                       }
                     ]
                   }
@@ -550,9 +1338,24 @@
                         "resource": "items",
                         "action": "create",
                         "tempId": 2000000101,
-                        "data": { "Name": "Rune Key", "Description": "Opens the ancient gate", "Type": "Quest" }
+                        "data": {
+                          "Name": "Rune Key",
+                          "Description": "Opens the ancient gate",
+                          "Type": "Quest"
+                        }
                       }
                     ]
+                  }
+                },
+                "applyPatchVerify": {
+                  "summary": "Read-only verify of a scenario patch_json before proposing (no writes)",
+                  "value": {
+                    "resource": "scenarios",
+                    "filename": "guard_intro.json",
+                    "patch_json": {
+                      "scenario_mode": "universal"
+                    },
+                    "baseHash": "4e1243bd22c66e76c2ba9eddc1f91394e57f9f83"
                   }
                 }
               }
@@ -561,21 +1364,44 @@
         },
         "responses": {
           "200": {
-            "description": "Validation result, dry-run diff preview, or submitted change request",
+            "description": "Success: validate/preview/apply_patch analysis, or the created/revised Change Request (propose).",
             "content": {
               "application/json": {
                 "examples": {
                   "validateOk": {
-                    "value": { "ok": true, "valid": true, "errors": [], "warnings": [], "normalized_operations": [] }
+                    "value": {
+                      "ok": true,
+                      "valid": true,
+                      "errors": [],
+                      "warnings": [],
+                      "normalized_operations": []
+                    }
                   },
                   "previewOk": {
                     "value": {
                       "ok": true,
                       "valid": true,
                       "analysis": {
-                        "summary": { "create": 1, "update": 0, "delete": 0, "fields": 3 },
-                        "tempIds": { "2000000101": { "resource": "items", "label": "Rune Key" } },
-                        "items": [{ "resource": "items", "action": "create", "id": 2000000101, "diff": [] }]
+                        "summary": {
+                          "create": 1,
+                          "update": 0,
+                          "delete": 0,
+                          "fields": 3
+                        },
+                        "tempIds": {
+                          "2000000101": {
+                            "resource": "items",
+                            "label": "Rune Key"
+                          }
+                        },
+                        "items": [
+                          {
+                            "resource": "items",
+                            "action": "create",
+                            "id": 2000000101,
+                            "diff": []
+                          }
+                        ]
                       },
                       "warnings": [],
                       "normalized_operations": []
@@ -591,8 +1417,25 @@
                         "status": "pending",
                         "version": 1,
                         "message": "Add Rune Key quest item and starter scenario",
-                        "author": { "nickname": "AI Assistant", "guestLogin": "ai_bot", "via": "ai_api" },
-                        "analysis": { "summary": { "create": 1, "update": 0, "delete": 0, "fields": 3 }, "tempIds": { "2000000101": { "resource": "items", "label": "Rune Key" } } }
+                        "author": {
+                          "nickname": "AI Assistant",
+                          "guestLogin": "ai_bot",
+                          "via": "ai_api"
+                        },
+                        "analysis": {
+                          "summary": {
+                            "create": 1,
+                            "update": 0,
+                            "delete": 0,
+                            "fields": 3
+                          },
+                          "tempIds": {
+                            "2000000101": {
+                              "resource": "items",
+                              "label": "Rune Key"
+                            }
+                          }
+                        }
                       }
                     }
                   },
@@ -608,6 +1451,48 @@
                         "version": 2
                       }
                     }
+                  },
+                  "applyPatchScenario": {
+                    "summary": "apply_patch: read-only server-side verify of a scenario patch (no writes)",
+                    "value": {
+                      "ok": true,
+                      "valid": true,
+                      "resource": "scenarios",
+                      "filename": "empty.json",
+                      "noop": false,
+                      "changed_fields": 1,
+                      "diff": [
+                        {
+                          "path": "scenario_mode",
+                          "before": "default",
+                          "after": "universal"
+                        }
+                      ],
+                      "sha256_before": "4e1243bd22c66e76c2ba9eddc1f91394e57f9f83",
+                      "summary_after": {
+                        "scenario_mode": "universal",
+                        "steps_count": 0
+                      }
+                    }
+                  },
+                  "applyPatchRecord": {
+                    "summary": "apply_patch: DB record merge with per-column diff (no writes)",
+                    "value": {
+                      "ok": true,
+                      "valid": true,
+                      "resource": "items",
+                      "id": 1,
+                      "changed_fields": 1,
+                      "diff": [
+                        {
+                          "column": "Data",
+                          "json": true,
+                          "before": "{\"use_scenario\": {\"name\": \"tutorial_data.json\"}}",
+                          "after": "{\"use_scenario\": {\"name\": \"tutorial_data.json\"}, \"bonus\": {\"strength\": 8}}"
+                        }
+                      ],
+                      "noop": false
+                    }
                   }
                 }
               }
@@ -617,7 +1502,9 @@
             "description": "Structured validation failure or malformed payload",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
                 "examples": {
                   "validationFailed": {
                     "value": {
@@ -625,7 +1512,12 @@
                       "code": "validation_failed",
                       "error": "Проверка операций выявила ошибки.",
                       "errors": [
-                        { "index": 0, "code": "quest_flags_conflict", "field": "Flags", "message": "Несовместимые взаимоисключающие флаги квеста: Tutorial, Type main." }
+                        {
+                          "index": 0,
+                          "code": "quest_flags_conflict",
+                          "field": "Flags",
+                          "message": "Несовместимые взаимоисключающие флаги квеста: Tutorial, Type main."
+                        }
                       ]
                     }
                   }
@@ -633,53 +1525,192 @@
               }
             }
           },
-          "403": { "description": "Forbidden resource, guest_forbidden (admin calling propose), CSRF, or Origin error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "409": { "description": "Version conflict, stale scenario baseHash, missing record, or non-pending status", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "429": { "description": "Cooldown or preview/submit rate limit exceeded", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
-        }
+          "403": {
+            "description": "Forbidden resource, guest_forbidden (admin calling propose), CSRF, or Origin error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version conflict, stale scenario baseHash, missing record, or non-pending status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Cooldown or preview/submit rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "description": "action=apply_patch — read-only server-side verify of patch_json: the server RFC 7396-merges the patch onto the live record/file and returns before/after/diff/noop plus exactly the errors action=propose would emit (e.g. missing_reference, base_hash_mismatch 409, version_conflict 409). Writes nothing, consumes no cooldown. Recommended order: analyze/similar -> get -> apply_patch -> validate -> preview -> propose. validate/preview remain available as-is; propose creates or revises a guest Change Request (admin-approved)."
       }
     },
     "/api/change-requests.php": {
       "get": {
-        "tags": ["requests"],
+        "tags": [
+          "requests"
+        ],
         "operationId": "changeRequestsGet",
         "summary": "List caller change requests, read request details, or read admin discussion messages",
-        "security": [{ "SessionCookie": [] }],
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
         "parameters": [
-          { "name": "action", "in": "query", "required": true, "schema": { "type": "string", "enum": ["config", "mine", "get", "messages"] } },
-          { "name": "id", "in": "query", "schema": { "type": "string" }, "description": "Change request ID for get/messages." },
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 100 } },
-          { "name": "offset", "in": "query", "schema": { "type": "integer", "minimum": 0, "default": 0 } }
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "config",
+                "mine",
+                "get",
+                "messages"
+              ]
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Change request ID for get/messages."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "Change-request list, details, or message thread" },
-          "403": { "description": "Access denied or admin-only action attempted by guest", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "404": { "description": "Request not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "200": {
+            "description": "Change-request list, details, or message thread"
+          },
+          "403": {
+            "description": "Access denied or admin-only action attempted by guest",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
         }
       },
       "post": {
-        "tags": ["requests"],
+        "tags": [
+          "requests"
+        ],
         "operationId": "changeRequestsPost",
         "summary": "Withdraw a pending request, post a thread reply, or mark messages read",
-        "security": [{ "SessionCookie": [], "CsrfHeader": [] }],
+        "security": [
+          {
+            "SessionCookie": [],
+            "CsrfHeader": []
+          }
+        ],
         "parameters": [
-          { "name": "action", "in": "query", "required": true, "schema": { "type": "string", "enum": ["withdraw", "message", "mark_read"] } }
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "withdraw",
+                "message",
+                "mark_read"
+              ]
+            }
+          }
         ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "examples": {
-                "withdraw": { "value": { "id": "cr_0123456789abcdef" } },
-                "message": { "value": { "id": "cr_0123456789abcdef", "body": "Updated dialog delay to 300ms." } }
+                "withdraw": {
+                  "value": {
+                    "id": "cr_0123456789abcdef"
+                  }
+                },
+                "message": {
+                  "value": {
+                    "id": "cr_0123456789abcdef",
+                    "body": "Updated dialog delay to 300ms."
+                  }
+                }
               }
             }
           }
         },
         "responses": {
-          "200": { "description": "Operation applied" },
-          "403": { "description": "Forbidden action (e.g. guest calling approve/reject/delete returns guest_forbidden)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
-          "409": { "description": "Conflict / request not pending", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+          "200": {
+            "description": "Operation applied"
+          },
+          "403": {
+            "description": "Forbidden action (e.g. guest calling approve/reject/delete returns guest_forbidden)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict / request not pending",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
         }
       }
     }

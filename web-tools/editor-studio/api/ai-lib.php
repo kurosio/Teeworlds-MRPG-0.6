@@ -238,9 +238,11 @@ function ai_build_manifest(string $role, ?array $account, array $limits, ?array 
         'openapi' => 'api/ai.php?action=openapi',
         'discovery_urls' => [
             'landing' => 'ai/',
-            'plugin_manifest' => '.well-known/ai-plugin.json',
-            'openapi' => 'openapi.json',
-            'mcp_http' => 'mcp',
+            'plugin_manifest' => 'api/ai.php?action=discovery',
+            'openapi' => 'api/ai.php?action=openapi',
+            'openapi_direct' => 'openapi.json',
+            'mcp_http' => 'api/mcp.php',
+            'mcp_direct' => 'mcp',
             'rest_api' => 'api/ai.php',
         ],
         'capabilities' => [
@@ -255,6 +257,11 @@ function ai_build_manifest(string $role, ?array $account, array $limits, ?array 
             'dangerous_confirmation_gate' => true,
             'optimistic_concurrency' => true,
             'idempotent_propose' => true,
+            'scenario_analysis' => true,
+            'scenario_corpus_dependency_check' => true,
+            'similar_records_search' => true,
+            'similar_records_create_warning' => true,
+            'verify_before_propose' => true,
         ],
         'auth' => [
             'role' => $role,
@@ -290,8 +297,11 @@ function ai_build_manifest(string $role, ?array $account, array $limits, ?array 
             'get' => ['method' => 'GET', 'params' => ['resource', 'id|file|world|path', 'fields?', 'summary_only?', 'include_references?', 'include_entities?', 'x?', 'y?']],
             'references' => ['method' => 'GET', 'params' => ['resource? & id?', 'source? & search?', 'limit?', 'offset?', 'max_bytes?']],
             'history' => ['method' => 'GET', 'params' => ['resource?', 'id?', 'limit?', 'offset?']],
+            'analyze' => ['method' => 'GET', 'params' => ['resource=scenarios', 'id?|file?', 'search?'], 'auth' => 'read', 'mutates' => false],
+            'similar' => ['method' => 'GET', 'params' => ['resource', 'name|q', 'limit?'], 'auth' => 'read', 'mutates' => false],
             'validate' => ['method' => 'POST', 'body' => ['operations' => 'array<op>'], 'mutates' => false],
             'preview' => ['method' => 'POST', 'body' => ['operations' => 'array<op>'], 'mutates' => false],
+            'apply_patch' => ['method' => 'POST', 'body' => ['resource', 'id|filename', 'patch_json', 'data?', 'baseHash?', 'expected_before?'], 'auth' => 'read', 'mutates' => false],
             'propose' => ['method' => 'POST', 'body' => ['message', 'nickname?', 'operations', 'confirm_dangerous?', 'idempotency_key?', 'request_id?', 'version?'], 'mutates' => 'sqlite_change_requests_only'],
         ],
         'temp_id_convention' => [
@@ -299,6 +309,13 @@ function ai_build_manifest(string $role, ?array $account, array $limits, ?array 
             'max' => GUEST_TEMP_ID_MAX,
             'auto_assign_when_omitted' => true,
             'note' => 'Database create operations can specify explicit tempId (2000000000..2000999999) for cross-referencing within the same proposal, or omit it for automatic sequential assignment.',
+        ],
+        'recommended_workflow' => [
+            'analyze' => 'Inspect scenarios and their dependencies first: GET api/ai.php?action=analyze&resource=scenarios[&id=file.json] (corpus overview without id). Reuse listed component types and fix missing_references before writing new scenarios.',
+            'similar' => 'Before creating any object, find likely duplicates: GET api/ai.php?action=similar&resource=<resource>&name=<Name>. A create operation also returns warning similar_records_found when similar rows exist.',
+            'read' => 'Read the current state: GET action=get&resource=<res>&id=<id>[&include_references=1] (for scenarios: id + sha256 as baseHash).',
+            'verify' => 'Apply patch_json server-side without writing: POST action=apply_patch {resource, id|filename, patch_json, baseHash?}. It returns before/after/diff plus the same errors action=propose would produce.',
+            'submit' => 'Only then submit with validate → preview → propose. Prefer patch_json over full data replacement.',
         ],
         'resources_summary' => array_map(static fn(array $r): array => [
             'kind' => $r['kind'],
@@ -1768,6 +1785,33 @@ function ai_validate_operations(
                 $warnings[] = $w;
             }
 
+            // Предупреждение о похожих существующих записях при создании (анти-дубли).
+            // Проверка read-only: не блокирует заявку, а подсказывает AI перепроверить.
+            if ($db !== null && $item['type'] === 'create' && !empty($R['label'])) {
+                $labelVal = $rawData[$R['label']] ?? null;
+                if (is_string($labelVal) && mb_strlen(trim($labelVal), 'UTF-8') >= 3) {
+                    try {
+                        $similar = ai_find_similar_records($db, $resKey, $labelVal, 3, $role, $guestPages, 0.62);
+                        if (is_array($similar) && $similar['candidates'] !== []) {
+                            $list = [];
+                            foreach ($similar['candidates'] as $cand) {
+                                $list[] = $resKey . '#' . $cand['id'] . ' «' . $cand['label'] . '» (' . $cand['score_percent'] . '%)';
+                            }
+                            $warnings[] = [
+                                'code' => 'similar_records_found',
+                                'operationIndex' => $idx,
+                                'resource' => $resKey,
+                                'field' => (string)$R['label'],
+                                'message' => 'Похожи на уже существующие записи: ' . implode('; ', $list) . '. Проверьте дубликаты (action=similar).',
+                                'similar' => $similar['candidates'],
+                            ];
+                        }
+                    } catch (Throwable) {
+                        // Поиск похожих — необязательная подсказка: сбой запроса не должен ломать валидацию.
+                    }
+                }
+            }
+
             // Проверка всех ссылок (прямых и вложенных JSON/DSL).
             $lookups = ai_schema_lookups();
             foreach (editor_data_references($resKey, $dbData) as $ref) {
@@ -1878,4 +1922,615 @@ function ai_enrich_analysis_diffs(array $analysis): array
     }
     unset($op);
     return $analysis;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Search & Verify (v2): анализ сценариев, похожие записи и серверная проверка
+//  patch_json перед отправкой заявки (verify-before-propose).
+//
+//  Канонический безопасный цикл AI-агента:
+//    1) GET  action=analyze&resource=scenarios[&id=file.json]  — структура сценария,
+//       зависимости (боты/предметы/миры) и места переиспользования компонентов;
+//    2) GET  action=similar&resource=<res>&name=<…>            — поиск похожих
+//       существующих записей до создания новой (анти-дубли);
+//    3) GET  action=get …                                      — исходная запись + baseHash;
+//    4) POST action=apply_patch {patch_json}                   — серверное слияние,
+//       расшифровка diff и повторная проверка результата БЕЗ записи в БД/файлы;
+//    5) POST action=propose                                     — только чистого пакета.
+//
+//  Все функции в этом разделе read-only: они ничего не пишут в игровую БД и
+//  на диск, не расходуют cooldown и не требуют confirm_dangerous.
+// ════════════════════════════════════════════════════════════════════════════
+
+/** Нормализация текста для сравнения похожести: lowercase, «ё»→«е», пунктуация → пробел. */
+function ai_normalize_search_text(string $s): string
+{
+    $s = mb_strtolower($s, 'UTF-8');
+    $s = str_replace('ё', 'е', $s);
+    $s = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $s) ?? '';
+    $s = preg_replace('/\s+/u', ' ', $s) ?? '';
+    return trim($s);
+}
+
+/** Бигграммы строки с обрамляющими пробелами (для Dice-коэффициента). */
+function ai_text_bigrams(string $s): array
+{
+    $padded = ' ' . $s . ' ';
+    $plen = mb_strlen($padded, 'UTF-8');
+    $out = [];
+    for ($i = 0; $i + 2 <= $plen; $i++) {
+        $out[] = mb_substr($padded, $i, 2, 'UTF-8');
+    }
+    return $out;
+}
+
+/**
+ * Похожесть двух строк (0..1): Dice-коэффициент по биграммам с бонусом за
+ * вхождение одной строки в другую. Регистр, пунктуация и «ё/е» игнорируются.
+ */
+function ai_similarity_score(string $a, string $b): float
+{
+    $na = ai_normalize_search_text($a);
+    $nb = ai_normalize_search_text($b);
+    if ($na === '' || $nb === '') {
+        return 0.0;
+    }
+    if ($na === $nb) {
+        return 1.0;
+    }
+    if (str_contains($na, $nb) || str_contains($nb, $na)) {
+        $shorter = (float)min(mb_strlen($na, 'UTF-8'), mb_strlen($nb, 'UTF-8'));
+        $longer = (float)max(mb_strlen($na, 'UTF-8'), mb_strlen($nb, 'UTF-8'));
+        return round(0.7 + 0.3 * ($shorter / $longer), 4);
+    }
+    $g1 = array_count_values(ai_text_bigrams($na));
+    $g2 = array_count_values(ai_text_bigrams($nb));
+    $inter = 0;
+    foreach ($g1 as $gram => $n) {
+        if (isset($g2[$gram])) {
+            $inter += min($n, $g2[$gram]);
+        }
+    }
+    $total = array_sum($g1) + array_sum($g2);
+    return $total > 0 ? round((2 * $inter) / $total, 4) : 0.0;
+}
+
+/**
+ * Поиск похожих существующих записей по названию (анти-дубли).
+ * Используется endpoint action=similar и автоматическим предупреждением
+ * similar_records_found при создании записей.
+ *
+ * Токены предфильтра содержат только буквы и цифры после нормализации,
+ * поэтому LIKE без ESCAPE здесь безопасен (диких символов %/_ в них нет).
+ *
+ * @return array{candidates: array<int, array{id:int, label:string, score:float, score_percent:int}>, scanned: int, threshold: float}|null
+ *         null — ресурс неизвестен или запрещён читающему актору.
+ */
+function ai_find_similar_records(mysqli $db, string $resource, string $query, int $limit = 5, string $role = EDITOR_ROLE_GUEST, ?array $guestPages = null, float $threshold = 0.35): ?array
+{
+    $resources = editor_resources();
+    $lookups = ai_schema_lookups();
+    $table = null;
+    $pk = 'ID';
+    $label = null;
+    if (isset($resources[$resource])) {
+        if (!ai_can_read_resource($resource, $role, $guestPages)) {
+            return null;
+        }
+        $table = (string)$resources[$resource]['table'];
+        $pk = (string)$resources[$resource]['pk'];
+        $label = $resources[$resource]['label'] ?? null;
+    } elseif (isset($lookups[$resource])) {
+        if (!ai_can_read_resource($resource, $role, $guestPages)) {
+            return null;
+        }
+        $table = (string)$lookups[$resource]['table'];
+        $pk = (string)($lookups[$resource]['pk'] ?? 'ID');
+        $label = $lookups[$resource]['label'] ?? null;
+    } else {
+        return null;
+    }
+
+    $limit = clamp_int($limit, 1, 25, 5);
+    if ($label === null) {
+        return ['candidates' => [], 'scanned' => 0, 'threshold' => $threshold];
+    }
+    $normQuery = ai_normalize_search_text($query);
+    if (mb_strlen($normQuery, 'UTF-8') < 2) {
+        return ['candidates' => [], 'scanned' => 0, 'threshold' => $threshold];
+    }
+
+    $tableId = editor_identifier($table, 'table');
+    $pkId = editor_identifier($pk, 'pk');
+    $labelId = editor_identifier((string)$label, 'label');
+
+    $tokens = preg_split('/\s+/u', $normQuery) ?: [];
+    $tokens = array_values(array_unique(array_filter($tokens, static fn(string $t): bool => mb_strlen($t, 'UTF-8') >= 3)));
+    usort($tokens, static fn(string $a, string $b): int => mb_strlen($b, 'UTF-8') <=> mb_strlen($a, 'UTF-8'));
+    $tokens = array_slice($tokens, 0, 6);
+
+    $where = '';
+    $types = '';
+    $params = [];
+    if ($tokens !== []) {
+        $parts = [];
+        foreach ($tokens as $token) {
+            $parts[] = "LOWER(CAST(`{$labelId}` AS CHAR)) LIKE ?";
+            $types .= 's';
+            $params[] = '%' . $token . '%';
+        }
+        $where = ' WHERE (' . implode(' OR ', $parts) . ')';
+    }
+
+    $sql = "SELECT `{$pkId}`, `{$labelId}` FROM `{$tableId}`{$where} ORDER BY `{$pkId}` ASC LIMIT 300";
+    $stmt = $db->prepare($sql);
+    if ($stmt === false) {
+        return ['candidates' => [], 'scanned' => 0, 'threshold' => $threshold];
+    }
+    if ($types !== '') {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $rows = [];
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $rows[] = $row;
+        }
+    }
+    $stmt->close();
+
+    $candidates = [];
+    foreach ($rows as $row) {
+        $labelValue = (string)($row[$label] ?? '');
+        if (trim($labelValue) === '') {
+            continue;
+        }
+        $score = ai_similarity_score($query, $labelValue);
+        if ($score < $threshold) {
+            continue;
+        }
+        $id = (int)($row[$pk] ?? 0);
+        if (is_guest_temp_id($id)) {
+            continue;
+        }
+        $candidates[] = ['id' => $id, 'label' => $labelValue, 'score' => $score, 'score_percent' => (int)round($score * 100)];
+    }
+    usort($candidates, static fn(array $a, array $b): int => $b['score'] <=> $a['score'] ?: $a['id'] <=> $b['id']);
+    return ['candidates' => array_slice($candidates, 0, $limit), 'scanned' => count($rows), 'threshold' => $threshold];
+}
+
+/** Инвентаризация типов компонентов шагов сценария (частоты и шаги появления). */
+function ai_scenario_component_inventory(array $content): array
+{
+    $known = array_flip(scenario_known_component_types());
+    $legacy = array_flip(scenario_legacy_component_types());
+    $inventory = [];
+    $total = 0;
+    $steps = $content['steps'] ?? [];
+    if (is_array($steps)) {
+        foreach ($steps as $idx => $step) {
+            if (!is_array($step)) {
+                continue;
+            }
+            $sid = isset($step['id']) && is_scalar($step['id']) && trim((string)$step['id']) !== ''
+                ? (string)$step['id']
+                : ('step_' . $idx);
+            $comps = $step['components'] ?? [];
+            if (!is_array($comps)) {
+                continue;
+            }
+            foreach ($comps as $comp) {
+                if (!is_array($comp)) {
+                    continue;
+                }
+                $type = isset($comp['type']) && is_string($comp['type']) ? trim($comp['type']) : '';
+                if ($type === '') {
+                    continue;
+                }
+                $total++;
+                if (!isset($inventory[$type])) {
+                    $inventory[$type] = [
+                        'type' => $type,
+                        'count' => 0,
+                        'steps' => [],
+                        'status' => isset($known[$type]) ? 'known' : (isset($legacy[$type]) ? 'legacy' : 'unknown'),
+                    ];
+                }
+                $inventory[$type]['count']++;
+                if (!in_array($sid, $inventory[$type]['steps'], true)) {
+                    $inventory[$type]['steps'][] = $sid;
+                }
+            }
+        }
+    }
+    $items = array_values($inventory);
+    usort($items, static fn(array $a, array $b): int => $b['count'] <=> $a['count'] ?: strcmp($a['type'], $b['type']));
+    $unknown = array_values(array_map(
+        static fn(array $item): string => $item['type'],
+        array_filter($items, static fn(array $item): bool => $item['status'] === 'unknown')
+    ));
+    return ['items' => $items, 'total' => $total, 'unknown_types' => $unknown];
+}
+
+/** Анализ одного файла сценария: компоненты, зависимости (боты/предметы/миры), входящие связи и переиспользование. */
+function ai_analyze_scenario(mysqli $db, string $filename, string $role, ?array $guestPages = null, ?string $scenariosDir = null): array
+{
+    $read = scenario_read_file($filename, $scenariosDir);
+    if (!$read['ok']) {
+        throw new CrInputError(
+            (string)($read['error'] ?? 'Файл сценария не найден.'),
+            ($read['code'] ?? '') === 'scenario_not_found' ? 404 : 400,
+            ['code' => (string)($read['code'] ?? 'scenario_not_found')]
+        );
+    }
+    $content = $read['content'];
+    $inventory = ai_scenario_component_inventory($content);
+
+    $resolved = [];
+    $missing = [];
+    $byTable = [];
+    foreach (scenario_extract_references($content) as $ref) {
+        $target = (string)$ref['target'];
+        $id = (int)$ref['id'];
+        $t = ai_resolve_target_summary($db, $target, $id, $role, $guestPages);
+        $entry = [
+            'path' => (string)$ref['path'],
+            'target' => $target,
+            'resource' => $t['target_resource'] ?? null,
+            'id' => $id,
+            'accessible' => (bool)($t['accessible'] ?? false),
+            'exists' => $t['exists'] ?? null,
+            'label' => $t['label'] ?? null,
+        ];
+        $resolved[] = $entry;
+        if ($entry['accessible'] && $entry['exists'] === false) {
+            $missing[] = $entry;
+        }
+        $byTable[$target][] = $id;
+    }
+    $dependencies = [];
+    foreach ($byTable as $table => $ids) {
+        $missingCount = 0;
+        foreach ($resolved as $entry) {
+            if ($entry['target'] === $table && $entry['accessible'] && $entry['exists'] === false) {
+                $missingCount++;
+            }
+        }
+        $dependencies[] = [
+            'table' => $table,
+            'resource' => ai_table_to_resource_map()[$table] ?? null,
+            'references' => count($ids),
+            'unique_ids' => count(array_unique($ids)),
+            'missing' => $missingCount,
+        ];
+    }
+    usort($dependencies, static fn(array $a, array $b): int => strcmp($a['table'], $b['table']));
+
+    $inbound = [];
+    try {
+        $inbound = ai_references_inspect($db, 'scenarios', $read['filename'], $role, $guestPages, $scenariosDir)['inbound'] ?? [];
+    } catch (Throwable) {
+        $inbound = [];
+    }
+
+    $usedTypes = array_column($inventory['items'], 'type');
+    $reuse = [];
+    if ($usedTypes !== []) {
+        foreach (scenario_list_files('', $scenariosDir) as $meta) {
+            if (($meta['filename'] ?? '') === $read['filename']) {
+                continue;
+            }
+            $metaSummary = is_array($meta['summary'] ?? null) ? $meta['summary'] : [];
+            $otherTypes = $metaSummary['component_types'] ?? [];
+            $shared = array_values(array_intersect($usedTypes, is_array($otherTypes) ? $otherTypes : []));
+            if ($shared === []) {
+                continue;
+            }
+            $reuse[] = [
+                'filename' => (string)$meta['filename'],
+                'shared_components' => $shared,
+                'shared_count' => count($shared),
+                'steps_count' => $metaSummary['steps_count'] ?? null,
+            ];
+        }
+        usort($reuse, static fn(array $a, array $b): int => $b['shared_count'] <=> $a['shared_count'] ?: strcmp($a['filename'], $b['filename']));
+        $reuse = array_slice($reuse, 0, 10);
+    }
+
+    return [
+        'filename' => $read['filename'],
+        'bytes' => $read['bytes'],
+        'sha256' => $read['sha256'],
+        'baseHash' => $read['sha256'],
+        'updated_at' => $read['updated_at'],
+        'summary' => $read['summary'],
+        'components' => $inventory['items'],
+        'component_total' => $inventory['total'],
+        'unknown_component_types' => $inventory['unknown_types'],
+        'references' => $resolved,
+        'missing_references' => $missing,
+        'dependencies' => $dependencies,
+        'dependency_ok' => $missing === [],
+        'inbound' => $inbound,
+        'reuse' => $reuse,
+    ];
+}
+
+/**
+ * Сводный анализ всего каталога сценариев (до 200 файлов за вызов):
+ * гистограмма компонентов, невалидные JSON-файлы и отчёт по отсутствующим
+ * зависимостям (боты/предметы/миры/квесты) с проверкой существования в БД.
+ */
+function ai_analyze_scenario_corpus(mysqli $db, string $role, ?array $guestPages = null, ?string $scenariosDir = null, string $search = ''): array
+{
+    $files = scenario_list_files($search, $scenariosDir);
+    $totalFiles = count($files);
+    $MAX_SCANNED = 200;
+    $scanned = 0;
+    $truncated = false;
+    $invalid = [];
+    $componentUsage = [];
+    $refTotal = 0;
+    $missingRefs = [];
+    $missingTotal = 0;
+    $tableStats = [];
+    $existCache = [];
+
+    foreach ($files as $meta) {
+        if ($scanned >= $MAX_SCANNED) {
+            $truncated = true;
+            break;
+        }
+        $scanned++;
+        if (!($meta['valid_json'] ?? false)) {
+            $invalid[] = ['filename' => (string)$meta['filename'], 'parse_error' => (string)($meta['parse_error'] ?? 'invalid JSON')];
+            continue;
+        }
+        $summary = is_array($meta['summary'] ?? null) ? $meta['summary'] : [];
+        foreach (($summary['component_types'] ?? []) as $type) {
+            $componentUsage[$type] = ($componentUsage[$type] ?? 0) + 1;
+        }
+        $read = scenario_read_file((string)$meta['filename'], $scenariosDir);
+        if (!$read['ok']) {
+            continue;
+        }
+        foreach (scenario_extract_references($read['content']) as $ref) {
+            $refTotal++;
+            $target = (string)$ref['target'];
+            $id = (int)$ref['id'];
+            if (!isset($tableStats[$target])) {
+                $tableStats[$target] = ['references' => 0, 'unique' => [], 'missing' => 0];
+            }
+            $tableStats[$target]['references']++;
+            $tableStats[$target]['unique'][$id] = true;
+            $cacheKey = $target . ':' . $id;
+            if (!array_key_exists($cacheKey, $existCache)) {
+                $chk = ai_resolve_target_summary($db, $target, $id, $role, $guestPages);
+                $existCache[$cacheKey] = [
+                    'accessible' => (bool)($chk['accessible'] ?? false),
+                    'exists' => $chk['exists'] ?? null,
+                ];
+            }
+            $cached = $existCache[$cacheKey];
+            if ($cached['accessible'] && $cached['exists'] === false) {
+                $missingTotal++;
+                $tableStats[$target]['missing']++;
+                if (count($missingRefs) < 100) {
+                    $missingRefs[] = [
+                        'filename' => (string)$read['filename'],
+                        'path' => (string)$ref['path'],
+                        'target' => $target,
+                        'id' => $id,
+                    ];
+                }
+            }
+        }
+    }
+
+    $knownTypes = scenario_known_component_types();
+    $legacyTypes = scenario_legacy_component_types();
+    $components = [];
+    foreach ($componentUsage as $type => $scenariosCount) {
+        $components[] = [
+            'type' => $type,
+            'scenarios' => $scenariosCount,
+            'status' => in_array($type, $knownTypes, true) ? 'known' : (in_array($type, $legacyTypes, true) ? 'legacy' : 'unknown'),
+        ];
+    }
+    usort($components, static fn(array $a, array $b): int => $b['scenarios'] <=> $a['scenarios'] ?: strcmp($a['type'], $b['type']));
+
+    $dependencies = [];
+    foreach ($tableStats as $table => $stats) {
+        $dependencies[] = [
+            'table' => $table,
+            'resource' => ai_table_to_resource_map()[$table] ?? null,
+            'references' => (int)$stats['references'],
+            'unique_ids' => count($stats['unique']),
+            'missing' => (int)$stats['missing'],
+        ];
+    }
+    usort($dependencies, static fn(array $a, array $b): int => strcmp($a['table'], $b['table']));
+
+    return [
+        'scanned' => $scanned,
+        'total_files' => $totalFiles,
+        'truncated' => $truncated,
+        'invalid' => $invalid,
+        'components' => $components,
+        'reference_total' => $refTotal,
+        'missing_references' => $missingRefs,
+        'missing_total' => $missingTotal,
+        'dependencies' => $dependencies,
+        'dependency_ok' => $missingTotal === 0,
+    ];
+}
+
+/**
+ * Серверная проверка patch_json перед отправкой заявки (шаг «verify»).
+ * Полностью read-only: прогоняет ту же валидацию, что и action=propose,
+ * затем возвращает исходную запись/файл, объединённый результат и diff.
+ *
+ * @param array{resource?:mixed, id?:mixed, filename?:mixed, file?:mixed, patch_json?:mixed, data?:mixed, baseHash?:mixed, expected_before?:mixed} $input
+ * @return array{status:int, payload:array<string, mixed>}
+ */
+function ai_apply_patch_verify(mysqli $db, array $input, string $role): array
+{
+    $resource = trim((string)($input['resource'] ?? ''));
+    if ($resource === '') {
+        throw new CrInputError('Укажите параметр resource.', 400, ['code' => 'missing_required_field', 'field' => 'resource']);
+    }
+    $known = isset(editor_resources()[$resource]) || $resource === 'scenarios';
+    if (!$known) {
+        throw new CrInputError("Неизвестный ресурс «{$resource}».", 404, ['code' => 'unknown_resource', 'field' => 'resource']);
+    }
+    if (!ai_can_read_resource($resource, $role)) {
+        throw new CrInputError("Доступ к ресурсу «{$resource}» запрещён вашей учётной записи.", 403, ['code' => 'resource_forbidden', 'field' => 'resource']);
+    }
+
+    $patch = $input['patch_json'] ?? null;
+    if (!is_array($patch) || ($patch !== [] && array_is_list($patch))) {
+        throw new CrInputError('Поле patch_json должно быть JSON-объектом.', 400, ['code' => 'invalid_patch_json', 'field' => 'patch_json']);
+    }
+
+    $op = ['type' => 'update', 'resource' => $resource, 'patch_json' => $patch];
+    if (isset($input['data'])) {
+        if (!is_array($input['data'])) {
+            throw new CrInputError('Поле data должно быть JSON-объектом.', 400, ['code' => 'invalid_data', 'field' => 'data']);
+        }
+        $op['data'] = $input['data'];
+    }
+    if (array_key_exists('expected_before', $input)) {
+        $op['expected_before'] = $input['expected_before'];
+    }
+    if (array_key_exists('baseHash', $input)) {
+        $op['baseHash'] = $input['baseHash'];
+    }
+
+    if ($resource === 'scenarios') {
+        $fn = $input['filename'] ?? ($input['id'] ?? ($input['file'] ?? null));
+        if (!is_string($fn) || trim($fn) === '') {
+            throw new CrInputError('Укажите filename (или id) сценария для проверки патча.', 400, ['code' => 'missing_required_field', 'field' => 'filename']);
+        }
+        $op['filename'] = $fn;
+    } else {
+        $idRaw = $input['id'] ?? null;
+        if ($idRaw === null || $idRaw === '') {
+            throw new CrInputError('Укажите id записи для проверки патча.', 400, ['code' => 'missing_required_field', 'field' => 'id']);
+        }
+        $op['id'] = $idRaw;
+    }
+
+    $val = ai_validate_operations($db, [$op], $role, null, null, 1);
+    if (!$val['valid']) {
+        $first = $val['errors'][0];
+        return [
+            'status' => ai_http_status_for_validation_errors($val['errors']),
+            'payload' => [
+                'ok' => false,
+                'valid' => false,
+                'code' => (string)($first['code'] ?? 'validation_failed'),
+                'error' => (string)($first['message'] ?? 'Проверка патча завершилась с ошибками.'),
+                'field' => $first['field'] ?? null,
+                'errors' => $val['errors'],
+                'warnings' => $val['warnings'],
+            ],
+        ];
+    }
+
+    $norm = $val['normalized_operations'][0] ?? null;
+    $warnings = $val['warnings'];
+
+    if ($resource === 'scenarios') {
+        $curRead = scenario_read_file((string)$norm['filename']);
+        $before = !empty($curRead['ok']) ? $curRead['content'] : null;
+        $after = $norm['data']['content'] ?? null;
+        $diff = scenario_json_diff($before, $after);
+        return [
+            'status' => 200,
+            'payload' => [
+                'ok' => true,
+                'valid' => true,
+                'resource' => 'scenarios',
+                'id' => (string)$norm['filename'],
+                'filename' => (string)$norm['filename'],
+                'before' => $before,
+                'after' => $after,
+                'diff' => $diff,
+                'changed_fields' => count($diff),
+                'noop' => $diff === [],
+                'sha256_before' => !empty($curRead['ok']) ? (string)$curRead['sha256'] : null,
+                'summary_after' => is_array($after) ? scenario_extract_summary($after) : null,
+                'normalized_operation' => $norm,
+                'warnings' => $warnings,
+                'note' => 'Read-only серверная проверка patch_json. Ничего не изменено; для отправки используйте action=propose.',
+            ],
+        ];
+    }
+
+    $R = editor_resources()[$resource] + ['key' => $resource];
+    $recId = (int)($norm['id'] ?? 0);
+    $cur = crud_fetch_row($db, $R, $recId);
+    $before = $cur !== null ? decode_json_cols($cur, $R['json'] ?? []) : null;
+    $jsonCols = array_flip($R['json'] ?? []);
+    $after = is_array($before) ? $before : [];
+    foreach (($norm['data'] ?? []) as $col => $value) {
+        if (isset($jsonCols[(string)$col]) && is_string($value)) {
+            $decoded = json_decode($value, true);
+            $after[$col] = $decoded;
+        } else {
+            $after[$col] = $value;
+        }
+    }
+
+    $diff = [];
+    foreach (($norm['data'] ?? []) as $col => $value) {
+        $isJson = isset($jsonCols[(string)$col]);
+        $beforeRaw = $cur !== null ? ($cur[$col] ?? null) : null;
+        $beforeVal = $isJson && is_array($before) ? ($before[$col] ?? null) : $beforeRaw;
+        $afterVal = $after[$col] ?? null;
+        if (editor_values_equal($beforeRaw, $afterVal, $isJson)) {
+            continue;
+        }
+        $diff[] = [
+            'column' => (string)$col,
+            'json' => $isJson,
+            'before' => cr_display_value($beforeVal ?? $beforeRaw, $isJson),
+            'after' => cr_display_value($afterVal, $isJson),
+        ];
+    }
+
+    return [
+        'status' => 200,
+        'payload' => [
+            'ok' => true,
+            'valid' => true,
+            'resource' => $resource,
+            'id' => $recId,
+            'record' => $after,
+            'before' => $before,
+            'diff' => $diff,
+            'changed_fields' => count($diff),
+            'noop' => $diff === [],
+            'normalized_operation' => $norm,
+            'warnings' => $warnings,
+            'note' => 'Read-only серверная проверка patch_json. Ничего не изменено; для отправки используйте action=propose.',
+        ],
+    ];
+}
+
+/** HTTP-статус для ответа с ошибками валидации: 403/409 по first-match, иначе 400. */
+function ai_http_status_for_validation_errors(array $errors): int
+{
+    foreach ($errors as $e) {
+        if (($e['code'] ?? '') === 'resource_forbidden') {
+            return 403;
+        }
+    }
+    foreach ($errors as $e) {
+        if (in_array((string)($e['code'] ?? ''), ['record_not_found', 'scenario_exists', 'scenario_not_found', 'base_hash_mismatch', 'version_conflict'], true)) {
+            return 409;
+        }
+    }
+    return 400;
 }
